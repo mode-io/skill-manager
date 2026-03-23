@@ -17,6 +17,12 @@ export async function fetchControlPlaneSummary(): Promise<ControlPlaneSummary> {
   return { harnesses, catalog, check };
 }
 
+export async function centralizeSkill(skillRef: string): Promise<CatalogEntrySummary> {
+  return expectJson<CatalogEntrySummary>(
+    fetch(`/catalog/${encodeURIComponent(skillRef)}/centralize`, { method: "POST" }),
+  );
+}
+
 export async function toggleBinding(
   skillRef: string,
   action: "enable" | "disable",

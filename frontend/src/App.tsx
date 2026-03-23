@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchControlPlaneSummary, toggleBinding } from "./api/client";
+import { centralizeSkill, fetchControlPlaneSummary, toggleBinding } from "./api/client";
 import type { CatalogEntrySummary, CheckIssue, ControlPlaneSummary, HarnessSummary } from "./api/types";
 
 type LoadState =
@@ -29,11 +29,13 @@ function CatalogTable({
   allHarnesses,
   mutating,
   onToggle,
+  onCentralize,
 }: {
   entries: CatalogEntrySummary[];
   allHarnesses: HarnessSummary[];
   mutating: string | null;
   onToggle: (entry: CatalogEntrySummary, action: "enable" | "disable", harness: string) => void;
+  onCentralize: (entry: CatalogEntrySummary) => void;
 }): JSX.Element {
   const manageable = allHarnesses.filter((h) => h.detected && h.manageable);
 
@@ -95,6 +97,15 @@ function CatalogTable({
                     </button>
                   );
                 })}
+                {entry.ownership === "unmanaged" && entry.conflicts.length === 0 && (
+                  <button
+                    className="action-btn centralize-btn"
+                    disabled={mutating !== null}
+                    onClick={() => onCentralize(entry)}
+                  >
+                    {mutating === `${entry.skillRef}:centralize` ? "..." : "Centralize"}
+                  </button>
+                )}
               </td>
             </tr>
           );
@@ -129,6 +140,20 @@ export function App(): JSX.Element {
         .then(() => load())
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : "mutation failed";
+          alert(message);
+        })
+        .finally(() => setMutating(null));
+    },
+    [load],
+  );
+
+  const handleCentralize = useCallback(
+    (entry: CatalogEntrySummary) => {
+      setMutating(`${entry.skillRef}:centralize`);
+      centralizeSkill(entry.skillRef)
+        .then(() => load())
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "centralize failed";
           alert(message);
         })
         .finally(() => setMutating(null));
@@ -238,6 +263,7 @@ export function App(): JSX.Element {
             allHarnesses={state.harnesses}
             mutating={mutating}
             onToggle={handleToggle}
+            onCentralize={handleCentralize}
           />
         )}
       </section>

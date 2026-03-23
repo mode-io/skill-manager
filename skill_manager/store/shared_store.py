@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
-from skill_manager.domain import CheckIssue, SourceDescriptor, StoreScan, find_skill_roots, parse_skill_package
+from skill_manager.domain import CheckIssue, SourceDescriptor, StoreScan, find_skill_roots, fingerprint_package, parse_skill_package
 
-from .manifest import load_manifest
+from .manifest import ManifestEntry, StoreManifest, load_manifest, write_manifest
 
 
 def default_shared_store_root(env: dict[str, str] | None = None) -> Path:
@@ -31,6 +32,32 @@ class SharedStore:
             )
             packages.append(parse_skill_package(path, default_source=source))
         return StoreScan(packages=tuple(packages), issues=tuple(issue.message for issue in self.check_integrity()))
+
+    def ingest(
+        self,
+        *,
+        source_path: Path,
+        declared_name: str,
+        source_kind: str,
+        source_locator: str,
+    ) -> Path:
+        """Copy a skill package into the shared store and update the manifest."""
+        self.root.mkdir(parents=True, exist_ok=True)
+        dest = self.root / source_path.name
+        if dest.exists():
+            raise ValueError(f"package directory already exists in store: {source_path.name}")
+        shutil.copytree(source_path, dest)
+        fingerprint, _ = fingerprint_package(dest)
+        manifest = load_manifest(self.manifest_path)
+        entry = ManifestEntry(
+            package_dir=source_path.name,
+            declared_name=declared_name,
+            source_kind=source_kind,
+            source_locator=source_locator,
+            revision=fingerprint,
+        )
+        write_manifest(self.manifest_path, StoreManifest(entries=manifest.entries + (entry,)))
+        return dest
 
     def check_integrity(self) -> tuple[CheckIssue, ...]:
         issues: list[CheckIssue] = []

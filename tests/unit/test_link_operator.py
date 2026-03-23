@@ -90,5 +90,52 @@ class LinkOperatorTests(unittest.TestCase):
             self.assertIn("not a symlink", str(ctx.exception))
 
 
+class ReplaceWithLinkTests(unittest.TestCase):
+    def test_replace_removes_dir_and_creates_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            harness_pkg = seed_skill_package(spec.home / ".codex" / "skills", "audit", "Audit")
+            operator = LinkOperator()
+            result = operator.replace_with_link(existing_dir=harness_pkg, target_path=store_pkg)
+            self.assertEqual(result.action, "created")
+            self.assertTrue(harness_pkg.is_symlink())
+            self.assertEqual(harness_pkg.resolve(), store_pkg.resolve())
+
+    def test_replace_idempotent_when_already_linked(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            link = spec.home / ".codex" / "skills" / "audit"
+            link.symlink_to(store_pkg.resolve())
+            operator = LinkOperator()
+            result = operator.replace_with_link(existing_dir=link, target_path=store_pkg)
+            self.assertEqual(result.action, "already_linked")
+
+    def test_replace_refuses_missing_directory(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            operator = LinkOperator()
+            with self.assertRaises(MutationError) as ctx:
+                operator.replace_with_link(
+                    existing_dir=spec.home / ".codex" / "skills" / "missing",
+                    target_path=store_pkg,
+                )
+            self.assertIn("does not exist", str(ctx.exception))
+
+    def test_replace_refuses_foreign_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            other = seed_skill_package(Path(temp_dir) / "other", "audit", "Other")
+            link = spec.home / ".codex" / "skills" / "audit"
+            link.symlink_to(other.resolve())
+            operator = LinkOperator()
+            with self.assertRaises(MutationError) as ctx:
+                operator.replace_with_link(existing_dir=link, target_path=store_pkg)
+            self.assertIn("points to", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

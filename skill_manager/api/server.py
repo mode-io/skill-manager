@@ -50,6 +50,14 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
                     return self._write_json({"error": str(error)}, status=error.status)
                 return self._write_json(result)
 
+        if parsed.path.startswith("/catalog/") and parsed.path.endswith("/centralize"):
+            skill_ref = unquote(parsed.path[len("/catalog/"):-len("/centralize")])
+            try:
+                result = self.service.centralize(skill_ref)
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
         self.send_error(404)
 
     def _read_body(self) -> object:

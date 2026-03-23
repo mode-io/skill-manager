@@ -206,6 +206,12 @@ h1 {
   background: #fafbfd;
 }
 
+.centralize-btn {
+  color: #2563a0;
+  border-color: #2563a0;
+  background: #f0f5ff;
+}
+
 @media (max-width: 720px) {
   .page-shell {
     padding: 20px 16px 32px;

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
 from typing import Literal
 
 
@@ -34,6 +35,19 @@ class LinkOperator:
         harness_skills_root.mkdir(parents=True, exist_ok=True)
         link.symlink_to(resolved_target)
         return LinkResult(action="created", detail=str(link))
+
+    def replace_with_link(self, *, existing_dir: Path, target_path: Path) -> LinkResult:
+        """Replace a real skill directory with a symlink to the shared store."""
+        resolved_target = target_path.resolve()
+        if not existing_dir.exists() and not existing_dir.is_symlink():
+            raise MutationError(f"directory does not exist: {existing_dir}")
+        if existing_dir.is_symlink():
+            if existing_dir.resolve() == resolved_target:
+                return LinkResult(action="already_linked", detail=str(existing_dir))
+            raise MutationError(f"symlink exists but points to {existing_dir.resolve()}, not {resolved_target}")
+        shutil.rmtree(existing_dir)
+        existing_dir.symlink_to(resolved_target)
+        return LinkResult(action="created", detail=str(existing_dir))
 
     def unlink_shared(self, *, package_dir: str, harness_skills_root: Path) -> LinkResult:
         link = harness_skills_root / package_dir
