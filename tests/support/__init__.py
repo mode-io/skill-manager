@@ -7,6 +7,7 @@ from .fake_home import (
     seed_divergent_source_fixture,
     seed_malformed_shared_directory,
     seed_mixed_fixture,
+    seed_shared_only_fixture,
     seed_skill_package,
     seed_store_manifest,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "seed_divergent_source_fixture",
     "seed_malformed_shared_directory",
     "seed_mixed_fixture",
+    "seed_shared_only_fixture",
     "seed_skill_package",
     "seed_store_manifest",
 ]

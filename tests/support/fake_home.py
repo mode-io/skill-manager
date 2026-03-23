@@ -166,3 +166,26 @@ def seed_divergent_source_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
         source_locator=source_locator,
     )
     return StubCommandRunner()
+
+
+def seed_shared_only_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
+    """Shared store skill not linked to any harness — for testing enable flow."""
+    seed_skill_package(
+        spec.shared_store_root,
+        "shared-audit",
+        "Shared Audit",
+        body="Shared package fixture.",
+    )
+    seed_store_manifest(
+        spec,
+        [
+            ManifestEntry(
+                package_dir="shared-audit",
+                declared_name="Shared Audit",
+                source_kind="github",
+                source_locator="github:mode-io/shared-audit",
+                revision="bootstrap",
+            )
+        ],
+    )
+    return StubCommandRunner()

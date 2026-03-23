@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlparse
 
 from skill_manager.application import ApplicationService
+from skill_manager.harness.link_operator import MutationError
 
 
 class SkillManagerRequestHandler(BaseHTTPRequestHandler):
@@ -32,6 +33,30 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
         if parsed.path == "/check":
             return self._write_json(self.service.run_check())
         return self._serve_static(parsed.path)
+
+    def do_POST(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        body = self._read_body()
+        harness = body.get("harness", "") if isinstance(body, dict) else ""
+
+        for action, method in (("/enable", self.service.enable_shared), ("/disable", self.service.disable_shared)):
+            if parsed.path.startswith("/catalog/") and parsed.path.endswith(action):
+                skill_ref = unquote(parsed.path[len("/catalog/"):-len(action)])
+                if not harness:
+                    return self._write_json({"error": "missing 'harness' in request body"}, status=400)
+                try:
+                    result = method(skill_ref, harness)
+                except MutationError as error:
+                    return self._write_json({"error": str(error)}, status=error.status)
+                return self._write_json(result)
+
+        self.send_error(404)
+
+    def _read_body(self) -> object:
+        length = int(self.headers.get("Content-Length", 0))
+        if length == 0:
+            return {}
+        return json.loads(self.rfile.read(length))
 
     def log_message(self, fmt: str, *args: object) -> None:
         return

@@ -174,6 +174,38 @@ h1 {
   background: #fff7f6;
 }
 
+.actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.action-btn {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.enable-btn {
+  color: #1f7a4c;
+  border-color: #1f7a4c;
+  background: #f0faf5;
+}
+
+.disable-btn {
+  color: #6b7280;
+  border-color: #ccd3dc;
+  background: #fafbfd;
+}
+
 @media (max-width: 720px) {
   .page-shell {
     padding: 20px 16px 32px;

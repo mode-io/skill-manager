@@ -1,4 +1,4 @@
-import type { ControlPlaneSummary } from "./types";
+import type { CatalogEntrySummary, ControlPlaneSummary } from "./types";
 
 async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
   const response = await responsePromise;
@@ -15,4 +15,18 @@ export async function fetchControlPlaneSummary(): Promise<ControlPlaneSummary> {
     expectJson(fetch("/check")),
   ]);
   return { harnesses, catalog, check };
+}
+
+export async function toggleBinding(
+  skillRef: string,
+  action: "enable" | "disable",
+  harness: string,
+): Promise<CatalogEntrySummary> {
+  return expectJson<CatalogEntrySummary>(
+    fetch(`/catalog/${encodeURIComponent(skillRef)}/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ harness }),
+    }),
+  );
 }

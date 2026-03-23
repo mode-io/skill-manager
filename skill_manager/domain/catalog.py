@@ -55,8 +55,9 @@ class CatalogEntry:
 
 
 class CatalogAssembler:
-    def assemble(self, *, store_scan: StoreScan, harness_scans: tuple[HarnessScan, ...]) -> tuple[CatalogEntry, ...]:
+    def assemble(self, *, store_scan: StoreScan, harness_scans: tuple[HarnessScan, ...], shared_store_root: Path | None = None) -> tuple[CatalogEntry, ...]:
         buckets: dict[tuple[OwnershipType, str], _Bucket] = {}
+        shared_path_index: dict[Path, tuple[OwnershipType, str]] = {}
 
         for package in store_scan.packages:
             logical_ref = package.ref
@@ -82,9 +83,28 @@ class CatalogAssembler:
                 )
             )
             bucket.revisions.add(package.revision)
+            shared_path_index[package.resolved_path] = key
 
         for scan in harness_scans:
             for observation in scan.skills:
+                shared_key = shared_path_index.get(observation.package.resolved_path)
+                if shared_key is not None:
+                    bucket = buckets[shared_key]
+                    bucket.sightings.append(
+                        CatalogSighting(
+                            kind="harness",
+                            harness=observation.harness,
+                            label=observation.label,
+                            scope=observation.scope,
+                            package_path=observation.package.root_path,
+                            revision=observation.package.revision,
+                            source=observation.package.source,
+                        )
+                    )
+                    bucket.harness_scopes[observation.harness].add(observation.scope)
+                    bucket.harness_labels[observation.harness] = observation.label
+                    continue
+
                 logical_ref = _resolve_unmanaged_logical_ref(observation)
                 key = ("unmanaged", logical_ref.value)
                 bucket = buckets.setdefault(

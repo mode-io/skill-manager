@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { fetchControlPlaneSummary } from "./api/client";
-import type { CheckIssue, ControlPlaneSummary } from "./api/types";
+import { fetchControlPlaneSummary, toggleBinding } from "./api/client";
+import type { CatalogEntrySummary, CheckIssue, ControlPlaneSummary, HarnessSummary } from "./api/types";
 
 type LoadState =
   | { kind: "loading" }
@@ -24,27 +24,117 @@ function renderIssueList(items: CheckIssue[]): JSX.Element {
   );
 }
 
+function CatalogTable({
+  entries,
+  allHarnesses,
+  mutating,
+  onToggle,
+}: {
+  entries: CatalogEntrySummary[];
+  allHarnesses: HarnessSummary[];
+  mutating: string | null;
+  onToggle: (entry: CatalogEntrySummary, action: "enable" | "disable", harness: string) => void;
+}): JSX.Element {
+  const manageable = allHarnesses.filter((h) => h.detected && h.manageable);
+
+  return (
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Ownership</th>
+          <th>Source</th>
+          <th>Bindings</th>
+          <th>Conflicts</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {entries.map((entry) => {
+          const boundSet = new Set(entry.harnesses.map((b) => b.harness));
+          const canEnable = entry.ownership === "shared" ? manageable.filter((h) => !boundSet.has(h.harness)) : [];
+          const canDisable = entry.ownership === "shared" ? manageable.filter((h) => boundSet.has(h.harness)) : [];
+
+          return (
+            <tr key={entry.skillRef}>
+              <td>
+                <strong>{entry.declaredName}</strong>
+              </td>
+              <td>{entry.ownership}</td>
+              <td>{entry.sourceKind}</td>
+              <td>
+                {entry.harnesses.map((binding) => binding.label).join(", ") ||
+                  entry.builtinHarnesses.join(", ") ||
+                  (entry.ownership === "shared" ? "Shared only" : "\u2014")}
+              </td>
+              <td>{entry.conflicts.length}</td>
+              <td className="actions-cell">
+                {canEnable.map((h) => {
+                  const key = `${entry.skillRef}:enable:${h.harness}`;
+                  return (
+                    <button
+                      key={key}
+                      className="action-btn enable-btn"
+                      disabled={mutating !== null}
+                      onClick={() => onToggle(entry, "enable", h.harness)}
+                    >
+                      {mutating === key ? "..." : `+ ${h.label}`}
+                    </button>
+                  );
+                })}
+                {canDisable.map((h) => {
+                  const key = `${entry.skillRef}:disable:${h.harness}`;
+                  return (
+                    <button
+                      key={key}
+                      className="action-btn disable-btn"
+                      disabled={mutating !== null}
+                      onClick={() => onToggle(entry, "disable", h.harness)}
+                    >
+                      {mutating === key ? "..." : `\u2212 ${h.label}`}
+                    </button>
+                  );
+                })}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 export function App(): JSX.Element {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const [mutating, setMutating] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    fetchControlPlaneSummary()
+      .then((nextState) => setState({ kind: "ready", ...nextState }))
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "unknown error";
+        setState({ kind: "error", message });
+      });
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetchControlPlaneSummary()
-      .then((nextState) => {
-        if (!cancelled) {
-          setState({ kind: "ready", ...nextState });
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          const message = error instanceof Error ? error.message : "unknown error";
-          setState({ kind: "error", message });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    load();
+  }, [load]);
+
+  const handleToggle = useCallback(
+    (entry: CatalogEntrySummary, action: "enable" | "disable", harness: string) => {
+      const key = `${entry.skillRef}:${action}:${harness}`;
+      setMutating(key);
+      toggleBinding(entry.skillRef, action, harness)
+        .then(() => load())
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "mutation failed";
+          alert(message);
+        })
+        .finally(() => setMutating(null));
+    },
+    [load],
+  );
 
   if (state.kind === "loading") {
     return (
@@ -80,10 +170,10 @@ export function App(): JSX.Element {
     <main className="page-shell">
       <section className="hero">
         <div>
-          <p className="eyebrow">Read-Only Bootstrap</p>
+          <p className="eyebrow">Control Plane</p>
           <h1>Skill Manager Control Plane</h1>
           <p className="subtle">
-            Unified read-only visibility across local harnesses, shared packages, and builtin skills.
+            Unified visibility and management across local harnesses, shared packages, and builtin skills.
           </p>
         </div>
         <div className="stat-grid">
@@ -143,34 +233,12 @@ export function App(): JSX.Element {
             <p>No skills discovered in the current fake-home environment.</p>
           </div>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Ownership</th>
-                <th>Source</th>
-                <th>Bindings</th>
-                <th>Conflicts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.catalog.map((entry) => (
-                <tr key={entry.skillRef}>
-                  <td>
-                    <strong>{entry.declaredName}</strong>
-                  </td>
-                  <td>{entry.ownership}</td>
-                  <td>{entry.sourceKind}</td>
-                  <td>
-                    {entry.harnesses.map((binding) => binding.label).join(", ") ||
-                      entry.builtinHarnesses.join(", ") ||
-                      "Shared only"}
-                  </td>
-                  <td>{entry.conflicts.length}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <CatalogTable
+            entries={state.catalog}
+            allHarnesses={state.harnesses}
+            mutating={mutating}
+            onToggle={handleToggle}
+          />
         )}
       </section>
 

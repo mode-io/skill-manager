@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from skill_manager.api import serve_in_thread
 from skill_manager.application import ApplicationService
@@ -48,4 +48,24 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             error.close()
         if status != expected_status:
             raise AssertionError(f"expected {expected_status} for {path}, got {status}: {payload}")
+        return json.loads(payload)
+
+    def post_json(self, path: str, body: object = None, *, expected_status: int = 200) -> object:
+        data = json.dumps(body).encode("utf-8") if body is not None else b""
+        request = Request(
+            f"{self.base_url}{path}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request) as response:
+                status = response.status
+                payload = response.read().decode("utf-8")
+        except HTTPError as error:
+            status = error.code
+            payload = error.read().decode("utf-8")
+            error.close()
+        if status != expected_status:
+            raise AssertionError(f"expected {expected_status} for POST {path}, got {status}: {payload}")
         return json.loads(payload)

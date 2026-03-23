@@ -15,6 +15,7 @@ class SkillParseError(ValueError):
 class SkillPackage:
     declared_name: str
     root_path: Path
+    resolved_path: Path
     relative_files: tuple[str, ...]
     revision: str
     source: SourceDescriptor
@@ -61,6 +62,7 @@ def parse_skill_package(root: Path, *, default_source: SourceDescriptor) -> Skil
     return SkillPackage(
         declared_name=declared_name,
         root_path=root,
+        resolved_path=root.resolve(),
         relative_files=relative_files,
         revision=fingerprint,
         source=source,
