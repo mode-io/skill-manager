@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from dataclasses import replace
+
 from skill_manager.domain import BuiltinObservation, HarnessScan, SkillObservation, SkillParseError, SourceDescriptor, parse_skill_package
 
 from ..command_runner import CommandRunner
@@ -14,14 +16,12 @@ class GeminiCliHarnessAdapter(ConfigHarnessAdapter):
     def __init__(
         self,
         *,
-        env: dict[str, str],
         command_runner: CommandRunner,
         user_skills_root: Path,
         builtins_path: Path | None = None,
     ) -> None:
         super().__init__(
             config=AdapterConfig(harness="gemini", label="Gemini", discovery_mode="command", builtin_support=True),
-            env=env,
             user_skills_root=user_skills_root,
             builtins_path=builtins_path,
         )
@@ -34,18 +34,7 @@ class GeminiCliHarnessAdapter(ConfigHarnessAdapter):
             issues = list(fallback.issues)
             if result.stderr.strip():
                 issues.append(result.stderr.strip())
-            return HarnessScan(
-                harness=fallback.harness,
-                label=fallback.label,
-                detected=fallback.detected,
-                manageable=fallback.manageable,
-                builtin_support=fallback.builtin_support,
-                discovery_mode=fallback.discovery_mode,
-                detection_details=fallback.detection_details,
-                skills=fallback.skills,
-                builtins=fallback.builtins,
-                issues=tuple(issues),
-            )
+            return replace(fallback, issues=tuple(issues))
 
         payload = json.loads(result.stdout)
         observations: list[SkillObservation] = []

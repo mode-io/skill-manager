@@ -77,11 +77,11 @@ class CatalogAssembler:
                     label="Shared Store",
                     scope=None,
                     package_path=package.root_path,
-                    revision=package.revision.fingerprint,
+                    revision=package.revision,
                     source=package.source,
                 )
             )
-            bucket.revisions.add(package.revision.fingerprint)
+            bucket.revisions.add(package.revision)
 
         for scan in harness_scans:
             for observation in scan.skills:
@@ -104,11 +104,11 @@ class CatalogAssembler:
                         label=observation.label,
                         scope=observation.scope,
                         package_path=observation.package.root_path,
-                        revision=observation.package.revision.fingerprint,
+                        revision=observation.package.revision,
                         source=observation.package.source,
                     )
                 )
-                bucket.revisions.add(observation.package.revision.fingerprint)
+                bucket.revisions.add(observation.package.revision)
                 bucket.harness_scopes[observation.harness].add(observation.scope)
                 bucket.harness_labels[observation.harness] = observation.label
 
@@ -207,7 +207,7 @@ def _resolve_unmanaged_logical_ref(observation: SkillObservation) -> SkillRef:
         return package.ref
     source = SourceDescriptor(
         kind="unmanaged-local",
-        locator=stable_id(package.declared_name, package.revision.fingerprint),
+        locator=stable_id(package.declared_name, package.revision),
     )
     return SkillRef(source=source, declared_name=package.declared_name)
 

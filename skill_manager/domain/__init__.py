@@ -5,7 +5,6 @@ from .observations import BuiltinObservation, HarnessScan, SkillObservation, Sto
 from .package import (
     SkillPackage,
     SkillParseError,
-    SkillRevision,
     fingerprint_package,
     find_skill_roots,
     parse_skill_package,
@@ -26,7 +25,6 @@ __all__ = [
     "SkillParseError",
     "SkillObservation",
     "SkillRef",
-    "SkillRevision",
     "SourceDescriptor",
     "StoreScan",
     "fingerprint_package",

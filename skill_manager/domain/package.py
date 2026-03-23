@@ -12,16 +12,11 @@ class SkillParseError(ValueError):
 
 
 @dataclass(frozen=True)
-class SkillRevision:
-    fingerprint: str
-
-
-@dataclass(frozen=True)
 class SkillPackage:
     declared_name: str
     root_path: Path
     relative_files: tuple[str, ...]
-    revision: SkillRevision
+    revision: str
     source: SourceDescriptor
 
     @property
@@ -58,15 +53,16 @@ def parse_skill_package(root: Path, *, default_source: SourceDescriptor) -> Skil
     skill_path = root / "SKILL.md"
     if not skill_path.is_file():
         raise SkillParseError(f"missing SKILL.md in {root}")
-    metadata = _parse_frontmatter(skill_path.read_text(encoding="utf-8"))
-    declared_name = _extract_declared_name(skill_path.read_text(encoding="utf-8"), metadata)
+    content = skill_path.read_text(encoding="utf-8")
+    metadata = _parse_frontmatter(content)
+    declared_name = _extract_declared_name(content, metadata)
     fingerprint, relative_files = fingerprint_package(root)
     source = _resolve_source(metadata, default_source=default_source)
     return SkillPackage(
         declared_name=declared_name,
         root_path=root,
         relative_files=relative_files,
-        revision=SkillRevision(fingerprint=fingerprint),
+        revision=fingerprint,
         source=source,
     )
 

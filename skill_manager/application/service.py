@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+from skill_manager.domain import CatalogAssembler
 from skill_manager.harness import CommandRunner
 
-from .catalog_queries import build_catalog_detail, build_catalog_views
-from .check_queries import build_check_report
 from .read_model_service import ReadModelService
-from .view_models import HarnessSummaryView
+from .serializers import catalog_detail_to_json, catalog_entry_to_json, check_report_to_json, harness_scan_to_json
 
 
 class ApplicationService:
@@ -32,19 +31,19 @@ class ApplicationService:
 
     def list_harnesses(self) -> list[dict[str, object]]:
         snapshot = self.read_models.snapshot()
-        return [HarnessSummaryView.from_scan(scan).to_dict() for scan in snapshot.harness_scans]
+        return [harness_scan_to_json(scan) for scan in snapshot.harness_scans]
 
     def list_catalog(self) -> list[dict[str, object]]:
         snapshot = self.read_models.snapshot()
-        return [entry.to_dict() for entry in build_catalog_views(snapshot.catalog_entries)]
+        return [catalog_entry_to_json(entry) for entry in snapshot.catalog_entries]
 
     def get_catalog_detail(self, skill_ref: str) -> dict[str, object] | None:
         snapshot = self.read_models.snapshot()
-        detail = build_catalog_detail(snapshot.catalog_entries, skill_ref=skill_ref)
-        if detail is None:
+        entry = CatalogAssembler.find_entry(snapshot.catalog_entries, skill_ref=skill_ref)
+        if entry is None:
             return None
-        return detail.to_dict()
+        return catalog_detail_to_json(entry)
 
     def run_check(self) -> dict[str, object]:
         snapshot = self.read_models.snapshot()
-        return build_check_report(store_scan=snapshot.store_scan, harness_scans=snapshot.harness_scans).to_dict()
+        return check_report_to_json(store_scan=snapshot.store_scan, harness_scans=snapshot.harness_scans)

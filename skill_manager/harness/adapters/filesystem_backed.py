@@ -12,12 +12,10 @@ class FilesystemHarnessAdapter:
         self,
         *,
         config: AdapterConfig,
-        env: dict[str, str],
         user_skills_root: Path,
         global_skills_root: Path | None = None,
     ) -> None:
         self.config = config
-        self.env = env
         self.user_skills_root = user_skills_root
         self.global_skills_root = global_skills_root
 
