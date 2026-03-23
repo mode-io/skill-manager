@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/dist/
+playwright-report/
+test-results/
+.artifacts/
+task_plan.md
+findings.md
+progress.md

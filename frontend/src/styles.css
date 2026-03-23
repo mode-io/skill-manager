@@ -1,0 +1,190 @@
+:root {
+  color-scheme: light;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: #f3f4f7;
+  color: #121826;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(79, 99, 123, 0.08), transparent 28%),
+    linear-gradient(180deg, #edf0f4 0%, #f8f9fb 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 28px 48px;
+}
+
+.hero {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #4b5c74;
+  font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.subtle {
+  margin: 10px 0 0;
+  color: #5d6676;
+  max-width: 720px;
+}
+
+.stat-grid,
+.check-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.stat-card,
+.panel {
+  border: 1px solid #ccd3dc;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.stat-card {
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.stat-label,
+.mono {
+  font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+}
+
+.stat-card strong {
+  font-size: 24px;
+}
+
+.status-ok {
+  color: #1f7a4c;
+}
+
+.status-warning {
+  color: #9c6700;
+}
+
+.status-error {
+  color: #ad1b0d;
+}
+
+.panel {
+  padding: 16px 18px 18px;
+  margin-top: 16px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel-header h2,
+.check-grid h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #586173;
+  padding: 0 0 10px;
+  border-bottom: 1px solid #d7dde5;
+}
+
+.data-table tbody td {
+  padding: 12px 0;
+  border-bottom: 1px solid #e6ebf0;
+  vertical-align: top;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.check-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.issue-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.issue-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dde3ea;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+.empty-state,
+.error-panel {
+  padding: 18px;
+  border: 1px dashed #c5cfda;
+  border-radius: 6px;
+  background: #fafbfd;
+}
+
+.error-panel {
+  border-style: solid;
+  border-color: #e3c4bf;
+  background: #fff7f6;
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    padding: 20px 16px 32px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

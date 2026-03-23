@@ -8,9 +8,10 @@ While `skill-manager/` lives inside `/Users/siruizhang/Desktop/ModeIOSkill`, the
 
 1. Read `/Users/siruizhang/Desktop/ModeIOSkill/AGENTS.md` for the root workflow rules.
 2. Read this file.
-3. Read `design.md` before changing architecture, interfaces, or project structure.
-4. If working inside `.worktrees/skillmgr--*`, read `.worktree-context.md` first.
-5. If the task includes frontend or visual design, also read `/Users/siruizhang/Desktop/ModeIOSkill/FRONTEND_DESIGN_GUIDE.md`.
+3. Read `design.md`.
+4. Read `phase-plan.md` before implementation work.
+5. If working inside `.worktrees/skillmgr--*`, read `.worktree-context.md` first.
+6. If the task includes frontend or visual design, also read `/Users/siruizhang/Desktop/ModeIOSkill/FRONTEND_DESIGN_GUIDE.md`.
 
 ## Workflow
 
@@ -28,9 +29,11 @@ While `skill-manager/` lives inside `/Users/siruizhang/Desktop/ModeIOSkill`, the
 - The application layer owns orchestration.
 - Harness-specific behavior belongs in adapters.
 - `design.md` is the current conceptual source of truth.
+- `phase-plan.md` is the current implementation-order and testing-order source of truth.
 
 ## Scaffolding Status
 
 - The current repo name and current design are both provisional.
 - Treat the current files as bootstrap scaffolding, not a frozen implementation contract.
 - When the design changes materially, update `design.md` first and then align the code to it.
+- When execution order, milestone strategy, or testing order changes materially, update `phase-plan.md`.
