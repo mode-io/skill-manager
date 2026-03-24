@@ -6,7 +6,7 @@ import mimetypes
 from pathlib import Path
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from skill_manager.application import ApplicationService
 from skill_manager.harness.link_operator import MutationError
@@ -32,6 +32,9 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
             return self._write_json(payload)
         if parsed.path == "/check":
             return self._write_json(self.service.run_check())
+        if parsed.path == "/search":
+            query = parse_qs(parsed.query).get("q", [""])[0]
+            return self._write_json(self.service.search_sources(query))
         return self._serve_static(parsed.path)
 
     def do_POST(self) -> None:  # noqa: N802
@@ -54,6 +57,25 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
             skill_ref = unquote(parsed.path[len("/catalog/"):-len("/centralize")])
             try:
                 result = self.service.centralize(skill_ref)
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
+        if parsed.path == "/install":
+            source_kind = body.get("sourceKind", "") if isinstance(body, dict) else ""
+            source_locator = body.get("sourceLocator", "") if isinstance(body, dict) else ""
+            if not source_kind or not source_locator:
+                return self._write_json({"error": "missing sourceKind or sourceLocator"}, status=400)
+            try:
+                result = self.service.install_from_source(source_kind, source_locator)
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
+        if parsed.path.startswith("/catalog/") and parsed.path.endswith("/update"):
+            skill_ref = unquote(parsed.path[len("/catalog/"):-len("/update")])
+            try:
+                result = self.service.update_skill(skill_ref)
             except MutationError as error:
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)

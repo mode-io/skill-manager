@@ -58,5 +58,40 @@ class SharedStoreIngestTests(unittest.TestCase):
             self.assertTrue(missing_root.is_dir())
 
 
+class SharedStoreUpdateTests(unittest.TestCase):
+    def test_update_replaces_changed_package(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store = SharedStore(spec.shared_store_root)
+            source_v1 = seed_skill_package(Path(temp_dir) / "v1", "audit", "Audit", body="version 1")
+            store.ingest(source_path=source_v1, declared_name="Audit", source_kind="github", source_locator="github:test/test/audit")
+            source_v2 = seed_skill_package(Path(temp_dir) / "v2", "audit", "Audit", body="version 2")
+            _, changed = store.update("audit", source_path=source_v2)
+            self.assertTrue(changed)
+            content = (spec.shared_store_root / "audit" / "SKILL.md").read_text()
+            self.assertIn("version 2", content)
+            manifest = load_manifest(store.manifest_path)
+            self.assertEqual(len(manifest.entries), 1)
+
+    def test_update_noop_when_identical(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store = SharedStore(spec.shared_store_root)
+            source = seed_skill_package(Path(temp_dir) / "original", "audit", "Audit", body="same content")
+            store.ingest(source_path=source, declared_name="Audit", source_kind="github", source_locator="github:test/test/audit")
+            source_copy = seed_skill_package(Path(temp_dir) / "copy", "audit", "Audit", body="same content")
+            _, changed = store.update("audit", source_path=source_copy)
+            self.assertFalse(changed)
+
+    def test_update_refuses_missing_package(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store = SharedStore(spec.shared_store_root)
+            source = seed_skill_package(Path(temp_dir) / "src", "audit", "Audit")
+            with self.assertRaises(ValueError) as ctx:
+                store.update("nonexistent", source_path=source)
+            self.assertIn("not in store", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

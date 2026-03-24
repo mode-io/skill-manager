@@ -206,10 +206,26 @@ h1 {
   background: #fafbfd;
 }
 
-.centralize-btn {
+.centralize-btn,
+.update-btn {
   color: #2563a0;
   border-color: #2563a0;
   background: #f0f5ff;
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccd3dc;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
 }
 
 @media (max-width: 720px) {

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import unittest
 
+from skill_manager.store import ManifestEntry
+
 from tests.support import (
     AppTestHarness,
     seed_divergent_source_fixture,
     seed_shared_only_fixture,
     seed_skill_package,
+    seed_store_manifest,
 )
 
 
@@ -88,6 +91,83 @@ class MutationTests(unittest.TestCase):
                 f"/catalog/{shared['skillRef']}/disable", {"harness": "codex"}, expected_status=409
             )
             self.assertIn("not a symlink", result["error"])
+
+
+def _seed_install_fixture(spec):
+    """Shared store with one installed skill for update testing."""
+    seed_skill_package(spec.shared_store_root, "audit-skill", "Audit Skill", body="version 1")
+    seed_store_manifest(spec, [
+        ManifestEntry(
+            package_dir="audit-skill",
+            declared_name="Audit Skill",
+            source_kind="github",
+            source_locator="github:test/repo/audit-skill",
+            revision="bootstrap",
+        ),
+    ])
+    from tests.support.command_runner import StubCommandRunner
+    return StubCommandRunner()
+
+
+class InstallTests(unittest.TestCase):
+    def test_install_from_local_source(self) -> None:
+        """Install by directly ingesting a prepared skill package into the store."""
+        with AppTestHarness() as harness:
+            source = seed_skill_package(harness.spec.home / "downloads", "new-skill", "New Skill", body="fresh")
+            harness.spec.shared_store_root.mkdir(parents=True, exist_ok=True)
+            harness.service.read_models.store.ingest(
+                source_path=source,
+                declared_name="New Skill",
+                source_kind="github",
+                source_locator="github:test/repo/new-skill",
+            )
+            catalog = harness.get_json("/catalog")
+            installed = next((e for e in catalog if e["declaredName"] == "New Skill"), None)
+            self.assertIsNotNone(installed)
+            self.assertEqual(installed["ownership"], "shared")
+
+    def test_install_bad_locator_returns_400(self) -> None:
+        with AppTestHarness() as harness:
+            result = harness.post_json("/install", {"sourceKind": "github", "sourceLocator": "bad-locator"}, expected_status=400)
+            self.assertIn("error", result)
+
+    def test_install_unsupported_source_returns_400(self) -> None:
+        with AppTestHarness() as harness:
+            result = harness.post_json("/install", {"sourceKind": "unknown", "sourceLocator": "x"}, expected_status=400)
+            self.assertIn("unsupported", result["error"])
+
+    def test_install_missing_params_returns_400(self) -> None:
+        with AppTestHarness() as harness:
+            result = harness.post_json("/install", {}, expected_status=400)
+            self.assertIn("missing", result["error"])
+
+
+class UpdateTests(unittest.TestCase):
+    def test_update_skill_detects_change(self) -> None:
+        with AppTestHarness(fixture_factory=_seed_install_fixture) as harness:
+            catalog = harness.get_json("/catalog")
+            skill = next(e for e in catalog if e["declaredName"] == "Audit Skill")
+            # Manually update store content to simulate a version change
+            store_pkg = harness.spec.shared_store_root / "audit-skill" / "SKILL.md"
+            original = store_pkg.read_text()
+            # Create a "new version" source
+            new_source = seed_skill_package(harness.spec.home / "update-src", "audit-skill", "Audit Skill", body="version 2")
+            _, changed = harness.service.read_models.store.update("audit-skill", source_path=new_source)
+            self.assertTrue(changed)
+
+    def test_update_noop_when_unchanged(self) -> None:
+        with AppTestHarness(fixture_factory=_seed_install_fixture) as harness:
+            # Create source with identical content
+            new_source = seed_skill_package(harness.spec.home / "update-src", "audit-skill", "Audit Skill", body="version 1")
+            _, changed = harness.service.read_models.store.update("audit-skill", source_path=new_source)
+            self.assertFalse(changed)
+
+    def test_update_refuses_non_shared(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            catalog = harness.get_json("/catalog")
+            unmanaged = next(e for e in catalog if e["ownership"] == "unmanaged")
+            result = harness.post_json(f"/catalog/{unmanaged['skillRef']}/update", expected_status=400)
+            self.assertIn("only shared", result["error"])
 
 
 class CentralizeTests(unittest.TestCase):

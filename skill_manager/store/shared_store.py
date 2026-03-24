@@ -59,6 +59,27 @@ class SharedStore:
         write_manifest(self.manifest_path, StoreManifest(entries=manifest.entries + (entry,)))
         return dest
 
+    def update(self, package_dir: str, *, source_path: Path) -> tuple[Path, bool]:
+        """Replace a shared package with a new version. Returns (path, changed)."""
+        dest = self.root / package_dir
+        if not dest.is_dir():
+            raise ValueError(f"package not in store: {package_dir}")
+        new_fp, _ = fingerprint_package(source_path)
+        old_fp, _ = fingerprint_package(dest)
+        if new_fp == old_fp:
+            return dest, False
+        shutil.rmtree(dest)
+        shutil.copytree(source_path, dest)
+        manifest = load_manifest(self.manifest_path)
+        updated = tuple(
+            ManifestEntry(e.package_dir, e.declared_name, e.source_kind, e.source_locator, new_fp)
+            if e.package_dir == package_dir
+            else e
+            for e in manifest.entries
+        )
+        write_manifest(self.manifest_path, StoreManifest(entries=updated))
+        return dest, True
+
     def check_integrity(self) -> tuple[CheckIssue, ...]:
         issues: list[CheckIssue] = []
         if not self.root.exists():

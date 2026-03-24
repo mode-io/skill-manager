@@ -49,6 +49,15 @@ export interface CheckReport {
   counts: Record<string, number>;
 }
 
+export interface SkillListing {
+  name: string;
+  description: string;
+  sourceKind: string;
+  sourceLocator: string;
+  registry: string;
+  installs: number;
+}
+
 export interface ControlPlaneSummary {
   harnesses: HarnessSummary[];
   catalog: CatalogEntrySummary[];

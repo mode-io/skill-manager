@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { centralizeSkill, fetchControlPlaneSummary, toggleBinding } from "./api/client";
-import type { CatalogEntrySummary, CheckIssue, ControlPlaneSummary, HarnessSummary } from "./api/types";
+import { centralizeSkill, fetchControlPlaneSummary, installSkill, searchSources, toggleBinding, updateSkill } from "./api/client";
+import type { CatalogEntrySummary, CheckIssue, ControlPlaneSummary, HarnessSummary, SkillListing } from "./api/types";
 
 type LoadState =
   | { kind: "loading" }
@@ -30,12 +30,14 @@ function CatalogTable({
   mutating,
   onToggle,
   onCentralize,
+  onUpdate,
 }: {
   entries: CatalogEntrySummary[];
   allHarnesses: HarnessSummary[];
   mutating: string | null;
   onToggle: (entry: CatalogEntrySummary, action: "enable" | "disable", harness: string) => void;
   onCentralize: (entry: CatalogEntrySummary) => void;
+  onUpdate: (entry: CatalogEntrySummary) => void;
 }): JSX.Element {
   const manageable = allHarnesses.filter((h) => h.detected && h.manageable);
 
@@ -106,6 +108,15 @@ function CatalogTable({
                     {mutating === `${entry.skillRef}:centralize` ? "..." : "Centralize"}
                   </button>
                 )}
+                {entry.ownership === "shared" && entry.sourceKind !== "shared-store" && entry.sourceKind !== "centralized" && (
+                  <button
+                    className="action-btn update-btn"
+                    disabled={mutating !== null}
+                    onClick={() => onUpdate(entry)}
+                  >
+                    {mutating === `${entry.skillRef}:update` ? "..." : "Update"}
+                  </button>
+                )}
               </td>
             </tr>
           );
@@ -154,6 +165,50 @@ export function App(): JSX.Element {
         .then(() => load())
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : "centralize failed";
+          alert(message);
+        })
+        .finally(() => setMutating(null));
+    },
+    [load],
+  );
+
+  const handleUpdate = useCallback(
+    (entry: CatalogEntrySummary) => {
+      setMutating(`${entry.skillRef}:update`);
+      updateSkill(entry.skillRef)
+        .then(() => load())
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "update failed";
+          alert(message);
+        })
+        .finally(() => setMutating(null));
+    },
+    [load],
+  );
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SkillListing[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const handleSearch = useCallback(() => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    searchSources(searchQuery.trim())
+      .then(setSearchResults)
+      .catch(() => setSearchResults([]))
+      .finally(() => setSearching(false));
+  }, [searchQuery]);
+
+  const handleInstall = useCallback(
+    (listing: SkillListing) => {
+      setMutating(`install:${listing.sourceLocator}`);
+      installSkill(listing.sourceKind, listing.sourceLocator)
+        .then(() => {
+          load();
+          setSearchResults((prev) => prev.filter((r) => r.sourceLocator !== listing.sourceLocator));
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "install failed";
           alert(message);
         })
         .finally(() => setMutating(null));
@@ -264,7 +319,62 @@ export function App(): JSX.Element {
             mutating={mutating}
             onToggle={handleToggle}
             onCentralize={handleCentralize}
+            onUpdate={handleUpdate}
           />
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <h2>Install from Source</h2>
+          <span className="mono">skills.sh + agentskill.sh</span>
+        </div>
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search skills..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <button className="action-btn enable-btn" onClick={handleSearch} disabled={searching || !searchQuery.trim()}>
+            {searching ? "..." : "Search"}
+          </button>
+        </div>
+        {searchResults.length > 0 && (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Source</th>
+                <th>Registry</th>
+                <th>Installs</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {searchResults.map((listing) => (
+                <tr key={listing.sourceLocator}>
+                  <td>
+                    <strong>{listing.name}</strong>
+                    {listing.description && <p className="subtle">{listing.description}</p>}
+                  </td>
+                  <td className="mono">{listing.sourceKind}</td>
+                  <td>{listing.registry}</td>
+                  <td>{listing.installs > 0 ? listing.installs.toLocaleString() : "\u2014"}</td>
+                  <td>
+                    <button
+                      className="action-btn enable-btn"
+                      disabled={mutating !== null}
+                      onClick={() => handleInstall(listing)}
+                    >
+                      {mutating === `install:${listing.sourceLocator}` ? "..." : "Install"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
 
