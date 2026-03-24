@@ -85,6 +85,34 @@ So the UI logic becomes simple:
 - A skill can be unmanaged and eligible for centralization
 - A skill can be builtin and never centralized
 
+## Product Semantics
+
+The browser product should use a simpler user-facing model than the raw internal ownership and observation model.
+
+### User-facing skill states
+
+The product should classify skills into these user-facing states:
+
+- `Managed`
+- `Found locally`
+- `Custom`
+- `Built-in`
+- `Needs review`
+
+These states are presentation semantics derived from the underlying catalog and should be produced by the application/read-model layer instead of forcing the frontend to interpret low-level internals.
+
+### Source and customization rules
+
+The catalog should follow these rules:
+
+- same source plus same content means the sightings collapse into one logical skill
+- same source plus different content means the modified version becomes a `Custom` skill instead of a first-class conflict
+- only unmodified source-backed managed skills are updateable
+- custom skills are not updateable from source
+- built-ins remain visible but are never centralized
+
+This keeps the product model aligned with user expectations and removes most conflict handling from the default workflow.
+
 ## Collaboration Protocol
 
 This is the skeleton of how modules collaborate.
@@ -123,6 +151,11 @@ This is the skeleton of how modules collaborate.
 - Existing harness bindings are reapplied by the application.
 - The catalog refreshes.
 
+Update eligibility rule:
+
+- only unmodified source-backed managed skills should surface as updateable in the user-facing product
+- if a managed skill diverges from its original source content, it should be treated as `Custom` instead of remaining a normal update target
+
 `check`
 - The store verifies shared package integrity.
 - Harness adapters verify current bindings.
@@ -147,12 +180,10 @@ The frontend should feel like a control panel, not a terminal wrapper.
 
 Core screens:
 
-- `Catalog`: all skills, grouped by ownership and source
-- `Skill detail`: metadata, source, revision, enabled harnesses
-- `Centralize dialog`: one-click conversion of unmanaged skills into shared skills
-- `Install dialog`: search or paste a source
-- `Updates view`: shared skills with available newer revisions
-- `Harnesses view`: detected harnesses and whether they are manageable
+- `Skills`: the primary management table, one skill per row group with per-harness toggles and a single primary action
+- `Skill detail`: metadata, source summary, updateability, and advanced details when expanded
+- `Marketplace`: normalized acquisition surface for popular and searchable skills from supported sources
+- `Settings`: secondary maintenance surface for harness availability, rescan, source preferences, and diagnostics
 
 ## Opinionated Defaults
 
@@ -165,5 +196,7 @@ To keep the product simple:
 - Source-qualified identity is required
 - The frontend is the primary UX
 - The CLI remains only a launcher
+- The main user workflow should live on a single `Skills` page
+- Advanced operational detail should stay backend-side unless explicitly expanded
 
 If you want, I can now turn this into the next layer down: a precise conceptual spec for the actual data contracts between `application`, `store`, `harness adapters`, and `source connectors`, still without dropping into file/function implementation.

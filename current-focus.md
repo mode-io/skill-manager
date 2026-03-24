@@ -67,6 +67,7 @@ Priorities:
 - simplify and harden centralize, enable/disable, install, and update flows
 - keep harness-specific behavior isolated in adapters instead of leaking into the application layer or UI
 - remove stale read-only/bootstrap assumptions from product behavior and repo messaging
+- align the backend read model and serializers to the simplified frontend product model before major UI implementation
 
 Working rule:
 
@@ -125,3 +126,14 @@ Changes should be validated in the smallest lane that proves the change, but the
 - Prefer shared-store and catalog correctness over clever adapter shortcuts.
 - Prefer removing stale framing over preserving outdated planning artifacts.
 - Prefer small, test-backed refinements over broad speculative roadmap expansion.
+
+## Immediate Execution Order
+
+For the current frontend redesign direction, use this order:
+
+1. lock durable product semantics in `design.md`
+2. keep the user-facing page and interaction brief in `frontend-redesign.md`
+3. align backend read models and serializers with the simplified product model
+4. build the redesigned frontend against that cleaner contract
+
+Do not start the full UI implementation from the current raw API shape if the UI would need to interpret backend mechanics directly.

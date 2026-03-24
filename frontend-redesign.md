@@ -268,6 +268,55 @@ The redesign should intentionally move interpretation work into the backend.
 
 The frontend should render a clean management experience, not expose backend classification internals directly.
 
+## Backend Alignment Requirement
+
+The redesigned frontend does not require a deep backend rewrite first, but it does require a backend read-model and API alignment pass before the new UI should be implemented.
+
+### What is already supported
+
+The backend already supports the core mechanics needed for the simplified product:
+
+- unified catalog scan and merge
+- per-skill enable and disable for managed skills
+- per-skill centralization
+- bulk centralization
+- marketplace search and install
+- source-backed update flow
+
+This means the planned table-based `Skills` page is mechanically feasible with the current backend.
+
+### What is not yet expressed in the right product shape
+
+The current backend still exposes implementation-oriented concepts too directly.
+
+Before the redesigned UI ships, the backend should provide a cleaner user-facing read model for:
+
+- display status (`Managed`, `Found locally`, `Custom`, `Built-in`, `Needs review`)
+- whether a skill is updateable
+- whether a skill is a custom variant
+- whether a skill needs user attention
+- whether a skill is eligible for bulk centralization
+- normalized marketplace popularity and source labeling
+
+### Required backend changes before frontend implementation
+
+The backend should be updated so that:
+
+- same-source same-content copies collapse into one skill automatically
+- same-source different-content copies become `Custom` instead of first-class conflicts
+- only unmodified source-backed managed skills are updateable
+- the frontend no longer needs raw discovery details or low-level conflict payloads in the default flow
+
+### Implementation posture
+
+The right approach is:
+
+- keep the current store, harness, and mutation core
+- add a UI-oriented read model and serializer layer on top
+- adjust catalog semantics where needed for `Custom` classification
+
+In other words, the frontend redesign should start after a thin backend product-model alignment pass, not after a full backend refactor.
+
 ## Updated Plan
 
 ### Step 1. Lock the user-facing product model
@@ -285,7 +334,19 @@ Define the update rule:
 - only unmodified source-backed managed skills are updateable
 - modified managed skills become custom
 
-### Step 2. Simplify the frontend information architecture
+### Step 2. Align the backend read model and API
+
+Add a frontend-oriented backend contract that exposes interpreted user-facing state instead of raw operational detail.
+
+This alignment should include:
+
+- `Custom` classification
+- updateability rules
+- bulk-centralize eligibility
+- simplified status and recommended action fields
+- normalized marketplace ranking inputs
+
+### Step 3. Simplify the frontend information architecture
 
 Replace the current multi-bucket mental model with:
 
@@ -296,7 +357,7 @@ Replace the current multi-bucket mental model with:
 
 Retire `Setup` and `Health` as primary user workflows.
 
-### Step 3. Redesign the main management surface around the table
+### Step 4. Redesign the main management surface around the table
 
 Implement the `Skills` page as the main management table:
 
@@ -306,7 +367,7 @@ Implement the `Skills` page as the main management table:
 - one harness column per detected manageable harness
 - one bulk centralize action at the page level
 
-### Step 4. Narrow the default information shown in the UI
+### Step 5. Narrow the default information shown in the UI
 
 Keep the default UI focused on decisions and actions.
 
@@ -317,7 +378,7 @@ Hide backend-only details by default, including:
 - discovery internals
 - raw integrity output
 
-### Step 5. Normalize the marketplace
+### Step 6. Normalize the marketplace
 
 Make marketplace results uniform across sources:
 
@@ -326,7 +387,7 @@ Make marketplace results uniform across sources:
 - official versus community labeling
 - one install action
 
-### Step 6. Move advanced behavior behind secondary surfaces
+### Step 7. Move advanced behavior behind secondary surfaces
 
 Keep advanced and maintenance functionality out of the primary workflow:
 
