@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "skill-manager"
 version = "0.1.0"
-description = "Bootstrap read-only local app and test infrastructure for universal skill management."
+description = "Local app and browser UI for universal skill management across agent harnesses."
 requires-python = ">=3.11"
 
 [tool.setuptools.packages.find]

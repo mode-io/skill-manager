@@ -12,7 +12,7 @@ from skill_manager.application import ApplicationService
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="skill-manager",
-        description="Launch the local read-only skill-manager control plane.",
+        description="Launch the local skill-manager control plane.",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=0, type=int)
