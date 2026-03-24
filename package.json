@@ -9,8 +9,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "lucide-react": "^1.0.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.13.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",

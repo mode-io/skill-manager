@@ -1,0 +1,65 @@
+.app-layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  padding: 24px 0;
+  z-index: 10;
+}
+
+.sidebar-brand {
+  padding: 0 20px 20px;
+  font-size: 13px; font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; flex: 1; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-btn);
+  font-size: 13px; font-weight: 400;
+  color: var(--color-text-secondary);
+  transition: background var(--transition), color var(--transition);
+  cursor: pointer;
+}
+.nav-item:hover { background: var(--color-surface-2); color: var(--color-text); }
+.nav-item.active { background: var(--color-surface-2); color: #FAFAFA; }
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+.content {
+  margin-left: var(--sidebar-width);
+  flex: 1; padding: 32px 40px;
+  max-width: 1200px;
+}
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; gap: 16px;
+}
+.page-header h1 { font-size: 20px; font-weight: 500; }
+.page-header .subtitle { color: var(--color-text-secondary); font-size: 13px; margin-top: 3px; }
+
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed; top: 0; left: 0; right: 0; bottom: auto;
+    width: 100%; height: var(--topnav-height);
+    flex-direction: row; align-items: center;
+    padding: 0 16px; border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .sidebar-brand { padding: 0; padding-right: 16px; }
+  .sidebar-nav { flex-direction: row; gap: 4px; padding: 0; overflow-x: auto; }
+  .nav-item { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+  .content { margin-left: 0; margin-top: var(--topnav-height); padding: 24px 16px; }
+}
+
+@media (max-width: 639px) {
+  .nav-item span { display: none; }
+  .nav-item { padding: 8px; }
+}

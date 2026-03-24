@@ -1,0 +1,44 @@
+:root {
+  /* Surfaces — neutral zinc scale, zero blue tint */
+  --color-bg: #09090B;
+  --color-surface: #18181B;
+  --color-surface-2: #27272A;
+
+  /* Text — zinc scale */
+  --color-text: #FAFAFA;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #71717A;
+
+  /* Status — used ONLY for indicators, never for buttons or backgrounds */
+  --color-ok: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Borders — barely visible */
+  --color-border: #27272A;
+  --color-border-subtle: #1C1C1E;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', monospace;
+
+  /* Radii — tight */
+  --radius-btn: 6px;
+  --radius-card: 8px;
+  --radius-input: 6px;
+
+  /* Shadows — none */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+
+  /* Transitions */
+  --transition: 150ms ease;
+  --sidebar-width: 240px;
+  --topnav-height: 56px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --transition: 0ms; }
+}

@@ -59,6 +59,12 @@ export interface SkillListing {
   installs: number;
 }
 
+export interface CentralizeAllResult {
+  centralized: Array<{ skillRef: string; declaredName: string }>;
+  skipped: Array<{ skillRef: string; reason: string }>;
+  catalogSnapshot: CatalogEntrySummary[];
+}
+
 export interface ControlPlaneSummary {
   harnesses: HarnessSummary[];
   catalog: CatalogEntrySummary[];

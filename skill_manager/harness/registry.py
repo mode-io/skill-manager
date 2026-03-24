@@ -28,6 +28,11 @@ def create_default_adapters(
             user_skills_root=paths.claude_user_root,
             global_skills_root=paths.claude_global_root,
         ),
+        FilesystemHarnessAdapter(
+            config=AdapterConfig("cursor", "Cursor", "filesystem", False),
+            user_skills_root=paths.cursor_user_root,
+            global_skills_root=paths.cursor_global_root,
+        ),
         ConfigHarnessAdapter(
             config=AdapterConfig("opencode", "OpenCode", "config", True),
             user_skills_root=paths.opencode_user_root,

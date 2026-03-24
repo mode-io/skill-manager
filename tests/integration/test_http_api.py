@@ -14,7 +14,7 @@ class HttpApiTests(unittest.TestCase):
             check = harness.get_json("/check")
 
             self.assertTrue(health["ok"])
-            self.assertEqual(len(harnesses), 5)
+            self.assertEqual(len(harnesses), 6)
             self.assertEqual(catalog, [])
             self.assertEqual(check["status"], "warning")
 
@@ -23,7 +23,7 @@ class HttpApiTests(unittest.TestCase):
             harnesses = harness.get_json("/harnesses")
             catalog = harness.get_json("/catalog")
 
-            self.assertEqual(len(harnesses), 5)
+            self.assertEqual(len(harnesses), 6)
             trace_lens = next(entry for entry in catalog if entry["declaredName"] == "Trace Lens")
             detail = harness.get_json(f"/catalog/{trace_lens['skillRef']}")
 

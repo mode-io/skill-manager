@@ -27,6 +27,7 @@ class FakeHomeSpec:
             "XDG_DATA_HOME": str(self.xdg_data_home),
             "SKILL_MANAGER_CODEX_ROOT": str(self.home / ".codex" / "skills"),
             "SKILL_MANAGER_CLAUDE_ROOT": str(self.home / ".claude" / "skills"),
+            "SKILL_MANAGER_CURSOR_ROOT": str(self.home / ".cursor" / "skills"),
             "SKILL_MANAGER_OPENCODE_ROOT": str(self.xdg_config_home / "opencode" / "skills"),
             "SKILL_MANAGER_OPENCLAW_ROOT": str(self.xdg_config_home / "openclaw" / "skills"),
             "SKILL_MANAGER_GEMINI_ROOT": str(self.xdg_config_home / "gemini" / "skills"),
@@ -43,6 +44,7 @@ def create_fake_home_spec(root: Path) -> FakeHomeSpec:
     for path in (
         spec.home / ".codex" / "skills",
         spec.home / ".claude" / "skills",
+        spec.home / ".cursor" / "skills",
         spec.xdg_config_home / "opencode" / "skills",
         spec.xdg_config_home / "openclaw" / "skills",
         spec.xdg_config_home / "gemini" / "skills",

@@ -16,6 +16,8 @@ class ResolvedHarnessPaths:
     openclaw_user_root: Path
     openclaw_global_root: Path | None
     openclaw_builtins: Path
+    cursor_user_root: Path
+    cursor_global_root: Path | None
     gemini_user_root: Path
     gemini_builtins: Path
 
@@ -35,6 +37,8 @@ def resolve_harness_paths(env: dict[str, str] | None = None) -> ResolvedHarnessP
         openclaw_user_root=Path(active_env.get("SKILL_MANAGER_OPENCLAW_ROOT", xdg_config_home / "openclaw" / "skills")),
         openclaw_global_root=_optional_path(active_env.get("SKILL_MANAGER_OPENCLAW_GLOBAL_ROOT")),
         openclaw_builtins=Path(active_env.get("SKILL_MANAGER_OPENCLAW_BUILTINS", xdg_config_home / "openclaw" / "builtins.json")),
+        cursor_user_root=Path(active_env.get("SKILL_MANAGER_CURSOR_ROOT", home / ".cursor" / "skills")),
+        cursor_global_root=_optional_path(active_env.get("SKILL_MANAGER_CURSOR_GLOBAL_ROOT")),
         gemini_user_root=Path(active_env.get("SKILL_MANAGER_GEMINI_ROOT", xdg_config_home / "gemini" / "skills")),
         gemini_builtins=Path(active_env.get("SKILL_MANAGER_GEMINI_BUILTINS", xdg_config_home / "gemini" / "builtins.json")),
     )

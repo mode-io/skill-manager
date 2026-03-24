@@ -1,4 +1,4 @@
-import type { CatalogEntrySummary, ControlPlaneSummary, SkillListing } from "./types";
+import type { CatalogEntrySummary, CentralizeAllResult, ControlPlaneSummary, SkillListing } from "./types";
 
 async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
   const response = await responsePromise;
@@ -54,5 +54,11 @@ export async function toggleBinding(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ harness }),
     }),
+  );
+}
+
+export async function centralizeAll(): Promise<CentralizeAllResult> {
+  return expectJson<CentralizeAllResult>(
+    fetch("/centralize-all", { method: "POST" }),
   );
 }
