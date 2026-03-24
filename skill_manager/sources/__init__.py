@@ -1,12 +1,12 @@
-from .github import GitHubSource
+from .github import GitHubSource, github_repo_from_locator
 from .registries import fetch_agentskill, search_agentskill, search_skillssh
-from .types import SkillListing, listing_to_json
+from .types import SkillListing
 
 __all__ = [
     "GitHubSource",
     "SkillListing",
     "fetch_agentskill",
-    "listing_to_json",
+    "github_repo_from_locator",
     "search_agentskill",
     "search_skillssh",
 ]

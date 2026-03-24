@@ -24,6 +24,12 @@ class BuiltinObservation:
 
 
 @dataclass(frozen=True)
+class StorePackageObservation:
+    package: SkillPackage
+    recorded_revision: str | None = None
+
+
+@dataclass(frozen=True)
 class HarnessScan:
     harness: str
     label: str
@@ -39,5 +45,5 @@ class HarnessScan:
 
 @dataclass(frozen=True)
 class StoreScan:
-    packages: tuple[SkillPackage, ...] = ()
+    packages: tuple[StorePackageObservation, ...] = ()
     issues: tuple[str, ...] = ()

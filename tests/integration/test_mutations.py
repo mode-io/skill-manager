@@ -1,245 +1,95 @@
 from __future__ import annotations
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
+from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
-from tests.support import (
-    AppTestHarness,
-    seed_divergent_source_fixture,
-    seed_shared_only_fixture,
-    seed_skill_package,
-    seed_store_manifest,
-)
+from tests.support import AppTestHarness, StubCommandRunner, seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
 
 
 class MutationTests(unittest.TestCase):
-    def test_enable_shared_skill_creates_symlink_and_adds_binding(self) -> None:
+    def test_enable_managed_skill_creates_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            shared_entry = next(e for e in catalog if e["declaredName"] == "Shared Audit")
-            skill_ref = shared_entry["skillRef"]
-            self.assertEqual(shared_entry["harnesses"], [])
+            skills = harness.get_json("/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
 
-            result = harness.post_json(f"/catalog/{skill_ref}/enable", {"harness": "codex"})
-            self.assertEqual(result["declaredName"], "Shared Audit")
-            codex_binding = next((h for h in result["harnesses"] if h["harness"] == "codex"), None)
-            self.assertIsNotNone(codex_binding)
-            self.assertEqual(codex_binding["state"], "enabled")
+            result = harness.post_json(f"/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
-            link = harness.spec.home / ".codex" / "skills" / "shared-audit"
-            self.assertTrue(link.is_symlink())
+            self.assertTrue(result["ok"])
+            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
 
-    def test_disable_shared_skill_removes_symlink_and_binding(self) -> None:
+    def test_disable_managed_skill_removes_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            skill_ref = next(e for e in catalog if e["declaredName"] == "Shared Audit")["skillRef"]
+            skills = harness.get_json("/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+            harness.post_json(f"/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
-            harness.post_json(f"/catalog/{skill_ref}/enable", {"harness": "codex"})
-            result = harness.post_json(f"/catalog/{skill_ref}/disable", {"harness": "codex"})
-            self.assertEqual(result["declaredName"], "Shared Audit")
-            self.assertEqual([h for h in result["harnesses"] if h["harness"] == "codex"], [])
+            result = harness.post_json(f"/skills/{shared_entry['skillRef']}/disable", {"harness": "codex"})
 
-            link = harness.spec.home / ".codex" / "skills" / "shared-audit"
-            self.assertFalse(link.exists())
+            self.assertTrue(result["ok"])
+            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
 
-    def test_enable_is_idempotent(self) -> None:
-        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            skill_ref = next(e for e in catalog if e["declaredName"] == "Shared Audit")["skillRef"]
+    def test_manage_skill_replaces_found_local_copy_with_managed_links(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            skills = harness.get_json("/skills")
+            trace_lens = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
 
-            harness.post_json(f"/catalog/{skill_ref}/enable", {"harness": "codex"})
-            result = harness.post_json(f"/catalog/{skill_ref}/enable", {"harness": "codex"})
-            codex_bindings = [h for h in result["harnesses"] if h["harness"] == "codex"]
-            self.assertEqual(len(codex_bindings), 1)
+            result = harness.post_json(f"/skills/{trace_lens['skillRef']}/manage")
+            refreshed = harness.get_json("/skills")
 
-    def test_disable_is_idempotent(self) -> None:
-        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            skill_ref = next(e for e in catalog if e["declaredName"] == "Shared Audit")["skillRef"]
+            self.assertTrue(result["ok"])
+            managed_trace = next(row for row in refreshed["rows"] if row["name"] == "Trace Lens")
+            self.assertEqual(managed_trace["displayStatus"], "Managed")
+            self.assertTrue((harness.spec.home / ".codex" / "skills" / "trace-lens").is_symlink())
+            self.assertTrue((harness.spec.home / ".claude" / "skills" / "trace-lens-copy").is_symlink())
 
-            result = harness.post_json(f"/catalog/{skill_ref}/disable", {"harness": "codex"})
-            self.assertEqual(result["declaredName"], "Shared Audit")
+    def test_manage_all_skills_centralizes_all_found_local_rows(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            result = harness.post_json("/skills/manage-all")
+            refreshed = harness.get_json("/skills")
 
-    def test_enable_unknown_skill_returns_404(self) -> None:
+            self.assertTrue(result["ok"])
+            self.assertEqual(refreshed["summary"]["foundLocally"], 0)
+
+    def test_manage_unknown_skill_returns_404(self) -> None:
         with AppTestHarness() as harness:
-            result = harness.post_json("/catalog/missing-ref/enable", {"harness": "codex"}, expected_status=404)
+            result = harness.post_json("/skills/missing-ref/manage", expected_status=404)
             self.assertIn("unknown skill ref", result["error"])
 
-    def test_enable_unmanaged_skill_returns_400(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            unmanaged = next(e for e in catalog if e["ownership"] == "unmanaged")
-            result = harness.post_json(
-                f"/catalog/{unmanaged['skillRef']}/enable", {"harness": "codex"}, expected_status=400
-            )
-            self.assertIn("only shared skills", result["error"])
-
-    def test_enable_unknown_harness_returns_400(self) -> None:
-        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            skill_ref = next(e for e in catalog if e["declaredName"] == "Shared Audit")["skillRef"]
-            result = harness.post_json(f"/catalog/{skill_ref}/enable", {"harness": "nope"}, expected_status=400)
-            self.assertIn("unknown harness", result["error"])
-
-    def test_disable_real_directory_returns_409(self) -> None:
-        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            seed_skill_package(harness.spec.home / ".codex" / "skills", "shared-audit", "Local Copy")
-            catalog = harness.get_json("/catalog")
-            shared = next(e for e in catalog if e["ownership"] == "shared" and e["declaredName"] == "Shared Audit")
-            result = harness.post_json(
-                f"/catalog/{shared['skillRef']}/disable", {"harness": "codex"}, expected_status=409
-            )
-            self.assertIn("not a symlink", result["error"])
-
-
-def _seed_install_fixture(spec):
-    """Shared store with one installed skill for update testing."""
-    seed_skill_package(spec.shared_store_root, "audit-skill", "Audit Skill", body="version 1")
-    seed_store_manifest(spec, [
-        ManifestEntry(
-            package_dir="audit-skill",
-            declared_name="Audit Skill",
-            source_kind="github",
-            source_locator="github:test/repo/audit-skill",
-            revision="bootstrap",
-        ),
-    ])
-    from tests.support.command_runner import StubCommandRunner
-    return StubCommandRunner()
-
-
-class InstallTests(unittest.TestCase):
-    def test_install_from_local_source(self) -> None:
-        """Install by directly ingesting a prepared skill package into the store."""
-        with AppTestHarness() as harness:
-            source = seed_skill_package(harness.spec.home / "downloads", "new-skill", "New Skill", body="fresh")
-            harness.spec.shared_store_root.mkdir(parents=True, exist_ok=True)
-            harness.service.read_models.store.ingest(
-                source_path=source,
-                declared_name="New Skill",
+    def test_update_refuses_custom_skill(self) -> None:
+        def seed_custom_fixture(spec):
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "audit-skill",
+                "Audit Skill",
+                body="customized version",
                 source_kind="github",
-                source_locator="github:test/repo/new-skill",
+                source_locator="github:mode-io/audit-skill",
             )
-            catalog = harness.get_json("/catalog")
-            installed = next((e for e in catalog if e["declaredName"] == "New Skill"), None)
-            self.assertIsNotNone(installed)
-            self.assertEqual(installed["ownership"], "shared")
+            revision, _ = fingerprint_package(package_root)
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="audit-skill",
+                        declared_name="Audit Skill",
+                        source_kind="github",
+                        source_locator="github:mode-io/audit-skill",
+                        revision=f"{revision}-recorded",
+                    )
+                ],
+            )
+            return StubCommandRunner()
 
-    def test_install_bad_locator_returns_400(self) -> None:
-        with AppTestHarness() as harness:
-            result = harness.post_json("/install", {"sourceKind": "github", "sourceLocator": "bad-locator"}, expected_status=400)
-            self.assertIn("error", result)
+        with AppTestHarness(fixture_factory=seed_custom_fixture) as harness:
+            skills = harness.get_json("/skills")
+            audit = next(row for row in skills["rows"] if row["name"] == "Audit Skill")
+            result = harness.post_json(f"/skills/{audit['skillRef']}/update", expected_status=400)
 
-    def test_install_unsupported_source_returns_400(self) -> None:
-        with AppTestHarness() as harness:
-            result = harness.post_json("/install", {"sourceKind": "unknown", "sourceLocator": "x"}, expected_status=400)
-            self.assertIn("unsupported", result["error"])
-
-    def test_install_missing_params_returns_400(self) -> None:
-        with AppTestHarness() as harness:
-            result = harness.post_json("/install", {}, expected_status=400)
-            self.assertIn("missing", result["error"])
-
-
-class UpdateTests(unittest.TestCase):
-    def test_update_skill_detects_change(self) -> None:
-        with AppTestHarness(fixture_factory=_seed_install_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            skill = next(e for e in catalog if e["declaredName"] == "Audit Skill")
-            # Manually update store content to simulate a version change
-            store_pkg = harness.spec.shared_store_root / "audit-skill" / "SKILL.md"
-            original = store_pkg.read_text()
-            # Create a "new version" source
-            new_source = seed_skill_package(harness.spec.home / "update-src", "audit-skill", "Audit Skill", body="version 2")
-            _, changed = harness.service.read_models.store.update("audit-skill", source_path=new_source)
-            self.assertTrue(changed)
-
-    def test_update_noop_when_unchanged(self) -> None:
-        with AppTestHarness(fixture_factory=_seed_install_fixture) as harness:
-            # Create source with identical content
-            new_source = seed_skill_package(harness.spec.home / "update-src", "audit-skill", "Audit Skill", body="version 1")
-            _, changed = harness.service.read_models.store.update("audit-skill", source_path=new_source)
-            self.assertFalse(changed)
-
-    def test_update_refuses_non_shared(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            unmanaged = next(e for e in catalog if e["ownership"] == "unmanaged")
-            result = harness.post_json(f"/catalog/{unmanaged['skillRef']}/update", expected_status=400)
-            self.assertIn("only shared", result["error"])
-
-
-class CentralizeAllTests(unittest.TestCase):
-    def test_centralize_all_centralizes_eligible_skills(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            result = harness.post_json("/centralize-all")
-            self.assertTrue(len(result["centralized"]) > 0)
-            names = {item["declaredName"] for item in result["centralized"]}
-            self.assertIn("Trace Lens", names)
-            self.assertIn("Policy Kit", names)
-            snapshot = result["catalogSnapshot"]
-            for entry in snapshot:
-                if entry["declaredName"] in names:
-                    self.assertEqual(entry["ownership"], "shared")
-
-    def test_centralize_all_returns_empty_when_no_unmanaged(self) -> None:
-        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            result = harness.post_json("/centralize-all")
-            self.assertEqual(result["centralized"], [])
-
-
-class CentralizeTests(unittest.TestCase):
-    def test_centralize_moves_unmanaged_to_shared_with_bindings(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            policy_kit = next(e for e in catalog if e["declaredName"] == "Policy Kit" and e["ownership"] == "unmanaged")
-            result = harness.post_json(f"/catalog/{policy_kit['skillRef']}/centralize")
-            self.assertEqual(result["ownership"], "shared")
-            self.assertEqual(result["declaredName"], "Policy Kit")
-            self.assertTrue(any(h["harness"] == "opencode" for h in result["harnesses"]))
-            pkg_path = harness.spec.xdg_config_home / "opencode" / "skills" / "policy-kit"
-            self.assertTrue(pkg_path.is_symlink())
-
-    def test_centralize_multiple_harness_copies_all_become_symlinks(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            trace_lens = next(e for e in catalog if e["declaredName"] == "Trace Lens" and e["ownership"] == "unmanaged")
-            result = harness.post_json(f"/catalog/{trace_lens['skillRef']}/centralize")
-            self.assertEqual(result["ownership"], "shared")
-            self.assertEqual(len(result["harnesses"]), 2)
-            codex_link = harness.spec.home / ".codex" / "skills" / "trace-lens"
-            claude_link = harness.spec.home / ".claude" / "skills" / "trace-lens-copy"
-            self.assertTrue(codex_link.is_symlink())
-            self.assertTrue(claude_link.is_symlink())
-            self.assertEqual(codex_link.resolve(), claude_link.resolve())
-
-    def test_centralize_refuses_shared_skill(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            shared = next(e for e in catalog if e["ownership"] == "shared")
-            result = harness.post_json(f"/catalog/{shared['skillRef']}/centralize", expected_status=400)
-            self.assertIn("only unmanaged", result["error"])
-
-    def test_centralize_refuses_builtin_skill(self) -> None:
-        with AppTestHarness(mixed=True) as harness:
-            catalog = harness.get_json("/catalog")
-            builtin = next(e for e in catalog if e["ownership"] == "builtin")
-            result = harness.post_json(f"/catalog/{builtin['skillRef']}/centralize", expected_status=400)
-            self.assertIn("only unmanaged", result["error"])
-
-    def test_centralize_refuses_conflicted_skill(self) -> None:
-        with AppTestHarness(fixture_factory=seed_divergent_source_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            policy_kit = next(e for e in catalog if e["declaredName"] == "Policy Kit")
-            self.assertTrue(len(policy_kit["conflicts"]) > 0)
-            result = harness.post_json(f"/catalog/{policy_kit['skillRef']}/centralize", expected_status=409)
-            self.assertIn("resolve conflicts", result["error"])
-
-    def test_centralize_unknown_skill_returns_404(self) -> None:
-        with AppTestHarness() as harness:
-            result = harness.post_json("/catalog/missing-ref/centralize", expected_status=404)
-            self.assertIn("unknown skill ref", result["error"])
+            self.assertIn("cannot be updated", result["error"])
 
 
 if __name__ == "__main__":

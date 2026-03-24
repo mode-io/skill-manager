@@ -11,14 +11,5 @@ class SkillListing:
     source_locator: str
     registry: str
     installs: int = 0
-
-
-def listing_to_json(listing: SkillListing) -> dict[str, object]:
-    return {
-        "name": listing.name,
-        "description": listing.description,
-        "sourceKind": listing.source_kind,
-        "sourceLocator": listing.source_locator,
-        "registry": listing.registry,
-        "installs": listing.installs,
-    }
+    github_repo: str | None = None
+    github_stars: int = 0

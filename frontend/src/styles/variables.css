@@ -1,44 +1,20 @@
 :root {
-  /* Surfaces — neutral zinc scale, zero blue tint */
-  --color-bg: #09090B;
-  --color-surface: #18181B;
-  --color-surface-2: #27272A;
-
-  /* Text — zinc scale */
-  --color-text: #FAFAFA;
-  --color-text-secondary: #A1A1AA;
-  --color-text-muted: #71717A;
-
-  /* Status — used ONLY for indicators, never for buttons or backgrounds */
-  --color-ok: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-
-  /* Borders — barely visible */
-  --color-border: #27272A;
-  --color-border-subtle: #1C1C1E;
-
-  /* Fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', monospace;
-
-  /* Radii — tight */
-  --radius-btn: 6px;
-  --radius-card: 8px;
-  --radius-input: 6px;
-
-  /* Shadows — none */
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-
-  /* Transitions */
-  --transition: 150ms ease;
-  --sidebar-width: 240px;
-  --topnav-height: 56px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root { --transition: 0ms; }
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+  --color-bg: #f2f4f1;
+  --color-panel: #fbfcf8;
+  --color-panel-strong: #ffffff;
+  --color-border: #c9d0c8;
+  --color-border-strong: #9da79d;
+  --color-text: #1f2820;
+  --color-text-muted: #5d675d;
+  --color-accent: #1d6b50;
+  --color-accent-soft: #d7ebe3;
+  --color-danger: #8d2f1f;
+  --color-danger-soft: #f6dfd8;
+  --color-warning: #7b5b16;
+  --color-warning-soft: #f1e7c5;
+  --shadow-panel: 0 10px 28px rgba(34, 48, 38, 0.08);
+  --radius-sm: 6px;
+  --radius-md: 10px;
 }

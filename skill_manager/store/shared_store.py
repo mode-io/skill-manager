@@ -3,7 +3,15 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from skill_manager.domain import CheckIssue, SourceDescriptor, StoreScan, find_skill_roots, fingerprint_package, parse_skill_package
+from skill_manager.domain import (
+    CheckIssue,
+    SourceDescriptor,
+    StorePackageObservation,
+    StoreScan,
+    find_skill_roots,
+    fingerprint_package,
+    parse_skill_package,
+)
 
 from .manifest import ManifestEntry, StoreManifest, load_manifest, write_manifest
 
@@ -30,7 +38,12 @@ class SharedStore:
                 kind=entry.source_kind if entry else "shared-store",
                 locator=entry.source_locator if entry else f"shared-store:{path.name}",
             )
-            packages.append(parse_skill_package(path, default_source=source))
+            packages.append(
+                StorePackageObservation(
+                    package=parse_skill_package(path, default_source=source),
+                    recorded_revision=entry.revision if entry else None,
+                )
+            )
         return StoreScan(packages=tuple(packages), issues=tuple(issue.message for issue in self.check_integrity()))
 
     def ingest(

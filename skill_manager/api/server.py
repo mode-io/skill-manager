@@ -20,21 +20,21 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/health":
             return self._write_json(self.service.health())
-        if parsed.path == "/harnesses":
-            return self._write_json(self.service.list_harnesses())
-        if parsed.path == "/catalog":
-            return self._write_json(self.service.list_catalog())
-        if parsed.path.startswith("/catalog/"):
-            skill_ref = unquote(parsed.path[len("/catalog/"):])
-            payload = self.service.get_catalog_detail(skill_ref)
+        if parsed.path == "/skills":
+            return self._write_json(self.service.list_skills())
+        if parsed.path.startswith("/skills/"):
+            skill_ref = unquote(parsed.path[len("/skills/"):])
+            payload = self.service.get_skill_detail(skill_ref)
             if payload is None:
                 return self._write_json({"error": f"unknown skill ref: {skill_ref}"}, status=404)
             return self._write_json(payload)
-        if parsed.path == "/check":
-            return self._write_json(self.service.run_check())
-        if parsed.path == "/search":
+        if parsed.path == "/marketplace/popular":
+            return self._write_json(self.service.popular_marketplace())
+        if parsed.path == "/marketplace/search":
             query = parse_qs(parsed.query).get("q", [""])[0]
-            return self._write_json(self.service.search_sources(query))
+            return self._write_json(self.service.search_marketplace(query))
+        if parsed.path == "/settings":
+            return self._write_json(self.service.settings())
         return self._serve_static(parsed.path)
 
     def do_POST(self) -> None:  # noqa: N802
@@ -42,9 +42,9 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
         body = self._read_body()
         harness = body.get("harness", "") if isinstance(body, dict) else ""
 
-        for action, method in (("/enable", self.service.enable_shared), ("/disable", self.service.disable_shared)):
-            if parsed.path.startswith("/catalog/") and parsed.path.endswith(action):
-                skill_ref = unquote(parsed.path[len("/catalog/"):-len(action)])
+        for action, method in (("/enable", self.service.enable_skill), ("/disable", self.service.disable_skill)):
+            if parsed.path.startswith("/skills/") and parsed.path.endswith(action):
+                skill_ref = unquote(parsed.path[len("/skills/"):-len(action)])
                 if not harness:
                     return self._write_json({"error": "missing 'harness' in request body"}, status=400)
                 try:
@@ -53,34 +53,34 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
                     return self._write_json({"error": str(error)}, status=error.status)
                 return self._write_json(result)
 
-        if parsed.path.startswith("/catalog/") and parsed.path.endswith("/centralize"):
-            skill_ref = unquote(parsed.path[len("/catalog/"):-len("/centralize")])
+        if parsed.path.startswith("/skills/") and parsed.path.endswith("/manage"):
+            skill_ref = unquote(parsed.path[len("/skills/"):-len("/manage")])
             try:
-                result = self.service.centralize(skill_ref)
+                result = self.service.manage_skill(skill_ref)
             except MutationError as error:
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)
 
-        if parsed.path == "/centralize-all":
+        if parsed.path == "/skills/manage-all":
             try:
-                result = self.service.centralize_all()
+                result = self.service.manage_all_skills()
             except MutationError as error:
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)
 
-        if parsed.path == "/install":
+        if parsed.path == "/marketplace/install":
             source_kind = body.get("sourceKind", "") if isinstance(body, dict) else ""
             source_locator = body.get("sourceLocator", "") if isinstance(body, dict) else ""
             if not source_kind or not source_locator:
                 return self._write_json({"error": "missing sourceKind or sourceLocator"}, status=400)
             try:
-                result = self.service.install_from_source(source_kind, source_locator)
+                result = self.service.install_skill(source_kind, source_locator)
             except MutationError as error:
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)
 
-        if parsed.path.startswith("/catalog/") and parsed.path.endswith("/update"):
-            skill_ref = unquote(parsed.path[len("/catalog/"):-len("/update")])
+        if parsed.path.startswith("/skills/") and parsed.path.endswith("/update"):
+            skill_ref = unquote(parsed.path[len("/skills/"):-len("/update")])
             try:
                 result = self.service.update_skill(skill_ref)
             except MutationError as error:

@@ -1,72 +1,137 @@
-export interface HarnessSummary {
+export type SkillStatus = "Managed" | "Found locally" | "Custom" | "Built-in";
+export type SkillActionKind = "open" | "manage";
+export type HarnessCellState = "enabled" | "disabled" | "found" | "builtin" | "empty";
+
+export interface SkillsSummary {
+  managed: number;
+  foundLocally: number;
+  custom: number;
+  builtIn: number;
+  needsAction: number;
+}
+
+export interface HarnessColumn {
   harness: string;
   label: string;
-  detected: boolean;
-  manageable: boolean;
-  builtinSupport: boolean;
-  discoveryMode: string;
-  detectionDetails: string[];
-  issues: string[];
 }
 
-export interface HarnessBinding {
+export interface SkillAction {
+  kind: SkillActionKind;
+  label: string;
+}
+
+export interface HarnessCell {
   harness: string;
   label: string;
-  state: "enabled" | "disabled";
-  scopes: string[];
+  state: HarnessCellState;
+  interactive: boolean;
 }
 
-export interface CatalogConflict {
-  conflictType: string;
-  message: string;
-  revisions: string[];
-  harnesses: string[];
-}
-
-export interface CatalogEntrySummary {
+export interface SkillTableRow {
   skillRef: string;
-  declaredName: string;
+  name: string;
   description: string;
-  ownership: "shared" | "unmanaged" | "builtin";
+  displayStatus: SkillStatus;
+  attentionMessage: string | null;
+  primaryAction: SkillAction;
+  isBuiltin: boolean;
+  cells: HarnessCell[];
+}
+
+export interface SkillsPageData {
+  summary: SkillsSummary;
+  harnessColumns: HarnessColumn[];
+  rows: SkillTableRow[];
+}
+
+export interface SkillSource {
+  kind: string;
+  label: string;
+  locator: string;
+}
+
+export interface SkillActions {
+  canManage: boolean;
+  canToggle: boolean;
+  canUpdate: boolean;
+  updateAvailable: boolean | null;
+}
+
+export interface SkillHarnessDetail {
+  harness: string;
+  label: string;
+  state: HarnessCellState;
+  scopes: string[];
+  paths: string[];
+}
+
+export interface SkillLocation {
+  kind: "shared" | "harness" | "builtin";
+  harness: string | null;
+  label: string;
+  scope: string | null;
+  path: string | null;
+  revision: string | null;
   sourceKind: string;
   sourceLocator: string;
-  revision: string;
-  harnesses: HarnessBinding[];
-  builtinHarnesses: string[];
-  issues: string[];
-  conflicts: CatalogConflict[];
+  detail: string | null;
 }
 
-export interface CheckIssue {
-  severity: "warning" | "error";
-  message: string;
-  code: string;
+export interface SkillAdvanced {
+  packageDir: string | null;
+  packagePath: string | null;
+  currentRevision: string | null;
+  recordedRevision: string | null;
+  sourceKind: string;
+  sourceLocator: string;
 }
 
-export interface CheckReport {
-  status: "ok" | "warning" | "error";
-  issues: CheckIssue[];
-  warnings: CheckIssue[];
-  counts: Record<string, number>;
+export interface SkillDetail {
+  skillRef: string;
+  name: string;
+  description: string;
+  displayStatus: SkillStatus;
+  statusMessage: string;
+  attentionMessage: string | null;
+  primaryAction: SkillAction;
+  source: SkillSource;
+  actions: SkillActions;
+  harnesses: SkillHarnessDetail[];
+  locations: SkillLocation[];
+  advanced: SkillAdvanced;
 }
 
-export interface SkillListing {
+export interface MarketplaceItem {
+  id: string;
   name: string;
   description: string;
   sourceKind: string;
   sourceLocator: string;
   registry: string;
   installs: number;
+  githubRepo: string | null;
+  githubStars: number;
+  badge: string;
+  popularity: number;
 }
 
-export interface CentralizeAllResult {
-  centralized: Array<{ skillRef: string; declaredName: string }>;
-  skipped: Array<{ skillRef: string; reason: string }>;
-  catalogSnapshot: CatalogEntrySummary[];
+export interface SettingsHarness {
+  harness: string;
+  label: string;
+  detected: boolean;
+  manageable: boolean;
+  builtinSupport: boolean;
+  issues: string[];
+  diagnostics: {
+    discoveryMode: string;
+    detectionDetails: string[];
+  };
 }
 
-export interface ControlPlaneSummary {
-  harnesses: HarnessSummary[];
-  catalog: CatalogEntrySummary[];
-  check: CheckReport;
+export interface SettingsData {
+  harnesses: SettingsHarness[];
+  storeIssues: string[];
+  bulkActions: {
+    canManageAll: boolean;
+  };
 }

@@ -1,61 +1,111 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
-import { CatalogProvider } from "../context/CatalogContext";
 
 const fetchMock = vi.fn();
 
 function renderApp(initialRoute = "/") {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
-      <CatalogProvider>
-        <App />
-      </CatalogProvider>
+      <App />
     </MemoryRouter>,
   );
 }
 
-function mockReadyState() {
-  fetchMock
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => [
-        {
-          harness: "codex",
-          label: "Codex",
-          detected: true,
-          manageable: true,
-          builtinSupport: false,
-          discoveryMode: "filesystem",
-          detectionDetails: [],
-          issues: [],
-        },
-      ],
-    })
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => [
-        {
-          skillRef: "shared:abc",
-          declaredName: "Shared Audit",
-          description: "An audit skill",
-          ownership: "shared",
-          sourceKind: "github",
-          sourceLocator: "github:test/repo/audit",
-          revision: "abc123",
-          harnesses: [],
-          builtinHarnesses: [],
-          issues: [],
-          conflicts: [],
-        },
-      ],
-    })
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ status: "ok", issues: [], warnings: [], counts: {} }),
-    });
+function mockSkillsPage() {
+  fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url === "/skills") {
+      return {
+        ok: true,
+        json: async () => ({
+          summary: { managed: 1, foundLocally: 1, custom: 0, builtIn: 0, needsAction: 1 },
+          harnessColumns: [{ harness: "codex", label: "Codex" }],
+          rows: [
+            {
+              skillRef: "shared:shared-audit",
+              name: "Shared Audit",
+              description: "Shared audit workflow",
+              displayStatus: "Managed",
+              attentionMessage: null,
+              primaryAction: { kind: "open", label: "Open" },
+              isBuiltin: false,
+              cells: [{ harness: "codex", label: "Codex", state: "disabled", interactive: true }],
+            },
+          ],
+        }),
+      };
+    }
+    if (url.startsWith("/skills/")) {
+      return {
+        ok: true,
+        json: async () => ({
+          skillRef: "shared:shared-audit",
+          name: "Shared Audit",
+          description: "Shared audit workflow",
+          displayStatus: "Managed",
+          statusMessage: "Managed in the shared store and available for per-tool enable or disable.",
+          attentionMessage: null,
+          primaryAction: { kind: "open", label: "Open" },
+          source: { kind: "github", label: "GitHub", locator: "github:mode-io/shared-audit" },
+          actions: { canManage: false, canToggle: true, canUpdate: false, updateAvailable: null },
+          harnesses: [{ harness: "codex", label: "Codex", state: "disabled", scopes: [], paths: [] }],
+          locations: [],
+          advanced: {
+            packageDir: "shared-audit",
+            packagePath: "/tmp/shared-audit",
+            currentRevision: "abc",
+            recordedRevision: "abc",
+            sourceKind: "github",
+            sourceLocator: "github:mode-io/shared-audit",
+          },
+        }),
+      };
+    }
+    if (url === "/marketplace/popular") {
+      return {
+        ok: true,
+        json: async () => [
+          {
+            id: "github:github:mode-io/shared-audit",
+            name: "Shared Audit",
+            description: "Shared audit workflow",
+            sourceKind: "github",
+            sourceLocator: "github:mode-io/shared-audit",
+            registry: "skillssh",
+            installs: 12,
+            githubRepo: "mode-io/shared-audit",
+            githubStars: 33,
+            badge: "Official",
+            popularity: 33,
+          },
+        ],
+      };
+    }
+    if (url === "/settings") {
+      return {
+        ok: true,
+        json: async () => ({
+          harnesses: [
+            {
+              harness: "codex",
+              label: "Codex",
+              detected: true,
+              manageable: true,
+              builtinSupport: false,
+              issues: [],
+              diagnostics: { discoveryMode: "filesystem", detectionDetails: [] },
+            },
+          ],
+          storeIssues: [],
+          bulkActions: { canManageAll: true },
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({ ok: true }) };
+  });
 }
 
 describe("App routing", () => {
@@ -68,37 +118,26 @@ describe("App routing", () => {
     fetchMock.mockReset();
   });
 
-  it("renders My Skills page at /", async () => {
-    mockReadyState();
+  it("renders Skills page at /", async () => {
+    mockSkillsPage();
     renderApp("/");
-    await waitFor(() => expect(screen.getByText("My Skills")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Skills" })).toBeInTheDocument());
     expect(screen.getByText("Shared Audit")).toBeInTheDocument();
-  });
-
-  it("renders Setup page at /setup", async () => {
-    mockReadyState();
-    renderApp("/setup");
-    await waitFor(() => expect(screen.getByText("Setup")).toBeInTheDocument());
-    expect(screen.getByText("Detected Harnesses")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bring all eligible skills under management" })).toBeInTheDocument();
   });
 
   it("renders Marketplace page at /marketplace", async () => {
-    mockReadyState();
+    mockSkillsPage();
     renderApp("/marketplace");
-    await waitFor(() => expect(screen.getByText("Marketplace")).toBeInTheDocument());
-    expect(screen.getByText("Search for skills")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Popular skills")).toBeInTheDocument());
+    expect(screen.getByText("Shared Audit")).toBeInTheDocument();
   });
 
-  it("renders Health page at /system", async () => {
-    mockReadyState();
-    renderApp("/system");
-    await waitFor(() => expect(screen.getByText("Health")).toBeInTheDocument());
-    expect(screen.getByText("Shared Skills")).toBeInTheDocument();
-  });
-
-  it("renders error state when fetch fails", async () => {
-    fetchMock.mockRejectedValue(new Error("network down"));
+  it("opens the Settings drawer", async () => {
+    mockSkillsPage();
     renderApp("/");
-    await waitFor(() => expect(screen.getByText("Unable to load control plane")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument());
+    expect(screen.getByText("Tools")).toBeInTheDocument();
   });
 });

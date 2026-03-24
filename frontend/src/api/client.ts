@@ -1,4 +1,13 @@
-import type { CatalogEntrySummary, CentralizeAllResult, ControlPlaneSummary, SkillListing } from "./types";
+import type {
+  MarketplaceItem,
+  SettingsData,
+  SkillDetail,
+  SkillsPageData,
+} from "./types";
+
+interface OkResponse {
+  ok: boolean;
+}
 
 async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
   const response = await responsePromise;
@@ -8,57 +17,56 @@ async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchControlPlaneSummary(): Promise<ControlPlaneSummary> {
-  const [harnesses, catalog, check] = await Promise.all([
-    expectJson(fetch("/harnesses")),
-    expectJson(fetch("/catalog")),
-    expectJson(fetch("/check")),
-  ]);
-  return { harnesses, catalog, check };
-}
-
-export async function centralizeSkill(skillRef: string): Promise<CatalogEntrySummary> {
-  return expectJson<CatalogEntrySummary>(
-    fetch(`/catalog/${encodeURIComponent(skillRef)}/centralize`, { method: "POST" }),
-  );
-}
-
-export async function searchSources(query: string): Promise<SkillListing[]> {
-  return expectJson<SkillListing[]>(fetch(`/search?q=${encodeURIComponent(query)}`));
-}
-
-export async function installSkill(sourceKind: string, sourceLocator: string): Promise<CatalogEntrySummary> {
-  return expectJson<CatalogEntrySummary>(
-    fetch("/install", {
+async function postJson<T>(path: string, body?: object): Promise<T> {
+  return expectJson<T>(
+    fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sourceKind, sourceLocator }),
+      body: body ? JSON.stringify(body) : undefined,
     }),
   );
 }
 
-export async function updateSkill(skillRef: string): Promise<CatalogEntrySummary> {
-  return expectJson<CatalogEntrySummary>(
-    fetch(`/catalog/${encodeURIComponent(skillRef)}/update`, { method: "POST" }),
-  );
+export async function fetchSkillsPage(): Promise<SkillsPageData> {
+  return expectJson<SkillsPageData>(fetch("/skills"));
 }
 
-export async function toggleBinding(
-  skillRef: string,
-  action: "enable" | "disable",
-  harness: string,
-): Promise<CatalogEntrySummary> {
-  return expectJson<CatalogEntrySummary>(
-    fetch(`/catalog/${encodeURIComponent(skillRef)}/${action}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ harness }),
-    }),
-  );
+export async function fetchSkillDetail(skillRef: string): Promise<SkillDetail> {
+  return expectJson<SkillDetail>(fetch(`/skills/${encodeURIComponent(skillRef)}`));
 }
 
-export async function centralizeAll(): Promise<CentralizeAllResult> {
-  return expectJson<CentralizeAllResult>(
-    fetch("/centralize-all", { method: "POST" }),
-  );
+export async function enableSkill(skillRef: string, harness: string): Promise<OkResponse> {
+  return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/enable`, { harness });
+}
+
+export async function disableSkill(skillRef: string, harness: string): Promise<OkResponse> {
+  return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/disable`, { harness });
+}
+
+export async function manageSkill(skillRef: string): Promise<OkResponse> {
+  return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/manage`);
+}
+
+export async function updateSkill(skillRef: string): Promise<OkResponse> {
+  return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/update`);
+}
+
+export async function manageAllSkills(): Promise<OkResponse> {
+  return postJson<OkResponse>("/skills/manage-all");
+}
+
+export async function fetchMarketplacePopular(): Promise<MarketplaceItem[]> {
+  return expectJson<MarketplaceItem[]>(fetch("/marketplace/popular"));
+}
+
+export async function searchMarketplace(query: string): Promise<MarketplaceItem[]> {
+  return expectJson<MarketplaceItem[]>(fetch(`/marketplace/search?q=${encodeURIComponent(query)}`));
+}
+
+export async function installSkill(sourceKind: string, sourceLocator: string): Promise<OkResponse> {
+  return postJson<OkResponse>("/marketplace/install", { sourceKind, sourceLocator });
+}
+
+export async function fetchSettings(): Promise<SettingsData> {
+  return expectJson<SettingsData>(fetch("/settings"));
 }

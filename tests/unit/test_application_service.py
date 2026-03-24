@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from skill_manager.application import ApplicationService
+from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
 from tests.support import (
@@ -18,22 +19,56 @@ from tests.support import (
 
 
 class ApplicationServiceTests(unittest.TestCase):
-    def test_list_catalog_collapses_identical_content_and_preserves_builtins(self) -> None:
+    def test_list_skills_groups_identical_local_copies_and_preserves_builtins(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_mixed_fixture(spec)
             service = ApplicationService.from_environment(spec.env(), command_runner=runner)
-            catalog = service.list_catalog()
+            payload = service.list_skills()
 
-            trace_lens = next(entry for entry in catalog if entry["declaredName"] == "Trace Lens")
-            self.assertEqual(trace_lens["ownership"], "unmanaged")
-            self.assertEqual(len(trace_lens["harnesses"]), 2)
-            self.assertEqual(trace_lens["conflicts"], [])
+            trace_lens = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
+            self.assertEqual(trace_lens["displayStatus"], "Found locally")
+            self.assertEqual(
+                {cell["harness"] for cell in trace_lens["cells"] if cell["state"] == "found"},
+                {"codex", "claude"},
+            )
 
-            builtin = next(entry for entry in catalog if entry["ownership"] == "builtin" and entry["declaredName"] == "Scout")
-            self.assertEqual(builtin["builtinHarnesses"], ["gemini"])
+            scout = next(row for row in payload["rows"] if row["name"] == "Scout")
+            self.assertEqual(scout["displayStatus"], "Built-in")
 
-    def test_list_catalog_surfaces_divergent_source_backed_copies_as_conflicts(self) -> None:
+    def test_list_skills_marks_shared_store_modifications_as_custom(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "audit-skill",
+                "Audit Skill",
+                body="current managed version",
+                source_kind="github",
+                source_locator="github:mode-io/audit-skill",
+            )
+            current_revision, _ = fingerprint_package(package_root)
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="audit-skill",
+                        declared_name="Audit Skill",
+                        source_kind="github",
+                        source_locator="github:mode-io/audit-skill",
+                        revision=f"{current_revision}-old",
+                    )
+                ],
+            )
+
+            service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
+            payload = service.list_skills()
+            audit = next(row for row in payload["rows"] if row["name"] == "Audit Skill")
+
+            self.assertEqual(audit["displayStatus"], "Custom")
+            self.assertEqual(audit["attentionMessage"], "Modified locally; source updates are disabled.")
+
+    def test_divergent_source_backed_local_copies_become_separate_found_rows(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             service = ApplicationService.from_environment(
@@ -41,58 +76,22 @@ class ApplicationServiceTests(unittest.TestCase):
                 command_runner=seed_divergent_source_fixture(spec),
             )
 
-            catalog = service.list_catalog()
-            policy_kit = next(entry for entry in catalog if entry["declaredName"] == "Policy Kit")
+            payload = service.list_skills()
+            policy_rows = [row for row in payload["rows"] if row["name"] == "Policy Kit"]
 
-            self.assertEqual(policy_kit["ownership"], "unmanaged")
-            self.assertEqual(len(policy_kit["harnesses"]), 2)
-            self.assertEqual(len(policy_kit["conflicts"]), 1)
-            self.assertEqual(policy_kit["conflicts"][0]["conflictType"], "divergent_revision")
+            self.assertEqual(len(policy_rows), 2)
+            self.assertTrue(all(row["displayStatus"] == "Found locally" for row in policy_rows))
 
-    def test_shared_and_unmanaged_entries_stay_separate_even_with_matching_source_identity(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            spec = create_fake_home_spec(Path(temp_dir))
-            seed_skill_package(
-                spec.shared_store_root,
-                "policy-kit",
-                "Policy Kit",
-                body="shared canonical copy",
-            )
-            seed_store_manifest(
-                spec,
-                [
-                    ManifestEntry(
-                        package_dir="policy-kit",
-                        declared_name="Policy Kit",
-                        source_kind="github",
-                        source_locator="github:mode-io/policy-kit",
-                        revision="bootstrap",
-                    )
-                ],
-            )
-            seed_skill_package(
-                spec.home / ".codex" / "skills",
-                "policy-kit-local",
-                "Policy Kit",
-                body="local harness copy",
-                source_kind="github",
-                source_locator="github:mode-io/policy-kit",
-            )
-
-            service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
-            catalog = [entry for entry in service.list_catalog() if entry["declaredName"] == "Policy Kit"]
-
-            self.assertEqual(len(catalog), 2)
-            self.assertEqual({entry["ownership"] for entry in catalog}, {"shared", "unmanaged"})
-
-    def test_run_check_surfaces_broken_shared_directory(self) -> None:
+    def test_settings_surface_store_issues(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_mixed_fixture(spec)
             service = ApplicationService.from_environment(spec.env(), command_runner=runner)
-            report = service.run_check()
-            self.assertEqual(report["status"], "error")
-            self.assertEqual(report["counts"]["errors"], 1)
+
+            settings = service.settings()
+
+            self.assertEqual(len(settings["harnesses"]), 6)
+            self.assertEqual(len(settings["storeIssues"]), 1)
 
 
 if __name__ == "__main__":

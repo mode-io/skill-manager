@@ -1,99 +1,151 @@
-import { useCallback, useState } from "react";
-import { ShoppingBag, Download } from "lucide-react";
-import { useCatalog } from "../hooks/useCatalog";
-import { useMutation } from "../hooks/useMutation";
-import { SearchInput } from "../components/SearchInput";
-import { StatusBadge } from "../components/StatusBadge";
-import { EmptyState } from "../components/EmptyState";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { fetchMarketplacePopular, installSkill, searchMarketplace } from "../api/client";
+import type { MarketplaceItem } from "../api/types";
 import { ErrorBanner } from "../components/ErrorBanner";
-import type { SkillListing } from "../api/types";
-import "../styles/marketplace.css";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { SearchInput } from "../components/SearchInput";
 
-export function MarketplacePage(): JSX.Element {
-  const { searchSources, installSkill } = useCatalog();
+interface MarketplacePageProps {
+  refreshToken: number;
+  onDataChanged: () => void;
+}
+
+export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePageProps): JSX.Element {
+  const navigate = useNavigate();
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorMessage, setErrorMessage] = useState("");
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SkillListing[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const [installingLocator, setInstallingLocator] = useState<string | null>(null);
-  const install = useMutation(installSkill);
+  const [mode, setMode] = useState<"popular" | "search">("popular");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
-    setSearching(true);
-    try {
-      const r = await searchSources(query.trim());
-      setResults(r);
-    } catch {
-      setResults([]);
-    } finally {
-      setSearching(false);
-      setSearched(true);
-    }
-  }, [query, searchSources]);
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading");
+    setErrorMessage("");
+    void fetchMarketplacePopular()
+      .then((payload) => {
+        if (cancelled) return;
+        setItems(payload);
+        setMode("popular");
+        setStatus("ready");
+      })
+      .catch((error: Error) => {
+        if (cancelled) return;
+        setErrorMessage(error.message);
+        setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshToken]);
 
-  const handleInstall = useCallback(async (listing: SkillListing) => {
-    setInstallingLocator(listing.sourceLocator);
+  async function handleSearch(): Promise<void> {
     try {
-      await install.execute(listing.sourceKind, listing.sourceLocator);
-      setResults((prev) => prev.filter((r) => r.sourceLocator !== listing.sourceLocator));
-    } finally {
-      setInstallingLocator(null);
+      setStatus("loading");
+      setErrorMessage("");
+      const payload = await searchMarketplace(query);
+      setItems(payload);
+      setMode(query.trim() ? "search" : "popular");
+      setStatus("ready");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to search the marketplace.");
+      setStatus("error");
     }
-  }, [install]);
+  }
+
+  async function handleInstall(item: MarketplaceItem): Promise<void> {
+    try {
+      setBusyId(item.id);
+      await installSkill(item.sourceKind, item.sourceLocator);
+      onDataChanged();
+      navigate("/");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Unable to install the skill.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
-    <>
+    <section className="page-panel">
       <div className="page-header">
         <div>
-          <h1>Marketplace</h1>
-          <p className="subtitle">Search skills.sh and agentskill.sh registries</p>
+          <p className="page-header__eyebrow">Acquisition</p>
+          <h2>Marketplace</h2>
+          <p className="page-header__copy">
+            Browse popular skills across the selected registries and install them into the managed store.
+          </p>
         </div>
       </div>
 
-      {install.error && <ErrorBanner message={install.error} onDismiss={install.clearError} />}
+      {errorMessage && <ErrorBanner message={errorMessage} onDismiss={() => setErrorMessage("")} />}
 
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        onSubmit={handleSearch}
-        placeholder="Search for skills..."
-        loading={searching}
-      />
+      <div className="marketplace-toolbar">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          onSubmit={() => void handleSearch()}
+          placeholder="Search by skill name or topic"
+          loading={status === "loading"}
+        />
+      </div>
 
-      {!searched ? (
-        <EmptyState icon={ShoppingBag} title="Search for skills" description="Enter a query to search community skill registries." />
-      ) : results.length === 0 ? (
-        <EmptyState icon={ShoppingBag} title="No results" description={`No skills found for "${query}".`} />
-      ) : (
-        <div className="skill-grid">
-          {results.map((listing) => (
-            <div key={listing.sourceLocator} className="skill-card">
-              <div className="skill-card-header">
-                <span className="skill-card-name">{listing.name}</span>
-                <StatusBadge variant={listing.sourceKind === "github" ? "shared" : "unmanaged"} label={listing.registry} />
+      <div className="marketplace-header">
+        <h3>{mode === "popular" ? "Popular skills" : "Search results"}</h3>
+        <span>{items.length}</span>
+      </div>
+
+      {status === "loading" ? (
+        <div className="panel-state">
+          <LoadingSpinner label="Loading marketplace" />
+        </div>
+      ) : null}
+
+      {status === "ready" ? (
+        <div className="marketplace-grid">
+          {items.map((item) => (
+            <article key={item.id} className="marketplace-card">
+              <div className="marketplace-card__header">
+                <div>
+                  <h4>{item.name}</h4>
+                  <p>{item.description || "No description provided."}</p>
+                </div>
+                <span className="marketplace-card__badge">{item.badge}</span>
               </div>
-              {listing.description && <p className="skill-card-desc">{listing.description}</p>}
-              <div className="skill-card-meta">
-                {listing.installs > 0 && (
-                  <span className="badge badge-ok">{listing.installs.toLocaleString()} installs</span>
-                )}
-                <span className="badge badge-shared">{listing.sourceKind}</span>
-              </div>
-              <div className="skill-card-actions">
-                <button
-                  className="btn btn-primary btn-sm"
-                  disabled={installingLocator !== null}
-                  onClick={() => handleInstall(listing)}
-                >
-                  {installingLocator === listing.sourceLocator ? <span className="spinner spinner-sm" /> : <Download size={14} />}
-                  Install
-                </button>
-              </div>
-            </div>
+              <dl className="definition-grid">
+                <div>
+                  <dt>Registry</dt>
+                  <dd>{item.registry}</dd>
+                </div>
+                <div>
+                  <dt>GitHub stars</dt>
+                  <dd>{item.githubStars || "N/A"}</dd>
+                </div>
+                <div>
+                  <dt>Installs</dt>
+                  <dd>{item.installs}</dd>
+                </div>
+                <div>
+                  <dt>Repository</dt>
+                  <dd>{item.githubRepo ?? "Not available"}</dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busyId !== null}
+                onClick={() => void handleInstall(item)}
+              >
+                {busyId === item.id ? <LoadingSpinner size="sm" label={`Installing ${item.name}`} /> : null}
+                Install
+              </button>
+            </article>
           ))}
         </div>
-      )}
-    </>
+      ) : null}
+    </section>
   );
 }

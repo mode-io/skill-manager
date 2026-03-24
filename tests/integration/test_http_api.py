@@ -6,45 +6,39 @@ from tests.support import AppTestHarness, seed_divergent_source_fixture
 
 
 class HttpApiTests(unittest.TestCase):
-    def test_empty_fixture_returns_read_only_health_and_empty_catalog(self) -> None:
+    def test_empty_fixture_returns_skills_settings_and_health(self) -> None:
         with AppTestHarness() as harness:
             health = harness.get_json("/health")
-            harnesses = harness.get_json("/harnesses")
-            catalog = harness.get_json("/catalog")
-            check = harness.get_json("/check")
+            skills = harness.get_json("/skills")
+            settings = harness.get_json("/settings")
 
             self.assertTrue(health["ok"])
-            self.assertEqual(len(harnesses), 6)
-            self.assertEqual(catalog, [])
-            self.assertEqual(check["status"], "warning")
+            self.assertEqual(skills["summary"]["managed"], 0)
+            self.assertEqual(skills["rows"], [])
+            self.assertEqual(len(settings["harnesses"]), 6)
 
-    def test_mixed_fixture_returns_harnesses_catalog_and_catalog_detail(self) -> None:
+    def test_mixed_fixture_returns_skills_page_and_detail(self) -> None:
         with AppTestHarness(mixed=True) as harness:
-            harnesses = harness.get_json("/harnesses")
-            catalog = harness.get_json("/catalog")
+            skills = harness.get_json("/skills")
 
-            self.assertEqual(len(harnesses), 6)
-            trace_lens = next(entry for entry in catalog if entry["declaredName"] == "Trace Lens")
-            detail = harness.get_json(f"/catalog/{trace_lens['skillRef']}")
+            shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+            detail = harness.get_json(f"/skills/{shared_audit['skillRef']}")
 
-            self.assertEqual(detail["declaredName"], "Trace Lens")
-            self.assertEqual(len(detail["sightings"]), 2)
-            self.assertEqual(detail["conflicts"], [])
-            self.assertTrue(any(item["harness"] == "codex" for item in detail["sightings"]))
+            self.assertEqual(shared_audit["displayStatus"], "Managed")
+            self.assertEqual(detail["displayStatus"], "Managed")
+            self.assertTrue(any(harness["harness"] == "codex" for harness in detail["harnesses"]))
 
-    def test_catalog_detail_reports_divergent_revision_conflict(self) -> None:
+    def test_divergent_source_fixture_returns_separate_found_rows(self) -> None:
         with AppTestHarness(fixture_factory=seed_divergent_source_fixture) as harness:
-            catalog = harness.get_json("/catalog")
-            policy_kit = next(entry for entry in catalog if entry["declaredName"] == "Policy Kit")
-            detail = harness.get_json(f"/catalog/{policy_kit['skillRef']}")
+            skills = harness.get_json("/skills")
+            policy_rows = [row for row in skills["rows"] if row["name"] == "Policy Kit"]
 
-            self.assertEqual(len(detail["conflicts"]), 1)
-            self.assertEqual(detail["conflicts"][0]["conflictType"], "divergent_revision")
-            self.assertEqual(len(detail["sightings"]), 2)
+            self.assertEqual(len(policy_rows), 2)
+            self.assertTrue(all(row["displayStatus"] == "Found locally" for row in policy_rows))
 
-    def test_unknown_catalog_detail_returns_404_payload(self) -> None:
+    def test_unknown_skill_detail_returns_404_payload(self) -> None:
         with AppTestHarness() as harness:
-            payload = harness.get_json("/catalog/missing-entry", expected_status=404)
+            payload = harness.get_json("/skills/missing-entry", expected_status=404)
             self.assertIn("unknown skill ref", payload["error"])
 
 

@@ -30,6 +30,7 @@ def search_skillssh(query: str, *, limit: int = 20) -> list[SkillListing]:
             else "",
             registry="skillssh",
             installs=item.get("installs", 0),
+            github_repo=item.get("source"),
         )
         for item in payload.get("skills", [])
         if item.get("source") and item.get("skillId")
@@ -49,6 +50,8 @@ def search_agentskill(query: str, *, limit: int = 20) -> list[SkillListing]:
             source_locator=f"agentskill:{item['slug']}",
             registry="agentskill",
             installs=item.get("installCount", 0),
+            github_repo=_extract_github_repo(item),
+            github_stars=int(item.get("githubStars", 0) or 0),
         )
         for item in items
         if item.get("slug")
@@ -66,3 +69,18 @@ def fetch_agentskill(slug: str, work_dir: Path) -> Path:
         raise ValueError(f"empty skill content returned for {slug}")
     (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
     return skill_dir
+
+
+def _extract_github_repo(item: dict[str, object]) -> str | None:
+    for key in ("githubRepo", "repo", "repository", "source"):
+        value = item.get(key)
+        if isinstance(value, str) and value.count("/") == 1 and not value.startswith("http"):
+            return value
+    for key in ("githubUrl", "repoUrl", "repositoryUrl"):
+        value = item.get(key)
+        if isinstance(value, str) and "github.com/" in value:
+            repo = value.split("github.com/", 1)[1].strip("/")
+            parts = repo.split("/")
+            if len(parts) >= 2:
+                return f"{parts[0]}/{parts[1]}"
+    return None

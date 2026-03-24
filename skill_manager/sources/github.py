@@ -3,12 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 
+
 def _parse_locator(locator: str) -> tuple[str, str, str]:
     """Parse 'owner/repo/skill-dir' into (owner, repo, skill_dir)."""
     parts = locator.split("/", 2)
     if len(parts) != 3:
         raise ValueError(f"invalid github locator (expected owner/repo/skill-dir): {locator}")
     return parts[0], parts[1], parts[2]
+
+
+def github_repo_from_locator(locator: str) -> str | None:
+    try:
+        owner, repo, _ = _parse_locator(locator.removeprefix("github:"))
+    except ValueError:
+        return None
+    return f"{owner}/{repo}"
 
 
 def _find_skill(clone_dir: Path, skill_dir: str) -> Path | None:

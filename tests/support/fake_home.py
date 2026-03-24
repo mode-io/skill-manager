@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
+from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry, StoreManifest, write_manifest
 
 from .command_runner import StubCommandRunner
@@ -100,7 +101,7 @@ def seed_malformed_shared_directory(spec: FakeHomeSpec, directory_name: str) -> 
 
 
 def seed_mixed_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
-    seed_skill_package(
+    shared_audit = seed_skill_package(
         spec.shared_store_root,
         "shared-audit",
         "Shared Audit",
@@ -115,7 +116,7 @@ def seed_mixed_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
                 declared_name="Shared Audit",
                 source_kind="github",
                 source_locator="github:mode-io/shared-audit",
-                revision="bootstrap",
+                revision=_package_revision(shared_audit),
             )
         ],
     )
@@ -175,7 +176,7 @@ def seed_divergent_source_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
 
 def seed_shared_only_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
     """Shared store skill not linked to any harness — for testing enable flow."""
-    seed_skill_package(
+    shared_audit = seed_skill_package(
         spec.shared_store_root,
         "shared-audit",
         "Shared Audit",
@@ -189,8 +190,13 @@ def seed_shared_only_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
                 declared_name="Shared Audit",
                 source_kind="github",
                 source_locator="github:mode-io/shared-audit",
-                revision="bootstrap",
+                revision=_package_revision(shared_audit),
             )
         ],
     )
     return StubCommandRunner()
+
+
+def _package_revision(path: Path) -> str:
+    revision, _ = fingerprint_package(path)
+    return revision

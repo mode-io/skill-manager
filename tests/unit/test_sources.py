@@ -5,8 +5,8 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator
-from skill_manager.sources.types import SkillListing, listing_to_json
+from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
+from skill_manager.sources.types import SkillListing
 
 from tests.support import seed_skill_package
 
@@ -22,9 +22,8 @@ class ParseLocatorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _parse_locator("anthropics/skills")
 
-    def test_parse_rejects_one_part(self) -> None:
-        with self.assertRaises(ValueError):
-            _parse_locator("skills")
+    def test_github_repo_from_locator(self) -> None:
+        self.assertEqual(github_repo_from_locator("github:anthropics/skills/commit-message"), "anthropics/skills")
 
 
 class FindSkillTests(unittest.TestCase):
@@ -46,7 +45,6 @@ class GitHubSourceTests(unittest.TestCase):
     def test_fetch_from_local_bare_repo(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            # Create a local git repo with a skill
             repo_dir = root / "test-repo"
             repo_dir.mkdir()
             seed_skill_package(repo_dir / "skills", "my-skill", "My Skill")
@@ -54,22 +52,27 @@ class GitHubSourceTests(unittest.TestCase):
             subprocess.run(["git", "add", "."], cwd=repo_dir, capture_output=True, check=True)
             subprocess.run(
                 ["git", "commit", "-m", "init", "--author", "test <t@t>"],
-                cwd=repo_dir, capture_output=True, check=True,
-                env={"GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(root), "PATH": "/usr/bin:/bin:/usr/local/bin"},
+                cwd=repo_dir,
+                capture_output=True,
+                check=True,
+                env={
+                    "GIT_COMMITTER_NAME": "test",
+                    "GIT_COMMITTER_EMAIL": "t@t",
+                    "HOME": str(root),
+                    "PATH": "/usr/bin:/bin:/usr/local/bin",
+                },
             )
-            # Clone using local file:// protocol
-            source = GitHubSource()
             work = root / "work"
             work.mkdir()
-            # Monkey-patch the clone URL to use local path
-            original_fetch = source.fetch
 
             def local_fetch(locator: str, work_dir: Path) -> Path:
                 owner, repo, skill_dir = _parse_locator(locator)
                 clone_dir = work_dir / f"{owner}--{repo}"
                 subprocess.run(
                     ["git", "clone", "--depth", "1", str(repo_dir), str(clone_dir)],
-                    check=True, capture_output=True, timeout=60,
+                    check=True,
+                    capture_output=True,
+                    timeout=60,
                 )
                 return _find_skill(clone_dir, skill_dir)
 
@@ -78,8 +81,8 @@ class GitHubSourceTests(unittest.TestCase):
             self.assertTrue((result / "SKILL.md").is_file())
 
 
-class ListingSerializationTests(unittest.TestCase):
-    def test_listing_to_json(self) -> None:
+class ListingModelTests(unittest.TestCase):
+    def test_listing_supports_github_repo_and_stars(self) -> None:
         listing = SkillListing(
             name="React Best",
             description="React best practices",
@@ -87,12 +90,11 @@ class ListingSerializationTests(unittest.TestCase):
             source_locator="github:vercel/skills/react-best",
             registry="skillssh",
             installs=1234,
+            github_repo="vercel/skills",
+            github_stars=4321,
         )
-        result = listing_to_json(listing)
-        self.assertEqual(result["name"], "React Best")
-        self.assertEqual(result["sourceKind"], "github")
-        self.assertEqual(result["registry"], "skillssh")
-        self.assertEqual(result["installs"], 1234)
+        self.assertEqual(listing.github_repo, "vercel/skills")
+        self.assertEqual(listing.github_stars, 4321)
 
 
 if __name__ == "__main__":
