@@ -87,6 +87,7 @@ Use the repo docs with this split:
 
 - `design.md`: product architecture, conceptual model, module boundaries, and durable product rules
 - `current-focus.md`: current priorities, active work streams, and validation expectations
+- `frontend-redesign.md`: user-facing frontend product brief, page responsibilities, and simplified interaction model
 
 If a change alters the product model, update `design.md` first.
 
