@@ -170,6 +170,25 @@ class UpdateTests(unittest.TestCase):
             self.assertIn("only shared", result["error"])
 
 
+class CentralizeAllTests(unittest.TestCase):
+    def test_centralize_all_centralizes_eligible_skills(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            result = harness.post_json("/centralize-all")
+            self.assertTrue(len(result["centralized"]) > 0)
+            names = {item["declaredName"] for item in result["centralized"]}
+            self.assertIn("Trace Lens", names)
+            self.assertIn("Policy Kit", names)
+            snapshot = result["catalogSnapshot"]
+            for entry in snapshot:
+                if entry["declaredName"] in names:
+                    self.assertEqual(entry["ownership"], "shared")
+
+    def test_centralize_all_returns_empty_when_no_unmanaged(self) -> None:
+        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
+            result = harness.post_json("/centralize-all")
+            self.assertEqual(result["centralized"], [])
+
+
 class CentralizeTests(unittest.TestCase):
     def test_centralize_moves_unmanaged_to_shared_with_bindings(self) -> None:
         with AppTestHarness(mixed=True) as harness:

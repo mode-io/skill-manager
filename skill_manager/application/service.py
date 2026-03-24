@@ -133,6 +133,43 @@ class ApplicationService:
         )
         return catalog_detail_to_json(updated) if updated is not None else {}
 
+    def centralize_all(self) -> dict[str, object]:
+        snapshot = self.read_models.snapshot()
+        eligible = [e for e in snapshot.catalog_entries if e.ownership == "unmanaged" and not e.conflicts]
+        centralized: list[dict[str, str]] = []
+        skipped: list[dict[str, str]] = []
+        for entry in eligible:
+            harness_sightings = [s for s in entry.sightings if s.kind == "harness" and s.package_path is not None]
+            if not harness_sightings:
+                skipped.append({"skillRef": entry.skill_ref, "reason": "no harness sightings"})
+                continue
+            source_sighting = harness_sightings[0]
+            if source_sighting.source.is_source_backed:
+                src_kind, src_locator = source_sighting.source.kind, source_sighting.source.locator
+            else:
+                src_kind = "centralized"
+                src_locator = f"centralized:{entry.declared_name}"
+            try:
+                ingested = self.read_models.store.ingest(
+                    source_path=source_sighting.package_path,
+                    declared_name=entry.declared_name,
+                    source_kind=src_kind,
+                    source_locator=src_locator,
+                )
+            except ValueError:
+                skipped.append({"skillRef": entry.skill_ref, "reason": "ingest conflict"})
+                continue
+            operator = LinkOperator()
+            for sighting in harness_sightings:
+                operator.replace_with_link(existing_dir=sighting.package_path, target_path=ingested)
+            centralized.append({"skillRef": entry.skill_ref, "declaredName": entry.declared_name})
+        fresh = self.read_models.snapshot()
+        return {
+            "centralized": centralized,
+            "skipped": skipped,
+            "catalogSnapshot": [catalog_entry_to_json(e) for e in fresh.catalog_entries],
+        }
+
     # --- Phase 6: Install and Update from Sources ---
 
     def search_sources(self, query: str) -> list[dict[str, object]]:

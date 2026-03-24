@@ -59,6 +59,7 @@ def catalog_entry_to_json(entry: CatalogEntry) -> dict[str, object]:
     return {
         "skillRef": entry.skill_ref,
         "declaredName": entry.declared_name,
+        "description": entry.description,
         "ownership": entry.ownership,
         "sourceKind": entry.source.kind,
         "sourceLocator": entry.source.locator,

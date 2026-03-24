@@ -58,6 +58,7 @@ def seed_skill_package(
     declared_name: str,
     *,
     body: str = "",
+    description: str | None = None,
     support_files: dict[str, str] | None = None,
     source_kind: str | None = None,
     source_locator: str | None = None,
@@ -65,6 +66,8 @@ def seed_skill_package(
     package_root = root / directory_name
     package_root.mkdir(parents=True, exist_ok=True)
     frontmatter = ["---", f"name: {declared_name}"]
+    if description is not None:
+        frontmatter.append(f"description: {description}")
     if source_kind is not None:
         frontmatter.append(f"source_kind: {source_kind}")
     if source_locator is not None:

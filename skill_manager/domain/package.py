@@ -14,6 +14,7 @@ class SkillParseError(ValueError):
 @dataclass(frozen=True)
 class SkillPackage:
     declared_name: str
+    description: str
     root_path: Path
     resolved_path: Path
     relative_files: tuple[str, ...]
@@ -57,10 +58,12 @@ def parse_skill_package(root: Path, *, default_source: SourceDescriptor) -> Skil
     content = skill_path.read_text(encoding="utf-8")
     metadata = _parse_frontmatter(content)
     declared_name = _extract_declared_name(content, metadata)
+    description = metadata.get("description", "").strip()
     fingerprint, relative_files = fingerprint_package(root)
     source = _resolve_source(metadata, default_source=default_source)
     return SkillPackage(
         declared_name=declared_name,
+        description=description,
         root_path=root,
         resolved_path=root.resolve(),
         relative_files=relative_files,
@@ -92,11 +95,31 @@ def _parse_frontmatter(document: str) -> dict[str, str]:
     metadata: dict[str, str] = {}
     if lines[:1] != ["---"]:
         return metadata
-    for raw_line in lines[1:]:
+    i = 1
+    while i < len(lines):
+        raw_line = lines[i]
         if raw_line.strip() == "---":
             break
         if ":" not in raw_line:
+            i += 1
             continue
         key, value = raw_line.split(":", 1)
-        metadata[key.strip()] = value.strip()
+        value = value.strip()
+        # Handle YAML block scalars (>-, >, |, |-)
+        if value in (">-", ">", "|", "|-"):
+            join_char = " " if value.startswith(">") else "\n"
+            continuation: list[str] = []
+            i += 1
+            while i < len(lines):
+                cont_line = lines[i]
+                if cont_line.strip() == "---":
+                    break
+                if cont_line and not cont_line[0].isspace():
+                    break
+                continuation.append(cont_line.strip())
+                i += 1
+            value = join_char.join(part for part in continuation if part)
+        else:
+            i += 1
+        metadata[key.strip()] = value
     return metadata

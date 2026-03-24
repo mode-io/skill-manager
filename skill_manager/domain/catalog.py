@@ -44,6 +44,7 @@ class CatalogEntry:
     skill_ref: str
     logical_ref: SkillRef
     declared_name: str
+    description: str
     ownership: OwnershipType
     source: SourceDescriptor
     primary_revision: str
@@ -68,6 +69,7 @@ class CatalogAssembler:
                     ownership="shared",
                     logical_ref=logical_ref,
                     declared_name=package.declared_name,
+                    description=package.description,
                     source=package.source,
                 ),
             )
@@ -113,6 +115,7 @@ class CatalogAssembler:
                         ownership="unmanaged",
                         logical_ref=logical_ref,
                         declared_name=observation.package.declared_name,
+                        description=observation.package.description,
                         source=logical_ref.source,
                     ),
                 )
@@ -170,10 +173,11 @@ class CatalogAssembler:
 
 
 class _Bucket:
-    def __init__(self, *, ownership: OwnershipType, logical_ref: SkillRef, declared_name: str, source: SourceDescriptor) -> None:
+    def __init__(self, *, ownership: OwnershipType, logical_ref: SkillRef, declared_name: str, description: str = "", source: SourceDescriptor) -> None:
         self.ownership = ownership
         self.logical_ref = logical_ref
         self.declared_name = declared_name
+        self.description = description
         self.source = source
         self.skill_ref = f"{ownership}:{logical_ref.value}"
         self.skill_observations: list[SkillObservation] = []
@@ -210,6 +214,7 @@ class _Bucket:
             skill_ref=self.skill_ref,
             logical_ref=self.logical_ref,
             declared_name=self.declared_name,
+            description=self.description,
             ownership=self.ownership,
             source=self.source,
             primary_revision=primary_revision,

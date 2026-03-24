@@ -26,6 +26,7 @@ export interface CatalogConflict {
 export interface CatalogEntrySummary {
   skillRef: string;
   declaredName: string;
+  description: string;
   ownership: "shared" | "unmanaged" | "builtin";
   sourceKind: string;
   sourceLocator: string;

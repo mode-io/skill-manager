@@ -61,6 +61,13 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)
 
+        if parsed.path == "/centralize-all":
+            try:
+                result = self.service.centralize_all()
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
         if parsed.path == "/install":
             source_kind = body.get("sourceKind", "") if isinstance(body, dict) else ""
             source_locator = body.get("sourceLocator", "") if isinstance(body, dict) else ""

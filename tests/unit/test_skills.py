@@ -50,5 +50,37 @@ class SkillParsingTests(unittest.TestCase):
                 )
 
 
+    def test_parse_extracts_single_line_description(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            package_root = seed_skill_package(
+                Path(temp_dir), "my-skill", "My Skill", description="A short description",
+            )
+            package = parse_skill_package(
+                package_root, default_source=SourceDescriptor(kind="shared-store", locator="fixture:test"),
+            )
+            self.assertEqual(package.description, "A short description")
+
+    def test_parse_extracts_multiline_block_scalar_description(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            package_root = Path(temp_dir) / "multi"
+            package_root.mkdir()
+            (package_root / "SKILL.md").write_text(
+                "---\nname: Multi\ndescription: >-\n  First line of\n  the description.\n---\n\n# Multi\n",
+                encoding="utf-8",
+            )
+            package = parse_skill_package(
+                package_root, default_source=SourceDescriptor(kind="shared-store", locator="fixture:test"),
+            )
+            self.assertEqual(package.description, "First line of the description.")
+
+    def test_parse_defaults_missing_description_to_empty(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            package_root = seed_skill_package(Path(temp_dir), "no-desc", "No Desc")
+            package = parse_skill_package(
+                package_root, default_source=SourceDescriptor(kind="shared-store", locator="fixture:test"),
+            )
+            self.assertEqual(package.description, "")
+
+
 if __name__ == "__main__":
     unittest.main()
