@@ -1,12 +1,19 @@
 import type {
   MarketplaceItem,
+  MarketplacePageResult,
   SettingsData,
   SkillDetail,
   SkillsPageData,
 } from "./types";
+import { apiPath } from "./paths";
 
 interface OkResponse {
   ok: boolean;
+}
+
+interface MarketplacePageParams {
+  limit?: number;
+  offset?: number;
 }
 
 async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
@@ -19,7 +26,7 @@ async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
 
 async function postJson<T>(path: string, body?: object): Promise<T> {
   return expectJson<T>(
-    fetch(path, {
+    fetch(apiPath(path), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
@@ -28,11 +35,11 @@ async function postJson<T>(path: string, body?: object): Promise<T> {
 }
 
 export async function fetchSkillsPage(): Promise<SkillsPageData> {
-  return expectJson<SkillsPageData>(fetch("/skills"));
+  return expectJson<SkillsPageData>(fetch(apiPath("/skills")));
 }
 
 export async function fetchSkillDetail(skillRef: string): Promise<SkillDetail> {
-  return expectJson<SkillDetail>(fetch(`/skills/${encodeURIComponent(skillRef)}`));
+  return expectJson<SkillDetail>(fetch(apiPath(`/skills/${encodeURIComponent(skillRef)}`)));
 }
 
 export async function enableSkill(skillRef: string, harness: string): Promise<OkResponse> {
@@ -55,12 +62,14 @@ export async function manageAllSkills(): Promise<OkResponse> {
   return postJson<OkResponse>("/skills/manage-all");
 }
 
-export async function fetchMarketplacePopular(): Promise<MarketplaceItem[]> {
-  return expectJson<MarketplaceItem[]>(fetch("/marketplace/popular"));
+export async function fetchMarketplacePopular(params: MarketplacePageParams = {}): Promise<MarketplacePageResult> {
+  return expectJson<MarketplacePageResult>(fetch(apiPath(withQuery("/marketplace/popular", params))));
 }
 
-export async function searchMarketplace(query: string): Promise<MarketplaceItem[]> {
-  return expectJson<MarketplaceItem[]>(fetch(`/marketplace/search?q=${encodeURIComponent(query)}`));
+export async function searchMarketplace(query: string, params: MarketplacePageParams = {}): Promise<MarketplacePageResult> {
+  return expectJson<MarketplacePageResult>(
+    fetch(apiPath(withQuery("/marketplace/search", { ...params, q: query }))),
+  );
 }
 
 export async function installSkill(sourceKind: string, sourceLocator: string): Promise<OkResponse> {
@@ -68,5 +77,17 @@ export async function installSkill(sourceKind: string, sourceLocator: string): P
 }
 
 export async function fetchSettings(): Promise<SettingsData> {
-  return expectJson<SettingsData>(fetch("/settings"));
+  return expectJson<SettingsData>(fetch(apiPath("/settings")));
+}
+
+function withQuery(path: string, params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === "") {
+      continue;
+    }
+    search.set(key, String(value));
+  }
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
 }

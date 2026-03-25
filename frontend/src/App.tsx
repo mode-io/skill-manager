@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/AppShell";
-import { SettingsDrawer } from "./components/SettingsDrawer";
+import { SettingsPopover } from "./components/SettingsPopover";
 import { MarketplacePage } from "./pages/MarketplacePage";
 import { SkillsPage } from "./pages/SkillsPage";
 
 export function App(): JSX.Element {
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
 
   function handleDataChanged(): void {
@@ -15,7 +14,7 @@ export function App(): JSX.Element {
   }
 
   return (
-    <AppShell onOpenSettings={() => setSettingsOpen(true)}>
+    <AppShell settingsControl={<SettingsPopover refreshToken={refreshToken} onDataChanged={handleDataChanged} />}>
       <Routes>
         <Route index element={<SkillsPage refreshToken={refreshToken} onDataChanged={handleDataChanged} />} />
         <Route
@@ -23,12 +22,6 @@ export function App(): JSX.Element {
           element={<MarketplacePage refreshToken={refreshToken} onDataChanged={handleDataChanged} />}
         />
       </Routes>
-      <SettingsDrawer
-        open={settingsOpen}
-        refreshToken={refreshToken}
-        onClose={() => setSettingsOpen(false)}
-        onDataChanged={handleDataChanged}
-      />
     </AppShell>
   );
 }

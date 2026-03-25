@@ -4,12 +4,21 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.domain import SourceDescriptor, SkillParseError, fingerprint_package, parse_skill_package
+from skill_manager.domain import SourceDescriptor, SkillParseError, fingerprint_package, parse_skill_manifest_text, parse_skill_package
 
 from tests.support import seed_skill_package
 
 
 class SkillParsingTests(unittest.TestCase):
+    def test_parse_skill_manifest_text_extracts_core_frontmatter(self) -> None:
+        manifest = parse_skill_manifest_text(
+            "---\nname: Manifest Skill\ndescription: A canonical description\nsource_kind: github\nsource_locator: github:mode-io/skills/manifest-skill\n---\n\n# Manifest Skill\n"
+        )
+        self.assertEqual(manifest.declared_name, "Manifest Skill")
+        self.assertEqual(manifest.description, "A canonical description")
+        self.assertEqual(manifest.source_kind, "github")
+        self.assertEqual(manifest.source_locator, "github:mode-io/skills/manifest-skill")
+
     def test_parse_skill_package_uses_frontmatter_name_and_source_metadata(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

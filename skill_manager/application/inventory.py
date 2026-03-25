@@ -93,6 +93,20 @@ class InventoryEntry:
         return None
 
     @property
+    def needs_attention(self) -> bool:
+        return self.is_custom or self.kind == "found"
+
+    @property
+    def default_sort_rank(self) -> int:
+        order = {
+            "Custom": 0,
+            "Found locally": 1,
+            "Managed": 2,
+            "Built-in": 3,
+        }
+        return order[self.display_status]
+
+    @property
     def can_update(self) -> bool:
         return self.kind == "managed" and not self.is_custom and self.source.is_source_backed
 
@@ -117,8 +131,9 @@ class InventoryEntry:
             "description": self.description,
             "displayStatus": self.display_status,
             "attentionMessage": self.attention_message,
+            "needsAttention": self.needs_attention,
+            "defaultSortRank": self.default_sort_rank,
             "primaryAction": self.primary_action,
-            "isBuiltin": self.kind == "builtin",
             "cells": [self._cell_dict(column) for column in columns],
         }
 

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { fetchMarketplacePopular, installSkill, searchMarketplace } from "../api/client";
-import type { MarketplaceItem } from "../api/types";
+import type { MarketplaceItem, MarketplacePageResult } from "../api/types";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { MarketplaceCard } from "../components/MarketplaceCard";
 import { SearchInput } from "../components/SearchInput";
 
 interface MarketplacePageProps {
@@ -12,48 +13,91 @@ interface MarketplacePageProps {
   onDataChanged: () => void;
 }
 
+const PAGE_SIZE = 18;
+
 export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePageProps): JSX.Element {
   const navigate = useNavigate();
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [mode, setMode] = useState<"popular" | "search">("popular");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const pagingRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setErrorMessage("");
-    void fetchMarketplacePopular()
-      .then((payload) => {
-        if (cancelled) return;
-        setItems(payload);
-        setMode("popular");
-        setStatus("ready");
-      })
-      .catch((error: Error) => {
-        if (cancelled) return;
-        setErrorMessage(error.message);
-        setStatus("error");
-      });
+    void loadPage({ nextMode: "popular", nextQuery: "", offset: 0, append: false, cancelledRef: () => cancelled });
     return () => {
       cancelled = true;
     };
   }, [refreshToken]);
 
-  async function handleSearch(): Promise<void> {
-    try {
-      setStatus("loading");
-      setErrorMessage("");
-      const payload = await searchMarketplace(query);
-      setItems(payload);
-      setMode(query.trim() ? "search" : "popular");
-      setStatus("ready");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to search the marketplace.");
-      setStatus("error");
+  useEffect(() => {
+    if (status !== "ready" || !hasMore || nextOffset === null) {
+      return;
     }
+    const node = sentinelRef.current;
+    if (!node) {
+      return;
+    }
+    const loadMoreIfNeeded = () => {
+      if (pagingRef.current || nextOffset === null || !sentinelRef.current) {
+        return;
+      }
+      const rect = sentinelRef.current.getBoundingClientRect();
+      if (rect.top > window.innerHeight + 240) {
+        return;
+      }
+      pagingRef.current = true;
+      void loadPage({
+        nextMode: mode,
+        nextQuery: submittedQuery,
+        offset: nextOffset,
+        append: true,
+      });
+    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) {
+          return;
+        }
+        loadMoreIfNeeded();
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(node);
+    window.addEventListener("scroll", loadMoreIfNeeded, { passive: true });
+    window.addEventListener("resize", loadMoreIfNeeded);
+    loadMoreIfNeeded()
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", loadMoreIfNeeded);
+      window.removeEventListener("resize", loadMoreIfNeeded);
+    };
+  }, [hasMore, mode, nextOffset, status, submittedQuery]);
+
+  const resultLabel = useMemo(() => {
+    if (mode === "popular") {
+      return "Popular skills";
+    }
+    return submittedQuery ? `Search results for “${submittedQuery}”` : "Search results";
+  }, [mode, submittedQuery]);
+
+  async function handleSearch(): Promise<void> {
+    const trimmed = query.trim();
+    await loadPage({
+      nextMode: trimmed ? "search" : "popular",
+      nextQuery: trimmed,
+      offset: 0,
+      append: false,
+    });
   }
 
   async function handleInstall(item: MarketplaceItem): Promise<void> {
@@ -69,15 +113,67 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
     }
   }
 
+  async function loadPage({
+    nextMode,
+    nextQuery,
+    offset,
+    append,
+    cancelledRef,
+  }: {
+    nextMode: "popular" | "search";
+    nextQuery: string;
+    offset: number;
+    append: boolean;
+    cancelledRef?: () => boolean;
+  }): Promise<void> {
+    const requestId = ++requestIdRef.current;
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setStatus("loading");
+        setErrorMessage("");
+      }
+
+      const payload = nextMode === "popular"
+        ? await fetchMarketplacePopular({ limit: PAGE_SIZE, offset })
+        : await searchMarketplace(nextQuery, { limit: PAGE_SIZE, offset });
+
+      if (cancelledRef?.()) {
+        return;
+      }
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setItems((current) => append ? mergeMarketplaceItems(current, payload) : payload.items);
+      setNextOffset(payload.nextOffset);
+      setHasMore(payload.hasMore);
+      setMode(nextMode);
+      setSubmittedQuery(nextQuery);
+      setStatus("ready");
+    } catch (error) {
+      if (cancelledRef?.()) {
+        return;
+      }
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+      setErrorMessage(error instanceof Error ? error.message : "Unable to load the marketplace.");
+      setStatus("error");
+    } finally {
+      pagingRef.current = false;
+      if (requestId === requestIdRef.current) {
+        setLoadingMore(false);
+      }
+    }
+  }
+
   return (
-    <section className="page-panel">
-      <div className="page-header">
+    <section className="marketplace-page">
+      <div className="marketplace-page__hero">
         <div>
-          <p className="page-header__eyebrow">Acquisition</p>
           <h2>Marketplace</h2>
-          <p className="page-header__copy">
-            Browse popular skills across the selected registries and install them into the managed store.
-          </p>
         </div>
       </div>
 
@@ -94,58 +190,53 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
       </div>
 
       <div className="marketplace-header">
-        <h3>{mode === "popular" ? "Popular skills" : "Search results"}</h3>
-        <span>{items.length}</span>
+        <div>
+          <h3>{resultLabel}</h3>
+          <p className="marketplace-header__note">
+            {mode === "popular" ? "Browse high-signal skills sorted by repository momentum." : "Continue scrolling to load more matching skills."}
+          </p>
+        </div>
       </div>
 
-      {status === "loading" ? (
+      {status === "loading" && items.length === 0 ? (
         <div className="panel-state">
           <LoadingSpinner label="Loading marketplace" />
         </div>
       ) : null}
 
       {status === "ready" ? (
-        <div className="marketplace-grid">
+        <>
+          <div className="marketplace-grid">
           {items.map((item) => (
-            <article key={item.id} className="marketplace-card">
-              <div className="marketplace-card__header">
-                <div>
-                  <h4>{item.name}</h4>
-                  <p>{item.description || "No description provided."}</p>
-                </div>
-                <span className="marketplace-card__badge">{item.badge}</span>
-              </div>
-              <dl className="definition-grid">
-                <div>
-                  <dt>Registry</dt>
-                  <dd>{item.registry}</dd>
-                </div>
-                <div>
-                  <dt>GitHub stars</dt>
-                  <dd>{item.githubStars || "N/A"}</dd>
-                </div>
-                <div>
-                  <dt>Installs</dt>
-                  <dd>{item.installs}</dd>
-                </div>
-                <div>
-                  <dt>Repository</dt>
-                  <dd>{item.githubRepo ?? "Not available"}</dd>
-                </div>
-              </dl>
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={busyId !== null}
-                onClick={() => void handleInstall(item)}
-              >
-                {busyId === item.id ? <LoadingSpinner size="sm" label={`Installing ${item.name}`} /> : null}
-                Install
-              </button>
-            </article>
+            <MarketplaceCard
+              key={item.id}
+              item={item}
+              disabled={busyId !== null}
+              installing={busyId === item.id}
+              onInstall={() => void handleInstall(item)}
+            />
           ))}
-        </div>
+          </div>
+          {hasMore ? <div ref={sentinelRef} className="marketplace-load-sentinel" aria-hidden="true" /> : null}
+          {loadingMore ? (
+            <div className="marketplace-load-more">
+              <LoadingSpinner size="sm" label="Loading more marketplace skills" />
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   );
+}
+
+function mergeMarketplaceItems(current: MarketplaceItem[], payload: MarketplacePageResult): MarketplaceItem[] {
+  const seen = new Set(current.map((item) => item.id));
+  const appended = payload.items.filter((item) => {
+    if (seen.has(item.id)) {
+      return false;
+    }
+    seen.add(item.id);
+    return true;
+  });
+  return [...current, ...appended];
 }

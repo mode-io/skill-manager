@@ -5,7 +5,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
+from skill_manager.sources.github import GitHubManifestFetcher, GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
 from skill_manager.sources.types import SkillListing
 
 from tests.support import seed_skill_package
@@ -80,12 +80,31 @@ class GitHubSourceTests(unittest.TestCase):
             self.assertIsNotNone(result)
             self.assertTrue((result / "SKILL.md").is_file())
 
+    def test_manifest_fetcher_tries_common_preferred_paths_before_tree_scan(self) -> None:
+        file_calls: list[tuple[str, str]] = []
+
+        def file_text_fetcher(repo: str, path: str) -> str | None:
+            file_calls.append((repo, path))
+            if path == "skills/find-skills/SKILL.md":
+                return "---\nname: find-skills\ndescription: Canonical find-skills description.\n---\n"
+            return None
+
+        fetcher = GitHubManifestFetcher(
+            tree_fetcher=lambda repo: [],
+            file_text_fetcher=file_text_fetcher,
+        )
+
+        text = fetcher.fetch_skill_manifest_text("github:vercel-labs/skills/find-skills")
+
+        self.assertIsNotNone(text)
+        self.assertIn(("vercel-labs/skills", "skills/find-skills/SKILL.md"), file_calls)
+
 
 class ListingModelTests(unittest.TestCase):
     def test_listing_supports_github_repo_and_stars(self) -> None:
         listing = SkillListing(
             name="React Best",
-            description="React best practices",
+            description_hint="React best practices",
             source_kind="github",
             source_locator="github:vercel/skills/react-best",
             registry="skillssh",

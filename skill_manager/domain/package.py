@@ -12,6 +12,14 @@ class SkillParseError(ValueError):
 
 
 @dataclass(frozen=True)
+class SkillManifest:
+    declared_name: str
+    description: str
+    source_kind: str | None
+    source_locator: str | None
+
+
+@dataclass(frozen=True)
 class SkillPackage:
     declared_name: str
     description: str
@@ -56,19 +64,33 @@ def parse_skill_package(root: Path, *, default_source: SourceDescriptor) -> Skil
     if not skill_path.is_file():
         raise SkillParseError(f"missing SKILL.md in {root}")
     content = skill_path.read_text(encoding="utf-8")
-    metadata = _parse_frontmatter(content)
-    declared_name = _extract_declared_name(content, metadata)
-    description = metadata.get("description", "").strip()
+    manifest = parse_skill_manifest_text(content)
     fingerprint, relative_files = fingerprint_package(root)
-    source = _resolve_source(metadata, default_source=default_source)
+    source = _resolve_source(
+        {
+            "source_kind": manifest.source_kind or "",
+            "source_locator": manifest.source_locator or "",
+        },
+        default_source=default_source,
+    )
     return SkillPackage(
-        declared_name=declared_name,
-        description=description,
+        declared_name=manifest.declared_name,
+        description=manifest.description,
         root_path=root,
         resolved_path=root.resolve(),
         relative_files=relative_files,
         revision=fingerprint,
         source=source,
+    )
+
+
+def parse_skill_manifest_text(document: str) -> SkillManifest:
+    metadata = _parse_frontmatter(document)
+    return SkillManifest(
+        declared_name=_extract_declared_name(document, metadata),
+        description=metadata.get("description", "").strip(),
+        source_kind=_optional_metadata_value(metadata, "source_kind"),
+        source_locator=_optional_metadata_value(metadata, "source_locator"),
     )
 
 
@@ -123,3 +145,8 @@ def _parse_frontmatter(document: str) -> dict[str, str]:
             i += 1
         metadata[key.strip()] = value
     return metadata
+
+
+def _optional_metadata_value(metadata: dict[str, str], key: str) -> str | None:
+    value = metadata.get(key, "").strip()
+    return value or None

@@ -12,16 +12,19 @@ interface SearchInputProps {
 export function SearchInput({ value, onChange, onSubmit, placeholder = "Search...", loading, disabled }: SearchInputProps): JSX.Element {
   return (
     <div className="search-bar">
-      <input
-        className="search-input"
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-        disabled={disabled}
-      />
-      <button className="btn btn-primary" onClick={onSubmit} disabled={loading || disabled || !value.trim()}>
+      <div className="search-bar__field">
+        <Search size={16} className="search-bar__icon" />
+        <input
+          className="search-input"
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onSubmit()}
+          disabled={disabled}
+        />
+      </div>
+      <button type="button" className="btn btn-primary search-bar__submit" onClick={onSubmit} disabled={loading || disabled}>
         {loading ? <span className="spinner spinner-sm" /> : <Search size={16} />}
         Search
       </button>

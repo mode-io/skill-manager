@@ -29,10 +29,38 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
                 return self._write_json({"error": f"unknown skill ref: {skill_ref}"}, status=404)
             return self._write_json(payload)
         if parsed.path == "/marketplace/popular":
-            return self._write_json(self.service.popular_marketplace())
+            query = parse_qs(parsed.query)
+            return self._write_json(
+                self.service.popular_marketplace(
+                    limit=_parse_int(query.get("limit", [""])[0]),
+                    offset=_parse_int(query.get("offset", [""])[0]) or 0,
+                )
+            )
+        if parsed.path == "/marketplace/avatar":
+            repo = parse_qs(parsed.query).get("repo", [""])[0]
+            owner = parse_qs(parsed.query).get("owner", [""])[0]
+            if not repo and not owner:
+                self.send_error(400)
+                return
+            asset = self.service.marketplace_avatar(repo=repo or None, owner=owner or None)
+            if asset is None:
+                self.send_error(404)
+                return
+            return self._write_bytes(
+                asset.body,
+                content_type=asset.content_type,
+                cache_control="private, max-age=900",
+            )
         if parsed.path == "/marketplace/search":
-            query = parse_qs(parsed.query).get("q", [""])[0]
-            return self._write_json(self.service.search_marketplace(query))
+            query_args = parse_qs(parsed.query)
+            query = query_args.get("q", [""])[0]
+            return self._write_json(
+                self.service.search_marketplace(
+                    query,
+                    limit=_parse_int(query_args.get("limit", [""])[0]),
+                    offset=_parse_int(query_args.get("offset", [""])[0]) or 0,
+                )
+            )
         if parsed.path == "/settings":
             return self._write_json(self.service.settings())
         return self._serve_static(parsed.path)
@@ -103,6 +131,22 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _write_bytes(
+        self,
+        body: bytes,
+        *,
+        content_type: str,
+        status: int = 200,
+        cache_control: str | None = None,
+    ) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        if cache_control is not None:
+            self.send_header("Cache-Control", cache_control)
         self.end_headers()
         self.wfile.write(body)
 
@@ -179,3 +223,10 @@ def serve_in_thread(
     thread.start()
     actual_host, actual_port = server.server_address[:2]
     return ServerHandle(server=server, thread=thread, base_url=f"http://{actual_host}:{actual_port}")
+
+
+def _parse_int(value: str) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None

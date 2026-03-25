@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { disableSkill, enableSkill, fetchSkillsPage, manageAllSkills, manageSkill } from "../api/client";
-import type { SkillStatus, SkillTableRow, SkillsPageData } from "../api/types";
+import type { HarnessCell, SkillTableRow, SkillsPageData } from "../api/types";
+import { SkillsEmptyState } from "../components/skills/SkillsEmptyState";
+import { SkillsOverviewStrip } from "../components/skills/SkillsOverviewStrip";
+import { SkillsTable } from "../components/skills/SkillsTable";
+import { SkillsToolbar } from "../components/skills/SkillsToolbar";
+import {
+  filterSkillsRows,
+  hasActiveSkillsFilters,
+  nextStatusFilterForMetric,
+  resetSkillsFilters,
+  type SkillsFilterState,
+} from "../components/skills/model";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { SkillDetailDrawer } from "../components/SkillDetailDrawer";
@@ -11,18 +22,11 @@ interface SkillsPageProps {
   onDataChanged: () => void;
 }
 
-type SortOption = "needsAction" | "name";
-type StatusFilter = "All" | SkillStatus;
-
 export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JSX.Element {
   const [data, setData] = useState<SkillsPageData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [harnessFilter, setHarnessFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<SortOption>("needsAction");
-  const [showBuiltIns, setShowBuiltIns] = useState(false);
+  const [filters, setFilters] = useState<SkillsFilterState>(() => resetSkillsFilters());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [selectedSkillRef, setSelectedSkillRef] = useState<string | null>(null);
 
@@ -46,41 +50,8 @@ export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JS
     };
   }, [refreshToken]);
 
-  const visibleRows = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    const normalizedSearch = search.trim().toLowerCase();
-    const filtered = data.rows.filter((row) => {
-      if (!showBuiltIns && row.displayStatus === "Built-in") {
-        return false;
-      }
-      if (statusFilter !== "All" && row.displayStatus !== statusFilter) {
-        return false;
-      }
-      if (harnessFilter !== "all") {
-        const cell = row.cells.find((item) => item.harness === harnessFilter);
-        if (!cell || cell.state === "empty") {
-          return false;
-        }
-      }
-      if (!normalizedSearch) {
-        return true;
-      }
-      return (
-        row.name.toLowerCase().includes(normalizedSearch)
-        || row.description.toLowerCase().includes(normalizedSearch)
-      );
-    });
-
-    filtered.sort((left, right) => {
-      if (sortBy === "name") {
-        return left.name.localeCompare(right.name);
-      }
-      return statusRank(left.displayStatus) - statusRank(right.displayStatus) || left.name.localeCompare(right.name);
-    });
-    return filtered;
-  }, [data, harnessFilter, search, showBuiltIns, sortBy, statusFilter]);
+  const visibleRows = useMemo(() => filterSkillsRows(data, filters), [data, filters]);
+  const hasActiveFilters = useMemo(() => hasActiveSkillsFilters(filters), [filters]);
 
   async function runAction(actionId: string, task: () => Promise<unknown>): Promise<void> {
     try {
@@ -94,10 +65,39 @@ export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JS
     }
   }
 
+  function updateFilters(partial: Partial<SkillsFilterState>): void {
+    setFilters((current) => ({ ...current, ...partial }));
+  }
+
+  function handleOverviewMetric(metric: "needsAction" | "managed" | "foundLocally" | "custom" | "builtIn"): void {
+    if (metric === "builtIn") {
+      setFilters((current) => ({ ...current, showBuiltIns: !current.showBuiltIns }));
+      return;
+    }
+    setFilters((current) => ({ ...current, statusFilter: nextStatusFilterForMetric(metric, current.statusFilter) }));
+  }
+
+  function handleToggleCell(row: SkillTableRow, cell: HarnessCell): void {
+    void runAction(
+      `${row.skillRef}:${cell.harness}`,
+      () => cell.state === "enabled"
+        ? disableSkill(row.skillRef, cell.harness)
+        : enableSkill(row.skillRef, cell.harness),
+    );
+  }
+
+  function handlePrimaryAction(row: SkillTableRow): void {
+    if (row.primaryAction.kind === "manage") {
+      void runAction(`manage:${row.skillRef}`, () => manageSkill(row.skillRef));
+      return;
+    }
+    setSelectedSkillRef(row.skillRef);
+  }
+
   return (
     <>
-      <section className="page-panel">
-        <div className="page-header">
+      <section className="page-panel skills-page">
+        <div className="skills-page__header">
           <div>
             <p className="page-header__eyebrow">Primary workspace</p>
             <h2>Skills</h2>
@@ -119,62 +119,20 @@ export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JS
         {errorMessage && <ErrorBanner message={errorMessage} onDismiss={() => setErrorMessage("")} />}
 
         {data ? (
-          <div className="stats-grid">
-            <div className="stat-box">
-              <span>Managed</span>
-              <strong>{data.summary.managed}</strong>
-            </div>
-            <div className="stat-box">
-              <span>Found locally</span>
-              <strong>{data.summary.foundLocally}</strong>
-            </div>
-            <div className="stat-box">
-              <span>Custom</span>
-              <strong>{data.summary.custom}</strong>
-            </div>
-            <div className="stat-box">
-              <span>Needs action</span>
-              <strong>{data.summary.needsAction}</strong>
-            </div>
-          </div>
+          <SkillsOverviewStrip summary={data.summary} filters={filters} onSelectMetric={handleOverviewMetric} />
         ) : null}
 
-        <div className="toolbar">
-          <label className="field">
-            <span>Search</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter skills" />
-          </label>
-          <label className="field">
-            <span>Status</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
-              <option value="All">All</option>
-              <option value="Managed">Managed</option>
-              <option value="Found locally">Found locally</option>
-              <option value="Custom">Custom</option>
-              <option value="Built-in">Built-in</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>Tool</span>
-            <select value={harnessFilter} onChange={(event) => setHarnessFilter(event.target.value)}>
-              <option value="all">All tools</option>
-              {data?.harnessColumns.map((column) => (
-                <option key={column.harness} value={column.harness}>{column.label}</option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>Sort</span>
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)}>
-              <option value="needsAction">Needs action first</option>
-              <option value="name">Name</option>
-            </select>
-          </label>
-          <label className="checkbox-field">
-            <input type="checkbox" checked={showBuiltIns} onChange={(event) => setShowBuiltIns(event.target.checked)} />
-            <span>Show built-in skills</span>
-          </label>
-        </div>
+        <SkillsToolbar
+          columns={data?.harnessColumns ?? []}
+          filters={filters}
+          hasActiveFilters={hasActiveFilters}
+          onSearchChange={(value) => updateFilters({ search: value })}
+          onStatusFilterChange={(value) => updateFilters({ statusFilter: value })}
+          onHarnessFilterChange={(value) => updateFilters({ harnessFilter: value })}
+          onSortByChange={(value) => updateFilters({ sortBy: value })}
+          onShowBuiltInsChange={(value) => updateFilters({ showBuiltIns: value })}
+          onResetFilters={() => setFilters(resetSkillsFilters())}
+        />
 
         {status === "loading" ? (
           <div className="panel-state">
@@ -183,79 +141,18 @@ export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JS
         ) : null}
 
         {status === "ready" && data ? (
-          <div className="table-wrap">
-            <table className="skills-table">
-              <thead>
-                <tr>
-                  <th>Skill</th>
-                  <th>Status</th>
-                  {data.harnessColumns.map((column) => (
-                    <th key={column.harness}>{column.label}</th>
-                  ))}
-                  <th>Action</th>
-                </tr>
-              </thead>
-              {visibleRows.map((row) => (
-                <tbody key={row.skillRef} className="skill-row-group">
-                  <tr>
-                    <td>
-                      <button type="button" className="skill-name-button" onClick={() => setSelectedSkillRef(row.skillRef)}>
-                        {row.name}
-                      </button>
-                    </td>
-                    <td>
-                      <div className="status-block">
-                        <strong>{row.displayStatus}</strong>
-                        {row.attentionMessage ? <span>{row.attentionMessage}</span> : null}
-                      </div>
-                    </td>
-                    {row.cells.map((cell) => (
-                      <td key={`${row.skillRef}:${cell.harness}`} className="table-cell-center">
-                        {cell.interactive ? (
-                          <button
-                            type="button"
-                            className={`toggle-button${cell.state === "enabled" ? " is-enabled" : ""}`}
-                            disabled={busyId !== null}
-                            onClick={() => void runAction(
-                              `${row.skillRef}:${cell.harness}`,
-                              () => cell.state === "enabled"
-                                ? disableSkill(row.skillRef, cell.harness)
-                                : enableSkill(row.skillRef, cell.harness),
-                            )}
-                          >
-                            {busyId === `${row.skillRef}:${cell.harness}`
-                              ? <LoadingSpinner size="sm" label={`Updating ${cell.label}`} />
-                              : cell.state === "enabled" ? "On" : "Off"}
-                          </button>
-                        ) : (
-                          <span className={`cell-indicator cell-indicator--${cell.state}`}>{cellLabel(cell.state)}</span>
-                        )}
-                      </td>
-                    ))}
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        disabled={busyId !== null}
-                        onClick={() => row.primaryAction.kind === "manage"
-                          ? void runAction(`manage:${row.skillRef}`, () => manageSkill(row.skillRef))
-                          : setSelectedSkillRef(row.skillRef)}
-                      >
-                        {busyId === `manage:${row.skillRef}`
-                          ? <LoadingSpinner size="sm" label={`Managing ${row.name}`} />
-                          : row.primaryAction.label}
-                      </button>
-                    </td>
-                  </tr>
-                  <tr className="skills-table__description-row">
-                    <td colSpan={data.harnessColumns.length + 3}>
-                      {row.description || "No description provided."}
-                    </td>
-                  </tr>
-                </tbody>
-              ))}
-            </table>
-          </div>
+          visibleRows.length > 0 ? (
+            <SkillsTable
+              columns={data.harnessColumns}
+              rows={visibleRows}
+              busyId={busyId}
+              onOpenSkill={setSelectedSkillRef}
+              onToggleCell={handleToggleCell}
+              onRunPrimaryAction={handlePrimaryAction}
+            />
+          ) : (
+            <SkillsEmptyState onResetFilters={() => setFilters(resetSkillsFilters())} />
+          )
         ) : null}
 
         {status === "error" ? (
@@ -273,30 +170,4 @@ export function SkillsPage({ refreshToken, onDataChanged }: SkillsPageProps): JS
       />
     </>
   );
-}
-
-function cellLabel(state: string): string {
-  switch (state) {
-    case "found":
-      return "Found";
-    case "builtin":
-      return "Built-in";
-    default:
-      return "—";
-  }
-}
-
-function statusRank(status: SkillStatus): number {
-  switch (status) {
-    case "Custom":
-      return 0;
-    case "Found locally":
-      return 1;
-    case "Managed":
-      return 2;
-    case "Built-in":
-      return 3;
-    default:
-      return 9;
-  }
 }

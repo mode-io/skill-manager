@@ -25,6 +25,9 @@ class HttpApiTests(unittest.TestCase):
             detail = harness.get_json(f"/skills/{shared_audit['skillRef']}")
 
             self.assertEqual(shared_audit["displayStatus"], "Managed")
+            self.assertFalse(shared_audit["needsAttention"])
+            self.assertEqual(shared_audit["defaultSortRank"], 2)
+            self.assertNotIn("isBuiltin", shared_audit)
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertTrue(any(harness["harness"] == "codex" for harness in detail["harnesses"]))
 

@@ -1,0 +1,142 @@
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(4, 5, 8, 0.56);
+}
+
+.drawer {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  width: min(560px, calc(100vw - 32px));
+  height: calc(100vh - 32px);
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(14, 17, 22, 0.96);
+  box-shadow: var(--shadow-panel);
+  overflow-y: auto;
+}
+
+.drawer__header,
+.drawer__actions,
+.section-heading,
+.detail-harness-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.drawer__header {
+  margin-bottom: 18px;
+}
+
+.drawer__header h2 {
+  margin: 0;
+  font-size: 1.48rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.drawer__eyebrow {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.drawer__actions {
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.drawer__body {
+  display: grid;
+  gap: 20px;
+}
+
+.panel-section,
+.details-block,
+.settings-row {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.84);
+}
+
+.section-heading h3 {
+  margin: 0;
+}
+
+.section-heading span {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.detail-copy,
+.settings-row p,
+.location-row p {
+  color: var(--color-text-muted);
+}
+
+.detail-alert {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(240, 141, 121, 0.42);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.detail-harness-list,
+.location-list,
+.settings-list {
+  display: grid;
+  gap: 12px;
+}
+
+.details-block summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.definition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 16px;
+  margin-top: 14px;
+}
+
+.definition-grid dt {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.definition-grid dd {
+  margin: 6px 0 0;
+  word-break: break-word;
+}
+
+.location-row strong {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .drawer {
+    top: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+}

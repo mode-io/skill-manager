@@ -4,11 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "dev": "VITE_API_BASE=/api vite --host 127.0.0.1 --port 5173",
+    "dev:backend": "python3 -m skill_manager --host 127.0.0.1 --port 8000 --no-open-browser",
+    "build": "VITE_API_BASE= vite build",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-switch": "^1.2.6",
     "lucide-react": "^1.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

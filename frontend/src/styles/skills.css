@@ -1,0 +1,317 @@
+.skills-page {
+  display: grid;
+  gap: 18px;
+}
+
+.skills-page__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.skills-page__header .page-header__copy {
+  max-width: 720px;
+}
+
+.skills-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.skills-overview__metric {
+  min-width: 132px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.88);
+  text-align: left;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.skills-overview__metric.is-emphasis {
+  border-color: rgba(243, 201, 105, 0.32);
+}
+
+.skills-overview__metric.is-active {
+  border-color: rgba(240, 163, 107, 0.42);
+  background: var(--color-accent-soft);
+}
+
+.skills-overview__metric.is-emphasis.is-active {
+  border-color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.skills-overview__label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.skills-overview__value {
+  display: block;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.skills-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.skills-toolbar__search {
+  position: relative;
+  width: min(520px, 100%);
+}
+
+.skills-toolbar__search input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.88);
+  padding: 0 14px 0 38px;
+  color: var(--color-text);
+}
+
+.skills-toolbar__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+
+.skills-toolbar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.skills-toolbar__segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.88);
+}
+
+.skills-toolbar__segment,
+.skills-toolbar__toggle,
+.skills-toolbar__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.skills-toolbar__segment.is-active,
+.skills-toolbar__toggle.is-active {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+}
+
+.skills-toolbar__toggle.is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.skills-toolbar__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.88);
+  color: var(--color-text);
+}
+
+.skills-toolbar__select select {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding-right: 4px;
+}
+
+.skills-toolbar__select select:focus {
+  outline: none;
+}
+
+.skills-toolbar__chevron {
+  color: var(--color-text-muted);
+}
+
+.skills-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(15, 17, 22, 0.86);
+}
+
+.skills-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.skills-table th,
+.skills-table td {
+  padding: 14px 12px;
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.skills-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-top: none;
+  background: rgba(20, 24, 32, 0.96);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.skills-table__row:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.skills-table__row.is-attention td:first-child {
+  border-left: 2px solid rgba(243, 201, 105, 0.62);
+}
+
+.skills-table tbody tr:first-child td {
+  border-top: none;
+}
+
+.skills-table__skill-cell {
+  min-width: 280px;
+}
+
+.skills-table__status-cell {
+  min-width: 220px;
+}
+
+.skills-table__tool-cell {
+  width: 92px;
+  text-align: center;
+}
+
+.skills-table__action-cell {
+  width: 160px;
+}
+
+.skills-row__skill,
+.skills-row__status {
+  display: grid;
+  gap: 8px;
+}
+
+.skills-row__name-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  text-align: left;
+}
+
+.skills-row__description,
+.skills-row__attention {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.skills-row__description {
+  line-height: 1.45;
+}
+
+.skills-row__attention {
+  font-size: 0.88rem;
+}
+
+.skills-row__switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.skills-row__empty {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.skills-row__action {
+  min-width: 120px;
+}
+
+.skills-empty-state {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 24, 32, 0.84);
+}
+
+.skills-empty-state__eyebrow {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.skills-empty-state h3,
+.skills-empty-state p {
+  margin: 0;
+}
+
+.skills-empty-state p {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 900px) {
+  .skills-page__header {
+    grid-template-columns: 1fr;
+  }
+
+  .skills-toolbar__controls {
+    align-items: stretch;
+  }
+
+  .skills-toolbar__segments {
+    width: 100%;
+  }
+
+  .skills-toolbar__select,
+  .skills-toolbar__toggle,
+  .skills-toolbar__reset {
+    min-height: 40px;
+  }
+}

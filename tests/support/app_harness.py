@@ -8,8 +8,10 @@ from tempfile import TemporaryDirectory
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from skill_manager.api import serve_in_thread
 from skill_manager.application import ApplicationService
+from skill_manager.application.marketplace import MarketplaceService
+from skill_manager.application.read_model_service import ReadModelService
+from skill_manager.api import serve_in_thread
 
 from .command_runner import StubCommandRunner
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
@@ -22,6 +24,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         frontend_dist: Path | None = None,
         mixed: bool = False,
         fixture_factory: Callable[[FakeHomeSpec], StubCommandRunner] | None = None,
+        marketplace: MarketplaceService | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name))
@@ -29,7 +32,13 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             raise ValueError("pass either mixed=True or fixture_factory, not both")
         seeder = fixture_factory or (seed_mixed_fixture if mixed else None)
         self.runner = seeder(self.spec) if seeder is not None else StubCommandRunner()
-        self.service = ApplicationService.from_environment(self.spec.env(), command_runner=self.runner)
+        if marketplace is None:
+            self.service = ApplicationService.from_environment(self.spec.env(), command_runner=self.runner)
+        else:
+            self.service = ApplicationService(
+                ReadModelService.from_environment(self.spec.env(), command_runner=self.runner),
+                marketplace=marketplace,
+            )
         self.server = serve_in_thread(self.service, frontend_dist=frontend_dist)
         self.base_url = self.server.base_url
 
