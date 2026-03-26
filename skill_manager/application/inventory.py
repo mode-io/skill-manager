@@ -88,9 +88,21 @@ class InventoryEntry:
     def attention_message(self) -> str | None:
         if self.is_custom:
             return "Modified locally; source updates are disabled."
-        if self.kind == "found" and len(self._harness_presence()) > 1:
-            return f"Found locally in {len(self._harness_presence())} tools."
         return None
+
+    @property
+    def needs_attention(self) -> bool:
+        return self.is_custom
+
+    @property
+    def default_sort_rank(self) -> int:
+        order = {
+            "Custom": 0,
+            "Found locally": 1,
+            "Managed": 2,
+            "Built-in": 3,
+        }
+        return order[self.display_status]
 
     @property
     def can_update(self) -> bool:
@@ -117,8 +129,9 @@ class InventoryEntry:
             "description": self.description,
             "displayStatus": self.display_status,
             "attentionMessage": self.attention_message,
+            "needsAttention": self.needs_attention,
+            "defaultSortRank": self.default_sort_rank,
             "primaryAction": self.primary_action,
-            "isBuiltin": self.kind == "builtin",
             "cells": [self._cell_dict(column) for column in columns],
         }
 
@@ -335,7 +348,7 @@ class SkillInventory:
             "custom": sum(1 for entry in self.entries if entry.display_status == "Custom"),
             "builtIn": sum(1 for entry in self.entries if entry.display_status == "Built-in"),
         }
-        counts["needsAction"] = counts["foundLocally"] + counts["custom"]
+        counts["needsAction"] = counts["custom"]
         return {
             "summary": counts,
             "harnessColumns": [column.to_dict() for column in self.columns],

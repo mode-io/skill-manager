@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from skill_manager.domain import SourceDescriptor, fingerprint_package, parse_skill_package
 from skill_manager.harness import CommandRunner
 from skill_manager.harness.link_operator import LinkOperator, MutationError
-from skill_manager.sources import GitHubSource, fetch_agentskill
+from skill_manager.sources import GitHubAvatarAsset, GitHubSource, fetch_agentskill
 
 from .inventory import InventoryEntry, SkillInventory
 from .marketplace import MarketplaceService
@@ -114,11 +114,18 @@ class ApplicationService:
                 raise MutationError(str(error), status=409) from error
         return {"ok": True}
 
-    def popular_marketplace(self) -> list[dict[str, object]]:
-        return self.marketplace.popular()
+    def popular_marketplace(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
+        return self.marketplace.popular_page(limit=limit, offset=offset)
 
-    def search_marketplace(self, query: str) -> list[dict[str, object]]:
-        return self.marketplace.search(query)
+    def search_marketplace(self, query: str, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
+        return self.marketplace.search_page(query, limit=limit, offset=offset)
+
+    def marketplace_avatar(self, *, repo: str | None = None, owner: str | None = None) -> GitHubAvatarAsset | None:
+        if repo:
+            return self.marketplace.avatar_for_repo(repo)
+        if owner:
+            return self.marketplace.avatar_for_owner(owner)
+        return None
 
     def install_skill(self, source_kind: str, source_locator: str) -> dict[str, bool]:
         with TemporaryDirectory(prefix="skill-install-") as work_dir:

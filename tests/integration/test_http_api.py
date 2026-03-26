@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from urllib.request import urlopen
 
 from tests.support import AppTestHarness, seed_divergent_source_fixture
 
@@ -25,6 +28,9 @@ class HttpApiTests(unittest.TestCase):
             detail = harness.get_json(f"/skills/{shared_audit['skillRef']}")
 
             self.assertEqual(shared_audit["displayStatus"], "Managed")
+            self.assertFalse(shared_audit["needsAttention"])
+            self.assertEqual(shared_audit["defaultSortRank"], 2)
+            self.assertNotIn("isBuiltin", shared_audit)
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertTrue(any(harness["harness"] == "codex" for harness in detail["harnesses"]))
 
@@ -40,6 +46,18 @@ class HttpApiTests(unittest.TestCase):
         with AppTestHarness() as harness:
             payload = harness.get_json("/skills/missing-entry", expected_status=404)
             self.assertIn("unknown skill ref", payload["error"])
+
+    def test_frontend_skill_routes_return_spa_shell_when_dist_is_present(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-dist-") as tempdir:
+            dist = Path(tempdir)
+            (dist / "index.html").write_text("<!doctype html><html><body><div id='root'>skill-manager</div></body></html>", encoding="utf-8")
+
+            with AppTestHarness(frontend_dist=dist) as harness:
+                for path in ("/skills/managed", "/skills/found-local"):
+                    with urlopen(f"{harness.base_url}{path}") as response:
+                        body = response.read().decode("utf-8")
+                    self.assertEqual(response.status, 200)
+                    self.assertIn("<div id='root'>skill-manager</div>", body)
 
 
 if __name__ == "__main__":

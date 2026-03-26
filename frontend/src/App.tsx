@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/AppShell";
 import { SettingsDrawer } from "./components/SettingsDrawer";
 import { MarketplacePage } from "./pages/MarketplacePage";
-import { SkillsPage } from "./pages/SkillsPage";
+import { FoundLocalSkillsPage } from "./pages/FoundLocalSkillsPage";
+import { ManagedSkillsPage } from "./pages/ManagedSkillsPage";
+import { SkillsWorkspacePage } from "./pages/SkillsWorkspacePage";
 
 export function App(): JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -17,7 +19,12 @@ export function App(): JSX.Element {
   return (
     <AppShell onOpenSettings={() => setSettingsOpen(true)}>
       <Routes>
-        <Route index element={<SkillsPage refreshToken={refreshToken} onDataChanged={handleDataChanged} />} />
+        <Route index element={<Navigate to="/skills/managed" replace />} />
+        <Route path="skills" element={<SkillsWorkspacePage refreshToken={refreshToken} onDataChanged={handleDataChanged} />}>
+          <Route index element={<Navigate to="managed" replace />} />
+          <Route path="managed" element={<ManagedSkillsPage />} />
+          <Route path="found-local" element={<FoundLocalSkillsPage />} />
+        </Route>
         <Route
           path="marketplace"
           element={<MarketplacePage refreshToken={refreshToken} onDataChanged={handleDataChanged} />}

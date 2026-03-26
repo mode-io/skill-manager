@@ -1,0 +1,203 @@
+.btn,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-panel-strong);
+  color: var(--color-text);
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.btn:hover,
+.icon-button:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-panel-elevated);
+}
+
+.btn:disabled,
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn.btn-primary {
+  border-color: rgba(240, 163, 107, 0.42);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.btn.btn-primary:hover {
+  border-color: rgba(240, 163, 107, 0.58);
+  background: rgba(240, 163, 107, 0.18);
+}
+
+.btn.btn-secondary {
+  background: var(--color-panel-strong);
+}
+
+.icon-button {
+  width: 38px;
+  padding: 0;
+}
+
+.ui-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  width: 36px;
+  height: 22px;
+  padding: 2px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ui-switch:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.ui-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(240, 163, 107, 0.18);
+}
+
+.ui-switch[data-state="checked"] {
+  border-color: rgba(240, 163, 107, 0.6);
+  background: rgba(240, 163, 107, 0.88);
+}
+
+.ui-switch[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-switch__thumb {
+  pointer-events: none;
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #f4f6f8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.26);
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  transform: translateX(0);
+}
+
+.ui-switch[data-state="checked"] .ui-switch__thumb {
+  background: #fff8f1;
+  transform: translateX(14px);
+}
+
+.ui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-panel-elevated);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ui-status-badge--success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.ui-status-badge--warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.ui-status-badge--neutral {
+  background: var(--color-panel-elevated);
+  color: var(--color-text);
+}
+
+.ui-status-badge--muted {
+  color: var(--color-text-muted);
+}
+
+.detail-harness-row__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-harness-row__empty {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(240, 141, 121, 0.42);
+  border-radius: var(--radius);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.error-banner__message {
+  min-width: 0;
+}
+
+.error-banner__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+}
+
+.spinner {
+  display: inline-block;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+}
+
+.spinner-md {
+  width: 20px;
+  height: 20px;
+}
+
+.spinner-lg {
+  width: 28px;
+  height: 28px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,16 +1,42 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
-import time
-from urllib.request import Request, urlopen
+from typing import Protocol
+from urllib.parse import quote
 
-from skill_manager.sources import search_agentskill, search_skillssh
-from skill_manager.sources.github import github_repo_from_locator
+from skill_manager.sources import (
+    GitHubAvatarAsset,
+    GitHubIdentitySnapshot,
+    GitHubRepoMetadataClient,
+    github_repo_from_locator,
+    github_repo_url,
+    search_agentskill,
+    search_skillssh,
+)
 from skill_manager.sources.types import SkillListing
 
-_CACHE_TTL_SECONDS = 900
-_TIMEOUT_SECONDS = 10
+
+class MarketplaceSearchProvider(Protocol):
+    def __call__(self, query: str, *, limit: int = 20) -> list[SkillListing]:
+        ...
+
+
+@dataclass(frozen=True)
+class MarketplaceGitHubIdentity:
+    repo: str | None
+    url: str | None
+    owner_login: str | None
+    avatar_path: str | None
+    stars: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "repo": self.repo,
+            "url": self.url,
+            "ownerLogin": self.owner_login,
+            "avatarPath": self.avatar_path,
+            "stars": self.stars,
+        }
 
 
 @dataclass(frozen=True)
@@ -21,13 +47,12 @@ class MarketplaceItem:
     source_locator: str
     registry: str
     installs: int
-    github_repo: str | None
-    github_stars: int
-    badge: str
+    github: MarketplaceGitHubIdentity | None
 
     @property
     def popularity(self) -> int:
-        return self.github_stars if self.github_stars > 0 else self.installs
+        github_stars = self.github.stars if self.github is not None else 0
+        return github_stars if github_stars > 0 else self.installs
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -37,44 +62,77 @@ class MarketplaceItem:
             "sourceKind": self.source_kind,
             "sourceLocator": self.source_locator,
             "registry": self.registry,
-            "installs": self.installs,
-            "githubRepo": self.github_repo,
-            "githubStars": self.github_stars,
-            "badge": self.badge,
-            "popularity": self.popularity,
+            "github": self.github.to_dict() if self.github is not None else None,
+        }
+
+
+@dataclass(frozen=True)
+class MarketplacePageResult:
+    items: tuple[MarketplaceItem, ...]
+    next_offset: int | None
+    has_more: bool
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "items": [item.to_dict() for item in self.items],
+            "nextOffset": self.next_offset,
+            "hasMore": self.has_more,
         }
 
 
 class MarketplaceService:
-    def __init__(self) -> None:
-        self._github_star_cache: dict[str, tuple[float, int]] = {}
+    DEFAULT_PAGE_SIZE = 18
+    MAX_PAGE_SIZE = 60
 
-    def popular(self) -> list[dict[str, object]]:
-        return [item.to_dict() for item in self._normalize(self._search_all(""))]
+    def __init__(
+        self,
+        *,
+        searchers: tuple[MarketplaceSearchProvider, ...] | None = None,
+        github_client: GitHubRepoMetadataClient | None = None,
+    ) -> None:
+        self._searchers = searchers or (search_skillssh, search_agentskill)
+        self.github_client = github_client or GitHubRepoMetadataClient()
 
-    def search(self, query: str) -> list[dict[str, object]]:
+    def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
+        return self._page("", limit=limit, offset=offset).to_dict()
+
+    def search_page(self, query: str, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         if not query.strip():
-            return self.popular()
-        return [item.to_dict() for item in self._normalize(self._search_all(query))]
+            return self.popular_page(limit=limit, offset=offset)
+        return self._page(query, limit=limit, offset=offset).to_dict()
 
-    def _search_all(self, query: str) -> list[SkillListing]:
+    def avatar_for_repo(self, repo: str) -> GitHubAvatarAsset | None:
+        return self.github_client.avatar_for_repo(repo)
+
+    def avatar_for_owner(self, owner: str) -> GitHubAvatarAsset | None:
+        return self.github_client.avatar_for_owner(owner)
+
+    def _search_all(self, query: str, *, per_source_limit: int) -> tuple[list[SkillListing], bool]:
         listings: list[SkillListing] = []
-        for searcher in (search_skillssh, search_agentskill):
+        maybe_more = False
+        for searcher in self._searchers:
             try:
-                listings.extend(searcher(query, limit=12))
+                results = searcher(query, limit=per_source_limit)
             except Exception:  # noqa: BLE001
                 continue
-        return listings
+            listings.extend(results)
+            if len(results) >= per_source_limit:
+                maybe_more = True
+        return listings, maybe_more
 
     def _normalize(self, listings: list[SkillListing]) -> list[MarketplaceItem]:
         deduped: dict[tuple[str, str], MarketplaceItem] = {}
         for listing in listings:
             repo = listing.github_repo
-            if repo is None and listing.source_kind == "github":
+            if (repo is None or repo.count("/") != 1) and listing.source_kind == "github":
                 repo = github_repo_from_locator(listing.source_locator)
-            stars = listing.github_stars
-            if stars <= 0 and repo:
-                stars = self._github_stars(repo)
+            owner_login = listing.github_owner
+            if (owner_login is None or not owner_login) and isinstance(repo, str) and repo.count("/") == 1:
+                owner_login = repo.split("/", 1)[0]
+            github = self._github_identity(
+                snapshot=self.github_client.identity_snapshot(repo=repo, owner=owner_login),
+                stars_hint=listing.github_stars,
+            )
             item = MarketplaceItem(
                 name=listing.name,
                 description=listing.description,
@@ -82,9 +140,7 @@ class MarketplaceService:
                 source_locator=listing.source_locator,
                 registry=listing.registry,
                 installs=listing.installs,
-                github_repo=repo,
-                github_stars=stars,
-                badge="Official" if listing.source_kind == "github" else "Community",
+                github=github,
             )
             key = (item.source_kind, item.source_locator)
             current = deduped.get(key)
@@ -95,24 +151,63 @@ class MarketplaceService:
             key=lambda item: (-item.popularity, -item.installs, item.name.lower(), item.source_locator),
         )
 
-    def _github_stars(self, repo: str) -> int:
-        cached = self._github_star_cache.get(repo)
-        now = time.time()
-        if cached is not None and (now - cached[0]) < _CACHE_TTL_SECONDS:
-            return cached[1]
-
-        request = Request(
-            f"https://api.github.com/repos/{repo}",
-            headers={
-                "Accept": "application/vnd.github+json",
-                "User-Agent": "skill-manager/0.1",
-            },
+    def _page(self, query: str, *, limit: int | None, offset: int) -> MarketplacePageResult:
+        page_limit = self._normalize_limit(limit)
+        page_offset = max(offset, 0)
+        fetch_count = page_offset + page_limit + 1
+        listings, maybe_more = self._search_all(query, per_source_limit=fetch_count)
+        normalized = self._normalize(listings)
+        page_items = normalized[page_offset:page_offset + page_limit]
+        has_more = len(normalized) > (page_offset + page_limit) or maybe_more
+        next_offset = page_offset + len(page_items) if has_more and page_items else None
+        return MarketplacePageResult(
+            items=tuple(page_items),
+            next_offset=next_offset,
+            has_more=has_more and bool(page_items),
         )
-        try:
-            with urlopen(request, timeout=_TIMEOUT_SECONDS) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-            stars = int(payload.get("stargazers_count", 0))
-        except Exception:  # noqa: BLE001
-            stars = 0
-        self._github_star_cache[repo] = (now, stars)
-        return stars
+
+    def _github_identity(
+        self,
+        *,
+        snapshot: GitHubIdentitySnapshot,
+        stars_hint: int,
+    ) -> MarketplaceGitHubIdentity | None:
+        repo_name = snapshot.repo
+        resolved_owner = snapshot.owner
+        star_count = snapshot.stars if snapshot.stars > 0 else stars_hint
+        if repo_name is None and resolved_owner is None and star_count <= 0:
+            return None
+
+        repo_url = snapshot.repo_url
+        if repo_url is None and repo_name is not None:
+            repo_url = github_repo_url(repo_name)
+        if repo_url is None:
+            repo_url = snapshot.owner_url
+
+        avatar_path: str | None = None
+        if repo_name is not None:
+            avatar_path = self._avatar_path(repo=repo_name)
+        elif resolved_owner is not None:
+            avatar_path = self._avatar_path(owner=resolved_owner)
+
+        return MarketplaceGitHubIdentity(
+            repo=repo_name,
+            url=repo_url,
+            owner_login=resolved_owner,
+            avatar_path=avatar_path,
+            stars=star_count,
+        )
+
+    @staticmethod
+    def _avatar_path(*, repo: str | None = None, owner: str | None = None) -> str:
+        if repo is not None:
+            return f"/marketplace/avatar?repo={quote(repo, safe='')}"
+        if owner is not None:
+            return f"/marketplace/avatar?owner={quote(owner, safe='')}"
+        raise ValueError("repo or owner is required for an avatar path")
+
+    @classmethod
+    def _normalize_limit(cls, limit: int | None) -> int:
+        if limit is None:
+            return cls.DEFAULT_PAGE_SIZE
+        return max(1, min(limit, cls.MAX_PAGE_SIZE))

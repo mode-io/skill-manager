@@ -12,4 +12,5 @@ class SkillListing:
     registry: str
     installs: int = 0
     github_repo: str | None = None
+    github_owner: str | None = None
     github_stars: int = 0

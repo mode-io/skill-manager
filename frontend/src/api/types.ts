@@ -7,7 +7,6 @@ export interface SkillsSummary {
   foundLocally: number;
   custom: number;
   builtIn: number;
-  needsAction: number;
 }
 
 export interface HarnessColumn {
@@ -33,8 +32,9 @@ export interface SkillTableRow {
   description: string;
   displayStatus: SkillStatus;
   attentionMessage: string | null;
+  needsAttention: boolean;
+  defaultSortRank: number;
   primaryAction: SkillAction;
-  isBuiltin: boolean;
   cells: HarnessCell[];
 }
 
@@ -108,11 +108,21 @@ export interface MarketplaceItem {
   sourceKind: string;
   sourceLocator: string;
   registry: string;
-  installs: number;
-  githubRepo: string | null;
-  githubStars: number;
-  badge: string;
-  popularity: number;
+  github: MarketplaceGitHubIdentity | null;
+}
+
+export interface MarketplaceGitHubIdentity {
+  repo: string | null;
+  url: string | null;
+  ownerLogin: string | null;
+  avatarPath: string | null;
+  stars: number;
+}
+
+export interface MarketplacePageResult {
+  items: MarketplaceItem[];
+  nextOffset: number | null;
+  hasMore: boolean;
 }
 
 export interface SettingsHarness {

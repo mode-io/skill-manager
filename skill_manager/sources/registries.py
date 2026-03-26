@@ -31,6 +31,7 @@ def search_skillssh(query: str, *, limit: int = 20) -> list[SkillListing]:
             registry="skillssh",
             installs=item.get("installs", 0),
             github_repo=item.get("source"),
+            github_owner=_extract_github_owner(item),
         )
         for item in payload.get("skills", [])
         if item.get("source") and item.get("skillId")
@@ -51,6 +52,7 @@ def search_agentskill(query: str, *, limit: int = 20) -> list[SkillListing]:
             registry="agentskill",
             installs=item.get("installCount", 0),
             github_repo=_extract_github_repo(item),
+            github_owner=_extract_github_owner(item),
             github_stars=int(item.get("githubStars", 0) or 0),
         )
         for item in items
@@ -83,4 +85,18 @@ def _extract_github_repo(item: dict[str, object]) -> str | None:
             parts = repo.split("/")
             if len(parts) >= 2:
                 return f"{parts[0]}/{parts[1]}"
+    return None
+
+
+def _extract_github_owner(item: dict[str, object]) -> str | None:
+    for key in ("owner", "githubOwner", "ownerLogin"):
+        value = item.get(key)
+        if isinstance(value, str) and value and "/" not in value and not value.startswith("http"):
+            return value
+    repo = _extract_github_repo(item)
+    if repo is not None:
+        return repo.split("/", 1)[0]
+    slug = item.get("slug")
+    if isinstance(slug, str) and slug.count("/") >= 1:
+        return slug.split("/", 1)[0]
     return None

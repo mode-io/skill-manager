@@ -28,6 +28,8 @@ class ApplicationServiceTests(unittest.TestCase):
 
             trace_lens = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
             self.assertEqual(trace_lens["displayStatus"], "Found locally")
+            self.assertFalse(trace_lens["needsAttention"])
+            self.assertEqual(trace_lens["defaultSortRank"], 1)
             self.assertEqual(
                 {cell["harness"] for cell in trace_lens["cells"] if cell["state"] == "found"},
                 {"codex", "claude"},
@@ -35,6 +37,9 @@ class ApplicationServiceTests(unittest.TestCase):
 
             scout = next(row for row in payload["rows"] if row["name"] == "Scout")
             self.assertEqual(scout["displayStatus"], "Built-in")
+            self.assertFalse(scout["needsAttention"])
+            self.assertEqual(scout["defaultSortRank"], 3)
+            self.assertNotIn("isBuiltin", trace_lens)
 
     def test_list_skills_marks_shared_store_modifications_as_custom(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -67,6 +72,8 @@ class ApplicationServiceTests(unittest.TestCase):
 
             self.assertEqual(audit["displayStatus"], "Custom")
             self.assertEqual(audit["attentionMessage"], "Modified locally; source updates are disabled.")
+            self.assertTrue(audit["needsAttention"])
+            self.assertEqual(audit["defaultSortRank"], 0)
 
     def test_divergent_source_backed_local_copies_become_separate_found_rows(self) -> None:
         with TemporaryDirectory() as temp_dir:

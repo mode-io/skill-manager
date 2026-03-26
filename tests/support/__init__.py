@@ -11,12 +11,15 @@ from .fake_home import (
     seed_skill_package,
     seed_store_manifest,
 )
+from .marketplace_fixture import create_fixture_marketplace_service, fixture_marketplace_search
 
 __all__ = [
     "AppTestHarness",
     "FakeHomeSpec",
     "StubCommandRunner",
+    "create_fixture_marketplace_service",
     "create_fake_home_spec",
+    "fixture_marketplace_search",
     "seed_builtin_catalog",
     "seed_divergent_source_fixture",
     "seed_malformed_shared_directory",

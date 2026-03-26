@@ -21,7 +21,7 @@ function mockSkillsPage() {
       return {
         ok: true,
         json: async () => ({
-          summary: { managed: 1, foundLocally: 1, custom: 0, builtIn: 0, needsAction: 1 },
+          summary: { managed: 1, foundLocally: 1, custom: 1, builtIn: 1 },
           harnessColumns: [{ harness: "codex", label: "Codex" }],
           rows: [
             {
@@ -30,9 +30,43 @@ function mockSkillsPage() {
               description: "Shared audit workflow",
               displayStatus: "Managed",
               attentionMessage: null,
+              needsAttention: false,
+              defaultSortRank: 2,
               primaryAction: { kind: "open", label: "Open" },
-              isBuiltin: false,
               cells: [{ harness: "codex", label: "Codex", state: "disabled", interactive: true }],
+            },
+            {
+              skillRef: "shared:audit-skill",
+              name: "Audit Skill",
+              description: "Custom audit workflow",
+              displayStatus: "Custom",
+              attentionMessage: "Modified locally; source updates are disabled.",
+              needsAttention: true,
+              defaultSortRank: 0,
+              primaryAction: { kind: "open", label: "Open" },
+              cells: [{ harness: "codex", label: "Codex", state: "enabled", interactive: true }],
+            },
+            {
+              skillRef: "local:trace-lens",
+              name: "Trace Lens",
+              description: "Trace review workflow",
+              displayStatus: "Found locally",
+              attentionMessage: null,
+              needsAttention: false,
+              defaultSortRank: 1,
+              primaryAction: { kind: "manage", label: "Bring under management" },
+              cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
+            },
+            {
+              skillRef: "builtin:scout",
+              name: "Scout",
+              description: "Built-in scouting workflow",
+              displayStatus: "Built-in",
+              attentionMessage: null,
+              needsAttention: false,
+              defaultSortRank: 3,
+              primaryAction: { kind: "open", label: "Open" },
+              cells: [{ harness: "codex", label: "Codex", state: "builtin", interactive: false }],
             },
           ],
         }),
@@ -64,24 +98,30 @@ function mockSkillsPage() {
         }),
       };
     }
-    if (url === "/marketplace/popular") {
+    if (url.startsWith("/marketplace/popular")) {
       return {
         ok: true,
-        json: async () => [
-          {
-            id: "github:github:mode-io/shared-audit",
-            name: "Shared Audit",
-            description: "Shared audit workflow",
-            sourceKind: "github",
-            sourceLocator: "github:mode-io/shared-audit",
-            registry: "skillssh",
-            installs: 12,
-            githubRepo: "mode-io/shared-audit",
-            githubStars: 33,
-            badge: "Official",
-            popularity: 33,
-          },
-        ],
+        json: async () => ({
+          items: [
+            {
+              id: "github:github:mode-io/shared-audit",
+              name: "Shared Audit",
+              description: "Shared audit workflow",
+              sourceKind: "github",
+              sourceLocator: "github:mode-io/shared-audit",
+              registry: "skillssh",
+              github: {
+                repo: "mode-io/shared-audit",
+                url: "https://github.com/mode-io/shared-audit",
+                ownerLogin: "mode-io",
+                avatarPath: "/marketplace/avatar?repo=mode-io%2Fshared-audit",
+                stars: 33,
+              },
+            },
+          ],
+          nextOffset: null,
+          hasMore: false,
+        }),
       };
     }
     if (url === "/settings") {
@@ -122,8 +162,23 @@ describe("App routing", () => {
     mockSkillsPage();
     renderApp("/");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Skills" })).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Managed skills" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Managed skills list")).toBeInTheDocument();
     expect(screen.getByText("Shared Audit")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search managed skills by name, description, or state")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Enable Shared Audit for Codex" })).toBeInTheDocument();
+    expect(screen.getByText("Audit Skill")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bring all eligible skills under management" })).not.toBeInTheDocument();
+  });
+
+  it("renders the found-local intake page", async () => {
+    mockSkillsPage();
+    renderApp("/skills/found-local");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Found locally" })).toBeInTheDocument());
+    expect(screen.getByLabelText("Found local skills list")).toBeInTheDocument();
+    expect(screen.getByText("Trace Lens")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bring all eligible skills under management" })).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 
   it("renders Marketplace page at /marketplace", async () => {
@@ -131,6 +186,8 @@ describe("App routing", () => {
     renderApp("/marketplace");
     await waitFor(() => expect(screen.getByText("Popular skills")).toBeInTheDocument());
     expect(screen.getByText("Shared Audit")).toBeInTheDocument();
+    expect(screen.getByAltText("Avatar for mode-io")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "mode-io/shared-audit" })).toBeInTheDocument();
   });
 
   it("opens the Settings drawer", async () => {

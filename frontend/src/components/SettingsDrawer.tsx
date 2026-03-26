@@ -66,7 +66,7 @@ export function SettingsDrawer({
   return (
     <>
       <button type="button" className="drawer-backdrop" aria-label="Close settings" onClick={onClose} />
-      <aside className="drawer" aria-label="Settings drawer">
+      <aside className="drawer drawer--settings" aria-label="Settings drawer">
         <div className="drawer__header">
           <div>
             <p className="drawer__eyebrow">Operations</p>

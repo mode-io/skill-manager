@@ -5,6 +5,9 @@ import { disableSkill, enableSkill, fetchSkillDetail, manageSkill, updateSkill }
 import type { SkillDetail } from "../api/types";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { StatusBadge } from "./ui/StatusBadge";
+import { Switch } from "./ui/Switch";
+import { passiveHarnessStateBadge, skillStatusTone } from "./ui/statusMappings";
 
 interface SkillDetailDrawerProps {
   skillRef: string | null;
@@ -74,7 +77,7 @@ export function SkillDetailDrawer({
   return (
     <>
       <button type="button" className="drawer-backdrop" aria-label="Close skill details" onClick={onClose} />
-      <aside className="drawer" aria-label="Skill details drawer">
+      <aside className="drawer drawer--detail" aria-label="Skill details drawer">
         <div className="drawer__header">
           <div>
             <p className="drawer__eyebrow">Skill details</p>
@@ -97,8 +100,9 @@ export function SkillDetailDrawer({
           <div className="drawer__body">
             <section className="panel-section">
               <div className="section-heading">
-                <h3>{detail.displayStatus}</h3>
+                <h3>Status</h3>
               </div>
+              <StatusBadge label={detail.displayStatus} tone={skillStatusTone(detail.displayStatus)} />
               <p className="detail-copy">{detail.statusMessage}</p>
               {detail.attentionMessage ? <p className="detail-alert">{detail.attentionMessage}</p> : null}
               <dl className="definition-grid">
@@ -157,25 +161,29 @@ export function SkillDetailDrawer({
                       <strong>{harness.label}</strong>
                       <p>{harness.paths.length ? harness.paths.join(", ") : "Not present"}</p>
                     </div>
-                    <div className="detail-harness-row__actions">
+                    <div className="detail-harness-row__control">
                       {detail.actions.canToggle && (harness.state === "enabled" || harness.state === "disabled") ? (
-                        <button
-                          type="button"
-                          className={`toggle-button${harness.state === "enabled" ? " is-enabled" : ""}`}
-                          disabled={busyAction !== null}
-                          onClick={() => void runAction(
-                            `toggle:${harness.harness}`,
-                            () => harness.state === "enabled"
-                              ? disableSkill(detail.skillRef, harness.harness)
-                              : enableSkill(detail.skillRef, harness.harness),
-                          )}
-                        >
-                          {busyAction === `toggle:${harness.harness}`
-                            ? <LoadingSpinner size="sm" label={`Updating ${harness.label}`} />
-                            : harness.state === "enabled" ? "On" : "Off"}
-                        </button>
+                        <>
+                          <Switch
+                            checked={harness.state === "enabled"}
+                            disabled={busyAction !== null}
+                            ariaLabel={`${harness.state === "enabled" ? "Disable" : "Enable"} ${detail.name} for ${harness.label}`}
+                            onCheckedChange={() => void runAction(
+                              `toggle:${harness.harness}`,
+                              () => harness.state === "enabled"
+                                ? disableSkill(detail.skillRef, harness.harness)
+                                : enableSkill(detail.skillRef, harness.harness),
+                            )}
+                          />
+                          {busyAction === `toggle:${harness.harness}` ? <LoadingSpinner size="sm" label={`Updating ${harness.label}`} /> : null}
+                        </>
+                      ) : passiveHarnessStateBadge(harness.state) ? (
+                        <StatusBadge
+                          label={passiveHarnessStateBadge(harness.state)!.label}
+                          tone={passiveHarnessStateBadge(harness.state)!.tone}
+                        />
                       ) : (
-                        <span className={`cell-indicator cell-indicator--${harness.state}`}>{detailStateLabel(harness.state)}</span>
+                        <span className="detail-harness-row__empty">—</span>
                       )}
                     </div>
                   </div>
@@ -224,19 +232,4 @@ export function SkillDetailDrawer({
       </aside>
     </>
   );
-}
-
-function detailStateLabel(state: string): string {
-  switch (state) {
-    case "enabled":
-      return "Enabled";
-    case "disabled":
-      return "Disabled";
-    case "found":
-      return "Found";
-    case "builtin":
-      return "Built-in";
-    default:
-      return "—";
-  }
 }

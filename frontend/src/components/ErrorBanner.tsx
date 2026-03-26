@@ -15,9 +15,11 @@ export function ErrorBanner({ message, onDismiss }: ErrorBannerProps): JSX.Eleme
 
   return (
     <div className="error-banner" role="alert">
-      <span>{message}</span>
+      <span className="error-banner__message">{message}</span>
       {onDismiss && (
-        <button onClick={onDismiss} aria-label="Dismiss error"><X size={16} /></button>
+        <button type="button" className="error-banner__dismiss" onClick={onDismiss} aria-label="Dismiss error">
+          <X size={16} />
+        </button>
       )}
     </div>
   );
