@@ -8,14 +8,12 @@ from skill_manager.sources import (
     GitHubAvatarAsset,
     GitHubIdentitySnapshot,
     GitHubRepoMetadataClient,
-    browse_skillssh,
     github_repo_from_locator,
     github_repo_url,
     search_agentskill,
     search_skillssh,
 )
 from skill_manager.sources.types import SkillListing
-from .marketplace_descriptions import MarketplaceDescriptionResolver
 
 
 class MarketplaceSearchProvider(Protocol):
@@ -42,9 +40,9 @@ class MarketplaceGitHubIdentity:
 
 
 @dataclass(frozen=True)
-class MarketplaceCandidate:
+class MarketplaceItem:
     name: str
-    description_hint: str | None
+    description: str
     source_kind: str
     source_locator: str
     registry: str
@@ -56,23 +54,11 @@ class MarketplaceCandidate:
         github_stars = self.github.stars if self.github is not None else 0
         return github_stars if github_stars > 0 else self.installs
 
-
-@dataclass(frozen=True)
-class MarketplaceItem:
-    name: str
-    description: str | None
-    description_status: str
-    source_kind: str
-    source_locator: str
-    registry: str
-    github: MarketplaceGitHubIdentity | None
-
     def to_dict(self) -> dict[str, object]:
         return {
             "id": f"{self.source_kind}:{self.source_locator}",
             "name": self.name,
             "description": self.description,
-            "descriptionStatus": self.description_status,
             "sourceKind": self.source_kind,
             "sourceLocator": self.source_locator,
             "registry": self.registry,
@@ -102,15 +88,10 @@ class MarketplaceService:
         self,
         *,
         searchers: tuple[MarketplaceSearchProvider, ...] | None = None,
-        browse_searchers: tuple[MarketplaceSearchProvider, ...] | None = None,
         github_client: GitHubRepoMetadataClient | None = None,
-        description_resolver: MarketplaceDescriptionResolver | None = None,
     ) -> None:
-        resolved_searchers = searchers or (search_skillssh, search_agentskill)
-        self._searchers = resolved_searchers
-        self._browse_searchers = browse_searchers or (resolved_searchers if searchers is not None else (browse_skillssh, search_agentskill))
+        self._searchers = searchers or (search_skillssh, search_agentskill)
         self.github_client = github_client or GitHubRepoMetadataClient()
-        self.description_resolver = description_resolver or MarketplaceDescriptionResolver()
 
     def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         return self._page("", limit=limit, offset=offset).to_dict()
@@ -129,8 +110,7 @@ class MarketplaceService:
     def _search_all(self, query: str, *, per_source_limit: int) -> tuple[list[SkillListing], bool]:
         listings: list[SkillListing] = []
         maybe_more = False
-        active_searchers = self._browse_searchers if not query.strip() else self._searchers
-        for searcher in active_searchers:
+        for searcher in self._searchers:
             try:
                 results = searcher(query, limit=per_source_limit)
             except Exception:  # noqa: BLE001
@@ -140,8 +120,8 @@ class MarketplaceService:
                 maybe_more = True
         return listings, maybe_more
 
-    def _normalize_candidates(self, listings: list[SkillListing]) -> list[MarketplaceCandidate]:
-        deduped: dict[tuple[str, str], MarketplaceCandidate] = {}
+    def _normalize(self, listings: list[SkillListing]) -> list[MarketplaceItem]:
+        deduped: dict[tuple[str, str], MarketplaceItem] = {}
         for listing in listings:
             repo = listing.github_repo
             if (repo is None or repo.count("/") != 1) and listing.source_kind == "github":
@@ -153,9 +133,9 @@ class MarketplaceService:
                 snapshot=self.github_client.identity_snapshot(repo=repo, owner=owner_login),
                 stars_hint=listing.github_stars,
             )
-            item = MarketplaceCandidate(
+            item = MarketplaceItem(
                 name=listing.name,
-                description_hint=listing.description_hint,
+                description=listing.description,
                 source_kind=listing.source_kind,
                 source_locator=listing.source_locator,
                 registry=listing.registry,
@@ -176,15 +156,14 @@ class MarketplaceService:
         page_offset = max(offset, 0)
         fetch_count = page_offset + page_limit + 1
         listings, maybe_more = self._search_all(query, per_source_limit=fetch_count)
-        normalized = self._normalize_candidates(listings)
-        page_candidates = normalized[page_offset:page_offset + page_limit]
-        page_items = tuple(self._materialize_item(candidate) for candidate in page_candidates)
+        normalized = self._normalize(listings)
+        page_items = normalized[page_offset:page_offset + page_limit]
         has_more = len(normalized) > (page_offset + page_limit) or maybe_more
-        next_offset = page_offset + len(page_candidates) if has_more and page_candidates else None
+        next_offset = page_offset + len(page_items) if has_more and page_items else None
         return MarketplacePageResult(
-            items=page_items,
+            items=tuple(page_items),
             next_offset=next_offset,
-            has_more=has_more and bool(page_candidates),
+            has_more=has_more and bool(page_items),
         )
 
     def _github_identity(
@@ -232,19 +211,3 @@ class MarketplaceService:
         if limit is None:
             return cls.DEFAULT_PAGE_SIZE
         return max(1, min(limit, cls.MAX_PAGE_SIZE))
-
-    def _materialize_item(self, candidate: MarketplaceCandidate) -> MarketplaceItem:
-        description = self.description_resolver.resolve(
-            source_kind=candidate.source_kind,
-            source_locator=candidate.source_locator,
-            description_hint=candidate.description_hint,
-        )
-        return MarketplaceItem(
-            name=candidate.name,
-            description=description.description,
-            description_status=description.status,
-            source_kind=candidate.source_kind,
-            source_locator=candidate.source_locator,
-            registry=candidate.registry,
-            github=candidate.github,
-        )

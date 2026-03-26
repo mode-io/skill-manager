@@ -19,8 +19,6 @@
   --color-danger-soft: rgba(240, 141, 121, 0.14);
   --color-warning: #f3c969;
   --color-warning-soft: rgba(243, 201, 105, 0.16);
-  --shadow-panel: 0 20px 48px rgba(0, 0, 0, 0.32);
-  --shadow-panel-soft: 0 12px 28px rgba(0, 0, 0, 0.22);
-  --radius-sm: 7px;
-  --radius-md: 12px;
+  --shadow-panel: 0 12px 28px rgba(0, 0, 0, 0.22);
+  --radius: 4px;
 }

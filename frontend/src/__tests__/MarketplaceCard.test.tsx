@@ -8,10 +8,11 @@ const item: MarketplaceItem = {
   id: "github:github:mode-io/skills/mode-switch",
   name: "Mode Switch",
   description: "Switch between supported skill execution modes.",
-  descriptionStatus: "resolved",
   sourceKind: "github",
   sourceLocator: "github:mode-io/skills/mode-switch",
   registry: "skillssh",
+  installs: 128,
+  badge: "Official",
   github: {
     repo: "mode-io/skills",
     url: "https://github.com/mode-io/skills",
@@ -22,14 +23,13 @@ const item: MarketplaceItem = {
 };
 
 describe("MarketplaceCard", () => {
-  it("renders the avatar image, repo identity, and title-adjacent star signal", () => {
+  it("renders the avatar image and repo identity in the header", () => {
     render(<MarketplaceCard item={item} disabled={false} installing={false} onInstall={() => {}} />);
 
     expect(screen.getByAltText("Avatar for mode-io")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "mode-io/skills" })).toBeInTheDocument();
     expect(screen.getByText("512")).toBeInTheDocument();
-    expect(screen.queryByText("Official")).not.toBeInTheDocument();
-    expect(screen.queryByText(/installs/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Repository")).not.toBeInTheDocument();
   });
 
   it("falls back to initials when the avatar image fails", () => {
@@ -38,19 +38,5 @@ describe("MarketplaceCard", () => {
     fireEvent.error(screen.getByAltText("Avatar for mode-io"));
 
     expect(screen.getByText("MO")).toBeInTheDocument();
-  });
-
-  it("shows a softer unavailable-description state instead of the old hard fallback copy", () => {
-    render(
-      <MarketplaceCard
-        item={{ ...item, description: null, descriptionStatus: "unavailable" }}
-        disabled={false}
-        installing={false}
-        onInstall={() => {}}
-      />,
-    );
-
-    expect(screen.getByText("Description unavailable.")).toBeInTheDocument();
-    expect(screen.queryByText("No description provided.")).not.toBeInTheDocument();
   });
 });

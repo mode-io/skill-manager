@@ -15,11 +15,17 @@ from skill_manager.harness.link_operator import MutationError
 class SkillManagerRequestHandler(BaseHTTPRequestHandler):
     service: ApplicationService
     frontend_dist: Path | None
+    frontend_routes = frozenset({
+        "/skills/managed",
+        "/skills/found-local",
+    })
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         if parsed.path == "/health":
             return self._write_json(self.service.health())
+        if parsed.path in self.frontend_routes:
+            return self._serve_static(parsed.path)
         if parsed.path == "/skills":
             return self._write_json(self.service.list_skills())
         if parsed.path.startswith("/skills/"):

@@ -68,11 +68,7 @@ export function MarketplaceCard({
         </div>
       </div>
 
-      {item.description ? (
-        <p className="marketplace-card__description">{item.description}</p>
-      ) : item.descriptionStatus === "unavailable" ? (
-        <p className="marketplace-card__description marketplace-card__description--subtle">Description unavailable.</p>
-      ) : null}
+      <p className="marketplace-card__description">{item.description || "No description provided."}</p>
 
       <div className="marketplace-card__meta">
         <span className="marketplace-card__meta-item">{item.registry}</span>

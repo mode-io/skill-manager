@@ -28,7 +28,7 @@ class ApplicationServiceTests(unittest.TestCase):
 
             trace_lens = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
             self.assertEqual(trace_lens["displayStatus"], "Found locally")
-            self.assertTrue(trace_lens["needsAttention"])
+            self.assertFalse(trace_lens["needsAttention"])
             self.assertEqual(trace_lens["defaultSortRank"], 1)
             self.assertEqual(
                 {cell["harness"] for cell in trace_lens["cells"] if cell["state"] == "found"},

@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { Settings } from "lucide-react";
 
 interface AppShellProps {
   children: ReactNode;
-  settingsControl: ReactNode;
+  onOpenSettings: () => void;
 }
 
-export function AppShell({ children, settingsControl }: AppShellProps): JSX.Element {
+export function AppShell({ children, onOpenSettings }: AppShellProps): JSX.Element {
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -15,14 +16,16 @@ export function AppShell({ children, settingsControl }: AppShellProps): JSX.Elem
           <h1 className="app-header__title">skill-manager</h1>
         </div>
         <nav className="app-header__nav" aria-label="Primary">
-          <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}>
+          <NavLink to="/skills" className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}>
             <span className="nav-link__label">Skills</span>
           </NavLink>
           <NavLink to="/marketplace" className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}>
             <span className="nav-link__label">Marketplace</span>
           </NavLink>
         </nav>
-        {settingsControl}
+        <button type="button" className="icon-button" onClick={onOpenSettings} aria-label="Open settings">
+          <Settings size={18} />
+        </button>
       </header>
       <main className="app-main">{children}</main>
     </div>

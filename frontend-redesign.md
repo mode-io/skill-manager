@@ -103,62 +103,77 @@ The frontend should have three user-facing surfaces and one shared detail surfac
 
 ### 1. Skills
 
-This is the primary page and default landing page.
+This is the primary workspace and default landing area.
 
 Purpose:
 
-- show all relevant skills in one place
-- show which harnesses can use each skill
-- let the user enable or disable a skill per harness
-- let the user bring locally found skills under management
-- let the user run a bulk centralization action
+- separate ongoing management from local intake
+- keep both workflows under one top-level `Skills` product surface
+- let the user switch between operating managed skills and reviewing local discoveries without leaving context
+
+#### Workspace structure
+
+The `Skills` workspace should have two route-backed subviews:
+
+- `Managed`
+- `Found locally`
+
+A shared tab bar sits under the workspace header.
+
+### Managed
+
+Purpose:
+
+- operate skills already owned by the shared store
+- toggle per-tool availability
+- review custom modifications
+- access the detail drawer for deeper actions
 
 #### Main layout
 
-The core layout should be a management table.
+The core layout is a dense card-row control list.
 
-- each skill is represented as a two-line row group
-- the first row contains the operational controls
-- the second row contains a one-line description
-
-#### First row columns
-
-- `Skill`
-- `Status`
-- one column per detected and manageable harness
-- `Action`
-
-#### Second row content
-
-- one-line description spanning the table width
+- each skill is represented as one management record
+- the top band contains operational controls
+- the bottom band contains a short description
+- built-ins can appear as a separate secondary reference section when explicitly revealed
 
 #### Row behavior
 
-- harness columns contain compact enable/disable toggles
-- the `Action` column shows the most relevant single action for that skill
-- examples:
-  - `Bring under management`
-  - `Update`
-  - `Open`
+- grouped per-harness toggles stay in this page only
+- the primary action is `Details` or another managed-only action such as update when available
+- `Bring under management` does not belong here
+
+#### Page-level actions
+
+- optional built-in reveal
+- optional route to `Found locally` when intake items exist
+
+### Found locally
+
+Purpose:
+
+- review unmanaged skills detected in local tool folders
+- decide what to centralize into the shared store
+- run bulk intake actions
+
+#### Main layout
+
+The layout is a simpler intake list, not a toggle matrix.
+
+- rows emphasize identity, short description, and where the skill was found
+- the primary action is `Bring under management`
+- details still open in the shared drawer
 
 #### Page-level actions
 
 - primary bulk action: `Bring all eligible skills under management`
-- optional built-in toggle: `Show built-in skills`
+- search and tool filters
 
-#### What belongs here
+#### What does not belong here
 
-- all day-to-day skill management
-- managed skills
-- locally found skills
-- compact user-facing status
-- lightweight attention states
-
-#### What should not dominate this page
-
-- diagnostics
-- raw conflict structures
-- low-level harness details
+- per-tool enable/disable toggles
+- managed-state operational controls
 
 ### 2. Marketplace
 
@@ -213,11 +228,11 @@ The page should exist, but it should not compete with `Skills` as the main place
 
 ### 4. Skill Details Panel
 
-This is a shared side panel or drawer that opens from the main table.
+This is a shared side panel or drawer that opens from both `Managed` and `Found locally`.
 
 Purpose:
 
-- show richer skill information without making the main table heavy
+- show richer skill information without making the main list heavy
 
 #### Responsibilities
 
@@ -243,7 +258,7 @@ The redesign should avoid making conflict management a primary workflow unless t
 ### UI implication
 
 - no dedicated conflict page is required in the first redesign
-- the main `Skills` table only needs a small user-facing review state
+- the main `Skills` list only needs a small user-facing review state
 - any real review flow can open from a detail panel or separate focused interaction later
 
 ## Frontend and Backend Responsibility Split
@@ -270,7 +285,7 @@ The frontend should render a clean management experience, not expose backend cla
 
 ## Backend Alignment Requirement
 
-The redesigned frontend does not require a deep backend rewrite first, but it does require a backend read-model and API alignment pass before the new UI should be implemented.
+The redesigned frontend does not require a deep backend rewrite first. The current `Skills` read model is sufficient for the card-row management surface, and backend work should now focus on future product refinements rather than blocking this UI structure.
 
 ### What is already supported
 
@@ -283,13 +298,11 @@ The backend already supports the core mechanics needed for the simplified produc
 - marketplace search and install
 - source-backed update flow
 
-This means the planned table-based `Skills` page is mechanically feasible with the current backend.
+This means the planned card-row `Skills` page is mechanically feasible with the current backend.
 
-### What is not yet expressed in the right product shape
+### What may still need refinement later
 
-The current backend still exposes implementation-oriented concepts too directly.
-
-Before the redesigned UI ships, the backend should provide a cleaner user-facing read model for:
+The current backend contract is good enough for the main list refactor, but some product-facing semantics can still improve over time:
 
 - display status (`Managed`, `Found locally`, `Custom`, `Built-in`, `Needs review`)
 - whether a skill is updateable
@@ -298,24 +311,13 @@ Before the redesigned UI ships, the backend should provide a cleaner user-facing
 - whether a skill is eligible for bulk centralization
 - normalized marketplace popularity and source labeling
 
-### Required backend changes before frontend implementation
-
-The backend should be updated so that:
-
-- same-source same-content copies collapse into one skill automatically
-- same-source different-content copies become `Custom` instead of first-class conflicts
-- only unmodified source-backed managed skills are updateable
-- the frontend no longer needs raw discovery details or low-level conflict payloads in the default flow
-
 ### Implementation posture
 
 The right approach is:
 
 - keep the current store, harness, and mutation core
-- add a UI-oriented read model and serializer layer on top
-- adjust catalog semantics where needed for `Custom` classification
-
-In other words, the frontend redesign should start after a thin backend product-model alignment pass, not after a full backend refactor.
+- keep the current `Skills` API contract for the card-row refactor
+- refine backend semantics later only where the product model genuinely needs it
 
 ## Updated Plan
 
@@ -334,38 +336,38 @@ Define the update rule:
 - only unmodified source-backed managed skills are updateable
 - modified managed skills become custom
 
-### Step 2. Align the backend read model and API
+### Step 2. Keep the backend contract stable for the Skills refactor
 
-Add a frontend-oriented backend contract that exposes interpreted user-facing state instead of raw operational detail.
+Use the current frontend-oriented backend contract for the list rewrite.
 
-This alignment should include:
+Backend follow-up can continue later for:
 
-- `Custom` classification
+- `Custom` classification refinement
 - updateability rules
 - bulk-centralize eligibility
-- simplified status and recommended action fields
 - normalized marketplace ranking inputs
 
 ### Step 3. Simplify the frontend information architecture
 
 Replace the current multi-bucket mental model with:
 
-- `Skills`
+- `Skills` workspace
+- `Managed`
+- `Found locally`
 - `Marketplace`
 - `Settings`
 - shared `Skill details panel`
 
 Retire `Setup` and `Health` as primary user workflows.
 
-### Step 4. Redesign the main management surface around the table
+### Step 4. Split the `Skills` workspace by workflow
 
-Implement the `Skills` page as the main management table:
+Implement `Skills` as one workspace with two subviews:
 
-- per skill, one row group
-- first row for controls and status
-- second row for description
-- one harness column per detected manageable harness
-- one bulk centralize action at the page level
+- `Managed`: dense control-plane card rows with grouped harness toggles
+- `Found locally`: intake records with discovery context and management CTA
+- shared detail drawer across both
+- bulk centralization action only in `Found locally`
 
 ### Step 5. Narrow the default information shown in the UI
 
@@ -393,16 +395,16 @@ Keep advanced and maintenance functionality out of the primary workflow:
 
 - diagnostics live in `Settings`
 - rare review cases open from a focused panel
-- full skill metadata lives in the detail panel instead of the main table
+- full skill metadata lives in the detail panel instead of the main list
 
 ## Success Criteria
 
 The redesign is successful if a user can do the following with very low mental overhead:
 
 1. open the app and immediately understand which skills exist
-2. see which harnesses can use each skill
-3. toggle skill availability per harness from one table
-4. bring found local skills under management without learning backend terms
+2. understand whether they should operate a managed skill or review a local discovery
+3. toggle skill availability per harness from the managed view
+4. bring found local skills under management from the intake view without learning backend terms
 5. install new skills from one normalized marketplace
 6. understand modified skills as `Custom` rather than as a complicated conflict model
 

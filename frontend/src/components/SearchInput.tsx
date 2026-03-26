@@ -24,7 +24,7 @@ export function SearchInput({ value, onChange, onSubmit, placeholder = "Search..
           disabled={disabled}
         />
       </div>
-      <button type="button" className="btn btn-primary search-bar__submit" onClick={onSubmit} disabled={loading || disabled}>
+      <button type="button" className="btn btn-primary search-bar__submit" onClick={onSubmit} disabled={loading || disabled || !value.trim()}>
         {loading ? <span className="spinner spinner-sm" /> : <Search size={16} />}
         Search
       </button>

@@ -41,7 +41,7 @@
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: rgba(20, 24, 32, 0.88);
   padding: 0 14px 0 38px;
   color: var(--color-text);
@@ -77,9 +77,8 @@
   gap: 12px;
   padding: 12px 13px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: rgba(17, 19, 24, 0.94);
-  box-shadow: var(--shadow-panel-soft);
   break-inside: avoid;
 }
 
@@ -104,7 +103,7 @@
   width: 34px;
   height: 34px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--color-panel-elevated);
   overflow: hidden;
   flex-shrink: 0;
@@ -173,10 +172,6 @@
   line-height: 1.5;
 }
 
-.marketplace-card__description--subtle {
-  font-style: italic;
-}
-
 .marketplace-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -188,9 +183,9 @@
   align-items: center;
   min-height: 24px;
   padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-panel-elevated);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.06em;

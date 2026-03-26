@@ -7,7 +7,6 @@ export interface SkillsSummary {
   foundLocally: number;
   custom: number;
   builtIn: number;
-  needsAction: number;
 }
 
 export interface HarnessColumn {

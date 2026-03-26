@@ -180,7 +180,9 @@ The frontend should feel like a control panel, not a terminal wrapper.
 
 Core screens:
 
-- `Skills`: the primary management table, one skill per row group with per-harness toggles and a single primary action
+- `Skills`: a primary workspace split into `Managed` and `Found locally`
+- `Managed`: dense card-row control plane for shared-store skills with per-harness toggles
+- `Found locally`: intake surface for unmanaged local discoveries with centralization actions
 - `Skill detail`: metadata, source summary, updateability, and advanced details when expanded
 - `Marketplace`: normalized acquisition surface for popular and searchable skills from supported sources
 - `Settings`: secondary maintenance surface for harness availability, rescan, source preferences, and diagnostics

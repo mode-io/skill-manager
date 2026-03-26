@@ -29,7 +29,6 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
   const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const pagingRef = useRef(false);
-  const requestIdRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,40 +46,23 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
     if (!node) {
       return;
     }
-    const loadMoreIfNeeded = () => {
-      if (pagingRef.current || nextOffset === null || !sentinelRef.current) {
-        return;
-      }
-      const rect = sentinelRef.current.getBoundingClientRect();
-      if (rect.top > window.innerHeight + 240) {
-        return;
-      }
-      pagingRef.current = true;
-      void loadPage({
-        nextMode: mode,
-        nextQuery: submittedQuery,
-        offset: nextOffset,
-        append: true,
-      });
-    };
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) {
+        if (!entries.some((entry) => entry.isIntersecting) || pagingRef.current) {
           return;
         }
-        loadMoreIfNeeded();
+        pagingRef.current = true;
+        void loadPage({
+          nextMode: mode,
+          nextQuery: submittedQuery,
+          offset: nextOffset,
+          append: true,
+        });
       },
       { rootMargin: "240px" },
     );
     observer.observe(node);
-    window.addEventListener("scroll", loadMoreIfNeeded, { passive: true });
-    window.addEventListener("resize", loadMoreIfNeeded);
-    loadMoreIfNeeded()
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", loadMoreIfNeeded);
-      window.removeEventListener("resize", loadMoreIfNeeded);
-    };
+    return () => observer.disconnect();
   }, [hasMore, mode, nextOffset, status, submittedQuery]);
 
   const resultLabel = useMemo(() => {
@@ -126,7 +108,6 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
     append: boolean;
     cancelledRef?: () => boolean;
   }): Promise<void> {
-    const requestId = ++requestIdRef.current;
     try {
       if (append) {
         setLoadingMore(true);
@@ -142,9 +123,6 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
       if (cancelledRef?.()) {
         return;
       }
-      if (requestId !== requestIdRef.current) {
-        return;
-      }
 
       setItems((current) => append ? mergeMarketplaceItems(current, payload) : payload.items);
       setNextOffset(payload.nextOffset);
@@ -156,16 +134,11 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
       if (cancelledRef?.()) {
         return;
       }
-      if (requestId !== requestIdRef.current) {
-        return;
-      }
       setErrorMessage(error instanceof Error ? error.message : "Unable to load the marketplace.");
       setStatus("error");
     } finally {
       pagingRef.current = false;
-      if (requestId === requestIdRef.current) {
-        setLoadingMore(false);
-      }
+      setLoadingMore(false);
     }
   }
 
@@ -174,6 +147,9 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
       <div className="marketplace-page__hero">
         <div>
           <h2>Marketplace</h2>
+          <p className="page-header__copy">
+            Browse popular skills across the selected registries and install them into the managed store.
+          </p>
         </div>
       </div>
 
@@ -185,7 +161,7 @@ export function MarketplacePage({ refreshToken, onDataChanged }: MarketplacePage
           onChange={setQuery}
           onSubmit={() => void handleSearch()}
           placeholder="Search by skill name or topic"
-          loading={status === "loading"}
+          loading={status === "loading" && items.length > 0}
         />
       </div>
 

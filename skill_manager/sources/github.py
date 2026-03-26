@@ -6,10 +6,7 @@ from pathlib import Path
 import subprocess
 import time
 from typing import Callable
-from urllib.parse import quote
 from urllib.request import Request, urlopen
-
-from skill_manager.domain import parse_skill_manifest_text
 
 _CACHE_TTL_SECONDS = 900
 _TIMEOUT_SECONDS = 10
@@ -91,8 +88,6 @@ class GitHubIdentitySnapshot:
 MetadataFetcher = Callable[[str], GitHubRepoMetadata | None]
 OwnerFetcher = Callable[[str], GitHubOwnerMetadata | None]
 AvatarFetcher = Callable[[str], GitHubAvatarAsset | None]
-TreeFetcher = Callable[[str], list[str]]
-FileTextFetcher = Callable[[str, str], str | None]
 
 
 def _parse_locator(locator: str) -> tuple[str, str, str]:
@@ -191,42 +186,6 @@ def _default_owner_fetcher(login: str) -> GitHubOwnerMetadata | None:
         profile_url=profile_url,
         avatar_url=avatar_url,
     )
-
-
-def _default_tree_fetcher(repo: str) -> list[str]:
-    request = Request(
-        f"https://api.github.com/repos/{repo}/git/trees/HEAD?recursive=1",
-        headers=_github_headers("application/vnd.github+json"),
-    )
-    try:
-        with urlopen(request, timeout=_TIMEOUT_SECONDS) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except Exception:  # noqa: BLE001
-        return []
-
-    tree = payload.get("tree")
-    if not isinstance(tree, list):
-        return []
-    return [
-        item.get("path", "")
-        for item in tree
-        if isinstance(item, dict)
-        and item.get("type") == "blob"
-        and isinstance(item.get("path"), str)
-        and item["path"].endswith("SKILL.md")
-    ]
-
-
-def _default_file_text_fetcher(repo: str, path: str) -> str | None:
-    request = Request(
-        f"https://raw.githubusercontent.com/{repo}/HEAD/{quote(path, safe='/')}",
-        headers=_github_headers("text/plain"),
-    )
-    try:
-        with urlopen(request, timeout=_TIMEOUT_SECONDS) as response:
-            return response.read().decode("utf-8")
-    except Exception:  # noqa: BLE001
-        return None
 
 
 def _owner_from_repo(repo: str | None) -> str | None:
@@ -365,97 +324,6 @@ class GitHubRepoMetadataClient:
         return None
 
 
-class GitHubManifestFetcher:
-    def __init__(
-        self,
-        *,
-        tree_fetcher: TreeFetcher | None = None,
-        file_text_fetcher: FileTextFetcher | None = None,
-        ttl_seconds: int = _CACHE_TTL_SECONDS,
-    ) -> None:
-        self._tree_fetcher = tree_fetcher or _default_tree_fetcher
-        self._file_text_fetcher = file_text_fetcher or _default_file_text_fetcher
-        self._ttl_seconds = ttl_seconds
-        self._tree_cache: dict[str, tuple[float, tuple[str, ...]]] = {}
-        self._text_cache: dict[str, tuple[float, str]] = {}
-
-    def fetch_skill_manifest_text(self, locator: str) -> str | None:
-        repo, skill_dir = _repo_and_skill_dir(locator)
-        if repo is None or not skill_dir:
-            return None
-
-        candidate_paths = self._candidate_paths(repo, skill_dir)
-        for path in candidate_paths:
-            text = self._file_text(repo, path)
-            if not text:
-                continue
-            if Path(path).parent.name == skill_dir:
-                return text
-            try:
-                manifest = parse_skill_manifest_text(text)
-            except Exception:  # noqa: BLE001
-                continue
-            if manifest.declared_name == skill_dir:
-                return text
-        return None
-
-    def fetch_manifest_text(self, source_locator: str) -> str | None:
-        return self.fetch_skill_manifest_text(source_locator)
-
-    def _candidate_paths(self, repo: str, skill_dir: str) -> list[str]:
-        preferred = self._preferred_paths(skill_dir)
-        existing_preferred = [path for path in preferred if self._file_text(repo, path)]
-        if existing_preferred:
-            return existing_preferred
-
-        paths = list(self._tree_paths(repo))
-        preferred = [path for path in paths if Path(path).parent.name == skill_dir]
-        if preferred:
-            return preferred
-
-        related = [path for path in paths if skill_dir in path]
-        if related:
-            return related
-
-        return paths
-
-    @staticmethod
-    def _preferred_paths(skill_dir: str) -> list[str]:
-        return [
-            f"{skill_dir}/SKILL.md",
-            f"skills/{skill_dir}/SKILL.md",
-            f".cursor/skills/{skill_dir}/SKILL.md",
-            f".claude/skills/{skill_dir}/SKILL.md",
-            f"agents/{skill_dir}/SKILL.md",
-            f"agent-skills/{skill_dir}/SKILL.md",
-            f"{skill_dir}/skill.md",
-            f"skills/{skill_dir}/skill.md",
-        ]
-
-    def _tree_paths(self, repo: str) -> tuple[str, ...]:
-        cached = self._tree_cache.get(repo)
-        now = time.time()
-        if cached is not None and (now - cached[0]) < self._ttl_seconds:
-            return cached[1]
-
-        paths = tuple(self._tree_fetcher(repo))
-        if paths:
-            self._tree_cache[repo] = (now, paths)
-        return paths
-
-    def _file_text(self, repo: str, path: str) -> str | None:
-        key = f"{repo}:{path}"
-        cached = self._text_cache.get(key)
-        now = time.time()
-        if cached is not None and (now - cached[0]) < self._ttl_seconds:
-            return cached[1]
-
-        text = self._file_text_fetcher(repo, path)
-        if text:
-            self._text_cache[key] = (now, text)
-        return text
-
-
 def _find_skill(clone_dir: Path, skill_dir: str) -> Path | None:
     """Find a skill directory by dir name or SKILL.md name field (recursive)."""
     for skill_md in clone_dir.rglob("SKILL.md"):
@@ -503,11 +371,3 @@ class GitHubSource:
         if skill_path is None:
             raise ValueError(f"skill directory '{skill_dir}' not found in {owner}/{repo}")
         return skill_path
-
-
-def _repo_and_skill_dir(locator: str) -> tuple[str | None, str | None]:
-    try:
-        owner, repo, skill_dir = _parse_locator(locator.removeprefix("github:"))
-    except ValueError:
-        return None, None
-    return f"{owner}/{repo}", skill_dir
