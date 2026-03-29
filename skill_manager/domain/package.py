@@ -88,7 +88,7 @@ def parse_skill_manifest_text(document: str) -> SkillManifest:
     metadata = _parse_frontmatter(document)
     return SkillManifest(
         declared_name=_extract_declared_name(document, metadata),
-        description=metadata.get("description", "").strip(),
+        description=_normalize_metadata_scalar(metadata.get("description", "")),
         source_kind=_optional_metadata_value(metadata, "source_kind"),
         source_locator=_optional_metadata_value(metadata, "source_locator"),
     )
@@ -104,7 +104,7 @@ def _resolve_source(metadata: dict[str, str], *, default_source: SourceDescripto
 
 def _extract_declared_name(document: str, metadata: dict[str, str]) -> str:
     if metadata.get("name", "").strip():
-        return metadata["name"].strip().strip("'\"")
+        return _normalize_metadata_scalar(metadata["name"])
     for raw_line in document.splitlines():
         stripped = raw_line.strip()
         if stripped.startswith("# "):
@@ -142,11 +142,19 @@ def _parse_frontmatter(document: str) -> dict[str, str]:
                 i += 1
             value = join_char.join(part for part in continuation if part)
         else:
+            value = _normalize_metadata_scalar(value)
             i += 1
         metadata[key.strip()] = value
     return metadata
 
 
 def _optional_metadata_value(metadata: dict[str, str], key: str) -> str | None:
-    value = metadata.get(key, "").strip()
+    value = _normalize_metadata_scalar(metadata.get(key, ""))
     return value or None
+
+
+def _normalize_metadata_scalar(value: str) -> str:
+    normalized = value.strip()
+    if len(normalized) >= 2 and normalized[0] == normalized[-1] and normalized[0] in {"'", '"'}:
+        return normalized[1:-1].strip()
+    return normalized

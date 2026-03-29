@@ -2,16 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import type { SkillsPageData } from "../api/types";
 import {
-  buildFoundLocalOverview,
-  buildManagedOverview,
-  filterFoundLocalRows,
+  countManageableUnmanagedRows,
+  countUnmanagedRows,
+  filterBuiltInRows,
   filterManagedRows,
-  resetFoundLocalSkillsFilters,
+  filterUnmanagedRows,
   resetManagedSkillsFilters,
-} from "../components/skills/model";
+  resetUnmanagedSkillsFilters,
+} from "../features/skills/selectors";
 
 const data: SkillsPageData = {
-  summary: { managed: 1, foundLocally: 1, custom: 1, builtIn: 1 },
+  summary: { managed: 1, unmanaged: 1, custom: 1, builtIn: 1 },
   harnessColumns: [{ harness: "codex", label: "Codex" }],
   rows: [
     {
@@ -20,8 +21,6 @@ const data: SkillsPageData = {
       description: "Shared audit workflow",
       displayStatus: "Managed",
       attentionMessage: null,
-      needsAttention: false,
-      defaultSortRank: 2,
       primaryAction: { kind: "open", label: "Open" },
       cells: [{ harness: "codex", label: "Codex", state: "disabled", interactive: true }],
     },
@@ -31,19 +30,15 @@ const data: SkillsPageData = {
       description: "Custom audit workflow",
       displayStatus: "Custom",
       attentionMessage: "Modified locally; source updates are disabled.",
-      needsAttention: true,
-      defaultSortRank: 0,
       primaryAction: { kind: "open", label: "Open" },
       cells: [{ harness: "codex", label: "Codex", state: "enabled", interactive: true }],
     },
     {
-      skillRef: "local:trace-lens",
+      skillRef: "unmanaged:trace-lens",
       name: "Trace Lens",
       description: "Trace review workflow",
-      displayStatus: "Found locally",
+      displayStatus: "Unmanaged",
       attentionMessage: null,
-      needsAttention: false,
-      defaultSortRank: 1,
       primaryAction: { kind: "manage", label: "Bring under management" },
       cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
     },
@@ -53,8 +48,6 @@ const data: SkillsPageData = {
       description: "Built-in scouting workflow",
       displayStatus: "Built-in",
       attentionMessage: null,
-      needsAttention: false,
-      defaultSortRank: 3,
       primaryAction: { kind: "open", label: "Open" },
       cells: [{ harness: "codex", label: "Codex", state: "builtin", interactive: false }],
     },
@@ -62,23 +55,25 @@ const data: SkillsPageData = {
 };
 
 describe("skills workspace model", () => {
-  it("partitions managed and found-local rows correctly", () => {
+  it("partitions managed and unmanaged rows correctly", () => {
     const managedRows = filterManagedRows(data, resetManagedSkillsFilters());
-    const foundLocalRows = filterFoundLocalRows(data, resetFoundLocalSkillsFilters());
+    const builtInRows = filterBuiltInRows(data);
+    const unmanagedRows = filterUnmanagedRows(data, resetUnmanagedSkillsFilters());
 
-    expect(managedRows.map((row) => row.name)).toEqual(["Audit Skill", "Shared Audit"]);
-    expect(foundLocalRows.map((row) => row.name)).toEqual(["Trace Lens"]);
+    expect(managedRows.map((row) => row.name)).toEqual(["Shared Audit", "Audit Skill"]);
+    expect(builtInRows.map((row) => row.name)).toEqual(["Scout"]);
+    expect(unmanagedRows.map((row) => row.name)).toEqual(["Trace Lens"]);
   });
 
-  it("builds page-specific overview counts", () => {
-    expect(buildManagedOverview(data)).toEqual({
-      managed: 1,
-      custom: 1,
-      builtIn: 1,
-    });
-    expect(buildFoundLocalOverview(data)).toEqual({
-      foundLocally: 1,
-      eligibleNow: 1,
-    });
+  it("filters managed rows by display status only", () => {
+    expect(filterManagedRows(data, resetManagedSkillsFilters()).map((row) => row.name)).toEqual([
+      "Shared Audit",
+      "Audit Skill",
+    ]);
+  });
+
+  it("counts unmanaged rows and manageable actions without the deleted overview strip", () => {
+    expect(countUnmanagedRows(data)).toBe(1);
+    expect(countManageableUnmanagedRows(data)).toBe(1);
   });
 });

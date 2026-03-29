@@ -8,15 +8,14 @@ test("renders the managed skills page", async ({ page }) => {
   await expect(page.getByLabel("Managed skills list")).toBeVisible();
   await expect(page.getByRole("switch").first()).toBeVisible();
   await expect(page.getByText("Shared Audit")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Details" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /Found locally/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Unmanaged/i })).toBeVisible();
 });
 
-test("renders the found-local intake page", async ({ page }) => {
-  await page.goto("/skills/found-local");
-  await expect(page.getByRole("heading", { name: "Found locally" })).toBeVisible();
-  await expect(page.getByPlaceholder("Search found skills by name, description, or tool")).toBeVisible();
-  await expect(page.getByLabel("Found local skills list")).toBeVisible();
+test("renders the unmanaged intake page", async ({ page }) => {
+  await page.goto("/skills/unmanaged");
+  await expect(page.getByRole("heading", { name: "Unmanaged skills" })).toBeVisible();
+  await expect(page.getByPlaceholder("Search unmanaged skills by name, description, or tool")).toBeVisible();
+  await expect(page.getByLabel("Unmanaged skills list")).toBeVisible();
   await expect(page.getByText("Trace Lens")).toBeVisible();
   await expect(page.getByRole("button", { name: "Bring all eligible skills under management" })).toBeVisible();
 });

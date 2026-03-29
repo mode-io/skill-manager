@@ -42,7 +42,7 @@ class LauncherTests(unittest.TestCase):
                 deadline = time.time() + 5.0
                 while True:
                     try:
-                        with urlopen(f"http://127.0.0.1:{port}/health") as response:
+                        with urlopen(f"http://127.0.0.1:{port}/api/health") as response:
                             self.assertEqual(response.status, 200)
                             break
                     except Exception:  # noqa: BLE001

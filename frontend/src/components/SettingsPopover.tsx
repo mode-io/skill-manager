@@ -1,56 +1,31 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Settings, X } from "lucide-react";
 
-import { fetchSettings, manageAllSkills } from "../api/client";
-import type { SettingsData } from "../api/types";
+import { useManageAllFromSettingsMutation, useSettingsQuery } from "../features/settings/queries";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingSpinner } from "./LoadingSpinner";
 
-interface SettingsPopoverProps {
-  refreshToken: number;
-  onDataChanged: () => void;
-}
-
-export function SettingsPopover({ refreshToken, onDataChanged }: SettingsPopoverProps): JSX.Element {
+export function SettingsPopover() {
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<SettingsData | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    let cancelled = false;
-    setStatus("loading");
-    setErrorMessage("");
-    void fetchSettings()
-      .then((payload) => {
-        if (cancelled) return;
-        setData(payload);
-        setStatus("ready");
-      })
-      .catch((error: Error) => {
-        if (cancelled) return;
-        setErrorMessage(error.message);
-        setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, refreshToken]);
+  const settingsQuery = useSettingsQuery(open);
+  const manageAllMutation = useManageAllFromSettingsMutation();
+  const data = settingsQuery.data ?? null;
+  const status: "idle" | "loading" | "ready" | "error" = settingsQuery.isPending
+    ? "loading"
+    : data
+      ? "ready"
+      : settingsQuery.error
+        ? "error"
+        : "idle";
+  const busy = manageAllMutation.isPending;
 
   async function handleManageAll(): Promise<void> {
     try {
-      setBusy(true);
-      await manageAllSkills();
-      onDataChanged();
+      await manageAllMutation.mutateAsync();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to manage all skills.");
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -89,7 +64,7 @@ export function SettingsPopover({ refreshToken, onDataChanged }: SettingsPopover
           {errorMessage && <ErrorBanner message={errorMessage} onDismiss={() => setErrorMessage("")} />}
 
           <div className="settings-popover__actions">
-            <button type="button" className="btn btn-secondary" onClick={onDataChanged}>
+            <button type="button" className="btn btn-secondary" onClick={() => void settingsQuery.refetch()}>
               Refresh data
             </button>
             <button

@@ -1,5 +1,5 @@
 function normalizeBase(value: string | undefined): string {
-  const trimmed = (value ?? "").trim();
+  const trimmed = (value ?? "/api").trim();
   if (trimmed === "" || trimmed === "/") {
     return "";
   }

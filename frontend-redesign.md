@@ -15,6 +15,8 @@ It is not a visual design guide. It is a product-surface brief that clarifies:
 
 Today, skills are spread across different local tools, each with its own storage model, enablement behavior, and built-in versus user-installed distinction. The project already has a Python backend that scans harnesses, merges skill discoveries, manages a shared store, centralizes local skills, enables and disables managed skills, installs from external sources, updates source-backed skills, and exposes all of that through a local API. The browser UI is the primary product surface.
 
+The browser app owns page routing. JSON data is served separately under `/api/*`.
+
 The original frontend was useful as a bootstrap shell, but it still reflects implementation buckets more than user jobs. Pages such as `Setup` and `Health` expose too much operational detail directly and create more navigation and mental switching than necessary.
 
 The redesign should make the product feel like a simple skill manager rather than a developer console for internal mechanics.
@@ -30,6 +32,12 @@ This user:
 - wants simple management, not infrastructure details
 - wants to know what is installed, what is active, and what needs action
 - does not want to manually reason about filesystem layout, source metadata, or sync mechanics
+
+The UI should therefore preserve context aggressively:
+
+- returning to `Skills` should feel instant
+- filters and search should stay in memory during route changes
+- background refresh should not reset a loaded page back to a blocking spinner
 
 The product should also remain usable for a more technical operator, but advanced details should be secondary and not the default view.
 
@@ -53,7 +61,7 @@ The frontend should help the user answer five questions quickly:
 1. What skills do I have?
 2. Which tools can use each skill?
 3. Which skills are already managed by the app?
-4. Which skills need action from me?
+4. Which skills are custom or unmanaged?
 5. How do I add a new skill?
 
 ### What the frontend should not force the user to learn
@@ -77,14 +85,12 @@ To keep the mental model simple, the frontend should use a small set of user-fac
 
 - `Managed`
   - The app owns this skill and can manage it directly.
-- `Found locally`
+- `Unmanaged`
   - The skill exists in one or more harnesses but is not yet under app management.
 - `Custom`
   - A managed skill has been modified locally and should no longer be treated as updateable from its original source.
 - `Built-in`
   - The skill is provided by a harness and is visible, but not managed by this app.
-- `Needs review`
-  - Reserved for rare ambiguous cases that cannot be simplified automatically.
 
 ### Update and customization rule
 
@@ -116,7 +122,7 @@ Purpose:
 The `Skills` workspace should have two route-backed subviews:
 
 - `Managed`
-- `Found locally`
+- `Unmanaged`
 
 A shared tab bar sits under the workspace header.
 
@@ -136,7 +142,8 @@ The core layout is a dense card-row control list.
 - each skill is represented as one management record
 - the top band contains operational controls
 - the bottom band contains a short description
-- built-ins can appear as a separate secondary reference section when explicitly revealed
+- built-ins can appear as a separate passive secondary reference section when present
+- `Custom` is explained by a compact badge explainer, not a full warning line in every card
 
 #### Row behavior
 
@@ -146,10 +153,9 @@ The core layout is a dense card-row control list.
 
 #### Page-level actions
 
-- optional built-in reveal
-- optional route to `Found locally` when intake items exist
+- optional route to `Unmanaged` when intake items exist
 
-### Found locally
+### Unmanaged
 
 Purpose:
 
@@ -168,7 +174,7 @@ The layout is a simpler intake list, not a toggle matrix.
 #### Page-level actions
 
 - primary bulk action: `Bring all eligible skills under management`
-- search and tool filters
+- search only
 
 #### What does not belong here
 
@@ -185,16 +191,16 @@ Purpose:
 
 #### Main responsibilities
 
-- show popular skills from all supported sources
-- support search across supported sources
-- normalize results into one display model
+- show the `skills.sh` all-time leaderboard on first load
+- support `skills.sh` keyword search when the query is at least 2 characters
+- present one installs-first display model for all marketplace cards
 - let the user install a skill into managed storage
 
 #### Default sorting
 
-Since the current source model can resolve to GitHub, the default ranking can use GitHub stars.
+Marketplace ranking should use `skills.sh` installs only.
 
-Official skills should be distinguishable from community results, but the page should still feel like one unified marketplace rather than separate source silos.
+GitHub stars are still useful as repository context, but they should not affect ordering.
 
 #### Result display model
 
@@ -202,11 +208,12 @@ Each marketplace item should have a uniform summary:
 
 - name
 - short description
-- source label
-- official or community label
-- popularity
+- installs
+- GitHub stars
+- repo label
+- primary link to the exact GitHub skill folder when proven, otherwise a fallback link to the `skills.sh` detail page
 
-YAML or source-specific formatting should be normalized in the backend before being shown in the UI.
+The frontend should not expose raw source identity on the marketplace cards.
 
 ### 3. Settings
 
@@ -219,16 +226,16 @@ Purpose:
 #### Responsibilities
 
 - show detected harnesses and availability
-- allow rescan
-- hold source preferences
 - expose advanced diagnostics when needed
 - optionally duplicate bulk maintenance actions such as `Bring all eligible skills under management`
+
+This surface currently lives as a popover, not a full primary page.
 
 The page should exist, but it should not compete with `Skills` as the main place where the product is used.
 
 ### 4. Skill Details Panel
 
-This is a shared side panel or drawer that opens from both `Managed` and `Found locally`.
+This is a shared side panel or drawer that opens from both `Managed` and `Unmanaged`.
 
 Purpose:
 
@@ -238,7 +245,7 @@ Purpose:
 
 - show full description
 - show source summary
-- show user-facing skill type (`Managed`, `Found locally`, `Custom`, `Built-in`)
+- show user-facing skill type (`Managed`, `Unmanaged`, `Custom`, `Built-in`)
 - show harness availability and bindings
 - show whether the skill is updateable
 - show advanced details only when expanded
@@ -253,7 +260,6 @@ The redesign should avoid making conflict management a primary workflow unless t
 
 - identical discoveries collapse automatically
 - locally modified managed skills become `Custom`
-- only rare unresolved edge cases become `Needs review`
 
 ### UI implication
 
@@ -267,7 +273,7 @@ The redesign should intentionally move interpretation work into the backend.
 
 ### Backend should decide
 
-- whether a skill is `Managed`, `Found locally`, `Custom`, `Built-in`, or `Needs review`
+- whether a skill is `Managed`, `Unmanaged`, `Custom`, or `Built-in`
 - whether a skill is updateable
 - whether bulk centralization is allowed
 - whether a skill needs user attention
@@ -304,12 +310,12 @@ This means the planned card-row `Skills` page is mechanically feasible with the 
 
 The current backend contract is good enough for the main list refactor, but some product-facing semantics can still improve over time:
 
-- display status (`Managed`, `Found locally`, `Custom`, `Built-in`, `Needs review`)
+- display status (`Managed`, `Unmanaged`, `Custom`, `Built-in`)
 - whether a skill is updateable
 - whether a skill is a custom variant
 - whether a skill needs user attention
 - whether a skill is eligible for bulk centralization
-- normalized marketplace popularity and source labeling
+- installs-based marketplace ranking and metadata fallback quality
 
 ### Implementation posture
 
@@ -326,10 +332,9 @@ The right approach is:
 Define and adopt the final user-facing states:
 
 - `Managed`
-- `Found locally`
+- `Unmanaged`
 - `Custom`
 - `Built-in`
-- `Needs review`
 
 Define the update rule:
 
@@ -353,7 +358,7 @@ Replace the current multi-bucket mental model with:
 
 - `Skills` workspace
 - `Managed`
-- `Found locally`
+- `Unmanaged`
 - `Marketplace`
 - `Settings`
 - shared `Skill details panel`
@@ -365,9 +370,9 @@ Retire `Setup` and `Health` as primary user workflows.
 Implement `Skills` as one workspace with two subviews:
 
 - `Managed`: dense control-plane card rows with grouped harness toggles
-- `Found locally`: intake records with discovery context and management CTA
+- `Unmanaged`: intake records with discovery context and management CTA
 - shared detail drawer across both
-- bulk centralization action only in `Found locally`
+- bulk centralization action only in `Unmanaged`
 
 ### Step 5. Narrow the default information shown in the UI
 
@@ -382,11 +387,11 @@ Hide backend-only details by default, including:
 
 ### Step 6. Normalize the marketplace
 
-Make marketplace results uniform across sources:
+Make marketplace results uniform within the `skills.sh` model:
 
 - one summary format
-- one popularity ranking model
-- official versus community labeling
+- one installs-based ranking model
+- one GitHub-folder-or-detail-page linking rule
 - one install action
 
 ### Step 7. Move advanced behavior behind secondary surfaces

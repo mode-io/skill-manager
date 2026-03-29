@@ -16,17 +16,24 @@ The CLI is not the product surface. It only starts the local app and opens the b
 The browser frontend is the product surface.  
 The application core is the only place where orchestration logic lives.
 
+The HTTP split is explicit:
+
+- SPA routes live at `/`, `/skills`, `/skills/managed`, `/skills/unmanaged`, and `/marketplace`
+- JSON APIs live under `/api/*`
+
+This avoids page/API route collisions and keeps the browser app as the only owner of page navigation.
+
 ## Module Model
 
 | Module | Responsibility | Knows About |
 |---|---|---|
-| `frontend` | User interactions, views, action triggers, optimistic refresh | API shapes only |
+| `frontend` | User interactions, views, query caching, optimistic UI, session memory | API shapes only |
 | `api` | Thin local HTTP boundary between frontend and app core | Request/response contracts only |
 | `application` | Orchestrates scan, centralize, enable, disable, install, update, check | store, harnesses, sources, domain |
 | `domain` | Skill concepts, identity, validation, grouping, dedupe rules | nothing external |
 | `store` | Canonical shared skill store and manifest | domain models only |
 | `harness adapters` | Detect, scan, enable, disable per harness | domain models only |
-| `source connectors` | Search/fetch/update from GitHub and other registries | domain models only |
+| `source connectors` | Fetch/update from GitHub and ingest marketplace data from `skills.sh` | domain models only |
 
 This keeps the separation simple:
 
@@ -51,6 +58,8 @@ Use these models:
 | `CatalogEntry` | What the frontend renders: one logical skill plus ownership, source, and per-harness visibility |
 | `HarnessBinding` | Whether a skill is enabled for a given harness |
 | `BuiltinEntry` | A harness-provided skill that is visible but not owned by the shared store |
+
+The frontend should not receive backend-only ranking or workflow scaffolding fields. The API should expose stable read-model DTOs rather than domain objects or serializer logic embedded in inventory/domain types.
 
 The right identity split is:
 
@@ -94,10 +103,9 @@ The browser product should use a simpler user-facing model than the raw internal
 The product should classify skills into these user-facing states:
 
 - `Managed`
-- `Found locally`
+- `Unmanaged`
 - `Custom`
 - `Built-in`
-- `Needs review`
 
 These states are presentation semantics derived from the underlying catalog and should be produced by the application/read-model layer instead of forcing the frontend to interpret low-level internals.
 
@@ -113,6 +121,8 @@ The catalog should follow these rules:
 
 This keeps the product model aligned with user expectations and removes most conflict handling from the default workflow.
 
+The current simplified skills payload intentionally does not surface a separate `needs action` workflow bucket. `Custom` is the only user-facing review state derived from local divergence, and its explanation belongs in the badge/detail surface rather than a dedicated list filter.
+
 ## Collaboration Protocol
 
 This is the skeleton of how modules collaborate.
@@ -122,6 +132,13 @@ This is the skeleton of how modules collaborate.
 - The store reports all shared packages.
 - The application merges them into one `CatalogEntry` list.
 - The frontend renders the unified catalog.
+
+Read paths should stay split from mutation paths:
+
+- `SkillsQueryService` builds read models and API DTOs
+- `SkillsMutationService` owns enable/disable/manage/update/install mutations
+- `SourceFetchService` resolves source-backed fetches
+- `MarketplaceService` owns marketplace ingestion, search, and install-token resolution
 
 `centralize`
 - The application selects all eligible unmanaged skills.
@@ -138,7 +155,8 @@ This is the skeleton of how modules collaborate.
 - The frontend updates the toggle state.
 
 `install`
-- The frontend chooses a source.
+- The frontend chooses a marketplace entry.
+- The application resolves the marketplace install token into a GitHub source descriptor.
 - The source connector fetches a `SkillPackage`.
 - The store ingests it.
 - The application adds it to the catalog.
@@ -178,13 +196,20 @@ It only cares that every adapter supports the same conceptual actions.
 
 The frontend should feel like a control panel, not a terminal wrapper.
 
+Client-side data flow should use one consistent pattern:
+
+- React Query owns server state and invalidation
+- feature-layer selectors derive UI models from cached API data
+- route/session providers own ephemeral UI memory such as tab filters and scroll position
+- transport helpers in `api/client.ts` stay thin and stateless
+
 Core screens:
 
-- `Skills`: a primary workspace split into `Managed` and `Found locally`
+- `Skills`: a primary workspace split into `Managed` and `Unmanaged`
 - `Managed`: dense card-row control plane for shared-store skills with per-harness toggles
-- `Found locally`: intake surface for unmanaged local discoveries with centralization actions
+- `Unmanaged`: intake surface for unmanaged local discoveries with centralization actions
 - `Skill detail`: metadata, source summary, updateability, and advanced details when expanded
-- `Marketplace`: normalized acquisition surface for popular and searchable skills from supported sources
+- `Marketplace`: acquisition surface backed by the `skills.sh` all-time leaderboard and `skills.sh` search
 - `Settings`: secondary maintenance surface for harness availability, rescan, source preferences, and diagnostics
 
 ## Opinionated Defaults

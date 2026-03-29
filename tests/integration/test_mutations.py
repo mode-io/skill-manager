@@ -13,32 +13,32 @@ from tests.support import AppTestHarness, StubCommandRunner, seed_mixed_fixture,
 class MutationTests(unittest.TestCase):
     def test_enable_managed_skill_creates_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            skills = harness.get_json("/skills")
+            skills = harness.get_json("/api/skills")
             shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
 
-            result = harness.post_json(f"/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
             self.assertTrue(result["ok"])
             self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
 
     def test_disable_managed_skill_removes_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            skills = harness.get_json("/skills")
+            skills = harness.get_json("/api/skills")
             shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
-            harness.post_json(f"/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
+            harness.post_json(f"/api/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
-            result = harness.post_json(f"/skills/{shared_entry['skillRef']}/disable", {"harness": "codex"})
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/disable", {"harness": "codex"})
 
             self.assertTrue(result["ok"])
             self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
 
     def test_manage_skill_replaces_found_local_copy_with_managed_links(self) -> None:
         with AppTestHarness(mixed=True) as harness:
-            skills = harness.get_json("/skills")
+            skills = harness.get_json("/api/skills")
             trace_lens = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
 
-            result = harness.post_json(f"/skills/{trace_lens['skillRef']}/manage")
-            refreshed = harness.get_json("/skills")
+            result = harness.post_json(f"/api/skills/{trace_lens['skillRef']}/manage")
+            refreshed = harness.get_json("/api/skills")
 
             self.assertTrue(result["ok"])
             managed_trace = next(row for row in refreshed["rows"] if row["name"] == "Trace Lens")
@@ -48,15 +48,17 @@ class MutationTests(unittest.TestCase):
 
     def test_manage_all_skills_centralizes_all_found_local_rows(self) -> None:
         with AppTestHarness(mixed=True) as harness:
-            result = harness.post_json("/skills/manage-all")
-            refreshed = harness.get_json("/skills")
+            result = harness.post_json("/api/skills/manage-all")
+            refreshed = harness.get_json("/api/skills")
 
             self.assertTrue(result["ok"])
-            self.assertEqual(refreshed["summary"]["foundLocally"], 0)
+            self.assertGreater(result["managedCount"], 0)
+            self.assertEqual(result["failures"], [])
+            self.assertEqual(refreshed["summary"]["unmanaged"], 0)
 
     def test_manage_unknown_skill_returns_404(self) -> None:
         with AppTestHarness() as harness:
-            result = harness.post_json("/skills/missing-ref/manage", expected_status=404)
+            result = harness.post_json("/api/skills/missing-ref/manage", expected_status=404)
             self.assertIn("unknown skill ref", result["error"])
 
     def test_update_refuses_custom_skill(self) -> None:
@@ -85,9 +87,9 @@ class MutationTests(unittest.TestCase):
             return StubCommandRunner()
 
         with AppTestHarness(fixture_factory=seed_custom_fixture) as harness:
-            skills = harness.get_json("/skills")
+            skills = harness.get_json("/api/skills")
             audit = next(row for row in skills["rows"] if row["name"] == "Audit Skill")
-            result = harness.post_json(f"/skills/{audit['skillRef']}/update", expected_status=400)
+            result = harness.post_json(f"/api/skills/{audit['skillRef']}/update", expected_status=400)
 
             self.assertIn("cannot be updated", result["error"])
 

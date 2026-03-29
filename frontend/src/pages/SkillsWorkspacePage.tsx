@@ -1,153 +1,292 @@
-import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Outlet, useLocation, useSearchParams } from "react-router-dom";
 
-import { disableSkill, enableSkill, fetchSkillsPage, manageAllSkills, manageSkill } from "../api/client";
-import type { HarnessCell, HarnessCellState, SkillTableRow, SkillsPageData } from "../api/types";
+import type { HarnessCell, HarnessCellState, SkillTableRow } from "../api/types";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { SkillDetailPanel } from "../components/SkillDetailPanel";
 import { SkillDetailDrawer } from "../components/SkillDetailDrawer";
+import { SkillsPaneTransition, type SkillsPaneDirection, type SkillsPaneView } from "../components/skills/SkillsPaneTransition";
 import { SkillsWorkspaceTabs } from "../components/skills/SkillsWorkspaceTabs";
 import type { SkillsWorkspaceContextValue } from "../components/skills/workspace";
+import {
+  useManageAllSkillsMutation,
+  useManageSkillMutation,
+  useSkillsListQuery,
+  useToggleSkillMutation,
+  useUpdateSkillMutation,
+} from "../features/skills/queries";
 
-interface SkillsWorkspacePageProps {
-  refreshToken: number;
-  onDataChanged: () => void;
-}
-
-export function SkillsWorkspacePage({
-  refreshToken,
-  onDataChanged,
-}: SkillsWorkspacePageProps): JSX.Element {
+export function SkillsWorkspacePage() {
   const location = useLocation();
-  const [data, setData] = useState<SkillsPageData | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const listQuery = useSkillsListQuery();
+  const toggleMutation = useToggleSkillMutation();
+  const manageMutation = useManageSkillMutation();
+  const manageAllMutation = useManageAllSkillsMutation();
+  const updateMutation = useUpdateSkillMutation();
+  const isMobileDetail = useCompactDetailLayout();
+
+  const [actionErrorMessage, setActionErrorMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [selectedSkillRef, setSelectedSkillRef] = useState<string | null>(null);
+
+  const data = listQuery.data ?? null;
+  const hasData = data !== null;
+  const isInitialLoading = listQuery.isPending && !hasData;
+  const isRefreshing = listQuery.isFetching && hasData;
+  const queryErrorMessage = listQuery.error instanceof Error ? listQuery.error.message : "";
+  const status: "loading" | "ready" | "error" = isInitialLoading
+    ? "loading"
+    : hasData
+      ? "ready"
+      : queryErrorMessage
+        ? "error"
+        : "loading";
+  const activeTab = location.pathname.endsWith("/unmanaged") ? "unmanaged" : "managed";
+  const selectedSkillRef = searchParams.get("skill");
+  const { direction: transitionDirection, shouldAnimate: shouldAnimatePaneTransition } = usePaneTransition(activeTab);
+
+  const updateSelectedSkillRef = useCallback((skillRef: string | null, replace = false) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (skillRef) {
+      nextParams.set("skill", skillRef);
+    } else {
+      nextParams.delete("skill");
+    }
+    setSearchParams(nextParams, { replace });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    let cancelled = false;
-    setStatus("loading");
-    setErrorMessage("");
-    void fetchSkillsPage()
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setData(payload);
-        setStatus("ready");
-      })
-      .catch((error: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setErrorMessage(error.message);
-        setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshToken]);
+    if (!selectedSkillRef || !data) {
+      return;
+    }
+    const stillVisibleInTab = data.rows.some((row) =>
+      row.skillRef === selectedSkillRef && rowVisibleOnTab(row, activeTab),
+    );
+    if (!stillVisibleInTab) {
+      updateSelectedSkillRef(null, true);
+    }
+  }, [activeTab, data, selectedSkillRef, updateSelectedSkillRef]);
 
-  useEffect(() => {
-    setSelectedSkillRef(null);
-  }, [location.pathname]);
+  const handleOpenSkill = useCallback((skillRef: string) => {
+    updateSelectedSkillRef(selectedSkillRef === skillRef ? null : skillRef);
+  }, [selectedSkillRef, updateSelectedSkillRef]);
 
-  async function runAction(actionId: string, task: () => Promise<unknown>): Promise<void> {
+  async function handleToggleSkill(
+    skillRef: string,
+    harness: string,
+    currentState: HarnessCellState,
+  ): Promise<void> {
+    const nextState: HarnessCellState = currentState === "enabled" ? "disabled" : "enabled";
+    setBusyId(`${skillRef}:${harness}`);
+    setActionErrorMessage("");
     try {
-      setBusyId(actionId);
-      await task();
-      onDataChanged();
+      await toggleMutation.mutateAsync({ skillRef, harness, nextState });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to complete the action.");
+      setActionErrorMessage(error instanceof Error ? error.message : "Unable to toggle the skill.");
+      throw error;
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleManageSkill(skillRef: string): Promise<void> {
+    setBusyId(`manage:${skillRef}`);
+    setActionErrorMessage("");
+    try {
+      await manageMutation.mutateAsync({ skillRef });
+    } catch (error) {
+      setActionErrorMessage(error instanceof Error ? error.message : "Unable to manage the skill.");
+      throw error;
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleManageAll(): Promise<void> {
+    setBusyId("manage-all");
+    setActionErrorMessage("");
+    try {
+      await manageAllMutation.mutateAsync();
+    } catch (error) {
+      setActionErrorMessage(error instanceof Error ? error.message : "Unable to manage all skills.");
+      throw error;
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleUpdateSkill(skillRef: string): Promise<void> {
+    setBusyId(`update:${skillRef}`);
+    setActionErrorMessage("");
+    try {
+      await updateMutation.mutateAsync({ skillRef });
+    } catch (error) {
+      setActionErrorMessage(error instanceof Error ? error.message : "Unable to update the skill.");
+      throw error;
     } finally {
       setBusyId(null);
     }
   }
 
   function handleToggleCell(row: SkillTableRow, cell: HarnessCell): void {
-    const cellKey = `${row.skillRef}:${cell.harness}`;
-    const newState: HarnessCellState = cell.state === "enabled" ? "disabled" : "enabled";
-
-    setBusyId(cellKey);
-    setData((current) => current ? applyCellToggle(current, row.skillRef, cell.harness, newState) : current);
-
-    const apiCall = cell.state === "enabled"
-      ? disableSkill(row.skillRef, cell.harness)
-      : enableSkill(row.skillRef, cell.harness);
-
-    void apiCall
-      .catch((error) => {
-        setData((current) => current ? applyCellToggle(current, row.skillRef, cell.harness, cell.state) : current);
-        setErrorMessage(error instanceof Error ? error.message : "Unable to toggle the skill.");
-      })
-      .finally(() => setBusyId(null));
-  }
-
-  function handlePrimaryAction(row: SkillTableRow): void {
-    if (row.primaryAction.kind === "manage") {
-      void runAction(`manage:${row.skillRef}`, () => manageSkill(row.skillRef));
-      return;
-    }
-    setSelectedSkillRef(row.skillRef);
+    void handleToggleSkill(row.skillRef, cell.harness, cell.state);
   }
 
   const context: SkillsWorkspaceContextValue = {
     data,
+    hasData,
+    isInitialLoading,
+    isRefreshing,
     status,
+    errorMessage: actionErrorMessage || (hasData ? queryErrorMessage : ""),
     busyId,
-    onManageAll: () => void runAction("manage-all", manageAllSkills),
-    onOpenSkill: setSelectedSkillRef,
+    selectedSkillRef,
+    onManageAll: () => void handleManageAll(),
+    onManageSkill: handleManageSkill,
+    onOpenSkill: handleOpenSkill,
     onToggleCell: handleToggleCell,
-    onRunPrimaryAction: handlePrimaryAction,
   };
+
+  const isDesktopDetailOpen = Boolean(selectedSkillRef) && !isMobileDetail;
 
   return (
     <>
-      <section className="page-panel skills-workspace">
-        <div className="skills-workspace__header">
-          <div>
-            <p className="page-header__eyebrow">Primary workspace</p>
-            <h2>Skills</h2>
-            <p className="page-header__copy">
-              Operate managed skills separately from local intake, while keeping one shared inventory and one detail surface.
-            </p>
+      <section className="skills-workspace-page">
+        <div className={`skills-workspace-shell${isDesktopDetailOpen ? " is-detail-open" : ""}`}>
+          <div className="skills-workspace-shell__main">
+            <section className="skills-workspace">
+              <div className="skills-workspace__top">
+                <div className="skills-workspace__header">
+                  <div className="skills-workspace__header-main">
+                    <div className="skills-workspace__title-row">
+                      <h2>Skills</h2>
+                      <SkillsWorkspaceTabs summary={data?.summary ?? null} />
+                    </div>
+                  </div>
+                  {isRefreshing ? (
+                    <div className="skills-workspace__refresh" aria-live="polite">
+                      <LoadingSpinner size="sm" label="Refreshing skills" />
+                    </div>
+                  ) : null}
+                </div>
+
+                {actionErrorMessage ? (
+                  <ErrorBanner message={actionErrorMessage} onDismiss={() => setActionErrorMessage("")} />
+                ) : null}
+                {!actionErrorMessage && hasData && queryErrorMessage ? (
+                  <ErrorBanner message={queryErrorMessage} />
+                ) : null}
+              </div>
+
+              <div className="skills-workspace__content">
+                <SkillsPaneTransition
+                  view={activeTab}
+                  direction={transitionDirection}
+                  animate={shouldAnimatePaneTransition}
+                >
+                  <Outlet context={context} />
+                </SkillsPaneTransition>
+              </div>
+            </section>
           </div>
+          {!isMobileDetail ? (
+            <SkillDetailPanel
+              isOpen={isDesktopDetailOpen}
+              skillRef={selectedSkillRef}
+              onClose={() => updateSelectedSkillRef(null)}
+              onManageSkill={handleManageSkill}
+              onUpdateSkill={handleUpdateSkill}
+            />
+          ) : null}
         </div>
-
-        <SkillsWorkspaceTabs summary={data?.summary ?? null} />
-
-        {errorMessage && <ErrorBanner message={errorMessage} onDismiss={() => setErrorMessage("")} />}
-
-        <Outlet context={context} />
       </section>
 
-      <SkillDetailDrawer
-        skillRef={selectedSkillRef}
-        refreshToken={refreshToken}
-        onClose={() => setSelectedSkillRef(null)}
-        onDataChanged={onDataChanged}
-      />
+      {isMobileDetail ? (
+        <SkillDetailDrawer
+          skillRef={selectedSkillRef}
+          onClose={() => updateSelectedSkillRef(null)}
+          onManageSkill={handleManageSkill}
+          onUpdateSkill={handleUpdateSkill}
+        />
+      ) : null}
     </>
   );
 }
 
-function applyCellToggle(
-  data: SkillsPageData,
-  skillRef: string,
-  harness: string,
-  newState: HarnessCellState,
-): SkillsPageData {
-  return {
-    ...data,
-    rows: data.rows.map((row) =>
-      row.skillRef !== skillRef
-        ? row
-        : {
-            ...row,
-            cells: row.cells.map((cell) =>
-              cell.harness !== harness ? cell : { ...cell, state: newState },
-            ),
-          },
-    ),
-  };
+type SkillsWorkspaceTab = SkillsPaneView;
+
+function rowVisibleOnTab(row: SkillTableRow, tab: SkillsWorkspaceTab): boolean {
+  if (tab === "unmanaged") {
+    return row.displayStatus === "Unmanaged";
+  }
+  return row.displayStatus === "Managed" || row.displayStatus === "Custom" || row.displayStatus === "Built-in";
+}
+
+function usePaneTransition(activeTab: SkillsPaneView): { direction: SkillsPaneDirection; shouldAnimate: boolean } {
+  const previousTabRef = useRef<SkillsPaneView | null>(null);
+  const [transitionState, setTransitionState] = useState<{
+    direction: SkillsPaneDirection;
+    shouldAnimate: boolean;
+  }>({
+    direction: "forward",
+    shouldAnimate: false,
+  });
+
+  useEffect(() => {
+    const previousTab = previousTabRef.current;
+    if (previousTab === null) {
+      previousTabRef.current = activeTab;
+      return;
+    }
+
+    if (previousTab !== activeTab) {
+      setTransitionState({
+        direction: getPaneDirection(previousTab, activeTab),
+        shouldAnimate: true,
+      });
+      previousTabRef.current = activeTab;
+    }
+  }, [activeTab]);
+
+  return transitionState;
+}
+
+function getPaneDirection(previousTab: SkillsPaneView, activeTab: SkillsPaneView): SkillsPaneDirection {
+  return previousTab === "managed" && activeTab === "unmanaged" ? "forward" : "backward";
+}
+
+function useCompactDetailLayout(breakpointPx = 1180): boolean {
+  const [matches, setMatches] = useState(() => getCompactDetailLayoutMatch(breakpointPx));
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      setMatches(getCompactDetailLayoutMatch(breakpointPx));
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(`(max-width: ${breakpointPx}px)`);
+    const update = () => setMatches(mediaQuery.matches);
+    update();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", update);
+      return () => mediaQuery.removeEventListener("change", update);
+    }
+
+    mediaQuery.addListener(update);
+    return () => mediaQuery.removeListener(update);
+  }, [breakpointPx]);
+
+  return matches;
+}
+
+function getCompactDetailLayoutMatch(breakpointPx: number): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
+  }
+  return window.innerWidth <= breakpointPx;
 }

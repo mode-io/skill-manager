@@ -197,6 +197,15 @@ def seed_shared_only_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
     return StubCommandRunner()
 
 
+def seed_managed_linked_fixture(spec: FakeHomeSpec) -> StubCommandRunner:
+    """Shared store skill linked into Codex — for testing managed detail locations."""
+    runner = seed_shared_only_fixture(spec)
+    target = spec.shared_store_root / "shared-audit"
+    codex_link = spec.home / ".codex" / "skills" / "shared-audit"
+    codex_link.symlink_to(target)
+    return runner
+
+
 def _package_revision(path: Path) -> str:
     revision, _ = fingerprint_package(path)
     return revision

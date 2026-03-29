@@ -6,7 +6,7 @@ interface ErrorBannerProps {
   onDismiss?: () => void;
 }
 
-export function ErrorBanner({ message, onDismiss }: ErrorBannerProps): JSX.Element {
+export function ErrorBanner({ message, onDismiss }: ErrorBannerProps) {
   useEffect(() => {
     if (!onDismiss) return;
     const timer = setTimeout(onDismiss, 5000);

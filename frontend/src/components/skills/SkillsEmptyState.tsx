@@ -2,7 +2,7 @@ interface SkillsEmptyStateProps {
   onResetFilters: () => void;
 }
 
-export function SkillsEmptyState({ onResetFilters }: SkillsEmptyStateProps): JSX.Element {
+export function SkillsEmptyState({ onResetFilters }: SkillsEmptyStateProps) {
   return (
     <div className="skills-empty-state">
       <div>

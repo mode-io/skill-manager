@@ -2,7 +2,7 @@ import type { HarnessCell, HarnessColumn, SkillTableRow } from "../../api/types"
 import { StatusBadge } from "../ui/StatusBadge";
 import { Switch } from "../ui/Switch";
 import { passiveHarnessStateBadge } from "../ui/statusMappings";
-import { alignHarnessCells } from "./model";
+import { alignHarnessCells } from "../../features/skills/selectors";
 
 interface ManagedSkillHarnessClusterProps {
   row: SkillTableRow;
@@ -16,11 +16,15 @@ export function ManagedSkillHarnessCluster({
   columns,
   busyId,
   onToggleCell,
-}: ManagedSkillHarnessClusterProps): JSX.Element {
+}: ManagedSkillHarnessClusterProps) {
   const items = alignHarnessCells(row, columns);
 
   return (
-    <div className="skill-harness-cluster skill-card__harnesses" aria-label={`Harness toggles for ${row.name}`}>
+    <div
+      className="skill-harness-cluster skill-card__harnesses"
+      aria-label={`Harness toggles for ${row.name}`}
+      onClick={(event) => event.stopPropagation()}
+    >
       <div className="skill-harness-cluster__items">
         {items.map(({ column, cell }) => (
           <div key={`${row.skillRef}:${column.harness}`} className="skill-harness-cluster__item">
@@ -56,7 +60,7 @@ function ManagedHarnessClusterControl({
   cell,
   busyId,
   onToggleCell,
-}: ManagedHarnessClusterControlProps): JSX.Element {
+}: ManagedHarnessClusterControlProps) {
   const passiveState = passiveHarnessStateBadge(cell.state);
 
   if (!cell.interactive) {

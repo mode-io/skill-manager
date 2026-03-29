@@ -7,17 +7,14 @@ from typing import Literal
 from skill_manager.domain import HarnessScan, SourceDescriptor, StoreScan, stable_id
 
 
-DisplayStatus = Literal["Managed", "Found locally", "Custom", "Built-in"]
-EntryKind = Literal["managed", "found", "builtin"]
+DisplayStatus = Literal["Managed", "Unmanaged", "Custom", "Built-in"]
+EntryKind = Literal["managed", "unmanaged", "builtin"]
 
 
 @dataclass(frozen=True)
 class InventoryColumn:
     harness: str
     label: str
-
-    def to_dict(self) -> dict[str, str]:
-        return {"harness": self.harness, "label": self.label}
 
 
 @dataclass(frozen=True)
@@ -31,19 +28,6 @@ class InventorySighting:
     source: SourceDescriptor
     detail: str = ""
 
-    def to_dict(self) -> dict[str, str | None]:
-        return {
-            "kind": self.kind,
-            "harness": self.harness,
-            "label": self.label,
-            "scope": self.scope,
-            "path": str(self.path) if self.path is not None else None,
-            "revision": self.revision,
-            "sourceKind": self.source.kind,
-            "sourceLocator": self.source.locator,
-            "detail": self.detail or None,
-        }
-
 
 @dataclass
 class InventoryEntry:
@@ -52,7 +36,6 @@ class InventoryEntry:
     description: str
     kind: EntryKind
     source: SourceDescriptor
-    source_label: str
     current_revision: str | None = None
     recorded_revision: str | None = None
     package_dir: str | None = None
@@ -72,15 +55,15 @@ class InventoryEntry:
     def display_status(self) -> DisplayStatus:
         if self.kind == "builtin":
             return "Built-in"
-        if self.kind == "found":
-            return "Found locally"
+        if self.kind == "unmanaged":
+            return "Unmanaged"
         if self.is_custom:
             return "Custom"
         return "Managed"
 
     @property
     def primary_action(self) -> dict[str, str]:
-        if self.kind == "found":
+        if self.kind == "unmanaged":
             return {"kind": "manage", "label": "Bring under management"}
         return {"kind": "open", "label": "Open"}
 
@@ -91,126 +74,35 @@ class InventoryEntry:
         return None
 
     @property
-    def needs_attention(self) -> bool:
-        return self.is_custom
-
-    @property
-    def default_sort_rank(self) -> int:
-        order = {
-            "Custom": 0,
-            "Found locally": 1,
-            "Managed": 2,
-            "Built-in": 3,
-        }
-        return order[self.display_status]
-
-    @property
     def can_update(self) -> bool:
-        return self.kind == "managed" and not self.is_custom and self.source.is_source_backed
+        return self.kind == "managed" and not self.is_custom and self.source.kind == "github"
 
     @property
     def can_manage(self) -> bool:
-        return self.kind == "found"
-
-    @property
-    def can_toggle(self) -> bool:
-        return self.kind == "managed"
+        return self.kind == "unmanaged"
 
     def add_sighting(self, sighting: InventorySighting) -> None:
         self.sightings.append(sighting)
 
-    def has_harness(self, harness: str) -> bool:
-        return any(sighting.harness == harness for sighting in self.sightings if sighting.harness is not None)
-
-    def row_dict(self, columns: tuple[InventoryColumn, ...]) -> dict[str, object]:
-        return {
-            "skillRef": self.skill_ref,
-            "name": self.name,
-            "description": self.description,
-            "displayStatus": self.display_status,
-            "attentionMessage": self.attention_message,
-            "needsAttention": self.needs_attention,
-            "defaultSortRank": self.default_sort_rank,
-            "primaryAction": self.primary_action,
-            "cells": [self._cell_dict(column) for column in columns],
-        }
-
-    def detail_dict(
-        self,
-        columns: tuple[InventoryColumn, ...],
-        *,
-        update_available: bool | None,
-    ) -> dict[str, object]:
-        status_message = {
-            "Managed": "Managed in the shared store and available for per-tool enable or disable.",
-            "Found locally": "Detected in local tool folders and not yet managed by skill-manager.",
-            "Custom": "Managed in the shared store, but modified locally. Source updates are disabled.",
-            "Built-in": "Provided by the tool and not managed by skill-manager.",
-        }[self.display_status]
-
-        return {
-            "skillRef": self.skill_ref,
-            "name": self.name,
-            "description": self.description,
-            "displayStatus": self.display_status,
-            "statusMessage": status_message,
-            "attentionMessage": self.attention_message,
-            "primaryAction": self.primary_action,
-            "source": {
-                "kind": self.source.kind,
-                "label": self.source_label,
-                "locator": self.source.locator,
-            },
-            "actions": {
-                "canManage": self.can_manage,
-                "canToggle": self.can_toggle,
-                "canUpdate": self.can_update,
-                "updateAvailable": update_available,
-            },
-            "harnesses": [self._detail_harness_dict(column) for column in columns],
-            "locations": [sighting.to_dict() for sighting in self._sorted_sightings()],
-            "advanced": {
-                "packageDir": self.package_dir,
-                "packagePath": str(self.package_path) if self.package_path is not None else None,
-                "currentRevision": self.current_revision,
-                "recordedRevision": self.recorded_revision,
-                "sourceKind": self.source.kind,
-                "sourceLocator": self.source.locator,
-            },
-        }
-
-    def _detail_harness_dict(self, column: InventoryColumn) -> dict[str, object]:
-        state = self._cell_state(column.harness)
-        matching = [s for s in self._sorted_sightings() if s.harness == column.harness]
-        return {
-            "harness": column.harness,
-            "label": column.label,
-            "state": state,
-            "scopes": [s.scope for s in matching if s.scope],
-            "paths": [str(s.path) for s in matching if s.path is not None],
-        }
-
-    def _cell_dict(self, column: InventoryColumn) -> dict[str, object]:
-        state = self._cell_state(column.harness)
-        return {
-            "harness": column.harness,
-            "label": column.label,
-            "state": state,
-            "interactive": state in {"enabled", "disabled"},
-        }
-
-    def _cell_state(self, harness: str) -> str:
+    def cell_state(self, harness: str) -> str:
         if self.kind == "builtin":
             return "builtin" if any(s.harness == harness for s in self.sightings) else "empty"
-        if self.kind == "found":
+        if self.kind == "unmanaged":
             return "found" if any(s.harness == harness for s in self.sightings) else "empty"
         return "enabled" if any(s.harness == harness for s in self.sightings if s.kind == "harness") else "disabled"
 
-    def _harness_presence(self) -> set[str]:
-        return {s.harness for s in self.sightings if s.harness is not None}
-
-    def _sorted_sightings(self) -> list[InventorySighting]:
-        return sorted(self.sightings, key=lambda item: (item.kind, item.harness or "", item.scope or "", item.label))
+    def detail_sightings(self) -> list[InventorySighting]:
+        order = {"shared": 0, "harness": 1, "builtin": 2}
+        return sorted(
+            self.sightings,
+            key=lambda item: (
+                order.get(item.kind, 99),
+                item.harness or "",
+                item.scope or "",
+                item.label,
+                str(item.path) if item.path is not None else "",
+            ),
+        )
 
 
 class SkillInventory:
@@ -246,7 +138,6 @@ class SkillInventory:
                 description=package.description,
                 kind="managed",
                 source=package.source,
-                source_label=_source_label(package.source),
                 current_revision=package.revision,
                 recorded_revision=store_package.recorded_revision,
                 package_dir=package.root_path.name,
@@ -266,7 +157,7 @@ class SkillInventory:
             entries.append(entry)
             shared_path_index[package.resolved_path] = entry
 
-        found_entries: dict[str, InventoryEntry] = {}
+        unmanaged_entries: dict[str, InventoryEntry] = {}
         builtin_entries: dict[str, InventoryEntry] = {}
 
         for scan in harness_scans:
@@ -285,20 +176,19 @@ class SkillInventory:
                     shared_entry.add_sighting(sighting)
                     continue
 
-                key = _found_entry_key(observation.package.declared_name, observation.package.source, observation.package.revision)
-                entry = found_entries.get(key)
+                key = _unmanaged_entry_key(observation.package.declared_name, observation.package.source, observation.package.revision)
+                entry = unmanaged_entries.get(key)
                 if entry is None:
-                    skill_ref = f"found:{key}"
+                    skill_ref = f"unmanaged:{key}"
                     entry = InventoryEntry(
                         skill_ref=skill_ref,
                         name=observation.package.declared_name,
                         description=observation.package.description,
-                        kind="found",
+                        kind="unmanaged",
                         source=observation.package.source,
-                        source_label=_source_label(observation.package.source),
                         current_revision=observation.package.revision,
                     )
-                    found_entries[key] = entry
+                    unmanaged_entries[key] = entry
                 entry.add_sighting(sighting)
 
             for builtin in scan.builtins:
@@ -312,7 +202,6 @@ class SkillInventory:
                         description=builtin.detail,
                         kind="builtin",
                         source=source,
-                        source_label="Built-in",
                     )
                     builtin_entries[key] = entry
                 entry.add_sighting(
@@ -328,7 +217,7 @@ class SkillInventory:
                     )
                 )
 
-        entries.extend(found_entries.values())
+        entries.extend(unmanaged_entries.values())
         entries.extend(builtin_entries.values())
         entries.sort(key=_entry_sort_key)
         return cls(
@@ -341,67 +230,18 @@ class SkillInventory:
     def find(self, skill_ref: str) -> InventoryEntry | None:
         return self._by_ref.get(skill_ref)
 
-    def skills_page_dict(self) -> dict[str, object]:
-        counts = {
-            "managed": sum(1 for entry in self.entries if entry.display_status == "Managed"),
-            "foundLocally": sum(1 for entry in self.entries if entry.display_status == "Found locally"),
-            "custom": sum(1 for entry in self.entries if entry.display_status == "Custom"),
-            "builtIn": sum(1 for entry in self.entries if entry.display_status == "Built-in"),
-        }
-        counts["needsAction"] = counts["custom"]
-        return {
-            "summary": counts,
-            "harnessColumns": [column.to_dict() for column in self.columns],
-            "rows": [entry.row_dict(self.columns) for entry in self.entries],
-        }
 
-    def settings_dict(self) -> dict[str, object]:
-        return {
-            "harnesses": [
-                {
-                    "harness": scan.harness,
-                    "label": scan.label,
-                    "detected": scan.detected,
-                    "manageable": scan.manageable,
-                    "builtinSupport": scan.builtin_support,
-                    "issues": list(scan.issues),
-                    "diagnostics": {
-                        "discoveryMode": scan.discovery_mode,
-                        "detectionDetails": list(scan.detection_details),
-                    },
-                }
-                for scan in self.harness_scans
-            ],
-            "storeIssues": list(self.store_issues),
-            "bulkActions": {
-                "canManageAll": any(entry.can_manage for entry in self.entries),
-            },
-        }
-
-
-def _found_entry_key(declared_name: str, source: SourceDescriptor, revision: str) -> str:
+def _unmanaged_entry_key(declared_name: str, source: SourceDescriptor, revision: str) -> str:
     if source.is_source_backed:
-        return stable_id("found", source.kind, source.locator, declared_name, revision)
-    return stable_id("found", declared_name, revision)
-
-
-def _source_label(source: SourceDescriptor) -> str:
-    mapping = {
-        "github": "GitHub",
-        "agentskill": "AgentSkill",
-        "centralized": "Managed Store",
-        "builtin": "Built-in",
-        "unmanaged-local": "Local copy",
-        "shared-store": "Shared Store",
-    }
-    return mapping.get(source.kind, source.kind.replace("-", " ").title())
+        return stable_id("unmanaged", source.kind, source.locator, declared_name, revision)
+    return stable_id("unmanaged", declared_name, revision)
 
 
 def _entry_sort_key(entry: InventoryEntry) -> tuple[int, str, str]:
     order = {
         "Managed": 0,
         "Custom": 1,
-        "Found locally": 2,
+        "Unmanaged": 2,
         "Built-in": 3,
     }
     return (order[entry.display_status], entry.name.lower(), entry.skill_ref)

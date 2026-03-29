@@ -7,7 +7,7 @@ interface SwitchProps {
   onCheckedChange: (checked: boolean) => void;
 }
 
-export function Switch({ checked, disabled = false, ariaLabel, onCheckedChange }: SwitchProps): JSX.Element {
+export function Switch({ checked, disabled = false, ariaLabel, onCheckedChange }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       className="ui-switch"

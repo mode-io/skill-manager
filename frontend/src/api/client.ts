@@ -1,10 +1,4 @@
-import type {
-  MarketplaceItem,
-  MarketplacePageResult,
-  SettingsData,
-  SkillDetail,
-  SkillsPageData,
-} from "./types";
+import type { BulkManageResult, MarketplacePageResult, SettingsData, SkillDetail, SkillsPageData } from "./types";
 import { apiPath } from "./paths";
 
 interface OkResponse {
@@ -58,22 +52,29 @@ export async function updateSkill(skillRef: string): Promise<OkResponse> {
   return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/update`);
 }
 
-export async function manageAllSkills(): Promise<OkResponse> {
-  return postJson<OkResponse>("/skills/manage-all");
+export async function manageAllSkills(): Promise<BulkManageResult> {
+  const result = await postJson<BulkManageResult>("/skills/manage-all");
+  if (!result.ok) {
+    const firstFailure = result.failures[0];
+    throw new Error(firstFailure?.error ?? "Unable to manage all eligible skills.");
+  }
+  return result;
 }
 
 export async function fetchMarketplacePopular(params: MarketplacePageParams = {}): Promise<MarketplacePageResult> {
-  return expectJson<MarketplacePageResult>(fetch(apiPath(withQuery("/marketplace/popular", params))));
+  return expectJson<MarketplacePageResult>(
+    fetch(apiPath(withQuery("/marketplace/popular", { limit: params.limit, offset: params.offset }))),
+  );
 }
 
 export async function searchMarketplace(query: string, params: MarketplacePageParams = {}): Promise<MarketplacePageResult> {
   return expectJson<MarketplacePageResult>(
-    fetch(apiPath(withQuery("/marketplace/search", { ...params, q: query }))),
+    fetch(apiPath(withQuery("/marketplace/search", { limit: params.limit, offset: params.offset, q: query }))),
   );
 }
 
-export async function installSkill(sourceKind: string, sourceLocator: string): Promise<OkResponse> {
-  return postJson<OkResponse>("/marketplace/install", { sourceKind, sourceLocator });
+export async function installSkill(installToken: string): Promise<OkResponse> {
+  return postJson<OkResponse>("/marketplace/install", { installToken });
 }
 
 export async function fetchSettings(): Promise<SettingsData> {

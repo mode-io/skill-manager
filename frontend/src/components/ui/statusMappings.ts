@@ -7,7 +7,7 @@ export function skillStatusTone(status: SkillStatus): StatusBadgeTone {
       return "success";
     case "Custom":
       return "warning";
-    case "Found locally":
+    case "Unmanaged":
       return "neutral";
     case "Built-in":
       return "muted";

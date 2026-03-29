@@ -19,6 +19,7 @@ class GitHubRepoMetadata:
     owner_login: str | None
     owner_avatar_url: str | None
     stars: int
+    default_branch: str | None = None
 
 
 @dataclass(frozen=True)
@@ -129,6 +130,7 @@ def _default_metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
     owner_avatar_url = owner_payload.get("avatar_url") if isinstance(owner_payload, dict) else None
     repo_url = payload.get("html_url")
     stars = payload.get("stargazers_count", 0)
+    default_branch = payload.get("default_branch")
 
     if not isinstance(owner_login, str) or not owner_login:
         owner_login = _owner_from_repo(repo)
@@ -140,6 +142,8 @@ def _default_metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
         star_count = int(stars)
     except (TypeError, ValueError):
         star_count = 0
+    if not isinstance(default_branch, str) or not default_branch:
+        default_branch = None
 
     return GitHubRepoMetadata(
         repo=repo,
@@ -147,6 +151,7 @@ def _default_metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
         owner_login=owner_login,
         owner_avatar_url=owner_avatar_url,
         stars=star_count,
+        default_branch=default_branch,
     )
 
 

@@ -5,8 +5,8 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.sources.github import GitHubManifestFetcher, GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
-from skill_manager.sources.types import SkillListing
+from skill_manager.application.marketplace.skillssh import extract_detail_description, parse_homepage_leaderboard
+from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
 
 from tests.support import seed_skill_package
 
@@ -80,40 +80,53 @@ class GitHubSourceTests(unittest.TestCase):
             self.assertIsNotNone(result)
             self.assertTrue((result / "SKILL.md").is_file())
 
-    def test_manifest_fetcher_tries_common_preferred_paths_before_tree_scan(self) -> None:
-        file_calls: list[tuple[str, str]] = []
+class SkillsShParsingTests(unittest.TestCase):
+    def test_parse_homepage_leaderboard_reads_embedded_initial_skills_payload(self) -> None:
+        html = """
+        <html>
+          <body>
+            <script>
+              self.__next_f.push([1,"{\\"initialSkills\\":[{\\"source\\":\\"mode-io/skills\\",\\"skillId\\":\\"mode-switch\\",\\"name\\":\\"Mode Switch\\",\\"installs\\":128},{\\"source\\":\\"vercel-labs/skills\\",\\"skillId\\":\\"trace-scout\\",\\"name\\":\\"Trace Scout\\",\\"installs\\":84}]}"])
+            </script>
+          </body>
+        </html>
+        """
+        skills = parse_homepage_leaderboard(html)
+        self.assertEqual([(item.repo, item.skill_id, item.installs) for item in skills], [
+            ("mode-io/skills", "mode-switch", 128),
+            ("vercel-labs/skills", "trace-scout", 84),
+        ])
 
-        def file_text_fetcher(repo: str, path: str) -> str | None:
-            file_calls.append((repo, path))
-            if path == "skills/find-skills/SKILL.md":
-                return "---\nname: find-skills\ndescription: Canonical find-skills description.\n---\n"
-            return None
-
-        fetcher = GitHubManifestFetcher(
-            tree_fetcher=lambda repo: [],
-            file_text_fetcher=file_text_fetcher,
+    def test_extract_detail_description_prefers_summary_then_skill_body_then_hint(self) -> None:
+        summary_html = """
+        <section>
+          <h2>Summary</h2>
+          <p>Investigate Azure telemetry and platform health.</p>
+          <h2>SKILL.md</h2>
+          <p>Ignored fallback body.</p>
+        </section>
+        """
+        self.assertEqual(
+            extract_detail_description(summary_html, skill_name="Azure Observability", description_hint="Hint"),
+            "Investigate Azure telemetry and platform health.",
         )
 
-        text = fetcher.fetch_skill_manifest_text("github:vercel-labs/skills/find-skills")
-
-        self.assertIsNotNone(text)
-        self.assertIn(("vercel-labs/skills", "skills/find-skills/SKILL.md"), file_calls)
-
-
-class ListingModelTests(unittest.TestCase):
-    def test_listing_supports_github_repo_and_stars(self) -> None:
-        listing = SkillListing(
-            name="React Best",
-            description_hint="React best practices",
-            source_kind="github",
-            source_locator="github:vercel/skills/react-best",
-            registry="skillssh",
-            installs=1234,
-            github_repo="vercel/skills",
-            github_stars=4321,
+        skill_body_html = """
+        <section>
+          <h2>SKILL.md</h2>
+          <p>Azure Observability</p>
+          <p>Use this skill to review Azure incidents and monitoring signals.</p>
+        </section>
+        """
+        self.assertEqual(
+            extract_detail_description(skill_body_html, skill_name="Azure Observability", description_hint="Hint"),
+            "Use this skill to review Azure incidents and monitoring signals.",
         )
-        self.assertEqual(listing.github_repo, "vercel/skills")
-        self.assertEqual(listing.github_stars, 4321)
+
+        self.assertEqual(
+            extract_detail_description("<html><body><p>No useful sections.</p></body></html>", skill_name="Azure Observability", description_hint="Hint"),
+            "Hint",
+        )
 
 
 if __name__ == "__main__":

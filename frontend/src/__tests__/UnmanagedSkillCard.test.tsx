@@ -2,16 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { SkillTableRow } from "../api/types";
-import { FoundLocalSkillCard } from "../components/skills/FoundLocalSkillCard";
+import { UnmanagedSkillCard } from "../components/skills/UnmanagedSkillCard";
 
 const row: SkillTableRow = {
-  skillRef: "local:trace-lens",
+  skillRef: "unmanaged:trace-lens",
   name: "Trace Lens",
   description: "Trace review workflow",
-  displayStatus: "Found locally",
+  displayStatus: "Unmanaged",
   attentionMessage: null,
-  needsAttention: false,
-  defaultSortRank: 1,
   primaryAction: { kind: "manage", label: "Bring under management" },
   cells: [
     { harness: "codex", label: "Codex", state: "found", interactive: false },
@@ -19,28 +17,29 @@ const row: SkillTableRow = {
   ],
 };
 
-describe("FoundLocalSkillCard", () => {
-  it("renders intake details and exposes manage plus details actions", () => {
+describe("UnmanagedSkillCard", () => {
+  it("renders intake details, manages explicitly, and opens details from the card surface", () => {
     const onOpenSkill = vi.fn();
-    const onRunPrimaryAction = vi.fn();
+    const onManageSkill = vi.fn(async () => undefined);
 
     render(
-      <FoundLocalSkillCard
+      <UnmanagedSkillCard
         row={row}
         busyId={null}
+        selected={false}
         onOpenSkill={onOpenSkill}
-        onRunPrimaryAction={onRunPrimaryAction}
+        onManageSkill={onManageSkill}
       />,
     );
 
     expect(screen.getByText("Trace Lens")).toBeInTheDocument();
-    expect(screen.getByText("Found in 2 tools")).toBeInTheDocument();
     expect(screen.getByText("Codex, Claude")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Bring under management" }));
-    expect(onRunPrimaryAction).toHaveBeenCalledWith(row);
+    expect(onManageSkill).toHaveBeenCalledWith(row.skillRef);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Details" })[0]);
+    fireEvent.click(screen.getByText("Trace review workflow"));
     expect(onOpenSkill).toHaveBeenCalledWith(row.skillRef);
+    expect(screen.queryByRole("button", { name: "Details" })).not.toBeInTheDocument();
   });
 });

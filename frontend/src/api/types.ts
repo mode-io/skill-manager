@@ -1,10 +1,10 @@
-export type SkillStatus = "Managed" | "Found locally" | "Custom" | "Built-in";
+export type SkillStatus = "Managed" | "Unmanaged" | "Custom" | "Built-in";
 export type SkillActionKind = "open" | "manage";
 export type HarnessCellState = "enabled" | "disabled" | "found" | "builtin" | "empty";
 
 export interface SkillsSummary {
   managed: number;
-  foundLocally: number;
+  unmanaged: number;
   custom: number;
   builtIn: number;
 }
@@ -32,8 +32,6 @@ export interface SkillTableRow {
   description: string;
   displayStatus: SkillStatus;
   attentionMessage: string | null;
-  needsAttention: boolean;
-  defaultSortRank: number;
   primaryAction: SkillAction;
   cells: HarnessCell[];
 }
@@ -44,25 +42,10 @@ export interface SkillsPageData {
   rows: SkillTableRow[];
 }
 
-export interface SkillSource {
-  kind: string;
-  label: string;
-  locator: string;
-}
-
 export interface SkillActions {
   canManage: boolean;
-  canToggle: boolean;
   canUpdate: boolean;
   updateAvailable: boolean | null;
-}
-
-export interface SkillHarnessDetail {
-  harness: string;
-  label: string;
-  state: HarnessCellState;
-  scopes: string[];
-  paths: string[];
 }
 
 export interface SkillLocation {
@@ -91,33 +74,24 @@ export interface SkillDetail {
   name: string;
   description: string;
   displayStatus: SkillStatus;
-  statusMessage: string;
   attentionMessage: string | null;
-  primaryAction: SkillAction;
-  source: SkillSource;
   actions: SkillActions;
-  harnesses: SkillHarnessDetail[];
   locations: SkillLocation[];
   advanced: SkillAdvanced;
+  documentMarkdown: string | null;
 }
 
 export interface MarketplaceItem {
   id: string;
   name: string;
-  description: string | null;
-  descriptionStatus: "resolved" | "fallback" | "missing" | "unavailable";
-  sourceKind: string;
-  sourceLocator: string;
-  registry: string;
-  github: MarketplaceGitHubIdentity | null;
-}
-
-export interface MarketplaceGitHubIdentity {
-  repo: string | null;
-  url: string | null;
-  ownerLogin: string | null;
-  avatarPath: string | null;
-  stars: number;
+  description: string;
+  installs: number;
+  stars: number | null;
+  repoLabel: string;
+  repoImageUrl: string | null;
+  githubFolderUrl: string | null;
+  skillsDetailUrl: string;
+  installToken: string;
 }
 
 export interface MarketplacePageResult {
@@ -145,4 +119,17 @@ export interface SettingsData {
   bulkActions: {
     canManageAll: boolean;
   };
+}
+
+export interface BulkManageFailure {
+  skillRef: string;
+  name: string;
+  error: string;
+}
+
+export interface BulkManageResult {
+  ok: boolean;
+  managedCount: number;
+  skippedCount: number;
+  failures: BulkManageFailure[];
 }

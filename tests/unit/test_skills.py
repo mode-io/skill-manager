@@ -19,6 +19,27 @@ class SkillParsingTests(unittest.TestCase):
         self.assertEqual(manifest.source_kind, "github")
         self.assertEqual(manifest.source_locator, "github:mode-io/skills/manifest-skill")
 
+    def test_parse_skill_manifest_text_normalizes_wrapping_quotes_for_scalar_metadata(self) -> None:
+        manifest = parse_skill_manifest_text(
+            "---\nname: \"Quoted Skill\"\ndescription: \"A canonical description\"\nsource_kind: \"github\"\nsource_locator: \"github:mode-io/skills/quoted-skill\"\n---\n\n# Ignored fallback heading\n"
+        )
+        self.assertEqual(manifest.declared_name, "Quoted Skill")
+        self.assertEqual(manifest.description, "A canonical description")
+        self.assertEqual(manifest.source_kind, "github")
+        self.assertEqual(manifest.source_locator, "github:mode-io/skills/quoted-skill")
+
+    def test_parse_skill_manifest_text_preserves_inner_quotes(self) -> None:
+        manifest = parse_skill_manifest_text(
+            "---\nname: Inner Quotes\ndescription: 'Use the \"fast\" path for browser automation.'\n---\n\n# Inner Quotes\n"
+        )
+        self.assertEqual(manifest.description, 'Use the "fast" path for browser automation.')
+
+    def test_parse_skill_manifest_text_preserves_mismatched_quotes(self) -> None:
+        manifest = parse_skill_manifest_text(
+            "---\nname: Odd Quotes\ndescription: \"Leading quote only\n---\n\n# Odd Quotes\n"
+        )
+        self.assertEqual(manifest.description, '"Leading quote only')
+
     def test_parse_skill_package_uses_frontmatter_name_and_source_metadata(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -68,6 +89,19 @@ class SkillParsingTests(unittest.TestCase):
                 package_root, default_source=SourceDescriptor(kind="shared-store", locator="fixture:test"),
             )
             self.assertEqual(package.description, "A short description")
+
+    def test_parse_extracts_single_line_description_without_wrapping_quotes(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            package_root = Path(temp_dir) / "quoted-desc"
+            package_root.mkdir()
+            (package_root / "SKILL.md").write_text(
+                "---\nname: Quoted Description\ndescription: \"A short quoted description\"\n---\n\n# Quoted Description\n",
+                encoding="utf-8",
+            )
+            package = parse_skill_package(
+                package_root, default_source=SourceDescriptor(kind="shared-store", locator="fixture:test"),
+            )
+            self.assertEqual(package.description, "A short quoted description")
 
     def test_parse_extracts_multiline_block_scalar_description(self) -> None:
         with TemporaryDirectory() as temp_dir:

@@ -5,6 +5,6 @@ interface StatusBadgeProps {
   tone: StatusBadgeTone;
 }
 
-export function StatusBadge({ label, tone }: StatusBadgeProps): JSX.Element {
+export function StatusBadge({ label, tone }: StatusBadgeProps) {
   return <span className={`ui-status-badge ui-status-badge--${tone}`}>{label}</span>;
 }

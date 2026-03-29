@@ -15,8 +15,6 @@ const row: SkillTableRow = {
   description: "Trace review workflow",
   displayStatus: "Managed",
   attentionMessage: null,
-  needsAttention: false,
-  defaultSortRank: 1,
   primaryAction: { kind: "open", label: "Open" },
   cells: [
     { harness: "codex", label: "Codex", state: "disabled", interactive: true },

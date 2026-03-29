@@ -9,7 +9,7 @@ interface SearchInputProps {
   disabled?: boolean;
 }
 
-export function SearchInput({ value, onChange, onSubmit, placeholder = "Search...", loading, disabled }: SearchInputProps): JSX.Element {
+export function SearchInput({ value, onChange, onSubmit, placeholder = "Search...", loading, disabled }: SearchInputProps) {
   return (
     <div className="search-bar">
       <div className="search-bar__field">
@@ -24,7 +24,7 @@ export function SearchInput({ value, onChange, onSubmit, placeholder = "Search..
           disabled={disabled}
         />
       </div>
-      <button type="button" className="btn btn-primary search-bar__submit" onClick={onSubmit} disabled={loading || disabled || !value.trim()}>
+      <button type="button" className="btn btn-primary search-bar__submit" onClick={onSubmit} disabled={loading || disabled}>
         {loading ? <span className="spinner spinner-sm" /> : <Search size={16} />}
         Search
       </button>

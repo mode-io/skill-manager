@@ -1,74 +1,140 @@
 from __future__ import annotations
 
+from pathlib import Path
+from tempfile import mkdtemp
 import unittest
 
 from skill_manager.application.marketplace import MarketplaceService
-from skill_manager.sources import GitHubRepoMetadataClient
-from skill_manager.sources.types import SkillListing
+from skill_manager.application.marketplace.cache import MarketplaceCache
+from skill_manager.application.marketplace.models import RepoDisplayMetadata, SkillsShSkill
+from skill_manager.application.marketplace.resolver import DetailEnrichment
+from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support import create_fixture_marketplace_service
 
 
 class MarketplaceServiceTests(unittest.TestCase):
-    def test_popular_returns_nested_github_identity_without_legacy_fields(self) -> None:
-        payload = create_fixture_marketplace_service().popular()
+    def test_popular_returns_install_sorted_cards_without_legacy_source_fields(self) -> None:
+        payload = create_fixture_marketplace_service().popular_page()["items"]
 
-        self.assertEqual(payload[0]["name"], "Switch Modes")
-        self.assertNotIn("popularity", payload[0])
+        self.assertEqual([item["name"] for item in payload[:3]], ["Mode Switch", "Trace Scout", "Azure Observability"])
 
-        mode_switch = next(item for item in payload if item["name"] == "Mode Switch")
-        switch_modes = next(item for item in payload if item["name"] == "Switch Modes")
+        mode_switch = payload[0]
+        self.assertEqual(mode_switch["installs"], 128)
+        self.assertEqual(mode_switch["stars"], 512)
+        self.assertEqual(mode_switch["repoLabel"], "mode-io/skills")
+        self.assertEqual(
+            mode_switch["githubFolderUrl"],
+            "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+        )
+        self.assertEqual(
+            mode_switch["skillsDetailUrl"],
+            "https://skills.sh/mode-io/skills/mode-switch",
+        )
+        self.assertNotIn("sourceKind", mode_switch)
+        self.assertNotIn("sourceLocator", mode_switch)
+        self.assertNotIn("github", mode_switch)
 
-        self.assertEqual(mode_switch["github"]["repo"], "mode-io/skills")
-        self.assertEqual(mode_switch["github"]["url"], "https://github.com/mode-io/skills")
-        self.assertEqual(mode_switch["github"]["avatarPath"], "/marketplace/avatar?repo=mode-io%2Fskills")
-        self.assertEqual(mode_switch["github"]["stars"], 512)
+    def test_search_requires_two_characters(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Enter at least 2 characters"):
+            create_fixture_marketplace_service().search_page("a")
 
-        self.assertIsNone(switch_modes["github"]["repo"])
-        self.assertEqual(switch_modes["github"]["url"], "https://github.com/openclaw")
-        self.assertEqual(switch_modes["github"]["ownerLogin"], "openclaw")
-        self.assertEqual(switch_modes["github"]["avatarPath"], "/marketplace/avatar?owner=openclaw")
-        self.assertEqual(switch_modes["github"]["stars"], 2218)
+    def test_search_results_are_sorted_by_installs(self) -> None:
+        payload = create_fixture_marketplace_service().search_page("switch")["items"]
+        self.assertEqual([item["name"] for item in payload], ["Mode Switch", "Switch Audit"])
+        self.assertEqual([item["installs"] for item in payload], [128, 12])
 
-    def test_identity_backed_rows_emit_avatar_paths_without_prefetched_avatar_metadata(self) -> None:
+    def test_install_tokens_resolve_to_github_descriptors(self) -> None:
+        service = create_fixture_marketplace_service()
+        payload = service.popular_page()["items"]
+        descriptor = service.resolve_install_token(payload[0]["installToken"])
+        self.assertEqual(descriptor, ("github", "github:mode-io/skills/mode-switch"))
+
+    def test_unexpected_provider_errors_are_not_silently_swallowed(self) -> None:
         service = MarketplaceService(
-            searchers=(
-                lambda query, *, limit=20: [
-                    SkillListing(
-                        name="Repo Only",
-                        description="Repo-backed listing without metadata preload.",
-                        source_kind="github",
-                        source_locator="github:mode-io/skills/repo-only",
-                        registry="skillssh",
-                        github_repo="mode-io/skills",
-                    ),
-                    SkillListing(
-                        name="Owner Only",
-                        description="Owner-backed listing without metadata preload.",
-                        source_kind="agentskill",
-                        source_locator="agentskill:openclaw/owner-only",
-                        registry="agentskill",
-                        github_owner="openclaw",
-                    ),
-                ][:limit],
-            ),
-            github_client=GitHubRepoMetadataClient(
-                metadata_fetcher=lambda repo: None,
-                owner_fetcher=lambda login: None,
-            ),
+            leaderboard_fetcher=lambda: (_ for _ in ()).throw(TypeError("bad provider wiring")),
+            search_fetcher=lambda query, limit: [],
+            warm_on_init=False,
         )
 
-        payload = service.popular()
-        repo_only = next(item for item in payload if item["name"] == "Repo Only")
-        owner_only = next(item for item in payload if item["name"] == "Owner Only")
+        with self.assertRaisesRegex(TypeError, "bad provider wiring"):
+            service.popular_page()
 
-        self.assertEqual(repo_only["github"]["repo"], "mode-io/skills")
-        self.assertEqual(repo_only["github"]["url"], "https://github.com/mode-io/skills")
-        self.assertEqual(repo_only["github"]["avatarPath"], "/marketplace/avatar?repo=mode-io%2Fskills")
+    def test_searcher_injection_is_used_for_expanded_fetch_windows(self) -> None:
+        calls: list[int] = []
 
-        self.assertIsNone(owner_only["github"]["repo"])
-        self.assertEqual(owner_only["github"]["url"], "https://github.com/openclaw")
-        self.assertEqual(owner_only["github"]["ownerLogin"], "openclaw")
-        self.assertEqual(owner_only["github"]["avatarPath"], "/marketplace/avatar?owner=openclaw")
+        def searcher(query: str, limit: int) -> list[SkillsShSkill]:
+            calls.append(limit)
+            return [
+                SkillsShSkill(repo="mode-io/skills", skill_id=f"skill-{index}", name=f"Skill {index}", installs=100 - index)
+                for index in range(limit)
+            ]
+
+        cache = MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-")))
+        for index in range(61):
+            cache.write(
+                "details",
+                f"https://skills.sh/mode-io/skills/skill-{index}",
+                DetailEnrichment(
+                    description=f"Skill {index} description",
+                    github_folder_url=f"https://github.com/mode-io/skills/tree/main/skills/skill-{index}",
+                ).to_dict(),
+            )
+
+        service = MarketplaceService(
+            leaderboard_fetcher=lambda: [],
+            search_fetcher=searcher,
+            github_client=GitHubRepoMetadataClient(
+                metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                    repo=repo,
+                    repo_url=f"https://github.com/{repo}",
+                    owner_login="mode-io",
+                    owner_avatar_url=None,
+                    stars=42,
+                    default_branch="main",
+                ),
+            ),
+            cache=cache,
+            warm_on_init=False,
+        )
+
+        payload = service.search_page("skill", limit=20, offset=40)
+        self.assertEqual(calls[-1], 61)
+        self.assertEqual(len(payload["items"]), 20)
+        self.assertEqual(payload["nextOffset"], 60)
+
+    def test_warm_details_persists_description_when_folder_resolution_fails(self) -> None:
+        cache = MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-")))
+        record = SkillsShSkill(
+            repo="google-labs-code/stitch-skills",
+            skill_id="react:components",
+            name="react:components",
+            installs=12,
+        )
+        service = MarketplaceService(
+            leaderboard_fetcher=lambda: [record],
+            search_fetcher=lambda query, limit: [record],
+            detail_fetcher=lambda detail_url: """
+                <section>
+                  <h2>SKILL.md</h2>
+                  <p>react:components</p>
+                  <p>Build React components from Stitch designs.</p>
+                </section>
+            """,
+            github_client=GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None),
+            cache=cache,
+            warm_on_init=False,
+        )
+        service._resolver.github_folder_url = lambda repo, skill_id, default_branch=None: (_ for _ in ()).throw(ValueError("no path"))  # type: ignore[method-assign]
+
+        service._warm_details([
+            (record, RepoDisplayMetadata(stars=None, image_url=None, default_branch="main")),
+        ])
+
+        cached = cache.read("details", record.detail_url, ttl_seconds=3600)
+        self.assertIsNotNone(cached)
+        payload = cached.payload
+        self.assertEqual(payload["description"], "Build React components from Stitch designs.")
+        self.assertIsNone(payload["githubFolderUrl"])
 
 
 if __name__ == "__main__":

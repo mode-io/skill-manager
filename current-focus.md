@@ -18,6 +18,7 @@ Current shape:
 
 - Python owns domain logic, the shared store, harness adapters, source connectors, the local API, and the launcher.
 - React/Vite owns the browser UI.
+- JSON APIs are namespaced under `/api/*`; page routes are SPA-only.
 - The browser UI is the primary product surface.
 - The CLI only launches the local app and browser.
 
@@ -28,10 +29,12 @@ Current product capabilities:
 - distinguish `shared`, `unmanaged`, and `builtin` entries
 - enable and disable shared skills per harness
 - centralize unmanaged skills into the shared store
-- search external registries
+- browse the `skills.sh` all-time leaderboard
+- search `skills.sh`
 - install source-backed skills into the shared store
 - update source-backed shared skills
 - report health and integrity state
+- keep the Skills workspace warm across route changes with cached client state
 
 Current supported harness surface:
 
@@ -54,6 +57,7 @@ Priorities:
 - improve clarity of the multi-page information architecture
 - tighten navigation, empty states, status communication, and action affordances
 - reduce visual and interaction debt carried over from the initial bootstrap
+- keep frontend data loading on one React Query-based architecture instead of route-local fetch state
 
 Working rule:
 
@@ -68,6 +72,7 @@ Priorities:
 - keep harness-specific behavior isolated in adapters instead of leaking into the application layer or UI
 - remove stale read-only/bootstrap assumptions from product behavior and repo messaging
 - align the backend read model and serializers to the simplified frontend product model before major UI implementation
+- keep API DTOs clean by removing unused workflow fields instead of preserving legacy payload baggage
 
 Working rule:
 
@@ -106,6 +111,7 @@ Changes should be validated in the smallest lane that proves the change, but the
 ### Frontend changes
 
 - targeted Vitest coverage when rendering, routing, or client state behavior changes
+- React Query invalidation and cached-route behavior should be covered when page-state architecture changes
 - frontend build must stay green
 
 ### End-to-end flow changes

@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
 
 interface AppShellProps {
   children: ReactNode;
-  onOpenSettings: () => void;
+  settingsControl?: ReactNode;
 }
 
-export function AppShell({ children, onOpenSettings }: AppShellProps): JSX.Element {
+export function AppShell({ children, settingsControl }: AppShellProps) {
+  const location = useLocation();
+  const isSkillsRoute = location.pathname.startsWith("/skills");
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -23,11 +25,9 @@ export function AppShell({ children, onOpenSettings }: AppShellProps): JSX.Eleme
             <span className="nav-link__label">Marketplace</span>
           </NavLink>
         </nav>
-        <button type="button" className="icon-button" onClick={onOpenSettings} aria-label="Open settings">
-          <Settings size={18} />
-        </button>
+        {settingsControl ?? null}
       </header>
-      <main className="app-main">{children}</main>
+      <main className={`app-main${isSkillsRoute ? " app-main--skills" : ""}`}>{children}</main>
     </div>
   );
 }
