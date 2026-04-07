@@ -2,7 +2,7 @@
 
 This repo is an incubating managed project for the Universal Skill Manager.
 
-While `skill-manager/` lives inside `/Users/siruizhang/Desktop/ModeIOSkill`, the root workflow rules still apply for task tracking, worktree management, and local-repo coordination. This file adds the project-local rules that should move with the repo if it is later promoted to a standalone Mode.io GitHub repository.
+While `skill-manager/` lives inside `/Users/siruizhang/Desktop/ModeIOSkill`, the root workflow rules still apply for task tracking, worktree management, and local-repo coordination. This file adds the project-local rules that remain repo-owned now that the project is published as `mode-io/skill-manager`.
 
 ## Session Start
 
