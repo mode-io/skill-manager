@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="640" height="640">
+  <!-- Head (rows 4-8, cols 2-16) -->
+  <rect x="2" y="4" width="15" height="5" fill="#D97757"/>
+  <!-- Left eye (row 7-8, col 5) -->
+  <rect x="5" y="7" width="1" height="2" fill="#1A1A1A"/>
+  <!-- Right eye (row 7-8, col 14) -->
+  <rect x="14" y="7" width="1" height="2" fill="#1A1A1A"/>
+  <!-- Arms full width (rows 9-11) -->
+  <rect x="0" y="9" width="20" height="3" fill="#D97757"/>
+  <!-- Body (rows 12-13, cols 2-16) -->
+  <rect x="2" y="12" width="15" height="2" fill="#D97757"/>
+  <!-- Leg 1 (rows 14-16, col 4) -->
+  <rect x="4" y="14" width="1" height="3" fill="#D97757"/>
+  <!-- Leg 2 (rows 14-16, col 6) -->
+  <rect x="6" y="14" width="1" height="3" fill="#D97757"/>
+  <!-- Leg 3 (rows 14-16, cols 12-13) -->
+  <rect x="12" y="14" width="2" height="3" fill="#D97757"/>
+  <!-- Leg 4 (rows 14-16, col 15) -->
+  <rect x="15" y="14" width="1" height="3" fill="#D97757"/>
+</svg>
