@@ -1023,22 +1023,44 @@
 .skill-harness-cluster__items {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
 }
 
 .skill-harness-cluster__item {
   display: grid;
   gap: 8px;
   justify-items: center;
-  min-width: 50px;
+  min-width: 46px;
 }
 
 .skill-harness-cluster__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.skill-harness-mark {
+  min-width: 0;
+}
+
+.skill-harness-mark--text {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+.skill-harness-mark--logo {
+  width: auto;
+}
+
+.skill-harness-mark__logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 96px;
 }
 
 .skill-harness-cluster__control {

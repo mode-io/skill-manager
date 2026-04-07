@@ -3,6 +3,7 @@ import { StatusBadge } from "../ui/StatusBadge";
 import { Switch } from "../ui/Switch";
 import { passiveHarnessStateBadge } from "../ui/statusMappings";
 import { alignHarnessCells } from "../../features/skills/selectors";
+import { HarnessMark } from "./HarnessMark";
 
 interface ManagedSkillHarnessClusterProps {
   row: SkillTableRow;
@@ -28,7 +29,11 @@ export function ManagedSkillHarnessCluster({
       <div className="skill-harness-cluster__items">
         {items.map(({ column, cell }) => (
           <div key={`${row.skillRef}:${column.harness}`} className="skill-harness-cluster__item">
-            <span className="skill-harness-cluster__tool">{column.label}</span>
+            <HarnessMark
+              harness={column.harness}
+              label={column.label}
+              className="skill-harness-cluster__tool"
+            />
             <div className="skill-harness-cluster__control">
               {cell ? (
                 <ManagedHarnessClusterControl

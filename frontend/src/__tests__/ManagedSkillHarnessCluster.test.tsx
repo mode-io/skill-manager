@@ -7,6 +7,7 @@ import { ManagedSkillHarnessCluster } from "../components/skills/ManagedSkillHar
 const columns: HarnessColumn[] = [
   { harness: "codex", label: "Codex" },
   { harness: "cursor", label: "Cursor" },
+  { harness: "gemini", label: "Gemini" },
 ];
 
 const row: SkillTableRow = {
@@ -19,6 +20,7 @@ const row: SkillTableRow = {
   cells: [
     { harness: "codex", label: "Codex", state: "disabled", interactive: true },
     { harness: "cursor", label: "Cursor", state: "builtin", interactive: false },
+    { harness: "gemini", label: "Gemini", state: "disabled", interactive: true },
   ],
 };
 
@@ -26,7 +28,7 @@ describe("ManagedSkillHarnessCluster", () => {
   it("renders grouped harness controls and forwards toggle events", () => {
     const onToggleCell = vi.fn();
 
-    render(
+    const { container } = render(
       <ManagedSkillHarnessCluster
         row={row}
         columns={columns}
@@ -36,6 +38,9 @@ describe("ManagedSkillHarnessCluster", () => {
     );
 
     expect(screen.getByText("Built-in")).toBeInTheDocument();
+    expect(container.querySelectorAll(".skill-harness-mark__logo")).toHaveLength(2);
+    expect(container.querySelector(".skill-harness-mark--codex .skill-harness-mark__logo")).not.toBeNull();
+    expect(screen.getByText("Gemini")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("switch", { name: "Enable Trace Lens for Codex" }));
     expect(onToggleCell).toHaveBeenCalledWith(row, row.cells[0]);
