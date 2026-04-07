@@ -47,7 +47,7 @@ export function SettingsPopover() {
           align="end"
           sideOffset={12}
           collisionPadding={16}
-          className="settings-popover__content"
+          className="settings-popover__content ui-scrollbar"
         >
           <div className="settings-popover__header">
             <div>

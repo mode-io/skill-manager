@@ -1,9 +1,9 @@
 import type { HarnessCell, HarnessColumn, SkillTableRow } from "../../api/types";
 import { StatusBadge } from "../ui/StatusBadge";
-import { Switch } from "../ui/Switch";
 import { passiveHarnessStateBadge } from "../ui/statusMappings";
 import { alignHarnessCells } from "../../features/skills/selectors";
 import { HarnessMark } from "./HarnessMark";
+import { HarnessToggleChip } from "./HarnessToggleChip";
 
 interface ManagedSkillHarnessClusterProps {
   row: SkillTableRow;
@@ -79,7 +79,7 @@ function ManagedHarnessClusterControl({
   const checked = cell.state === "enabled";
 
   return (
-    <Switch
+    <HarnessToggleChip
       checked={checked}
       disabled={busyId !== null}
       ariaLabel={`${checked ? "Disable" : "Enable"} ${row.name} for ${cell.label}`}

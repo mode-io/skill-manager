@@ -93,7 +93,7 @@ export function SkillDetailPanel({
       aria-label="Skill details panel"
       aria-hidden={!isPanelMounted}
     >
-      <div className="skills-detail-panel__inner" ref={detailScrollRef}>
+      <div className="skills-detail-panel__inner ui-scrollbar" ref={detailScrollRef}>
         <div className={`skills-detail-panel__content${isContentVisible ? " is-visible" : ""}`}>
           {isContentVisible && displayedSkillRef ? (
             <SkillDetailView

@@ -41,6 +41,8 @@ describe("ManagedSkillHarnessCluster", () => {
     expect(container.querySelectorAll(".skill-harness-mark__logo")).toHaveLength(2);
     expect(container.querySelector(".skill-harness-mark--codex .skill-harness-mark__logo")).not.toBeNull();
     expect(screen.getByText("Gemini")).toBeInTheDocument();
+    expect(container.querySelectorAll(".harness-toggle-chip")).toHaveLength(2);
+    expect(screen.getAllByText("Off")).toHaveLength(2);
 
     fireEvent.click(screen.getByRole("switch", { name: "Enable Trace Lens for Codex" }));
     expect(onToggleCell).toHaveBeenCalledWith(row, row.cells[0]);

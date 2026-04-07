@@ -60,7 +60,7 @@ export function UnmanagedSkillsPage() {
             searchPlaceholder="Search unmanaged skills by name, description, or tool"
           />
 
-          <div className="skills-pane__scroll" ref={scrollRef}>
+          <div className="skills-pane__scroll ui-scrollbar" ref={scrollRef}>
             <div className="skills-pane__content">
               {rows.length > 0 ? (
                 <UnmanagedSkillsList

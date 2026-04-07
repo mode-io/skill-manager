@@ -1,22 +1,29 @@
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 
-interface SwitchProps {
+interface HarnessToggleChipProps {
   checked: boolean;
   disabled?: boolean;
   ariaLabel: string;
   onCheckedChange: (checked: boolean) => void;
 }
 
-export function Switch({ checked, disabled = false, ariaLabel, onCheckedChange }: SwitchProps) {
+export function HarnessToggleChip({
+  checked,
+  disabled = false,
+  ariaLabel,
+  onCheckedChange,
+}: HarnessToggleChipProps) {
   return (
     <SwitchPrimitive.Root
-      className="ui-switch"
+      className="harness-toggle-chip"
       checked={checked}
       disabled={disabled}
       aria-label={ariaLabel}
       onCheckedChange={onCheckedChange}
     >
-      <SwitchPrimitive.Thumb className="ui-switch__thumb" />
+      <span className="harness-toggle-chip__label" aria-hidden="true">
+        {checked ? "On" : "Off"}
+      </span>
     </SwitchPrimitive.Root>
   );
 }

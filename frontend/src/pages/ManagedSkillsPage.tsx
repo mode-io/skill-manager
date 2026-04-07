@@ -56,7 +56,7 @@ export function ManagedSkillsPage() {
             searchPlaceholder="Search managed skills by name, description, or state"
           />
 
-          <div className="skills-pane__scroll" ref={scrollRef}>
+          <div className="skills-pane__scroll ui-scrollbar" ref={scrollRef}>
             <div className="skills-pane__content">
               {rows.length > 0 ? (
                 <ManagedSkillsList

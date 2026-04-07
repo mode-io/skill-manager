@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import "./styles/variables.css";
 import "./styles/reset.css";
+import "./styles/scrollbars.css";
 import "./styles/app.css";
 import "./styles/ui.css";
 import "./styles/skills.css";

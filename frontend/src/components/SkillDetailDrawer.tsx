@@ -20,7 +20,7 @@ export function SkillDetailDrawer({
   return (
     <>
       <button type="button" className="drawer-backdrop" aria-label="Close skill details" onClick={onClose} />
-      <aside className="drawer drawer--detail" aria-label="Skill details drawer">
+      <aside className="drawer drawer--detail ui-scrollbar" aria-label="Skill details drawer">
         <SkillDetailView
           skillRef={skillRef}
           onClose={onClose}
