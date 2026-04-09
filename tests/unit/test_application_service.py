@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from skill_manager.application import ApplicationService
+from skill_manager.application.marketplace.models import RepoDisplayMetadata
+from skill_manager.application.read_model_service import ReadModelService
 from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
@@ -66,9 +68,14 @@ class ApplicationServiceTests(unittest.TestCase):
             service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
             payload = service.list_skills()
             audit = next(row for row in payload["rows"] if row["name"] == "Audit Skill")
+            detail = service.get_skill_detail(audit["skillRef"])
 
             self.assertEqual(audit["displayStatus"], "Custom")
             self.assertEqual(audit["attentionMessage"], "Modified locally; source updates are disabled.")
+            assert detail is not None
+            self.assertEqual(detail["actions"]["updateStatus"], "no_source_available")
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
 
     def test_divergent_source_backed_local_copies_become_separate_found_rows(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -119,6 +126,15 @@ class ApplicationServiceTests(unittest.TestCase):
             self.assertIsNone(builtin_detail["documentMarkdown"])
             self.assertNotIn("statusMessage", shared_detail)
             self.assertNotIn("source", shared_detail)
+            self.assertNotIn("advanced", shared_detail)
+            self.assertEqual(shared_detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
+            self.assertEqual(shared_detail["actions"]["stopManagingHarnessLabels"], [])
+            self.assertIsNone(found_detail["actions"]["stopManagingStatus"])
+            self.assertIsNone(builtin_detail["actions"]["stopManagingStatus"])
+            self.assertEqual(
+                [cell["state"] for cell in builtin_detail["harnessCells"]],
+                ["empty", "empty", "empty"],
+            )
 
     def test_skill_detail_orders_managed_locations_with_shared_store_first(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -135,6 +151,98 @@ class ApplicationServiceTests(unittest.TestCase):
             self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex"])
             self.assertEqual(detail["locations"][0]["path"], str(spec.shared_store_root / "shared-audit"))
             self.assertEqual(detail["locations"][1]["path"], str(spec.home / ".codex" / "skills" / "shared-audit"))
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
+
+    def test_skill_detail_marks_centralized_managed_skills_as_no_source_available(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "local-playbook",
+                "Local Playbook",
+                body="Local package fixture.",
+                source_kind="centralized",
+                source_locator="centralized:Local Playbook",
+            )
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="local-playbook",
+                        declared_name="Local Playbook",
+                        source_kind="centralized",
+                        source_locator="centralized:Local Playbook",
+                        revision=fingerprint_package(package_root)[0],
+                    )
+                ],
+            )
+
+            service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
+            payload = service.list_skills()
+            local_playbook = next(row for row in payload["rows"] if row["name"] == "Local Playbook")
+            detail = service.get_skill_detail(local_playbook["skillRef"])
+
+            assert detail is not None
+
+            self.assertEqual(detail["actions"]["updateStatus"], "no_source_available")
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
+
+    def test_skill_detail_exposes_repo_and_folder_source_links_for_three_part_github_locator(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "shared-audit",
+                "Shared Audit",
+                body="Shared package fixture.",
+                source_kind="github",
+                source_locator="github:mode-io/skills/shared-audit",
+            )
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="shared-audit",
+                        declared_name="Shared Audit",
+                        source_kind="github",
+                        source_locator="github:mode-io/skills/shared-audit",
+                        revision=fingerprint_package(package_root)[0],
+                    )
+                ],
+            )
+
+            class FakeGitHubResolver:
+                def repo_metadata(self, repo: str) -> RepoDisplayMetadata:
+                    return RepoDisplayMetadata(stars=None, image_url=None, default_branch="main")
+
+                def github_folder_url(self, repo: str, skill_id: str, *, default_branch: str | None = None) -> str | None:
+                    return f"https://github.com/{repo}/tree/{default_branch or 'HEAD'}/skills/{skill_id}"
+
+            service = ApplicationService(
+                read_models=service_read_models(spec),
+                github_resolver=FakeGitHubResolver(),
+            )
+            service.skills_queries.check_for_update = lambda entry: None  # type: ignore[method-assign]
+            payload = service.list_skills()
+            shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
+            detail = service.get_skill_detail(shared["skillRef"])
+
+            assert detail is not None
+
+            self.assertEqual(detail["sourceLinks"], {
+                "repoLabel": "mode-io/skills",
+                "repoUrl": "https://github.com/mode-io/skills",
+                "folderUrl": "https://github.com/mode-io/skills/tree/main/skills/shared-audit",
+            })
+            self.assertEqual(detail["actions"]["updateStatus"], "no_update_available")
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
+
+
+def service_read_models(spec):
+    return ReadModelService.from_environment(spec.env(), command_runner=StubCommandRunner())
 
 
 if __name__ == "__main__":

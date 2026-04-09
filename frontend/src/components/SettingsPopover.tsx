@@ -65,7 +65,7 @@ export function SettingsPopover() {
 
           <div className="settings-popover__actions">
             <button type="button" className="btn btn-secondary" onClick={() => void settingsQuery.refetch()}>
-              Refresh data
+              Refresh Data
             </button>
             <button
               type="button"
@@ -74,7 +74,7 @@ export function SettingsPopover() {
               disabled={busy || !data?.bulkActions.canManageAll}
             >
               {busy ? <LoadingSpinner size="sm" label="Managing skills" /> : null}
-              Bring all eligible skills under management
+              Bring All Eligible Skills Under Management
             </button>
           </div>
 

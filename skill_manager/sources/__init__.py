@@ -7,6 +7,7 @@ from .github import (
     GitHubRepoMetadataClient,
     GitHubSource,
     github_repo_from_locator,
+    github_skill_dir_from_locator,
     github_repo_url,
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "GitHubRepoMetadataClient",
     "GitHubSource",
     "github_repo_from_locator",
+    "github_skill_dir_from_locator",
     "github_repo_url",
 ]

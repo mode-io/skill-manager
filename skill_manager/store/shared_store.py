@@ -93,6 +93,22 @@ class SharedStore:
         write_manifest(self.manifest_path, StoreManifest(entries=updated))
         return dest, True
 
+    def delete(self, package_dir: str) -> None:
+        self.ensure_deletable(package_dir)
+        dest = self.root / package_dir
+        manifest = load_manifest(self.manifest_path)
+        shutil.rmtree(dest)
+        updated = tuple(entry for entry in manifest.entries if entry.package_dir != package_dir)
+        write_manifest(self.manifest_path, StoreManifest(entries=updated))
+
+    def ensure_deletable(self, package_dir: str) -> None:
+        dest = self.root / package_dir
+        if not dest.is_dir():
+            raise ValueError(f"package not in store: {package_dir}")
+        manifest = load_manifest(self.manifest_path)
+        if not any(entry.package_dir == package_dir for entry in manifest.entries):
+            raise ValueError(f"package missing from manifest: {package_dir}")
+
     def check_integrity(self) -> tuple[CheckIssue, ...]:
         issues: list[CheckIssue] = []
         if not self.root.exists():

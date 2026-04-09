@@ -62,12 +62,6 @@ class InventoryEntry:
         return "Managed"
 
     @property
-    def primary_action(self) -> dict[str, str]:
-        if self.kind == "unmanaged":
-            return {"kind": "manage", "label": "Bring under management"}
-        return {"kind": "open", "label": "Open"}
-
-    @property
     def attention_message(self) -> str | None:
         if self.is_custom:
             return "Modified locally; source updates are disabled."
@@ -80,6 +74,14 @@ class InventoryEntry:
     @property
     def can_manage(self) -> bool:
         return self.kind == "unmanaged"
+
+    @property
+    def can_delete(self) -> bool:
+        return self.kind == "managed" and self.package_dir is not None and self.package_path is not None
+
+    @property
+    def can_stop_managing(self) -> bool:
+        return self.kind == "managed" and self.package_dir is not None and self.package_path is not None
 
     def add_sighting(self, sighting: InventorySighting) -> None:
         self.sightings.append(sighting)
@@ -103,6 +105,13 @@ class InventoryEntry:
                 str(item.path) if item.path is not None else "",
             ),
         )
+
+    def linked_harnesses(self) -> set[str]:
+        return {
+            sighting.harness
+            for sighting in self.sightings
+            if sighting.kind == "harness" and sighting.harness is not None
+        }
 
 
 class SkillInventory:

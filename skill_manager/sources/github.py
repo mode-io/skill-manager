@@ -99,12 +99,30 @@ def _parse_locator(locator: str) -> tuple[str, str, str]:
     return parts[0], parts[1], parts[2]
 
 
+def _parse_repo_identity(locator: str) -> tuple[str, str, str | None]:
+    stripped = locator.removeprefix("github:")
+    parts = stripped.split("/")
+    if len(parts) == 2:
+        return parts[0], parts[1], None
+    if len(parts) == 3:
+        return parts[0], parts[1], parts[2]
+    raise ValueError(f"invalid github locator (expected owner/repo or owner/repo/skill-dir): {locator}")
+
+
 def github_repo_from_locator(locator: str) -> str | None:
     try:
-        owner, repo, _ = _parse_locator(locator.removeprefix("github:"))
+        owner, repo, _ = _parse_repo_identity(locator)
     except ValueError:
         return None
     return f"{owner}/{repo}"
+
+
+def github_skill_dir_from_locator(locator: str) -> str | None:
+    try:
+        _, _, skill_dir = _parse_repo_identity(locator)
+    except ValueError:
+        return None
+    return skill_dir
 
 
 def _github_headers(accept: str) -> dict[str, str]:

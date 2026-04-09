@@ -3,7 +3,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { fetchMarketplacePopular, installSkill, searchMarketplace } from "../../api/client";
 import type { MarketplaceItem, MarketplacePageResult } from "../../api/types";
 import { invalidateSettingsQueries } from "../settings/queries";
-import { invalidateSkillsQueries } from "../skills/queries";
+import { invalidateSkillsQueries } from "../skills/api/queries";
 
 const MARKETPLACE_STALE_TIME_MS = 60_000;
 const MARKETPLACE_GC_TIME_MS = 15 * 60_000;

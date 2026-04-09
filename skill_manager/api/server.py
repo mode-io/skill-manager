@@ -113,6 +113,22 @@ class SkillManagerRequestHandler(BaseHTTPRequestHandler):
                 return self._write_json({"error": str(error)}, status=error.status)
             return self._write_json(result)
 
+        if parsed.path.startswith(f"{self.api_prefix}/skills/") and parsed.path.endswith("/unmanage"):
+            skill_ref = unquote(parsed.path[len(f"{self.api_prefix}/skills/"):-len("/unmanage")])
+            try:
+                result = self.service.unmanage_skill(skill_ref)
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
+        if parsed.path.startswith(f"{self.api_prefix}/skills/") and parsed.path.endswith("/delete"):
+            skill_ref = unquote(parsed.path[len(f"{self.api_prefix}/skills/"):-len("/delete")])
+            try:
+                result = self.service.delete_skill(skill_ref)
+            except MutationError as error:
+                return self._write_json({"error": str(error)}, status=error.status)
+            return self._write_json(result)
+
         self.send_error(404)
 
     def _read_body(self) -> object:

@@ -32,31 +32,47 @@ function stubDesktopMatchMedia() {
 }
 
 function mockSkillsPage() {
+  let sharedAuditState: "managed" | "unmanaged" | "deleted" = "managed";
+
   fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url === "/api/skills") {
       return {
         ok: true,
         json: async () => ({
-          summary: { managed: 1, unmanaged: 1, custom: 1, builtIn: 1 },
+          summary: {
+            managed: sharedAuditState === "managed" ? 1 : 0,
+            unmanaged: sharedAuditState === "unmanaged" ? 2 : 1,
+            custom: 1,
+            builtIn: 1,
+          },
           harnessColumns: [{ harness: "codex", label: "Codex" }],
           rows: [
-            {
+            ...(sharedAuditState === "managed" ? [{
               skillRef: "shared:shared-audit",
               name: "Shared Audit",
               description: "Shared audit workflow",
               displayStatus: "Managed",
               attentionMessage: null,
-              primaryAction: { kind: "open", label: "Open" },
+              actions: { canManage: false },
               cells: [{ harness: "codex", label: "Codex", state: "disabled", interactive: true }],
-            },
+            }] : []),
+            ...(sharedAuditState === "unmanaged" ? [{
+              skillRef: "unmanaged:shared-audit-restored",
+              name: "Shared Audit",
+              description: "Shared audit workflow",
+              displayStatus: "Unmanaged",
+              attentionMessage: null,
+              actions: { canManage: true },
+              cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
+            }] : []),
             {
               skillRef: "shared:audit-skill",
               name: "Audit Skill",
               description: "Custom audit workflow",
               displayStatus: "Custom",
               attentionMessage: "Modified locally; source updates are disabled.",
-              primaryAction: { kind: "open", label: "Open" },
+              actions: { canManage: false },
               cells: [{ harness: "codex", label: "Codex", state: "enabled", interactive: true }],
             },
             {
@@ -65,7 +81,7 @@ function mockSkillsPage() {
               description: "Trace review workflow",
               displayStatus: "Unmanaged",
               attentionMessage: null,
-              primaryAction: { kind: "manage", label: "Bring under management" },
+              actions: { canManage: true },
               cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
             },
             {
@@ -74,14 +90,36 @@ function mockSkillsPage() {
               description: "Built-in scouting workflow",
               displayStatus: "Built-in",
               attentionMessage: null,
-              primaryAction: { kind: "open", label: "Open" },
+              actions: { canManage: false },
               cells: [{ harness: "codex", label: "Codex", state: "builtin", interactive: false }],
             },
           ],
         }),
       };
     }
+    if (url === "/api/skills/shared%3Ashared-audit/delete") {
+      sharedAuditState = "deleted";
+      return {
+        ok: true,
+        json: async () => ({ ok: true }),
+      };
+    }
+    if (url === "/api/skills/shared%3Ashared-audit/unmanage") {
+      sharedAuditState = "unmanaged";
+      return {
+        ok: true,
+        json: async () => ({ ok: true }),
+      };
+    }
     if (url.startsWith("/api/skills/")) {
+      if (sharedAuditState !== "managed" && url === "/api/skills/shared%3Ashared-audit") {
+        return {
+          ok: false,
+          status: 404,
+          statusText: "Not Found",
+          json: async () => ({ error: "unknown skill ref: shared:shared-audit" }),
+        };
+      }
       return {
         ok: true,
         json: async () => ({
@@ -90,7 +128,20 @@ function mockSkillsPage() {
           description: "Shared audit workflow",
           displayStatus: "Managed",
           attentionMessage: null,
-          actions: { canManage: false, canUpdate: false, updateAvailable: null },
+          actions: {
+            canManage: false,
+            updateStatus: "no_update_available",
+            stopManagingStatus: "available",
+            stopManagingHarnessLabels: ["Codex"],
+            canDelete: true,
+            deleteHarnessLabels: ["Codex"],
+          },
+          harnessCells: [
+            { harness: "codex", label: "Codex", state: "disabled", interactive: true },
+            { harness: "claude", label: "Claude", state: "disabled", interactive: true },
+            { harness: "cursor", label: "Cursor", state: "disabled", interactive: true },
+            { harness: "opencode", label: "OpenCode", state: "disabled", interactive: true },
+          ],
           locations: [
             {
               kind: "shared",
@@ -115,13 +166,10 @@ function mockSkillsPage() {
               detail: null,
             },
           ],
-          advanced: {
-            packageDir: "shared-audit",
-            packagePath: "/tmp/shared-audit",
-            currentRevision: "abc",
-            recordedRevision: "abc",
-            sourceKind: "github",
-            sourceLocator: "github:mode-io/shared-audit",
+          sourceLinks: {
+            repoLabel: "mode-io/shared-audit",
+            repoUrl: "https://github.com/mode-io/shared-audit",
+            folderUrl: "https://github.com/mode-io/shared-audit/tree/main/shared-audit",
           },
           documentMarkdown: "# Shared Audit\n\n## Use when\n\nRun the shared audit workflow.\n",
         }),
@@ -199,7 +247,7 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { name: "Built-in skills" })).toBeInTheDocument();
     expect(screen.getByText("Scout")).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bring all eligible skills under management" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bring All Eligible Skills Under Management" })).not.toBeInTheDocument();
   });
 
   it("renders the unmanaged intake page", async () => {
@@ -210,7 +258,7 @@ describe("App routing", () => {
     expect(screen.getByText("Trace Lens")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Unmanaged skills" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Unmanaged/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bring all eligible skills under management" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bring All Eligible Skills Under Management" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "What happens when you manage all eligible skills" })).toBeInTheDocument();
     expect(
       screen.queryByText("Review skills discovered in local tool folders and bring the ones you want into the shared managed store."),
@@ -227,7 +275,7 @@ describe("App routing", () => {
 
     fireEvent.mouseEnter(screen.getByRole("button", { name: "What happens when you manage all eligible skills" }));
 
-    await waitFor(() => expect(screen.getByText("Bulk manage")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Bulk Manage")).toBeInTheDocument());
     expect(
       screen.getByText("Moves local copies into the Shared Store, then replaces tool-folder copies with managed links."),
     ).toBeInTheDocument();
@@ -296,17 +344,108 @@ describe("App routing", () => {
     );
     const panel = screen.getByLabelText("Skill details panel");
     expect(within(panel).getByRole("button", { name: /SKILL\.md/i })).toHaveAttribute("aria-expanded", "true");
-    expect(within(panel).getByRole("button", { name: /Advanced details/i })).toHaveAttribute("aria-expanded", "false");
-    expect(within(panel).queryByRole("switch")).not.toBeInTheDocument();
-    expect(within(panel).queryByText("Source")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Source")).toBeInTheDocument();
+    expect(within(panel).getByRole("link", { name: /mode-io\/shared-audit/i })).toHaveAttribute("href", "https://github.com/mode-io/shared-audit");
+    expect(within(panel).getByRole("link", { name: /Open skill folder/i })).toHaveAttribute("href", "https://github.com/mode-io/shared-audit/tree/main/shared-audit");
+    expect(within(panel).getByText("No Update Available")).toBeInTheDocument();
+    expect(within(panel).getByText("Harness access")).toBeInTheDocument();
+    expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for Codex" })).toBeInTheDocument();
+    expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for Claude" })).toBeInTheDocument();
+    expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for Cursor" })).toBeInTheDocument();
+    expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for OpenCode" })).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Stop Managing" })).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Delete Skill" })).toBeInTheDocument();
+    expect(within(panel).queryByRole("button", { name: /Advanced details/i })).not.toBeInTheDocument();
+    expect(within(panel).queryByText("OpenClaw")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Gemini")).not.toBeInTheDocument();
     expect(within(panel).queryByText("Overview")).not.toBeInTheDocument();
     expect(within(panel).getByText("Shared Store is the canonical physical package. Tool locations are symlinks to it when enabled.")).toBeInTheDocument();
     expect(within(panel).getByText("Canonical physical package")).toBeInTheDocument();
     expect(within(panel).getByText("Symlink to Shared Store")).toBeInTheDocument();
-    const panelText = panel.textContent ?? "";
-    expect(panelText.indexOf("Shared Store")).toBeLessThan(panelText.indexOf("Codex"));
     expect(screen.queryByLabelText("Skill details drawer")).not.toBeInTheDocument();
     expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it("routes detail-panel harness toggles through the enable mutation endpoint", async () => {
+    mockSkillsPage();
+    renderApp("/skills/managed?skill=shared:shared-audit");
+
+    const panel = await screen.findByLabelText("Skill details panel");
+    await waitFor(() => expect(within(panel).getByText("Harness access")).toBeInTheDocument());
+    const toggle = within(panel).getByRole("switch", { name: "Enable Shared Audit for Codex" });
+
+    fireEvent.click(toggle);
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([input, init]) => {
+          const url = typeof input === "string" ? input : input.toString();
+          return url === "/api/skills/shared%3Ashared-audit/enable" && init?.method === "POST";
+        }),
+      ).toBe(true),
+    );
+  });
+
+  it("confirms destructive delete from the detail panel and removes the skill", async () => {
+    mockSkillsPage();
+    renderApp("/skills/managed?skill=shared:shared-audit");
+
+    const panel = await screen.findByLabelText("Skill details panel");
+    const deleteButton = await within(panel).findByRole("button", { name: "Delete Skill" });
+    fireEvent.click(deleteButton);
+
+    const dialog = await screen.findByRole("dialog", { name: "Delete managed skill?" });
+    expect(within(dialog).getByText("Affected harnesses: Codex")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Still Delete" })).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Still Delete" }));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([input, init]) => {
+          const url = typeof input === "string" ? input : input.toString();
+          return url === "/api/skills/shared%3Ashared-audit/delete" && init?.method === "POST";
+        }),
+      ).toBe(true),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Skill details panel")).toHaveAttribute("aria-hidden", "true"),
+    );
+    expect(within(screen.getByLabelText("Managed skills list")).queryByText("Shared Audit")).not.toBeInTheDocument();
+  });
+
+  it("shows stop-managing help and moves the skill back to unmanaged", async () => {
+    mockSkillsPage();
+    renderApp("/skills/managed?skill=shared:shared-audit");
+
+    const panel = await screen.findByLabelText("Skill details panel");
+    const stopManagingButton = await within(panel).findByRole("button", { name: "Stop Managing" });
+
+    fireEvent.mouseEnter(stopManagingButton);
+
+    await waitFor(() => expect(screen.getByText("Moves this skill out of the shared managed store and restores local copies only for the harnesses that are currently enabled.")).toBeInTheDocument());
+
+    fireEvent.click(stopManagingButton);
+
+    const dialog = await screen.findByRole("dialog", { name: "Move skill back to unmanaged?" });
+    expect(within(dialog).getByText("Will restore to: Codex")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Stop Managing" })).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stop Managing" }));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([input, init]) => {
+          const url = typeof input === "string" ? input : input.toString();
+          return url === "/api/skills/shared%3Ashared-audit/unmanage" && init?.method === "POST";
+        }),
+      ).toBe(true),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Skill details panel")).toHaveAttribute("aria-hidden", "true"),
+    );
   });
 
   it("does not auto-scroll the window on desktop user selection", async () => {

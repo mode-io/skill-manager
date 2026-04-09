@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from skill_manager.application.marketplace.skillssh import extract_detail_description, parse_homepage_leaderboard
-from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator
+from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator, github_skill_dir_from_locator
 
 from tests.support import seed_skill_package
 
@@ -24,6 +24,13 @@ class ParseLocatorTests(unittest.TestCase):
 
     def test_github_repo_from_locator(self) -> None:
         self.assertEqual(github_repo_from_locator("github:anthropics/skills/commit-message"), "anthropics/skills")
+
+    def test_github_repo_from_two_part_locator(self) -> None:
+        self.assertEqual(github_repo_from_locator("github:mode-io/shared-audit"), "mode-io/shared-audit")
+
+    def test_github_skill_dir_from_locator(self) -> None:
+        self.assertEqual(github_skill_dir_from_locator("github:anthropics/skills/commit-message"), "commit-message")
+        self.assertIsNone(github_skill_dir_from_locator("github:mode-io/shared-audit"))
 
 
 class FindSkillTests(unittest.TestCase):

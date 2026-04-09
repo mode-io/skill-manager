@@ -105,6 +105,77 @@ class SkillsMutationService:
                 raise MutationError(str(error), status=409) from error
         return {"ok": True}
 
+    def unmanage_skill(self, skill_ref: str) -> dict[str, bool]:
+        entry = self.queries.require_entry(skill_ref)
+        if not entry.can_stop_managing:
+            raise MutationError(
+                f"only managed or custom shared-store skills can be moved back to unmanaged; this is {entry.display_status}",
+                status=400,
+            )
+        if entry.package_dir is None or entry.package_path is None:
+            raise MutationError("managed skill is missing its shared package metadata", status=500)
+
+        linked_sightings = [
+            sighting
+            for sighting in entry.sightings
+            if sighting.kind == "harness" and sighting.path is not None
+        ]
+        if not linked_sightings:
+            raise MutationError("turn on at least one harness before stopping management", status=400)
+
+        operator = LinkOperator()
+        try:
+            self.read_models.store.ensure_deletable(entry.package_dir)
+        except ValueError as error:
+            raise MutationError(str(error), status=409) from error
+
+        for sighting in linked_sightings:
+            operator.ensure_shared_link_materializable(
+                existing_link=sighting.path,
+                expected_target=entry.package_path,
+            )
+
+        for sighting in linked_sightings:
+            operator.materialize_shared_link(
+                existing_link=sighting.path,
+                source_path=entry.package_path,
+            )
+
+        try:
+            self.read_models.store.delete(entry.package_dir)
+        except ValueError as error:
+            raise MutationError(str(error), status=409) from error
+        return {"ok": True}
+
+    def delete_skill(self, skill_ref: str) -> dict[str, bool]:
+        entry = self.queries.require_entry(skill_ref)
+        if not entry.can_delete:
+            raise MutationError(f"only managed or custom shared-store skills can be deleted; this is {entry.display_status}", status=400)
+        if entry.package_dir is None:
+            raise MutationError("managed skill is missing its package directory name", status=500)
+
+        operator = LinkOperator()
+        adapters = tuple(self.read_models.harness_adapters)
+        try:
+            self.read_models.store.ensure_deletable(entry.package_dir)
+        except ValueError as error:
+            raise MutationError(str(error), status=409) from error
+        for adapter in adapters:
+            operator.ensure_shared_link_removable(
+                package_dir=entry.package_dir,
+                harness_skills_root=adapter.user_skills_root,
+            )
+        for adapter in adapters:
+            operator.unlink_shared(
+                package_dir=entry.package_dir,
+                harness_skills_root=adapter.user_skills_root,
+            )
+        try:
+            self.read_models.store.delete(entry.package_dir)
+        except ValueError as error:
+            raise MutationError(str(error), status=409) from error
+        return {"ok": True}
+
     def install_skill(self, *, source_kind: str, source_locator: str) -> dict[str, bool]:
         with TemporaryDirectory(prefix="skill-install-") as work_dir:
             skill_path = self.source_fetcher.fetch(

@@ -93,5 +93,47 @@ class SharedStoreUpdateTests(unittest.TestCase):
             self.assertIn("not in store", str(ctx.exception))
 
 
+class SharedStoreDeleteTests(unittest.TestCase):
+    def test_delete_removes_package_and_manifest_entry(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store = SharedStore(spec.shared_store_root)
+            source = seed_skill_package(Path(temp_dir) / "src", "audit", "Audit")
+            store.ingest(
+                source_path=source,
+                declared_name="Audit",
+                source_kind="github",
+                source_locator="github:test/test/audit",
+            )
+
+            store.delete("audit")
+
+            self.assertFalse((spec.shared_store_root / "audit").exists())
+            manifest = load_manifest(store.manifest_path)
+            self.assertEqual(manifest.entries, ())
+
+    def test_delete_refuses_missing_package(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store = SharedStore(spec.shared_store_root)
+
+            with self.assertRaises(ValueError) as ctx:
+                store.delete("missing")
+
+            self.assertIn("not in store", str(ctx.exception))
+
+    def test_delete_refuses_package_missing_from_manifest(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            store = SharedStore(spec.shared_store_root)
+
+            with self.assertRaises(ValueError) as ctx:
+                store.delete("audit")
+
+            self.assertIn("missing from manifest", str(ctx.exception))
+            self.assertTrue((spec.shared_store_root / "audit").is_dir())
+
+
 if __name__ == "__main__":
     unittest.main()

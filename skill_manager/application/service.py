@@ -6,6 +6,7 @@ from skill_manager.harness import CommandRunner
 from skill_manager.harness.link_operator import LinkOperator, MutationError
 
 from .marketplace import MarketplaceService
+from .marketplace.resolver import GitHubSkillResolver
 from .read_model_service import ReadModelService
 from .skills_mutation_service import SkillsMutationService
 from .skills_query_service import SkillsQueryService
@@ -13,11 +14,21 @@ from .source_fetch_service import SourceFetchService
 
 
 class ApplicationService:
-    def __init__(self, read_models: ReadModelService, *, marketplace: MarketplaceService | None = None) -> None:
+    def __init__(
+        self,
+        read_models: ReadModelService,
+        *,
+        marketplace: MarketplaceService | None = None,
+        github_resolver: GitHubSkillResolver | None = None,
+    ) -> None:
         self.read_models = read_models
         self.marketplace = marketplace or MarketplaceService()
         self.source_fetcher = SourceFetchService()
-        self.skills_queries = SkillsQueryService(self.read_models, self.source_fetcher)
+        self.skills_queries = SkillsQueryService(
+            self.read_models,
+            self.source_fetcher,
+            github_resolver=github_resolver,
+        )
         self.skills_mutations = SkillsMutationService(self.read_models, self.skills_queries, self.source_fetcher)
 
     @classmethod
@@ -58,6 +69,12 @@ class ApplicationService:
 
     def update_skill(self, skill_ref: str) -> dict[str, bool]:
         return self.skills_mutations.update_skill(skill_ref)
+
+    def unmanage_skill(self, skill_ref: str) -> dict[str, bool]:
+        return self.skills_mutations.unmanage_skill(skill_ref)
+
+    def delete_skill(self, skill_ref: str) -> dict[str, bool]:
+        return self.skills_mutations.delete_skill(skill_ref)
 
     def popular_marketplace(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         return self.marketplace.popular_page(limit=limit, offset=offset)

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from skill_manager.application.inventory import InventoryColumn, InventoryEntry, InventorySighting, SkillInventory
+
+DETAIL_HARNESS_ORDER = ("codex", "claude", "cursor", "opencode")
 
 
 def serialize_skills_page(inventory: SkillInventory) -> dict[str, object]:
@@ -22,9 +22,11 @@ def serialize_skills_page(inventory: SkillInventory) -> dict[str, object]:
 def serialize_skill_detail(
     entry: InventoryEntry,
     *,
-    package_root: Path | None,
+    columns: tuple[InventoryColumn, ...],
     document_markdown: str | None,
-    update_available: bool | None,
+    source_links: dict[str, str | None] | None,
+    update_status: str | None,
+    stop_managing_status: str | None,
 ) -> dict[str, object]:
     return {
         "skillRef": entry.skill_ref,
@@ -34,18 +36,15 @@ def serialize_skill_detail(
         "attentionMessage": entry.attention_message,
         "actions": {
             "canManage": entry.can_manage,
-            "canUpdate": entry.can_update,
-            "updateAvailable": update_available,
+            "updateStatus": update_status,
+            "stopManagingStatus": stop_managing_status,
+            "stopManagingHarnessLabels": linked_harness_labels(entry, columns),
+            "canDelete": entry.can_delete,
+            "deleteHarnessLabels": linked_harness_labels(entry, columns),
         },
+        "harnessCells": [serialize_cell(entry, column) for column in detail_columns(entry, columns)],
         "locations": [serialize_sighting(sighting) for sighting in entry.detail_sightings()],
-        "advanced": {
-            "packageDir": package_root.name if package_root is not None else entry.package_dir,
-            "packagePath": str(package_root) if package_root is not None else None,
-            "currentRevision": entry.current_revision,
-            "recordedRevision": entry.recorded_revision,
-            "sourceKind": entry.source.kind,
-            "sourceLocator": entry.source.locator,
-        },
+        "sourceLinks": source_links,
         "documentMarkdown": document_markdown,
     }
 
@@ -78,6 +77,22 @@ def serialize_column(column: InventoryColumn) -> dict[str, str]:
     return {"harness": column.harness, "label": column.label}
 
 
+def detail_columns(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> tuple[InventoryColumn, ...]:
+    columns_by_harness = {column.harness: column for column in columns}
+    selected: list[InventoryColumn] = []
+    for harness in DETAIL_HARNESS_ORDER:
+        column = columns_by_harness.get(harness)
+        if column is None:
+            continue
+        selected.append(column)
+    return tuple(selected)
+
+
+def linked_harness_labels(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> list[str]:
+    linked_harnesses = entry.linked_harnesses()
+    return [column.label for column in columns if column.harness in linked_harnesses]
+
+
 def serialize_row(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> dict[str, object]:
     return {
         "skillRef": entry.skill_ref,
@@ -85,7 +100,9 @@ def serialize_row(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -
         "description": entry.description,
         "displayStatus": entry.display_status,
         "attentionMessage": entry.attention_message,
-        "primaryAction": entry.primary_action,
+        "actions": {
+            "canManage": entry.can_manage,
+        },
         "cells": [serialize_cell(entry, column) for column in columns],
     }
 
