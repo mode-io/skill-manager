@@ -4,6 +4,10 @@ __pycache__/
 .pytest_cache/
 node_modules/
 frontend/dist/
+build/
+dist/
+packaging/npm/vendor/
+.artifacts/runtime/
 playwright-report/
 test-results/
 .artifacts/

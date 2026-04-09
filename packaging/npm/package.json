@@ -1,0 +1,20 @@
+{
+  "name": "skill-manager",
+  "version": "0.1.0",
+  "description": "Public installer wrapper for the skill-manager native release artifact.",
+  "license": "UNLICENSED",
+  "private": false,
+  "bin": {
+    "skill-manager": "bin/skill-manager.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64",
+    "x64"
+  ]
+}

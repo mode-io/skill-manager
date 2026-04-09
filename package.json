@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "VITE_API_BASE=/api vite --host 127.0.0.1 --port 5173",
-    "dev:backend": "python3 -m skill_manager --host 127.0.0.1 --port 8000 --no-open-browser",
+    "dev:backend": "./.venv/bin/python -m skill_manager serve --host 127.0.0.1 --port 8000 --no-open-browser",
+    "install:dev": "bash scripts/install-dev.sh",
+    "start:dev": "bash scripts/start-dev.sh",
+    "stop:dev": "bash scripts/stop-dev.sh",
+    "version:sync": "python3 scripts/sync_version.py --check",
+    "build:release": "./.venv/bin/python scripts/build_release.py",
     "build": "VITE_API_BASE=/api vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

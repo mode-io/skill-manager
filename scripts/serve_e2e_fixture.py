@@ -10,9 +10,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from skill_manager.api import create_server
-from skill_manager.application import ApplicationService
-from skill_manager.application.read_model_service import ReadModelService
+from skill_manager.application import build_backend_container
+from skill_manager.runtime.server import serve_foreground
 
 from tests.support import create_fake_home_spec, create_fixture_marketplace_service, seed_mixed_fixture
 
@@ -23,23 +22,18 @@ def main() -> int:
         runner = seed_mixed_fixture(spec)
         env = dict(os.environ)
         env.update(spec.env())
-        service = ApplicationService(
-            ReadModelService.from_environment(env, command_runner=runner),
-            marketplace=create_fixture_marketplace_service(),
+        container = build_backend_container(
+            env,
+            command_runner=runner,
+            marketplace_catalog=create_fixture_marketplace_service(),
         )
-        server = create_server(
-            service,
+        return serve_foreground(
+            container,
             host="127.0.0.1",
             port=4173,
             frontend_dist=REPO_ROOT / "frontend" / "dist",
+            open_browser=False,
         )
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            return 130
-        finally:
-            server.server_close()
-    return 0
 
 
 if __name__ == "__main__":

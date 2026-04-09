@@ -8,8 +8,8 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "python3 scripts/serve_e2e_fixture.py",
-    url: "http://127.0.0.1:4173/health",
+    command: "./.venv/bin/python scripts/serve_e2e_fixture.py",
+    url: "http://127.0.0.1:4173/api/health",
     reuseExistingServer: false,
     timeout: 30000,
   },
