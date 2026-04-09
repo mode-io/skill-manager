@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
-interface SkillDetailDisclosureProps {
+interface DetailDisclosureProps {
   title: string;
   eyebrow?: string;
   defaultOpen?: boolean;
@@ -9,13 +9,13 @@ interface SkillDetailDisclosureProps {
   children: ReactNode;
 }
 
-export function SkillDetailDisclosure({
+export function DetailDisclosure({
   title,
   eyebrow,
   defaultOpen = false,
   className = "",
   children,
-}: SkillDetailDisclosureProps) {
+}: DetailDisclosureProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const panelId = useId();
 

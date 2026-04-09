@@ -5,6 +5,7 @@ import {
   disableSkill,
   enableSkill,
   fetchSkillDetail,
+  fetchSkillSourceStatus,
   fetchSkillsPage,
   manageAllSkills,
   manageSkill,
@@ -22,6 +23,8 @@ export const skillsKeys = {
   list: () => ["skills", "list"] as const,
   detailPrefix: () => ["skills", "detail"] as const,
   detail: (skillRef: string) => ["skills", "detail", skillRef] as const,
+  sourceStatusPrefix: () => ["skills", "source-status"] as const,
+  sourceStatus: (skillRef: string) => ["skills", "source-status", skillRef] as const,
 };
 
 export function useSkillsListQuery() {
@@ -47,10 +50,22 @@ export function useSkillDetailQuery(skillRef: string | null) {
   });
 }
 
+export function useSkillSourceStatusQuery(skillRef: string | null) {
+  return useQuery({
+    queryKey: skillsKeys.sourceStatus(skillRef ?? "__none__"),
+    queryFn: () => fetchSkillSourceStatus(skillRef!),
+    enabled: Boolean(skillRef),
+    staleTime: SKILLS_STALE_TIME_MS,
+    gcTime: SKILLS_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export async function invalidateSkillsQueries(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
     queryClient.invalidateQueries({ queryKey: skillsKeys.detailPrefix() }),
+    queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatusPrefix() }),
   ]);
 }
 
@@ -97,6 +112,7 @@ export function useToggleSkillMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
         queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }),
+        queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }),
       ]);
     },
   });
@@ -110,6 +126,7 @@ export function useManageSkillMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
         queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }),
+        queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }),
       ]);
     },
   });
@@ -133,6 +150,7 @@ export function useUpdateSkillMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
         queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }),
+        queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }),
       ]);
     },
   });
@@ -144,6 +162,7 @@ export function useUnmanageSkillMutation() {
     mutationFn: ({ skillRef }: { skillRef: string }) => unmanageSkill(skillRef),
     onSuccess: async (_data, variables) => {
       queryClient.removeQueries({ queryKey: skillsKeys.detail(variables.skillRef), exact: true });
+      queryClient.removeQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef), exact: true });
       await invalidateSkillsQueries(queryClient);
     },
   });
@@ -157,6 +176,7 @@ export function useDeleteSkillMutation() {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: skillsKeys.list() }),
         queryClient.cancelQueries({ queryKey: skillsKeys.detail(skillRef) }),
+        queryClient.cancelQueries({ queryKey: skillsKeys.sourceStatus(skillRef) }),
       ]);
 
       const previousList = queryClient.getQueryData<SkillsWorkspaceData>(skillsKeys.list());
@@ -166,6 +186,7 @@ export function useDeleteSkillMutation() {
         queryClient.setQueryData<SkillsWorkspaceData>(skillsKeys.list(), removeSkillFromList(previousList, skillRef));
       }
       queryClient.removeQueries({ queryKey: skillsKeys.detail(skillRef), exact: true });
+      queryClient.removeQueries({ queryKey: skillsKeys.sourceStatus(skillRef), exact: true });
 
       return { previousList, previousDetail, skillRef };
     },
@@ -179,6 +200,7 @@ export function useDeleteSkillMutation() {
     },
     onSuccess: async (_data, variables) => {
       queryClient.removeQueries({ queryKey: skillsKeys.detail(variables.skillRef), exact: true });
+      queryClient.removeQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef), exact: true });
       await invalidateSkillsQueries(queryClient);
     },
   });

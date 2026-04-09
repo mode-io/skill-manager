@@ -111,6 +111,12 @@ function mockSkillsPage() {
         json: async () => ({ ok: true }),
       };
     }
+    if (url === "/api/skills/shared%3Ashared-audit/source-status") {
+      return {
+        ok: true,
+        json: async () => ({ updateStatus: "no_update_available" }),
+      };
+    }
     if (url.startsWith("/api/skills/")) {
       if (sharedAuditState !== "managed" && url === "/api/skills/shared%3Ashared-audit") {
         return {
@@ -130,7 +136,6 @@ function mockSkillsPage() {
           attentionMessage: null,
           actions: {
             canManage: false,
-            updateStatus: "no_update_available",
             stopManagingStatus: "available",
             stopManagingHarnessLabels: ["Codex"],
             canDelete: true,
@@ -175,6 +180,15 @@ function mockSkillsPage() {
         }),
       };
     }
+    if (url === "/api/marketplace/items/skillssh%3Amode-io%2Fshared-audit%3Ashared-audit/document") {
+      return {
+        ok: true,
+        json: async () => ({
+          status: "ready",
+          documentMarkdown: "# Shared Audit",
+        }),
+      };
+    }
     if (url.startsWith("/api/marketplace/popular")) {
       return {
         ok: true,
@@ -191,6 +205,10 @@ function mockSkillsPage() {
               githubFolderUrl: "https://github.com/mode-io/shared-audit/tree/main/shared-audit",
               skillsDetailUrl: "https://skills.sh/mode-io/shared-audit/shared-audit",
               installToken: "token-shared-audit",
+              installation: {
+                status: "installable",
+                installedSkillRef: null,
+              },
             },
           ],
           nextOffset: null,

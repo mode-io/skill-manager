@@ -8,7 +8,9 @@ import type {
   SkillSourceLinks as SkillSourceLinksDto,
   SkillStatus as SkillStatusDto,
   SkillsSummary as SkillsSummaryDto,
+  SkillDetailActionsDto,
   SkillStopManagingStatus as SkillStopManagingStatusDto,
+  SkillSourceStatusDto,
   SkillUpdateStatus as SkillUpdateStatusDto,
 } from "../api/types";
 
@@ -39,7 +41,9 @@ export interface SkillsWorkspaceData {
   rows: SkillListRow[];
 }
 
-export type SkillActions = SkillDetailDto["actions"];
+export interface SkillActions extends SkillDetailActionsDto {
+  updateStatus: SkillSourceStatusDto["updateStatus"];
+}
 
 export interface SkillDetail {
   skillRef: string;

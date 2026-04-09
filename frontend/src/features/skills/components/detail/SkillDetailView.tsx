@@ -1,10 +1,10 @@
+import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import type { HarnessCellState } from "../../model/types";
 import { useSkillDetailController } from "../../model/use-skill-detail-controller";
 import { SkillDeleteDialog } from "../dialogs/SkillDeleteDialog";
 import { SkillStopManagingDialog } from "../dialogs/SkillStopManagingDialog";
 import { SkillDetailContent } from "./SkillDetailContent";
-import { SkillDetailHeader } from "./SkillDetailHeader";
 import { SkillDetailSkeleton } from "./SkillDetailSkeleton";
 
 interface SkillDetailViewProps {
@@ -61,7 +61,7 @@ export function SkillDetailView({
     return (
       <>
         <div className="skill-detail__chrome">
-          <SkillDetailHeader title={<h2>Unable to load skill</h2>} onClose={onClose} />
+          <DetailHeader title={<h2>Unable to load skill</h2>} closeLabel="Close skill details" onClose={onClose} />
           <ErrorBanner message={queryErrorMessage} />
         </div>
         <div className="skill-detail__body">

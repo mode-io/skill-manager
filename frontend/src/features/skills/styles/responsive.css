@@ -16,12 +16,6 @@
   }
 }
 
-@keyframes skill-detail-shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 @media (max-width: 1180px) {
   .skills-workspace-page {
     height: auto;

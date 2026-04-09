@@ -8,8 +8,6 @@ from threading import Lock, Thread
 import time
 from typing import Callable
 
-from skill_manager.sources import GitHubRepoMetadataClient
-
 from .cache import MarketplaceCache
 from .models import MarketplaceCard, MarketplacePageResult, RepoDisplayMetadata, SkillsShSkill
 from .resolver import DetailEnrichment, GitHubSkillResolver
@@ -34,7 +32,7 @@ class SearchSnapshot:
     fetched_at: float
 
 
-class MarketplaceService:
+class MarketplaceCatalog:
     DEFAULT_PAGE_SIZE = 20
     MAX_PAGE_SIZE = 60
     DETAIL_LOADING_PLACEHOLDER = "Summary loading from skills.sh…"
@@ -52,14 +50,14 @@ class MarketplaceService:
         leaderboard_fetcher: LeaderboardFetcher | None = None,
         search_fetcher: SearchFetcher | None = None,
         detail_fetcher: DetailFetcher | None = None,
-        github_client: GitHubRepoMetadataClient | None = None,
+        github_resolver: GitHubSkillResolver | None = None,
         cache: MarketplaceCache | None = None,
         warm_on_init: bool = True,
     ) -> None:
         self._leaderboard_fetcher = leaderboard_fetcher or fetch_all_time_leaderboard
         self._search_fetcher = search_fetcher or (lambda query, limit: search_skills(query, limit=limit))
         self._detail_fetcher = detail_fetcher or fetch_detail_page
-        self._resolver = GitHubSkillResolver(github_client)
+        self._resolver = github_resolver or GitHubSkillResolver()
         self._cache = cache or MarketplaceCache()
         self._search_cache: dict[str, SearchSnapshot] = {}
         self._warming_details: set[str] = set()
@@ -75,15 +73,17 @@ class MarketplaceService:
         leaderboard_fetcher: LeaderboardFetcher | None = None,
         search_fetcher: SearchFetcher | None = None,
         detail_fetcher: DetailFetcher | None = None,
-        github_client: GitHubRepoMetadataClient | None = None,
-    ) -> "MarketplaceService":
+    ) -> "MarketplaceCatalog":
         return cls(
             leaderboard_fetcher=leaderboard_fetcher,
             search_fetcher=search_fetcher,
             detail_fetcher=detail_fetcher,
-            github_client=github_client,
             cache=MarketplaceCache.from_environment(env),
         )
+
+    @property
+    def cache(self) -> MarketplaceCache:
+        return self._cache
 
     def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         records = self._leaderboard_records()
@@ -117,6 +117,55 @@ class MarketplaceService:
         if not isinstance(source_kind, str) or not isinstance(source_locator, str):
             return None
         return source_kind, source_locator
+
+    def install_token(self, source_kind: str, source_locator: str) -> str:
+        payload = json.dumps([source_kind, source_locator], separators=(",", ":")).encode("utf-8")
+        return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+
+    def find_item(self, item_id: str) -> SkillsShSkill | None:
+        parsed = self.parse_item_id(item_id)
+        if parsed is None:
+            return None
+        repo, skill_id = parsed
+        for record in self._leaderboard_records():
+            if record.repo == repo and record.skill_id == skill_id:
+                return record
+        try:
+            snapshot = self._search_snapshot(skill_id, fetch_limit=self._SEARCH_FETCH_FLOOR)
+        except Exception:  # noqa: BLE001
+            snapshot = None
+        if snapshot is None:
+            return None
+        for record in snapshot.items:
+            if record.repo == repo and record.skill_id == skill_id:
+                return record
+        return None
+
+    def repo_metadata(self, repo: str) -> RepoDisplayMetadata:
+        return self._resolver.repo_metadata(repo)
+
+    def summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
+        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
+        if detail_cache is not None and isinstance(detail_cache.payload, dict):
+            return DetailEnrichment.from_dict(detail_cache.payload)
+
+        self._warm_details_async([(record, self.repo_metadata(record.repo))])
+        return DetailEnrichment(
+            description=record.description_hint or self.DETAIL_LOADING_PLACEHOLDER,
+            github_folder_url=None,
+        )
+
+    @staticmethod
+    def parse_item_id(item_id: str) -> tuple[str, str] | None:
+        if not item_id.startswith("skillssh:"):
+            return None
+        raw_value = item_id.removeprefix("skillssh:")
+        if ":" not in raw_value:
+            return None
+        repo, skill_id = raw_value.rsplit(":", 1)
+        if not repo or not skill_id:
+            return None
+        return repo, skill_id
 
     def _page(self, records: list[SkillsShSkill], *, limit: int | None, offset: int) -> MarketplacePageResult:
         page_limit = self._normalize_limit(limit)
@@ -163,7 +212,7 @@ class MarketplaceService:
                 enrichment = DetailEnrichment.from_dict(detail_cache.payload)
             else:
                 to_warm.append((record, metadata[record.repo]))
-            token = self._install_token("github", record.source_locator)
+            token = self.install_token("github", record.source_locator)
             repo_meta = metadata[record.repo]
             cards.append(
                 MarketplaceCard(
@@ -225,49 +274,12 @@ class MarketplaceService:
     def _warm_details(self, items: list[tuple[SkillsShSkill, RepoDisplayMetadata]]) -> None:
         try:
             for record, repo_meta in items:
-                description = record.description_hint or self.DETAIL_MISSING_FALLBACK
-                try:
-                    document = self._detail_fetcher(record.detail_url)
-                    extracted_description = extract_detail_description(
-                        document,
-                        skill_name=record.name,
-                        description_hint=record.description_hint,
-                    )
-                    if extracted_description:
-                        description = extracted_description
-                except Exception:  # noqa: BLE001
-                    pass
-
-                detail = DetailEnrichment(
-                    description=description,
-                    github_folder_url=None,
-                )
+                detail = self._resolve_detail_enrichment(record, repo_meta)
                 self._cache.write("details", record.detail_url, detail.to_dict())
-
-                try:
-                    github_folder_url = self._resolver.github_folder_url(
-                        record.repo,
-                        record.skill_id,
-                        default_branch=repo_meta.default_branch,
-                    )
-                except Exception:  # noqa: BLE001
-                    continue
-                self._cache.write(
-                    "details",
-                    record.detail_url,
-                    DetailEnrichment(
-                        description=description,
-                        github_folder_url=github_folder_url,
-                    ).to_dict(),
-                )
         finally:
             with self._warming_lock:
                 for record, _ in items:
                     self._warming_details.discard(record.detail_url)
-
-    def _install_token(self, source_kind: str, source_locator: str) -> str:
-        payload = json.dumps([source_kind, source_locator], separators=(",", ":")).encode("utf-8")
-        return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
 
     @staticmethod
     def _skill_to_dict(skill: SkillsShSkill) -> dict[str, object]:
@@ -312,3 +324,32 @@ class MarketplaceService:
             return
         ordered = sorted(self._search_cache.items(), key=lambda item: item[1].fetched_at, reverse=True)
         self._search_cache = dict(ordered[:self._SEARCH_CACHE_LIMIT])
+
+    def _resolve_detail_enrichment(self, record: SkillsShSkill, repo_meta: RepoDisplayMetadata) -> DetailEnrichment:
+        description = record.description_hint or self.DETAIL_MISSING_FALLBACK
+        try:
+            document = self._detail_fetcher(record.detail_url)
+            extracted_description = extract_detail_description(
+                document,
+                skill_name=record.name,
+                description_hint=record.description_hint,
+            )
+            if extracted_description:
+                description = extracted_description
+        except Exception:  # noqa: BLE001
+            pass
+
+        github_folder_url = None
+        try:
+            github_folder_url = self._resolver.github_folder_url(
+                record.repo,
+                record.skill_id,
+                default_branch=repo_meta.default_branch,
+            )
+        except Exception:  # noqa: BLE001
+            github_folder_url = None
+
+        return DetailEnrichment(
+            description=description,
+            github_folder_url=github_folder_url,
+        )

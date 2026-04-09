@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import os
 from pathlib import Path
+import socket
 import webbrowser
 
-from skill_manager.api import create_server
-from skill_manager.application import ApplicationService
+import uvicorn
+
+from skill_manager.api import create_app
+from skill_manager.application import build_backend_container
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,18 +38,24 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     env = dict(os.environ)
-    service = ApplicationService.from_environment(env)
+    container = build_backend_container(env)
     frontend_dist = Path(args.frontend_dist)
-    server = create_server(service, host=args.host, port=args.port, frontend_dist=frontend_dist if frontend_dist.exists() else None)
-    actual_host, actual_port = server.server_address[:2]
+    app = create_app(container, frontend_dist=frontend_dist if frontend_dist.exists() else None)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((args.host, args.port))
+    sock.listen(2048)
+    actual_host, actual_port = sock.getsockname()[:2]
     url = f"http://{actual_host}:{actual_port}"
     print(url, flush=True)
     if args.open_browser:
         webbrowser.open(url)
     try:
-        server.serve_forever()
+        config = uvicorn.Config(app, fd=sock.fileno(), log_level="info", access_log=False)
+        server = uvicorn.Server(config)
+        asyncio.run(server.serve())
     except KeyboardInterrupt:
         return 130
     finally:
-        server.server_close()
+        sock.close()
     return 0

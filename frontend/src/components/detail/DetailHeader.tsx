@@ -1,31 +1,33 @@
 import type { ReactNode } from "react";
 
-import { SkillDetailCloseButton } from "./SkillDetailCloseButton";
+import { DetailCloseButton } from "./DetailCloseButton";
 
-interface SkillDetailHeaderProps {
+interface DetailHeaderProps {
   title: ReactNode;
   onClose: () => void;
   titleAction?: ReactNode;
   meta?: ReactNode;
   utility?: ReactNode;
   eyebrow?: string | null;
+  closeLabel?: string;
 }
 
-export function SkillDetailHeader({
+export function DetailHeader({
   title,
   onClose,
   titleAction,
   meta,
   utility,
-  eyebrow = "Skill details",
-}: SkillDetailHeaderProps) {
+  eyebrow = "Details",
+  closeLabel = "Close detail view",
+}: DetailHeaderProps) {
   return (
     <div className="skill-detail__header">
       <div className="skill-detail__header-top">
         {eyebrow ? <p className="skill-detail__eyebrow">{eyebrow}</p> : null}
         <div className="skill-detail__utility-rail">
           {utility ? <div className="skill-detail__utility-content">{utility}</div> : null}
-          <SkillDetailCloseButton onClick={onClose} />
+          <DetailCloseButton onClick={onClose} ariaLabel={closeLabel} />
         </div>
       </div>
       <div className="skill-detail__title-stack">

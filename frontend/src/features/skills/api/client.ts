@@ -1,4 +1,4 @@
-import type { BulkManageResult, SkillDetailDto, SkillsPageDto } from "./types";
+import type { BulkManageResult, SkillDetailDto, SkillsPageDto, SkillSourceStatusDto } from "./types";
 import { apiPath } from "../../../api/paths";
 
 interface OkResponse {
@@ -38,6 +38,10 @@ export async function fetchSkillsPage(): Promise<SkillsPageDto> {
 
 export async function fetchSkillDetail(skillRef: string): Promise<SkillDetailDto> {
   return expectJson<SkillDetailDto>(fetch(apiPath(`/skills/${encodeURIComponent(skillRef)}`)));
+}
+
+export async function fetchSkillSourceStatus(skillRef: string): Promise<SkillSourceStatusDto> {
+  return expectJson<SkillSourceStatusDto>(fetch(apiPath(`/skills/${encodeURIComponent(skillRef)}/source-status`)));
 }
 
 export async function enableSkill(skillRef: string, harness: string): Promise<OkResponse> {

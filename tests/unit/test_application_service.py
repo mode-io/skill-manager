@@ -4,15 +4,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.application import ApplicationService
-from skill_manager.application.marketplace.models import RepoDisplayMetadata
-from skill_manager.application.read_model_service import ReadModelService
+from skill_manager.application import build_backend_container
 from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
 from tests.support import (
     StubCommandRunner,
     create_fake_home_spec,
+    create_fixture_marketplace_service,
     seed_divergent_source_fixture,
     seed_managed_linked_fixture,
     seed_mixed_fixture,
@@ -21,13 +20,13 @@ from tests.support import (
 )
 
 
-class ApplicationServiceTests(unittest.TestCase):
+class BackendContainerTests(unittest.TestCase):
     def test_list_skills_groups_identical_local_copies_and_preserves_builtins(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_mixed_fixture(spec)
-            service = ApplicationService.from_environment(spec.env(), command_runner=runner)
-            payload = service.list_skills()
+            container = build_backend_container(spec.env(), command_runner=runner)
+            payload = container.skills_queries.list_skills()
 
             trace_lens = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
             self.assertEqual(trace_lens["displayStatus"], "Unmanaged")
@@ -40,7 +39,7 @@ class ApplicationServiceTests(unittest.TestCase):
             self.assertEqual(scout["displayStatus"], "Built-in")
             self.assertNotIn("isBuiltin", trace_lens)
 
-    def test_list_skills_marks_shared_store_modifications_as_custom(self) -> None:
+    def test_detail_and_source_status_are_split(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             package_root = seed_skill_package(
@@ -65,27 +64,31 @@ class ApplicationServiceTests(unittest.TestCase):
                 ],
             )
 
-            service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
-            payload = service.list_skills()
+            container = build_backend_container(spec.env(), command_runner=StubCommandRunner())
+            payload = container.skills_queries.list_skills()
             audit = next(row for row in payload["rows"] if row["name"] == "Audit Skill")
-            detail = service.get_skill_detail(audit["skillRef"])
+            detail = container.skills_queries.get_skill_detail(audit["skillRef"])
+            source_status = container.skills_queries.get_skill_source_status(audit["skillRef"])
 
-            self.assertEqual(audit["displayStatus"], "Custom")
-            self.assertEqual(audit["attentionMessage"], "Modified locally; source updates are disabled.")
             assert detail is not None
-            self.assertEqual(detail["actions"]["updateStatus"], "no_source_available")
+            assert source_status is not None
+
+            self.assertEqual(detail["displayStatus"], "Custom")
+            self.assertEqual(detail["attentionMessage"], "Modified locally; source updates are disabled.")
+            self.assertNotIn("updateStatus", detail["actions"])
+            self.assertEqual(source_status["updateStatus"], "no_source_available")
             self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
 
     def test_divergent_source_backed_local_copies_become_separate_found_rows(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            service = ApplicationService.from_environment(
+            container = build_backend_container(
                 spec.env(),
                 command_runner=seed_divergent_source_fixture(spec),
             )
 
-            payload = service.list_skills()
+            payload = container.skills_queries.list_skills()
             policy_rows = [row for row in payload["rows"] if row["name"] == "Policy Kit"]
 
             self.assertEqual(len(policy_rows), 2)
@@ -95,9 +98,9 @@ class ApplicationServiceTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_mixed_fixture(spec)
-            service = ApplicationService.from_environment(spec.env(), command_runner=runner)
+            container = build_backend_container(spec.env(), command_runner=runner)
 
-            settings = service.settings()
+            settings = container.skills_queries.settings()
 
             self.assertEqual(len(settings["harnesses"]), 6)
             self.assertEqual(len(settings["storeIssues"]), 1)
@@ -106,16 +109,16 @@ class ApplicationServiceTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_mixed_fixture(spec)
-            service = ApplicationService.from_environment(spec.env(), command_runner=runner)
+            container = build_backend_container(spec.env(), command_runner=runner)
 
-            payload = service.list_skills()
+            payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             found = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
             builtin = next(row for row in payload["rows"] if row["name"] == "Scout")
 
-            shared_detail = service.get_skill_detail(shared["skillRef"])
-            found_detail = service.get_skill_detail(found["skillRef"])
-            builtin_detail = service.get_skill_detail(builtin["skillRef"])
+            shared_detail = container.skills_queries.get_skill_detail(shared["skillRef"])
+            found_detail = container.skills_queries.get_skill_detail(found["skillRef"])
+            builtin_detail = container.skills_queries.get_skill_detail(builtin["skillRef"])
 
             assert shared_detail is not None
             assert found_detail is not None
@@ -124,8 +127,6 @@ class ApplicationServiceTests(unittest.TestCase):
             self.assertIn("Shared package fixture.", shared_detail["documentMarkdown"])
             self.assertIn("trace", found_detail["documentMarkdown"])
             self.assertIsNone(builtin_detail["documentMarkdown"])
-            self.assertNotIn("statusMessage", shared_detail)
-            self.assertNotIn("source", shared_detail)
             self.assertNotIn("advanced", shared_detail)
             self.assertEqual(shared_detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
             self.assertEqual(shared_detail["actions"]["stopManagingHarnessLabels"], [])
@@ -140,11 +141,11 @@ class ApplicationServiceTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             runner = seed_managed_linked_fixture(spec)
-            service = ApplicationService.from_environment(spec.env(), command_runner=runner)
+            container = build_backend_container(spec.env(), command_runner=runner)
 
-            payload = service.list_skills()
+            payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
-            detail = service.get_skill_detail(shared["skillRef"])
+            detail = container.skills_queries.get_skill_detail(shared["skillRef"])
 
             assert detail is not None
 
@@ -154,42 +155,7 @@ class ApplicationServiceTests(unittest.TestCase):
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
 
-    def test_skill_detail_marks_centralized_managed_skills_as_no_source_available(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            spec = create_fake_home_spec(Path(temp_dir))
-            package_root = seed_skill_package(
-                spec.shared_store_root,
-                "local-playbook",
-                "Local Playbook",
-                body="Local package fixture.",
-                source_kind="centralized",
-                source_locator="centralized:Local Playbook",
-            )
-            seed_store_manifest(
-                spec,
-                [
-                    ManifestEntry(
-                        package_dir="local-playbook",
-                        declared_name="Local Playbook",
-                        source_kind="centralized",
-                        source_locator="centralized:Local Playbook",
-                        revision=fingerprint_package(package_root)[0],
-                    )
-                ],
-            )
-
-            service = ApplicationService.from_environment(spec.env(), command_runner=StubCommandRunner())
-            payload = service.list_skills()
-            local_playbook = next(row for row in payload["rows"] if row["name"] == "Local Playbook")
-            detail = service.get_skill_detail(local_playbook["skillRef"])
-
-            assert detail is not None
-
-            self.assertEqual(detail["actions"]["updateStatus"], "no_source_available")
-            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
-            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
-
-    def test_skill_detail_exposes_repo_and_folder_source_links_for_three_part_github_locator(self) -> None:
+    def test_source_links_use_local_head_folder_url(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             package_root = seed_skill_package(
@@ -213,36 +179,68 @@ class ApplicationServiceTests(unittest.TestCase):
                 ],
             )
 
-            class FakeGitHubResolver:
-                def repo_metadata(self, repo: str) -> RepoDisplayMetadata:
-                    return RepoDisplayMetadata(stars=None, image_url=None, default_branch="main")
-
-                def github_folder_url(self, repo: str, skill_id: str, *, default_branch: str | None = None) -> str | None:
-                    return f"https://github.com/{repo}/tree/{default_branch or 'HEAD'}/skills/{skill_id}"
-
-            service = ApplicationService(
-                read_models=service_read_models(spec),
-                github_resolver=FakeGitHubResolver(),
-            )
-            service.skills_queries.check_for_update = lambda entry: None  # type: ignore[method-assign]
-            payload = service.list_skills()
+            container = build_backend_container(spec.env(), command_runner=StubCommandRunner())
+            payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
-            detail = service.get_skill_detail(shared["skillRef"])
+            detail = container.skills_queries.get_skill_detail(shared["skillRef"])
+            source_status = container.skills_queries.get_skill_source_status(shared["skillRef"])
 
             assert detail is not None
+            assert source_status is not None
 
             self.assertEqual(detail["sourceLinks"], {
                 "repoLabel": "mode-io/skills",
                 "repoUrl": "https://github.com/mode-io/skills",
-                "folderUrl": "https://github.com/mode-io/skills/tree/main/skills/shared-audit",
+                "folderUrl": "https://github.com/mode-io/skills/tree/HEAD/shared-audit",
             })
-            self.assertEqual(detail["actions"]["updateStatus"], "no_update_available")
-            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
-            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
+            self.assertEqual(source_status["updateStatus"], "no_update_available")
 
+    def test_marketplace_queries_mark_matching_managed_source_as_installed(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "mode-switch",
+                "Mode Switch",
+                body="Managed package fixture.",
+                source_kind="github",
+                source_locator="github:mode-io/skills/mode-switch",
+            )
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="mode-switch",
+                        declared_name="Mode Switch",
+                        source_kind="github",
+                        source_locator="github:mode-io/skills/mode-switch",
+                        revision=fingerprint_package(package_root)[0],
+                    )
+                ],
+            )
 
-def service_read_models(spec):
-    return ReadModelService.from_environment(spec.env(), command_runner=StubCommandRunner())
+            container = build_backend_container(
+                spec.env(),
+                command_runner=StubCommandRunner(),
+                marketplace_catalog=create_fixture_marketplace_service(),
+            )
+
+            page = container.marketplace_queries.popular_page()
+            item = next(row for row in page["items"] if row["name"] == "Mode Switch")
+            detail = container.marketplace_queries.get_item_detail(item["id"])
+            document = container.marketplace_queries.get_item_document(item["id"])
+
+            self.assertEqual(item["installation"], {
+                "status": "installed",
+                "installedSkillRef": "shared:mode-switch",
+            })
+            assert detail is not None
+            assert document is not None
+            self.assertEqual(detail["installation"], {
+                "status": "installed",
+                "installedSkillRef": "shared:mode-switch",
+            })
+            self.assertIn(document["status"], {"ready", "unavailable"})
 
 
 if __name__ == "__main__":

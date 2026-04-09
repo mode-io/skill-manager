@@ -8,11 +8,12 @@ from skill_manager.domain import fingerprint_package
 from skill_manager.harness.link_operator import MutationError
 from skill_manager.sources import github_repo_from_locator, github_repo_url, github_skill_dir_from_locator
 
-from .marketplace.resolver import GitHubSkillResolver
+from ..document_utils import read_skill_document_markdown
+from ..read_model_service import ReadModelService
+from ..source_fetch_service import SourceFetchService
 from .inventory import InventoryEntry, SkillInventory
-from .read_model_service import ReadModelService
-from .skills_serializers import serialize_settings, serialize_skill_detail, serialize_skills_page
-from .source_fetch_service import SourceFetchService
+from .policy import can_stop_managing, can_update
+from .presenters import settings_payload, skill_detail_payload, skills_page_payload, source_status_payload
 
 
 class SkillsQueryService:
@@ -20,11 +21,9 @@ class SkillsQueryService:
         self,
         read_models: ReadModelService,
         source_fetcher: SourceFetchService,
-        github_resolver: GitHubSkillResolver | None = None,
     ) -> None:
         self.read_models = read_models
         self.source_fetcher = source_fetcher
-        self.github_resolver = github_resolver or GitHubSkillResolver()
 
     def health(self) -> dict[str, object]:
         snapshot = self.read_models.snapshot()
@@ -36,7 +35,7 @@ class SkillsQueryService:
         }
 
     def list_skills(self) -> dict[str, object]:
-        return serialize_skills_page(self.inventory())
+        return skills_page_payload(self.inventory())
 
     def get_skill_detail(self, skill_ref: str) -> dict[str, object] | None:
         inventory = self.inventory()
@@ -44,17 +43,21 @@ class SkillsQueryService:
         if entry is None:
             return None
         package_root = self.resolve_detail_package_root(entry)
-        return serialize_skill_detail(
+        return skill_detail_payload(
             entry,
             columns=inventory.columns,
-            document_markdown=self.read_skill_document_markdown(package_root),
+            document_markdown=read_skill_document_markdown(package_root),
             source_links=self.build_source_links(entry),
-            update_status=self.resolve_update_status(entry),
-            stop_managing_status=self.resolve_stop_managing_status(entry),
         )
 
+    def get_skill_source_status(self, skill_ref: str) -> dict[str, object] | None:
+        entry = self.inventory().find(skill_ref)
+        if entry is None:
+            return None
+        return source_status_payload(self.resolve_update_status(entry))
+
     def settings(self) -> dict[str, object]:
-        return serialize_settings(self.inventory())
+        return settings_payload(self.inventory())
 
     def inventory(self) -> SkillInventory:
         snapshot = self.read_models.snapshot()
@@ -70,7 +73,7 @@ class SkillsQueryService:
         return entry
 
     def check_for_update(self, entry: InventoryEntry) -> bool | None:
-        if not entry.can_update or entry.current_revision is None:
+        if not can_update(entry) or entry.current_revision is None:
             return None
         with TemporaryDirectory(prefix="skill-check-") as work_dir:
             try:
@@ -93,19 +96,6 @@ class SkillsQueryService:
                 return sighting.path
         return None
 
-    def read_skill_document_markdown(self, package_root: Path | None) -> str | None:
-        if package_root is None:
-            return None
-
-        skill_path = package_root / "SKILL.md"
-        if not skill_path.is_file():
-            return None
-
-        document = skill_path.read_text(encoding="utf-8").strip()
-        if not document:
-            return None
-        return _strip_frontmatter(document)
-
     def build_source_links(self, entry: InventoryEntry) -> dict[str, str | None] | None:
         if entry.source.kind != "github":
             return None
@@ -117,19 +107,7 @@ class SkillsQueryService:
         skill_dir = github_skill_dir_from_locator(entry.source.locator)
         folder_url = None
         if skill_dir:
-            default_branch = None
-            try:
-                default_branch = self.github_resolver.repo_metadata(repo).default_branch
-            except Exception:  # noqa: BLE001
-                default_branch = None
-            try:
-                folder_url = self.github_resolver.github_folder_url(
-                    repo,
-                    skill_dir,
-                    default_branch=default_branch,
-                )
-            except Exception:  # noqa: BLE001
-                folder_url = None
+            folder_url = f"{github_repo_url(repo)}/tree/HEAD/{skill_dir}"
 
         return {
             "repoLabel": repo,
@@ -143,30 +121,11 @@ class SkillsQueryService:
     ) -> Literal["update_available", "no_update_available", "no_source_available"] | None:
         if entry.kind != "managed":
             return None
-        if not entry.can_update:
+        if not can_update(entry):
             return "no_source_available"
         if self.check_for_update(entry):
             return "update_available"
         return "no_update_available"
 
-    def resolve_stop_managing_status(
-        self,
-        entry: InventoryEntry,
-    ) -> Literal["available", "disabled_no_enabled"] | None:
-        if not entry.can_stop_managing:
-            return None
-        if entry.linked_harnesses():
-            return "available"
-        return "disabled_no_enabled"
-
-
-def _strip_frontmatter(document: str) -> str | None:
-    lines = document.splitlines()
-    if lines[:1] != ["---"]:
-        return document.strip()
-
-    for index in range(1, len(lines)):
-        if lines[index].strip() == "---":
-            return "\n".join(lines[index + 1:]).strip() or None
-
-    return document.strip()
+    def can_stop_managing(self, entry: InventoryEntry) -> bool:
+        return can_stop_managing(entry)

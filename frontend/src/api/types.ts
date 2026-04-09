@@ -1,22 +1,3 @@
-export interface MarketplaceItem {
-  id: string;
-  name: string;
-  description: string;
-  installs: number;
-  stars: number | null;
-  repoLabel: string;
-  repoImageUrl: string | null;
-  githubFolderUrl: string | null;
-  skillsDetailUrl: string;
-  installToken: string;
-}
-
-export interface MarketplacePageResult {
-  items: MarketplaceItem[];
-  nextOffset: number | null;
-  hasMore: boolean;
-}
-
 export interface SettingsHarness {
   harness: string;
   label: string;

@@ -1,3 +1,3 @@
-from .service import ApplicationService
+from .container import BackendContainer, build_backend_container
 
-__all__ = ["ApplicationService"]
+__all__ = ["BackendContainer", "build_backend_container"]

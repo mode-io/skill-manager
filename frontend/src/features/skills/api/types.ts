@@ -42,13 +42,16 @@ export interface SkillsPageDto {
   rows: SkillTableRowDto[];
 }
 
-export interface SkillActions {
+export interface SkillDetailActionsDto {
   canManage: boolean;
-  updateStatus: SkillUpdateStatus | null;
   stopManagingStatus: SkillStopManagingStatus | null;
   stopManagingHarnessLabels: string[];
   canDelete: boolean;
   deleteHarnessLabels: string[];
+}
+
+export interface SkillSourceStatusDto {
+  updateStatus: SkillUpdateStatus | null;
 }
 
 export interface SkillLocation {
@@ -75,7 +78,7 @@ export interface SkillDetailDto {
   description: string;
   displayStatus: SkillStatus;
   attentionMessage: string | null;
-  actions: SkillActions;
+  actions: SkillDetailActionsDto;
   harnessCells: HarnessCell[];
   locations: SkillLocation[];
   sourceLinks: SkillSourceLinks | null;

@@ -1,4 +1,5 @@
-import { SkillDetailHeader } from "./SkillDetailHeader";
+import { DetailHeader } from "../../../../components/detail/DetailHeader";
+import { DetailLoadingChip } from "../../../../components/detail/DetailLoadingChip";
 
 interface SkillDetailSkeletonProps {
   onClose: () => void;
@@ -8,33 +9,34 @@ export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
   return (
     <>
       <div className="skill-detail__chrome">
-        <SkillDetailHeader
-          title={<span className="skill-detail__skeleton skill-detail__skeleton--title" aria-hidden="true" />}
-          meta={<span className="skill-detail__skeleton skill-detail__skeleton--subtitle" aria-hidden="true" />}
-          utility={<span className="skill-detail__loading-chip">Loading</span>}
+        <DetailHeader
+          title={<span className="detail-skeleton detail-skeleton--title" aria-hidden="true" />}
+          meta={<span className="detail-skeleton detail-skeleton--subtitle" aria-hidden="true" />}
+          utility={<DetailLoadingChip label="Loading" />}
+          closeLabel="Close skill details"
           onClose={onClose}
         />
 
         <section className="skill-detail__status" aria-hidden="true">
-          <span className="skill-detail__skeleton skill-detail__skeleton--badge" />
-          <span className="skill-detail__skeleton skill-detail__skeleton--line" />
-          <span className="skill-detail__skeleton skill-detail__skeleton--line skill-detail__skeleton--line-wide" />
+          <span className="detail-skeleton detail-skeleton--badge" />
+          <span className="detail-skeleton detail-skeleton--line" />
+          <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
         </section>
 
         <div className="skill-detail__primary-actions" aria-hidden="true">
           <div className="skill-detail__actions">
-            <span className="skill-detail__skeleton skill-detail__skeleton--button" />
-            <span className="skill-detail__skeleton skill-detail__skeleton--button skill-detail__skeleton--button-secondary" />
+            <span className="detail-skeleton detail-skeleton--button" />
+            <span className="detail-skeleton detail-skeleton--button detail-skeleton--button-secondary" />
           </div>
         </div>
       </div>
 
       <div className="skill-detail__body skill-detail__body--skeleton" aria-hidden="true">
         <section className="skill-detail__intro skill-detail__intro--skeleton">
-          <div className="skill-detail__paragraph-skeleton">
-            <span className="skill-detail__skeleton skill-detail__skeleton--line skill-detail__skeleton--line-wide" />
-            <span className="skill-detail__skeleton skill-detail__skeleton--line skill-detail__skeleton--line-wide" />
-            <span className="skill-detail__skeleton skill-detail__skeleton--line skill-detail__skeleton--line-short" />
+          <div className="detail-skeleton-paragraph">
+            <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
+            <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
+            <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-short" />
           </div>
         </section>
 
@@ -48,11 +50,11 @@ export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
           <div className="skill-detail-disclosure__frame">
             <div className="skill-detail-disclosure__body">
               <div className="skill-detail__document-surface">
-            <div className="skill-detail__paragraph-skeleton">
+            <div className="detail-skeleton-paragraph">
               {Array.from({ length: 8 }).map((_, index) => (
                 <span
                   key={index}
-                  className={`skill-detail__skeleton skill-detail__skeleton--line${index < 6 ? " skill-detail__skeleton--line-wide" : ""}`}
+                  className={`detail-skeleton detail-skeleton--line${index < 6 ? " detail-skeleton--line-wide" : ""}`}
                 />
               ))}
             </div>
@@ -65,9 +67,9 @@ export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
           <div className="skill-detail__context-heading">
             <h3>Locations</h3>
           </div>
-          <div className="skill-detail__paragraph-skeleton">
-            <span className="skill-detail__skeleton skill-detail__skeleton--label" />
-            <span className="skill-detail__skeleton skill-detail__skeleton--line skill-detail__skeleton--line-wide" />
+          <div className="detail-skeleton-paragraph">
+            <span className="detail-skeleton detail-skeleton--label" />
+            <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
           </div>
         </section>
       </div>

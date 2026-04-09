@@ -1,12 +1,22 @@
 import { ExternalLink, FolderGit2 } from "lucide-react";
 
-import type { SkillSourceLinks } from "../../model/types";
-
-interface SkillDetailSourceLinksProps {
-  sourceLinks: SkillSourceLinks | null;
+interface DetailSourceLinksProps {
+  sourceLinks: {
+    repoLabel: string;
+    repoUrl: string;
+    folderUrl: string | null;
+  } | null;
+  externalUrl?: string | null;
+  externalLabel?: string;
+  label?: string;
 }
 
-export function SkillDetailSourceLinks({ sourceLinks }: SkillDetailSourceLinksProps) {
+export function DetailSourceLinks({
+  sourceLinks,
+  externalUrl = null,
+  externalLabel = "Open external detail",
+  label = "Source",
+}: DetailSourceLinksProps) {
   if (!sourceLinks) {
     return null;
   }
@@ -15,7 +25,7 @@ export function SkillDetailSourceLinks({ sourceLinks }: SkillDetailSourceLinksPr
     <div className="skill-detail__source-row" aria-label={`Source links for ${sourceLinks.repoLabel}`}>
       <div className="skill-detail__source-label">
         <FolderGit2 size={14} aria-hidden="true" />
-        <span>Source</span>
+        <span>{label}</span>
       </div>
       <div className="skill-detail__source-links">
         <a
@@ -34,7 +44,18 @@ export function SkillDetailSourceLinks({ sourceLinks }: SkillDetailSourceLinksPr
             rel="noopener noreferrer"
             className="skill-detail__source-link skill-detail__source-link--folder"
           >
-            Open skill folder
+            Open Skill Folder
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
+        ) : null}
+        {externalUrl ? (
+          <a
+            href={externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="skill-detail__source-link skill-detail__source-link--external"
+          >
+            {externalLabel}
             <ExternalLink size={12} aria-hidden="true" />
           </a>
         ) : null}

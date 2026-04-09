@@ -7,7 +7,6 @@ from typing import Literal
 from skill_manager.domain import HarnessScan, SourceDescriptor, StoreScan, stable_id
 
 
-DisplayStatus = Literal["Managed", "Unmanaged", "Custom", "Built-in"]
 EntryKind = Literal["managed", "unmanaged", "builtin"]
 
 
@@ -42,56 +41,8 @@ class InventoryEntry:
     package_path: Path | None = None
     sightings: list[InventorySighting] = field(default_factory=list)
 
-    @property
-    def is_custom(self) -> bool:
-        return (
-            self.kind == "managed"
-            and self.recorded_revision is not None
-            and self.current_revision is not None
-            and self.recorded_revision != self.current_revision
-        )
-
-    @property
-    def display_status(self) -> DisplayStatus:
-        if self.kind == "builtin":
-            return "Built-in"
-        if self.kind == "unmanaged":
-            return "Unmanaged"
-        if self.is_custom:
-            return "Custom"
-        return "Managed"
-
-    @property
-    def attention_message(self) -> str | None:
-        if self.is_custom:
-            return "Modified locally; source updates are disabled."
-        return None
-
-    @property
-    def can_update(self) -> bool:
-        return self.kind == "managed" and not self.is_custom and self.source.kind == "github"
-
-    @property
-    def can_manage(self) -> bool:
-        return self.kind == "unmanaged"
-
-    @property
-    def can_delete(self) -> bool:
-        return self.kind == "managed" and self.package_dir is not None and self.package_path is not None
-
-    @property
-    def can_stop_managing(self) -> bool:
-        return self.kind == "managed" and self.package_dir is not None and self.package_path is not None
-
     def add_sighting(self, sighting: InventorySighting) -> None:
         self.sightings.append(sighting)
-
-    def cell_state(self, harness: str) -> str:
-        if self.kind == "builtin":
-            return "builtin" if any(s.harness == harness for s in self.sightings) else "empty"
-        if self.kind == "unmanaged":
-            return "found" if any(s.harness == harness for s in self.sightings) else "empty"
-        return "enabled" if any(s.harness == harness for s in self.sightings if s.kind == "harness") else "disabled"
 
     def detail_sightings(self) -> list[InventorySighting]:
         order = {"shared": 0, "harness": 1, "builtin": 2}
@@ -131,6 +82,8 @@ class SkillInventory:
 
     @classmethod
     def from_snapshot(cls, *, store_scan: StoreScan, harness_scans: tuple[HarnessScan, ...]) -> "SkillInventory":
+        from .policy import sort_entries
+
         columns = tuple(
             InventoryColumn(harness=scan.harness, label=scan.label)
             for scan in harness_scans
@@ -185,12 +138,15 @@ class SkillInventory:
                     shared_entry.add_sighting(sighting)
                     continue
 
-                key = _unmanaged_entry_key(observation.package.declared_name, observation.package.source, observation.package.revision)
+                key = _unmanaged_entry_key(
+                    observation.package.declared_name,
+                    observation.package.source,
+                    observation.package.revision,
+                )
                 entry = unmanaged_entries.get(key)
                 if entry is None:
-                    skill_ref = f"unmanaged:{key}"
                     entry = InventoryEntry(
-                        skill_ref=skill_ref,
+                        skill_ref=f"unmanaged:{key}",
                         name=observation.package.declared_name,
                         description=observation.package.description,
                         kind="unmanaged",
@@ -228,7 +184,7 @@ class SkillInventory:
 
         entries.extend(unmanaged_entries.values())
         entries.extend(builtin_entries.values())
-        entries.sort(key=_entry_sort_key)
+        sort_entries(entries)
         return cls(
             columns=columns,
             harness_scans=harness_scans,
@@ -244,13 +200,3 @@ def _unmanaged_entry_key(declared_name: str, source: SourceDescriptor, revision:
     if source.is_source_backed:
         return stable_id("unmanaged", source.kind, source.locator, declared_name, revision)
     return stable_id("unmanaged", declared_name, revision)
-
-
-def _entry_sort_key(entry: InventoryEntry) -> tuple[int, str, str]:
-    order = {
-        "Managed": 0,
-        "Custom": 1,
-        "Unmanaged": 2,
-        "Built-in": 3,
-    }
-    return (order[entry.display_status], entry.name.lower(), entry.skill_ref)

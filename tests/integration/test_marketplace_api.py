@@ -17,9 +17,30 @@ class MarketplaceApiTests(unittest.TestCase):
             self.assertEqual(first["stars"], 512)
             self.assertEqual(first["repoLabel"], "mode-io/skills")
             self.assertIn("installToken", first)
+            self.assertEqual(first["installation"], {
+                "status": "installable",
+                "installedSkillRef": None,
+            })
             self.assertNotIn("sourceKind", first)
             self.assertNotIn("sourceLocator", first)
             self.assertNotIn("github", first)
+
+    def test_marketplace_detail_returns_preview_payload_without_internal_source_fields(self) -> None:
+        with AppTestHarness(marketplace=create_fixture_marketplace_service()) as harness:
+            payload = harness.get_json("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch")
+            document = harness.get_json("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch/document")
+
+            self.assertEqual(payload["name"], "Mode Switch")
+            self.assertEqual(payload["sourceLinks"]["repoLabel"], "mode-io/skills")
+            self.assertEqual(payload["sourceLinks"]["skillsDetailUrl"], "https://skills.sh/mode-io/skills/mode-switch")
+            self.assertEqual(payload["installation"], {
+                "status": "installable",
+                "installedSkillRef": None,
+            })
+            self.assertIn(document["status"], {"ready", "unavailable"})
+            self.assertNotIn("sourceLocator", payload)
+            self.assertNotIn("sourceKind", payload)
+            self.assertNotIn("documentMarkdown", payload)
 
     def test_marketplace_search_rejects_short_queries(self) -> None:
         with AppTestHarness(marketplace=create_fixture_marketplace_service()) as harness:

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { HarnessCellState } from "./types";
-import { useSkillDetailQuery } from "../api/queries";
+import { useSkillDetailQuery, useSkillSourceStatusQuery } from "../api/queries";
 
 interface SkillDetailMutationHandlers {
   onManageSkill: (skillRef: string) => Promise<void>;
@@ -16,16 +16,29 @@ export function useSkillDetailController(
   handlers: SkillDetailMutationHandlers,
 ) {
   const detailQuery = useSkillDetailQuery(skillRef);
+  const sourceStatusQuery = useSkillSourceStatusQuery(skillRef);
   const [actionErrorMessage, setActionErrorMessage] = useState("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [isStopManagingDialogOpen, setStopManagingDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const isMountedRef = useRef(true);
 
-  const detail = detailQuery.data ?? null;
+  const detail = detailQuery.data
+    ? {
+        ...detailQuery.data,
+        actions: {
+          ...detailQuery.data.actions,
+          updateStatus: sourceStatusQuery.data?.updateStatus ?? null,
+        },
+      }
+    : null;
   const isInitialLoading = detailQuery.isPending && detail === null;
-  const isRefreshing = detailQuery.isFetching && detail !== null;
-  const queryErrorMessage = detailQuery.error instanceof Error ? detailQuery.error.message : "";
+  const isRefreshing = (detailQuery.isFetching || sourceStatusQuery.isFetching) && detail !== null;
+  const queryErrorMessage = detailQuery.error instanceof Error
+    ? detailQuery.error.message
+    : sourceStatusQuery.error instanceof Error
+      ? sourceStatusQuery.error.message
+      : "";
 
   useEffect(() => () => {
     isMountedRef.current = false;

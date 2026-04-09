@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import mkdtemp
 
-from skill_manager.application.marketplace import MarketplaceService
+from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import SkillsShSkill
+from skill_manager.application.marketplace.resolver import GitHubSkillResolver
 from skill_manager.application.marketplace.resolver import DetailEnrichment
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 
@@ -65,7 +66,7 @@ def fixture_marketplace_search(query: str, limit: int) -> list[SkillsShSkill]:
     return filtered[:limit]
 
 
-def create_fixture_marketplace_service() -> MarketplaceService:
+def create_fixture_marketplace_service() -> MarketplaceCatalog:
     cache_root = Path(mkdtemp(prefix="skill-manager-marketplace-cache-"))
     cache = MarketplaceCache(cache_root)
     cache.write("leaderboard", "all-time", [skill_to_dict(item) for item in _FIXTURE_SKILLS])
@@ -79,11 +80,11 @@ def create_fixture_marketplace_service() -> MarketplaceService:
             ).to_dict(),
         )
     github_client = GitHubRepoMetadataClient(metadata_fetcher=_fixture_repo_metadata)
-    return MarketplaceService(
+    return MarketplaceCatalog(
         leaderboard_fetcher=lambda: list(_FIXTURE_SKILLS),
         search_fetcher=fixture_marketplace_search,
         detail_fetcher=lambda detail_url: "",
-        github_client=github_client,
+        github_resolver=GitHubSkillResolver(github_client),
         cache=cache,
         warm_on_init=False,
     )

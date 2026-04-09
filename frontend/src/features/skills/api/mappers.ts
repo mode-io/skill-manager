@@ -16,7 +16,10 @@ export function mapSkillDetail(dto: SkillDetailDto): SkillDetail {
     description: dto.description,
     displayStatus: dto.displayStatus,
     attentionMessage: dto.attentionMessage,
-    actions: dto.actions,
+    actions: {
+      ...dto.actions,
+      updateStatus: null,
+    },
     harnessCells: dto.harnessCells,
     locations: dto.locations,
     sourceLinks: dto.sourceLinks,

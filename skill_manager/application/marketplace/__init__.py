@@ -1,3 +1,11 @@
-from .service import MarketplaceService
+from .catalog import MarketplaceCatalog
+from .documents import MarketplaceDocumentService
+from .installs import MarketplaceInstallService
+from .queries import MarketplaceQueryService
 
-__all__ = ["MarketplaceService"]
+__all__ = [
+    "MarketplaceCatalog",
+    "MarketplaceDocumentService",
+    "MarketplaceInstallService",
+    "MarketplaceQueryService",
+]

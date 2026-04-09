@@ -6,10 +6,11 @@ from tempfile import TemporaryDirectory
 from skill_manager.domain import SourceDescriptor, parse_skill_package
 from skill_manager.harness.link_operator import LinkOperator, MutationError
 
+from ..read_model_service import ReadModelService
+from ..source_fetch_service import SourceFetchService
 from .inventory import InventoryEntry
-from .read_model_service import ReadModelService
-from .skills_query_service import SkillsQueryService
-from .source_fetch_service import SourceFetchService
+from .policy import can_delete, can_manage, can_stop_managing, can_update, display_status
+from .queries import SkillsQueryService
 
 
 class SkillsMutationService:
@@ -26,7 +27,7 @@ class SkillsMutationService:
     def enable_skill(self, skill_ref: str, harness: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
         if entry.kind != "managed":
-            raise MutationError(f"only managed skills can be toggled; this is {entry.display_status}", status=400)
+            raise MutationError(f"only managed skills can be toggled; this is {display_status(entry)}", status=400)
         if entry.package_path is None:
             raise MutationError("managed skill is missing its shared package path", status=500)
         adapter = self.read_models.find_adapter(harness)
@@ -36,12 +37,13 @@ class SkillsMutationService:
             package_path=entry.package_path,
             harness_skills_root=adapter.user_skills_root,
         )
+        self.read_models.invalidate()
         return {"ok": True}
 
     def disable_skill(self, skill_ref: str, harness: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
         if entry.kind != "managed":
-            raise MutationError(f"only managed skills can be toggled; this is {entry.display_status}", status=400)
+            raise MutationError(f"only managed skills can be toggled; this is {display_status(entry)}", status=400)
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
         adapter = self.read_models.find_adapter(harness)
@@ -51,13 +53,15 @@ class SkillsMutationService:
             package_dir=entry.package_dir,
             harness_skills_root=adapter.user_skills_root,
         )
+        self.read_models.invalidate()
         return {"ok": True}
 
     def manage_skill(self, skill_ref: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
         if entry.kind != "unmanaged":
-            raise MutationError(f"only unmanaged skills can be managed; this is {entry.display_status}", status=400)
+            raise MutationError(f"only unmanaged skills can be managed; this is {display_status(entry)}", status=400)
         self._manage_entry(entry)
+        self.read_models.invalidate()
         return {"ok": True}
 
     def manage_all_skills(self) -> dict[str, object]:
@@ -67,7 +71,7 @@ class SkillsMutationService:
         failures: list[dict[str, str]] = []
 
         for entry in inventory.entries:
-            if not entry.can_manage:
+            if not can_manage(entry):
                 skipped_count += 1
                 continue
             try:
@@ -80,6 +84,9 @@ class SkillsMutationService:
                     "error": str(error),
                 })
 
+        if managed_count:
+            self.read_models.invalidate()
+
         return {
             "ok": not failures,
             "managedCount": managed_count,
@@ -89,7 +96,7 @@ class SkillsMutationService:
 
     def update_skill(self, skill_ref: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
-        if not entry.can_update:
+        if not can_update(entry):
             raise MutationError("skill cannot be updated from its source", status=400)
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
@@ -103,13 +110,14 @@ class SkillsMutationService:
                 self.read_models.store.update(entry.package_dir, source_path=skill_path)
             except ValueError as error:
                 raise MutationError(str(error), status=409) from error
+        self.read_models.invalidate()
         return {"ok": True}
 
     def unmanage_skill(self, skill_ref: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
-        if not entry.can_stop_managing:
+        if not can_stop_managing(entry):
             raise MutationError(
-                f"only managed or custom shared-store skills can be moved back to unmanaged; this is {entry.display_status}",
+                f"only managed or custom shared-store skills can be moved back to unmanaged; this is {display_status(entry)}",
                 status=400,
             )
         if entry.package_dir is None or entry.package_path is None:
@@ -145,12 +153,16 @@ class SkillsMutationService:
             self.read_models.store.delete(entry.package_dir)
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
+        self.read_models.invalidate()
         return {"ok": True}
 
     def delete_skill(self, skill_ref: str) -> dict[str, bool]:
         entry = self.queries.require_entry(skill_ref)
-        if not entry.can_delete:
-            raise MutationError(f"only managed or custom shared-store skills can be deleted; this is {entry.display_status}", status=400)
+        if not can_delete(entry):
+            raise MutationError(
+                f"only managed or custom shared-store skills can be deleted; this is {display_status(entry)}",
+                status=400,
+            )
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
 
@@ -174,6 +186,7 @@ class SkillsMutationService:
             self.read_models.store.delete(entry.package_dir)
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
+        self.read_models.invalidate()
         return {"ok": True}
 
     def install_skill(self, *, source_kind: str, source_locator: str) -> dict[str, bool]:
@@ -196,6 +209,7 @@ class SkillsMutationService:
                 )
             except ValueError as error:
                 raise MutationError(str(error), status=409) from error
+        self.read_models.invalidate()
         return {"ok": True}
 
     def _manage_entry(self, entry: InventoryEntry) -> None:

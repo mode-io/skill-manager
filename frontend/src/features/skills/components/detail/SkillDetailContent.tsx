@@ -2,16 +2,16 @@ import { useId } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { DetailDisclosure } from "../../../../components/detail/DetailDisclosure";
+import { DetailHeader } from "../../../../components/detail/DetailHeader";
+import { DetailSourceLinks } from "../../../../components/detail/DetailSourceLinks";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import { StatusBadge } from "../../../../components/ui/StatusBadge";
 import type { HarnessCell, SkillDetail } from "../../model/types";
 import { skillStatusTone } from "../../model/status-mappings";
-import { SkillDetailDisclosure } from "./SkillDetailDisclosure";
 import { SkillDetailActionBar } from "./SkillDetailActionBar";
 import { SkillDetailHarnessMatrix } from "./SkillDetailHarnessMatrix";
-import { SkillDetailHeader } from "./SkillDetailHeader";
-import { SkillDetailSourceLinks } from "./SkillDetailSourceLinks";
 
 interface SkillDetailContentProps {
   detail: SkillDetail;
@@ -51,7 +51,7 @@ export function SkillDetailContent({
   return (
     <>
       <div className="skill-detail__chrome">
-        <SkillDetailHeader
+        <DetailHeader
           title={<h2 id={headingId}>{detail.name}</h2>}
           titleAction={
             detail.actions.canManage ? (
@@ -67,7 +67,7 @@ export function SkillDetailContent({
             ) : undefined
           }
           meta={
-            detail.sourceLinks ? <SkillDetailSourceLinks sourceLinks={detail.sourceLinks} /> : undefined
+            detail.sourceLinks ? <DetailSourceLinks sourceLinks={detail.sourceLinks} /> : undefined
           }
           utility={
             isRefreshing ? (
@@ -76,6 +76,7 @@ export function SkillDetailContent({
               </div>
             ) : undefined
           }
+          closeLabel="Close skill details"
           onClose={onClose}
         />
 
@@ -114,7 +115,7 @@ export function SkillDetailContent({
           {detail.attentionMessage ? <p className="skill-detail__alert">{detail.attentionMessage}</p> : null}
         </section>
 
-        <SkillDetailDisclosure
+        <DetailDisclosure
           title="SKILL.md"
           eyebrow="Primary document"
           defaultOpen
@@ -131,7 +132,7 @@ export function SkillDetailContent({
               <p className="skill-detail__copy">No SKILL.md document is available for this entry.</p>
             )}
           </div>
-        </SkillDetailDisclosure>
+        </DetailDisclosure>
 
         {detail.locations.length > 0 ? (
           <section className="skill-detail__context">

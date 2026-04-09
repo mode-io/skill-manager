@@ -26,8 +26,10 @@ class HttpApiTests(unittest.TestCase):
 
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
+            source_status = harness.get_json(f"/api/skills/{shared_audit['skillRef']}/source-status")
             scout = next(row for row in skills["rows"] if row["name"] == "Scout")
             builtin_detail = harness.get_json(f"/api/skills/{scout['skillRef']}")
+            builtin_source_status = harness.get_json(f"/api/skills/{scout['skillRef']}/source-status")
 
             self.assertEqual(shared_audit["displayStatus"], "Managed")
             self.assertNotIn("isBuiltin", shared_audit)
@@ -36,12 +38,12 @@ class HttpApiTests(unittest.TestCase):
                 [cell["label"] for cell in detail["harnessCells"]],
                 ["Codex", "Claude", "OpenCode"],
             )
-            self.assertEqual(detail["actions"]["updateStatus"], "no_update_available")
+            self.assertNotIn("updateStatus", detail["actions"])
+            self.assertEqual(source_status["updateStatus"], "no_update_available")
             self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
             self.assertTrue(detail["actions"]["canDelete"])
             self.assertEqual(detail["actions"]["deleteHarnessLabels"], [])
-            self.assertNotIn("Cursor", [cell["label"] for cell in detail["harnessCells"]])
             self.assertNotIn("OpenClaw", [cell["label"] for cell in detail["harnessCells"]])
             self.assertNotIn("Gemini", [cell["label"] for cell in detail["harnessCells"]])
             self.assertIn("Shared package fixture.", detail["documentMarkdown"])
@@ -54,7 +56,7 @@ class HttpApiTests(unittest.TestCase):
                 "folderUrl": None,
             })
             self.assertFalse(builtin_detail["actions"]["canDelete"])
-            self.assertIsNone(builtin_detail["actions"]["updateStatus"])
+            self.assertIsNone(builtin_source_status["updateStatus"])
             self.assertIsNone(builtin_detail["actions"]["stopManagingStatus"])
             self.assertEqual(builtin_detail["actions"]["stopManagingHarnessLabels"], [])
             self.assertEqual(builtin_detail["actions"]["deleteHarnessLabels"], [])

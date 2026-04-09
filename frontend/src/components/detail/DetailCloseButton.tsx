@@ -1,16 +1,17 @@
 import { X } from "lucide-react";
 
-interface SkillDetailCloseButtonProps {
+interface DetailCloseButtonProps {
   onClick: () => void;
+  ariaLabel?: string;
 }
 
-export function SkillDetailCloseButton({ onClick }: SkillDetailCloseButtonProps) {
+export function DetailCloseButton({ onClick, ariaLabel = "Close detail view" }: DetailCloseButtonProps) {
   return (
     <button
       type="button"
       className="skill-detail__close-button"
+      aria-label={ariaLabel}
       onClick={onClick}
-      aria-label="Close skill details"
     >
       <X size={14} aria-hidden="true" />
     </button>

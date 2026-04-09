@@ -1,1 +1,2 @@
-# Standard library-only Python backend and test-support scaffold.
+fastapi>=0.115,<0.116
+uvicorn>=0.34,<0.35

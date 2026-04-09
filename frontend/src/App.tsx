@@ -4,11 +4,11 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/AppShell";
 import { SettingsPopover } from "./components/SettingsPopover";
+import { MarketplacePage } from "./features/marketplace/screens/MarketplacePage";
 import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
 import { ManagedSkillsPage } from "./features/skills/screens/ManagedSkillsPage";
 import { SkillsWorkspacePage } from "./features/skills/screens/SkillsWorkspacePage";
 import { UnmanagedSkillsPage } from "./features/skills/screens/UnmanagedSkillsPage";
-import { MarketplacePage } from "./pages/MarketplacePage";
 
 export function App() {
   const [queryClient] = useState(

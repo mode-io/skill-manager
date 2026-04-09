@@ -7,6 +7,10 @@ name = "skill-manager"
 version = "0.1.0"
 description = "Local app and browser UI for universal skill management across agent harnesses."
 requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<0.116",
+  "uvicorn>=0.34,<0.35",
+]
 
 [tool.setuptools.packages.find]
 include = ["skill_manager*"]

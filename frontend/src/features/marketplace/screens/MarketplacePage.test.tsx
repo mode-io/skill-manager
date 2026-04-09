@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MarketplacePage } from "../pages/MarketplacePage";
+import { MarketplacePage } from "./MarketplacePage";
 
 const fetchMock = vi.fn();
 const observers: MockIntersectionObserver[] = [];
@@ -30,7 +30,7 @@ class MockIntersectionObserver {
   }
 }
 
-function renderPage() {
+function renderPage(initialEntries: string[] = ["/marketplace"]) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -40,7 +40,7 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <MarketplacePage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -126,70 +126,118 @@ describe("MarketplacePage", () => {
     expect(screen.queryByText("Skill One")).not.toBeInTheDocument();
   });
 
-  it("returns to the leaderboard when the query is cleared and search is submitted", async () => {
+  it("opens the marketplace detail overlay and loads the item preview", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/popular?limit=20&offset=0")) {
         return okJson({
-          items: [baseItem("skill-1", "Skill One", 128)],
+          items: [baseItem("mode-switch", "Mode Switch", 128)],
           nextOffset: null,
           hasMore: false,
         });
       }
-      if (url.includes("/api/marketplace/search") && url.includes("q=trace") && url.includes("limit=20") && url.includes("offset=0")) {
+      if (url.includes("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch/document")) {
         return okJson({
-          items: [baseItem("trace-skill", "Trace Skill", 41)],
-          nextOffset: null,
-          hasMore: false,
+          status: "ready",
+          documentMarkdown: "# Mode Switch",
+        });
+      }
+      if (url.includes("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch")) {
+        return okJson({
+          id: "skillssh:mode-io/skills:mode-switch",
+          name: "Mode Switch",
+          description: "Switch between supported skill execution modes.",
+          installs: 128,
+          stars: 512,
+          repoLabel: "mode-io/skills",
+          repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
+          sourceLinks: {
+            repoLabel: "mode-io/skills",
+            repoUrl: "https://github.com/mode-io/skills",
+            folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+            skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
+          },
+          installation: {
+            status: "installable",
+            installedSkillRef: null,
+          },
+          installToken: "token-mode-switch",
         });
       }
       throw new Error(`Unhandled URL ${url}`);
     });
 
     renderPage();
-    await waitFor(() => expect(screen.getByText("Skill One")).toBeInTheDocument());
 
-    const input = screen.getByPlaceholderText("Search skills.sh by skill name or topic");
-    fireEvent.change(input, { target: { value: "trace" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
-    await waitFor(() => expect(screen.getByText("Trace Skill")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Mode Switch")).toBeInTheDocument());
 
-    fireEvent.change(input, { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    fireEvent.click(screen.getByRole("button", { name: /open marketplace detail for mode switch/i }));
 
-    await waitFor(() => expect(screen.getByText("All-time leaderboard")).toBeInTheDocument());
-    expect(screen.getByText("Skill One")).toBeInTheDocument();
-    expect(screen.queryByText("Trace Skill")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Mode Switch" })).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Close marketplace preview" })).toBeInTheDocument();
+    expect(screen.getAllByText("128 installs")).toHaveLength(2);
   });
 
-  it("refreshes visible cards when summaries finish loading in the background", async () => {
+  it("shows a staged preview while the full marketplace detail is still loading", async () => {
+    const pendingDetail = deferred<ReturnType<typeof okJson>>();
+
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/popular?limit=20&offset=0")) {
-        const callCount = fetchMock.mock.calls.length;
         return okJson({
-          items: [
-            {
-              ...baseItem("skill-1", "Skill One", 128),
-              description: callCount === 1 ? "Summary loading from skills.sh…" : "Enriched summary from skills.sh.",
-            },
-          ],
+          items: [baseItem("mode-switch", "Mode Switch", 128)],
           nextOffset: null,
           hasMore: false,
         });
+      }
+      if (url.includes("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch/document")) {
+        return okJson({
+          status: "ready",
+          documentMarkdown: "## Full Preview Loaded",
+        });
+      }
+      if (url.includes("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch")) {
+        return pendingDetail.promise;
       }
       throw new Error(`Unhandled URL ${url}`);
     });
 
     renderPage();
 
-    await waitFor(() => expect(screen.getByText("Summary loading from skills.sh…")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Mode Switch")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /open marketplace detail for mode switch/i }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Mode Switch" })).toBeInTheDocument());
+    expect(screen.getByText("Loading Preview")).toBeInTheDocument();
+    expect(screen.getAllByText("Mode Switch description")).toHaveLength(2);
 
     await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 1700));
+      pendingDetail.resolve(
+        okJson({
+          id: "skillssh:mode-io/skills:mode-switch",
+          name: "Mode Switch",
+          description: "Switch between supported skill execution modes.",
+          installs: 128,
+          stars: 512,
+          repoLabel: "mode-io/skills",
+          repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
+          sourceLinks: {
+            repoLabel: "mode-io/skills",
+            repoUrl: "https://github.com/mode-io/skills",
+            folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+            skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
+          },
+          installation: {
+            status: "installable",
+            installedSkillRef: null,
+          },
+          installToken: "token-mode-switch",
+        }),
+      );
     });
 
-    await waitFor(() => expect(screen.getByText("Enriched summary from skills.sh.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Full Preview Loaded")).toBeInTheDocument());
   });
 });
 
@@ -200,9 +248,17 @@ function okJson(payload: object) {
   };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 function baseItem(id: string, name: string, installs: number) {
   return {
-    id,
+    id: `skillssh:mode-io/skills:${id}`,
     name,
     description: `${name} description`,
     installs,
@@ -212,5 +268,9 @@ function baseItem(id: string, name: string, installs: number) {
     githubFolderUrl: `https://github.com/mode-io/skills/tree/main/skills/${id}`,
     skillsDetailUrl: `https://skills.sh/mode-io/skills/${id}`,
     installToken: `token-${id}`,
+    installation: {
+      status: "installable",
+      installedSkillRef: null,
+    },
   };
 }
