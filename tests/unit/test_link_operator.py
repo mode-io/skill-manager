@@ -137,5 +137,48 @@ class ReplaceWithLinkTests(unittest.TestCase):
             self.assertIn("points to", str(ctx.exception))
 
 
+class MaterializeSharedLinkTests(unittest.TestCase):
+    def test_materialize_restores_real_directory_from_shared_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit", body="shared version")
+            link = spec.home / ".codex" / "skills" / "audit"
+            link.symlink_to(store_pkg.resolve())
+
+            operator = LinkOperator()
+            result = operator.materialize_shared_link(existing_link=link, source_path=store_pkg)
+
+            self.assertEqual(result.action, "created")
+            self.assertTrue(link.is_dir())
+            self.assertFalse(link.is_symlink())
+            self.assertIn("shared version", (link / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_materialize_refuses_real_directory_targets(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            local_pkg = seed_skill_package(spec.home / ".codex" / "skills", "audit", "Audit", body="local")
+
+            operator = LinkOperator()
+            with self.assertRaises(MutationError) as ctx:
+                operator.materialize_shared_link(existing_link=local_pkg, source_path=store_pkg)
+
+            self.assertIn("not a symlink", str(ctx.exception))
+
+    def test_materialize_refuses_foreign_symlink_targets(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            store_pkg = seed_skill_package(spec.shared_store_root, "audit", "Audit")
+            other_pkg = seed_skill_package(Path(temp_dir) / "other-store", "audit", "Other")
+            link = spec.home / ".codex" / "skills" / "audit"
+            link.symlink_to(other_pkg.resolve())
+
+            operator = LinkOperator()
+            with self.assertRaises(MutationError) as ctx:
+                operator.materialize_shared_link(existing_link=link, source_path=store_pkg)
+
+            self.assertIn("points to", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

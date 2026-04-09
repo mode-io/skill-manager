@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -8,6 +7,63 @@ from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
 from tests.support import AppTestHarness, StubCommandRunner, seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
+
+
+def seed_custom_fixture(spec):
+    package_root = seed_skill_package(
+        spec.shared_store_root,
+        "audit-skill",
+        "Audit Skill",
+        body="customized version",
+        source_kind="github",
+        source_locator="github:mode-io/audit-skill",
+    )
+    revision, _ = fingerprint_package(package_root)
+    seed_store_manifest(
+        spec,
+        [
+            ManifestEntry(
+                package_dir="audit-skill",
+                declared_name="Audit Skill",
+                source_kind="github",
+                source_locator="github:mode-io/audit-skill",
+                revision=f"{revision}-recorded",
+            )
+        ],
+    )
+    return StubCommandRunner()
+
+
+def seed_delete_fixture(spec):
+    runner = seed_shared_only_fixture(spec)
+    target = spec.shared_store_root / "shared-audit"
+    for path in (
+        spec.home / ".codex" / "skills" / "shared-audit",
+        spec.home / ".claude" / "skills" / "shared-audit",
+        spec.xdg_config_home / "opencode" / "skills" / "shared-audit",
+        spec.xdg_config_home / "openclaw" / "skills" / "shared-audit",
+    ):
+        path.symlink_to(target)
+    return runner
+
+
+def seed_delete_preflight_failure_fixture(spec):
+    runner = seed_shared_only_fixture(spec)
+    target = spec.shared_store_root / "shared-audit"
+    (spec.home / ".codex" / "skills" / "shared-audit").symlink_to(target)
+    seed_skill_package(spec.home / ".claude" / "skills", "shared-audit", "Shared Audit", body="local conflict")
+    return runner
+
+
+def seed_unmanage_fixture(spec):
+    runner = seed_shared_only_fixture(spec)
+    target = spec.shared_store_root / "shared-audit"
+    for path in (
+        spec.home / ".codex" / "skills" / "shared-audit",
+        spec.home / ".claude" / "skills" / "shared-audit",
+    ):
+        path.symlink_to(target)
+    return runner
 
 
 class MutationTests(unittest.TestCase):
@@ -62,36 +118,105 @@ class MutationTests(unittest.TestCase):
             self.assertIn("unknown skill ref", result["error"])
 
     def test_update_refuses_custom_skill(self) -> None:
-        def seed_custom_fixture(spec):
-            package_root = seed_skill_package(
-                spec.shared_store_root,
-                "audit-skill",
-                "Audit Skill",
-                body="customized version",
-                source_kind="github",
-                source_locator="github:mode-io/audit-skill",
-            )
-            revision, _ = fingerprint_package(package_root)
-            seed_store_manifest(
-                spec,
-                [
-                    ManifestEntry(
-                        package_dir="audit-skill",
-                        declared_name="Audit Skill",
-                        source_kind="github",
-                        source_locator="github:mode-io/audit-skill",
-                        revision=f"{revision}-recorded",
-                    )
-                ],
-            )
-            return StubCommandRunner()
-
         with AppTestHarness(fixture_factory=seed_custom_fixture) as harness:
             skills = harness.get_json("/api/skills")
             audit = next(row for row in skills["rows"] if row["name"] == "Audit Skill")
             result = harness.post_json(f"/api/skills/{audit['skillRef']}/update", expected_status=400)
 
             self.assertIn("cannot be updated", result["error"])
+
+    def test_unmanage_restores_real_local_copies_for_currently_enabled_harnesses(self) -> None:
+        with AppTestHarness(fixture_factory=seed_unmanage_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/unmanage")
+
+            self.assertTrue(result["ok"])
+            self.assertFalse((harness.spec.shared_store_root / "shared-audit").exists())
+            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_dir())
+            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.home / ".claude" / "skills" / "shared-audit").is_dir())
+            self.assertFalse((harness.spec.home / ".claude" / "skills" / "shared-audit").is_symlink())
+            self.assertFalse((harness.spec.home / ".cursor" / "skills" / "shared-audit").exists())
+
+            refreshed = harness.get_json("/api/skills")
+            restored = [row for row in refreshed["rows"] if row["name"] == "Shared Audit"]
+            self.assertEqual(len(restored), 1)
+            self.assertEqual(restored[0]["displayStatus"], "Unmanaged")
+
+    def test_unmanage_rejects_skills_with_no_enabled_harnesses(self) -> None:
+        with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/unmanage", expected_status=400)
+
+            self.assertIn("turn on at least one harness", result["error"])
+            self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
+
+    def test_unmanage_rejects_unmanaged_and_builtin_skills(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            skills = harness.get_json("/api/skills")
+            unmanaged = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
+            builtin = next(row for row in skills["rows"] if row["name"] == "Scout")
+
+            unmanaged_result = harness.post_json(f"/api/skills/{unmanaged['skillRef']}/unmanage", expected_status=400)
+            builtin_result = harness.post_json(f"/api/skills/{builtin['skillRef']}/unmanage", expected_status=400)
+
+            self.assertIn("only managed or custom", unmanaged_result["error"])
+            self.assertIn("only managed or custom", builtin_result["error"])
+
+    def test_delete_managed_skill_removes_shared_package_and_all_links(self) -> None:
+        with AppTestHarness(fixture_factory=seed_delete_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/delete")
+
+            self.assertTrue(result["ok"])
+            self.assertFalse((harness.spec.shared_store_root / "shared-audit").exists())
+            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.home / ".claude" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.xdg_config_home / "opencode" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.xdg_config_home / "openclaw" / "skills" / "shared-audit").exists())
+
+            refreshed = harness.get_json("/api/skills")
+            self.assertNotIn(shared_entry["skillRef"], [row["skillRef"] for row in refreshed["rows"]])
+
+    def test_delete_custom_skill_is_allowed(self) -> None:
+        with AppTestHarness(fixture_factory=seed_custom_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            audit = next(row for row in skills["rows"] if row["name"] == "Audit Skill")
+
+            result = harness.post_json(f"/api/skills/{audit['skillRef']}/delete")
+
+            self.assertTrue(result["ok"])
+            self.assertFalse((harness.spec.shared_store_root / "audit-skill").exists())
+
+    def test_delete_rejects_unmanaged_and_builtin_skills(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            skills = harness.get_json("/api/skills")
+            unmanaged = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
+            builtin = next(row for row in skills["rows"] if row["name"] == "Scout")
+
+            unmanaged_result = harness.post_json(f"/api/skills/{unmanaged['skillRef']}/delete", expected_status=400)
+            builtin_result = harness.post_json(f"/api/skills/{builtin['skillRef']}/delete", expected_status=400)
+
+            self.assertIn("only managed or custom", unmanaged_result["error"])
+            self.assertIn("only managed or custom", builtin_result["error"])
+
+    def test_delete_aborts_before_mutation_when_any_target_is_real_directory(self) -> None:
+        with AppTestHarness(fixture_factory=seed_delete_preflight_failure_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/delete", expected_status=409)
+
+            self.assertIn("not a symlink", result["error"])
+            self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
+            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.home / ".claude" / "skills" / "shared-audit").is_dir())
 
 
 if __name__ == "__main__":

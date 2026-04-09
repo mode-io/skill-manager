@@ -8,8 +8,10 @@ import "./styles/reset.css";
 import "./styles/scrollbars.css";
 import "./styles/app.css";
 import "./styles/ui.css";
-import "./styles/skills.css";
-import "./styles/marketplace.css";
+import "./components/detail/index.css";
+import "./features/marketplace/styles/index.css";
+import "./features/skills/styles/index.css";
+import "./styles/dialogs.css";
 import "./styles/drawers.css";
 import "./styles/settings.css";
 

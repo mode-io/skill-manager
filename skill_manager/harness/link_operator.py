@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import shutil
 from typing import Literal
+from uuid import uuid4
 
 
 class MutationError(Exception):
@@ -57,3 +58,41 @@ class LinkOperator:
             raise MutationError(f"not a symlink at {link}; will not delete real directory")
         link.unlink()
         return LinkResult(action="removed", detail=str(link))
+
+    def ensure_shared_link_removable(self, *, package_dir: str, harness_skills_root: Path) -> None:
+        link = harness_skills_root / package_dir
+        if not link.exists() and not link.is_symlink():
+            return
+        if not link.is_symlink():
+            raise MutationError(f"not a symlink at {link}; will not delete real directory")
+
+    def ensure_shared_link_materializable(self, *, existing_link: Path, expected_target: Path) -> None:
+        if not existing_link.exists() and not existing_link.is_symlink():
+            raise MutationError(f"directory does not exist: {existing_link}")
+        if not existing_link.is_symlink():
+            raise MutationError(f"not a symlink at {existing_link}; will not overwrite real directory")
+        resolved_target = expected_target.resolve()
+        if existing_link.resolve() != resolved_target:
+            raise MutationError(f"symlink exists but points to {existing_link.resolve()}, not {resolved_target}")
+
+    def materialize_shared_link(self, *, existing_link: Path, source_path: Path) -> LinkResult:
+        resolved_target = source_path.resolve()
+        self.ensure_shared_link_materializable(existing_link=existing_link, expected_target=resolved_target)
+
+        temp_copy = existing_link.parent / f".{existing_link.name}.materialize-{uuid4().hex}"
+        backup_link = existing_link.parent / f".{existing_link.name}.backup-{uuid4().hex}"
+
+        try:
+            shutil.copytree(resolved_target, temp_copy)
+            existing_link.rename(backup_link)
+            temp_copy.rename(existing_link)
+        except OSError as error:
+            if backup_link.exists() and not existing_link.exists():
+                backup_link.rename(existing_link)
+            if temp_copy.exists():
+                shutil.rmtree(temp_copy, ignore_errors=True)
+            raise MutationError(f"unable to restore local copy at {existing_link}: {error}") from error
+
+        if backup_link.exists():
+            backup_link.unlink()
+        return LinkResult(action="created", detail=str(existing_link))

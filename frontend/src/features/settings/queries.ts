@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { fetchSettings, manageAllSkills } from "../../api/client";
-import { invalidateSkillsQueries } from "../skills/queries";
+import { fetchSettings } from "../../api/client";
+import { manageAllSkills } from "../skills/api/client";
+import { invalidateSkillsQueries } from "../skills/api/queries";
 
 const SETTINGS_STALE_TIME_MS = 60_000;
 const SETTINGS_GC_TIME_MS = 15 * 60_000;

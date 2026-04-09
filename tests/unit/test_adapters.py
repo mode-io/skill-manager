@@ -4,13 +4,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.harness import create_default_adapters
+from skill_manager.harness import SubprocessCommandRunner, create_default_adapters
 
 from tests.support import create_fake_home_spec, seed_builtin_catalog, seed_skill_package
 from tests.support.command_runner import StubCommandRunner
 
 
 class AdapterTests(unittest.TestCase):
+    def test_subprocess_command_runner_handles_missing_binary(self) -> None:
+        result = SubprocessCommandRunner().run(("definitely-not-a-real-skill-manager-command",))
+        self.assertEqual(result.returncode, 127)
+        self.assertIn("definitely-not-a-real-skill-manager-command", result.stderr)
+
     def test_filesystem_and_config_adapters_discover_skills_and_builtins(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))

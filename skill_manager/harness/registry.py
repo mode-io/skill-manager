@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 from skill_manager.domain import HarnessScan
 
 from .adapters.config_backed import ConfigHarnessAdapter
@@ -54,4 +56,8 @@ def create_default_adapters(
 
 
 def scan_all_harnesses(adapters: tuple[HarnessAdapter, ...]) -> tuple[HarnessScan, ...]:
-    return tuple(adapter.scan() for adapter in adapters)
+    if not adapters:
+        return ()
+    with ThreadPoolExecutor(max_workers=len(adapters)) as executor:
+        scans = executor.map(lambda adapter: adapter.scan(), adapters)
+        return tuple(scans)

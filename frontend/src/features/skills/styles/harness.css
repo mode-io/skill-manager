@@ -1,0 +1,154 @@
+.skill-card__harnesses {
+  min-width: 0;
+}
+
+.skill-harness-cluster {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.skill-harness-cluster__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skill-harness-cluster__item {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  min-width: 46px;
+}
+
+.skill-harness-cluster__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.skill-harness-mark {
+  min-width: 0;
+}
+
+.skill-harness-mark--text {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.skill-harness-mark--logo {
+  width: auto;
+}
+
+.skill-harness-mark__logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 96px;
+}
+
+.skill-harness-cluster__control {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.harness-state-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  height: 26px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: rgba(28, 33, 40, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #bcc4ce;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.harness-state-chip:hover {
+  background: rgba(32, 38, 46, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #d4dbe4;
+}
+
+.harness-state-chip:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 0 3px rgba(107, 194, 164, 0.16);
+}
+
+.harness-state-chip[data-state="checked"] {
+  background: rgba(34, 68, 58, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(189, 241, 221, 0.08);
+  color: #e3fbf2;
+}
+
+.harness-state-chip[data-state="checked"]:hover {
+  background: rgba(39, 75, 64, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(198, 246, 227, 0.1);
+  color: #effff8;
+}
+
+.harness-state-chip[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.harness-state-chip--static {
+  cursor: default;
+}
+
+.harness-state-chip--static:hover {
+  transform: none;
+}
+
+.harness-state-chip--found {
+  background: rgba(34, 68, 58, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(189, 241, 221, 0.08);
+  color: #e3fbf2;
+}
+
+.harness-state-chip--found:hover {
+  background: rgba(34, 68, 58, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(189, 241, 221, 0.08);
+  color: #e3fbf2;
+}
+
+.harness-state-chip--empty,
+.harness-state-chip--builtin {
+  background: rgba(28, 33, 40, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #a5b0bc;
+}
+
+.harness-state-chip--empty:hover,
+.harness-state-chip--builtin:hover {
+  background: rgba(28, 33, 40, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #a5b0bc;
+}
+
+.harness-state-chip__label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1;
+}
+

@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "**"
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install -r requirements.txt
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check version sync
+        run: ./.venv/bin/python scripts/sync_version.py --check
+
+      - name: Frontend typecheck
+        run: npm run typecheck
+
+      - name: Backend unit tests
+        run: ./.venv/bin/python -m unittest discover tests/unit -p 'test_*.py'
+
+      - name: Backend integration tests
+        run: ./.venv/bin/python -m unittest discover tests/integration -p 'test_*.py'
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Frontend build
+        run: npm run build
+
+  package-smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install build dependencies
+        run: |
+          python -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r requirements.txt .[build]
+          npm ci
+
+      - name: Build release artifact
+        run: ./.venv/bin/python scripts/build_release.py
+
+      - name: Validate packaged binary
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          ./.venv/bin/python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
+
+      - name: Validate npm wrapper with local artifact
+        run: |
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Validate Homebrew formula template
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          SHA="$(cut -d' ' -f1 "$(find .artifacts/release -name '*darwin-arm64.tar.gz.sha256' -print -quit)")"
+          bash scripts/validate_homebrew_formula.sh "$VERSION" "$SHA" "$SHA"

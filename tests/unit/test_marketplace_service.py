@@ -4,10 +4,10 @@ from pathlib import Path
 from tempfile import mkdtemp
 import unittest
 
-from skill_manager.application.marketplace import MarketplaceService
+from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import RepoDisplayMetadata, SkillsShSkill
-from skill_manager.application.marketplace.resolver import DetailEnrichment
+from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support import create_fixture_marketplace_service
 
@@ -50,7 +50,7 @@ class MarketplaceServiceTests(unittest.TestCase):
         self.assertEqual(descriptor, ("github", "github:mode-io/skills/mode-switch"))
 
     def test_unexpected_provider_errors_are_not_silently_swallowed(self) -> None:
-        service = MarketplaceService(
+        service = MarketplaceCatalog(
             leaderboard_fetcher=lambda: (_ for _ in ()).throw(TypeError("bad provider wiring")),
             search_fetcher=lambda query, limit: [],
             warm_on_init=False,
@@ -80,17 +80,19 @@ class MarketplaceServiceTests(unittest.TestCase):
                 ).to_dict(),
             )
 
-        service = MarketplaceService(
+        service = MarketplaceCatalog(
             leaderboard_fetcher=lambda: [],
             search_fetcher=searcher,
-            github_client=GitHubRepoMetadataClient(
-                metadata_fetcher=lambda repo: GitHubRepoMetadata(
-                    repo=repo,
-                    repo_url=f"https://github.com/{repo}",
-                    owner_login="mode-io",
-                    owner_avatar_url=None,
-                    stars=42,
-                    default_branch="main",
+            github_resolver=GitHubSkillResolver(
+                GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                        repo=repo,
+                        repo_url=f"https://github.com/{repo}",
+                        owner_login="mode-io",
+                        owner_avatar_url=None,
+                        stars=42,
+                        default_branch="main",
+                    ),
                 ),
             ),
             cache=cache,
@@ -110,7 +112,7 @@ class MarketplaceServiceTests(unittest.TestCase):
             name="react:components",
             installs=12,
         )
-        service = MarketplaceService(
+        service = MarketplaceCatalog(
             leaderboard_fetcher=lambda: [record],
             search_fetcher=lambda query, limit: [record],
             detail_fetcher=lambda detail_url: """
@@ -120,7 +122,7 @@ class MarketplaceServiceTests(unittest.TestCase):
                   <p>Build React components from Stitch designs.</p>
                 </section>
             """,
-            github_client=GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None),
+            github_resolver=GitHubSkillResolver(GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None)),
             cache=cache,
             warm_on_init=False,
         )

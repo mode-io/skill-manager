@@ -26,16 +26,51 @@ class HttpApiTests(unittest.TestCase):
 
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
+            source_status = harness.get_json(f"/api/skills/{shared_audit['skillRef']}/source-status")
             scout = next(row for row in skills["rows"] if row["name"] == "Scout")
             builtin_detail = harness.get_json(f"/api/skills/{scout['skillRef']}")
+            builtin_source_status = harness.get_json(f"/api/skills/{scout['skillRef']}/source-status")
 
             self.assertEqual(shared_audit["displayStatus"], "Managed")
             self.assertNotIn("isBuiltin", shared_audit)
             self.assertEqual(detail["displayStatus"], "Managed")
+            self.assertEqual(
+                [cell["label"] for cell in detail["harnessCells"]],
+                ["Codex", "Claude", "OpenCode"],
+            )
+            self.assertNotIn("updateStatus", detail["actions"])
+            self.assertEqual(source_status["updateStatus"], "no_update_available")
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "disabled_no_enabled")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
+            self.assertTrue(detail["actions"]["canDelete"])
+            self.assertEqual(detail["actions"]["deleteHarnessLabels"], [])
+            self.assertNotIn("OpenClaw", [cell["label"] for cell in detail["harnessCells"]])
+            self.assertNotIn("Gemini", [cell["label"] for cell in detail["harnessCells"]])
             self.assertIn("Shared package fixture.", detail["documentMarkdown"])
             self.assertNotIn("statusMessage", detail)
             self.assertNotIn("source", detail)
+            self.assertNotIn("advanced", detail)
+            self.assertEqual(detail["sourceLinks"], {
+                "repoLabel": "mode-io/shared-audit",
+                "repoUrl": "https://github.com/mode-io/shared-audit",
+                "folderUrl": None,
+            })
+            self.assertFalse(builtin_detail["actions"]["canDelete"])
+            self.assertIsNone(builtin_source_status["updateStatus"])
+            self.assertIsNone(builtin_detail["actions"]["stopManagingStatus"])
+            self.assertEqual(builtin_detail["actions"]["stopManagingHarnessLabels"], [])
+            self.assertEqual(builtin_detail["actions"]["deleteHarnessLabels"], [])
+            self.assertEqual(
+                builtin_detail["harnessCells"],
+                [
+                    {"harness": "codex", "label": "Codex", "state": "empty", "interactive": False},
+                    {"harness": "claude", "label": "Claude", "state": "empty", "interactive": False},
+                    {"harness": "opencode", "label": "OpenCode", "state": "empty", "interactive": False},
+                ],
+            )
             self.assertIsNone(builtin_detail["documentMarkdown"])
+            self.assertNotIn("advanced", builtin_detail)
+            self.assertIsNone(builtin_detail["sourceLinks"])
 
     def test_managed_detail_returns_shared_store_location_before_tool_links(self) -> None:
         with AppTestHarness(fixture_factory=seed_managed_linked_fixture) as harness:
@@ -44,6 +79,9 @@ class HttpApiTests(unittest.TestCase):
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
 
             self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex"])
+            self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
+            self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
+            self.assertEqual(detail["actions"]["deleteHarnessLabels"], ["Codex"])
 
     def test_divergent_source_fixture_returns_separate_found_rows(self) -> None:
         with AppTestHarness(fixture_factory=seed_divergent_source_fixture) as harness:

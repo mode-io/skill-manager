@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .launcher import main
+from skill_manager.cli import main
 
 
 if __name__ == "__main__":

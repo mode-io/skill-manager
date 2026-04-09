@@ -8,10 +8,9 @@ from tempfile import TemporaryDirectory
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from skill_manager.application import ApplicationService
-from skill_manager.application.marketplace import MarketplaceService
-from skill_manager.application.read_model_service import ReadModelService
-from skill_manager.api import serve_in_thread
+from skill_manager.application import build_backend_container
+from skill_manager.application.marketplace import MarketplaceCatalog
+from skill_manager.runtime import serve_in_thread
 
 from .command_runner import StubCommandRunner
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
@@ -24,7 +23,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         frontend_dist: Path | None = None,
         mixed: bool = False,
         fixture_factory: Callable[[FakeHomeSpec], StubCommandRunner] | None = None,
-        marketplace: MarketplaceService | None = None,
+        marketplace: MarketplaceCatalog | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name))
@@ -33,13 +32,16 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         seeder = fixture_factory or (seed_mixed_fixture if mixed else None)
         self.runner = seeder(self.spec) if seeder is not None else StubCommandRunner()
         if marketplace is None:
-            self.service = ApplicationService.from_environment(self.spec.env(), command_runner=self.runner)
+            self.container = build_backend_container(self.spec.env(), command_runner=self.runner)
         else:
-            self.service = ApplicationService(
-                ReadModelService.from_environment(self.spec.env(), command_runner=self.runner),
-                marketplace=marketplace,
+            self.container = build_backend_container(
+                self.spec.env(),
+                command_runner=self.runner,
+                marketplace_catalog=marketplace,
             )
-        self.server = serve_in_thread(self.service, frontend_dist=frontend_dist)
+            # Ensure tests exercising a custom catalog use the same read-model root.
+            self.container.read_models.invalidate()
+        self.server = serve_in_thread(self.container, frontend_dist=frontend_dist)
         self.base_url = self.server.base_url
 
     def __exit__(self, exc_type, exc, tb) -> None:
