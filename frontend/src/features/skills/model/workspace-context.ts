@@ -1,15 +1,17 @@
 import { useOutletContext } from "react-router-dom";
 
+import type { BulkSkillsAction, CellActionKey, StructuralSkillAction } from "./pending";
 import type { HarnessCell, SkillListRow, SkillsWorkspaceData } from "./types";
 
 export interface SkillsWorkspaceContextValue {
   data: SkillsWorkspaceData | null;
   hasData: boolean;
   isInitialLoading: boolean;
-  isRefreshing: boolean;
   status: "loading" | "ready" | "error";
   errorMessage: string;
-  busyId: string | null;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  pendingStructuralActions: ReadonlyMap<string, StructuralSkillAction>;
+  pendingBulkAction: BulkSkillsAction | null;
   selectedSkillRef: string | null;
   onManageAll: () => void;
   onManageSkill: (skillRef: string) => Promise<void>;

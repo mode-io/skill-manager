@@ -1,6 +1,4 @@
-import { useId } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { lazy, Suspense, useId } from "react";
 
 import { DetailDisclosure } from "../../../../components/detail/DetailDisclosure";
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
@@ -8,17 +6,20 @@ import { DetailSourceLinks } from "../../../../components/detail/DetailSourceLin
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import { StatusBadge } from "../../../../components/ui/StatusBadge";
+import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCell, SkillDetail } from "../../model/types";
 import { skillStatusTone } from "../../model/status-mappings";
 import { SkillDetailActionBar } from "./SkillDetailActionBar";
 import { SkillDetailHarnessMatrix } from "./SkillDetailHarnessMatrix";
 
+const MarkdownDocument = lazy(() => import("../../../../components/MarkdownDocument"));
+
 interface SkillDetailContentProps {
   detail: SkillDetail;
-  isRefreshing: boolean;
   actionErrorMessage: string;
   queryErrorMessage: string;
-  busyAction: string | null;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onClose: () => void;
   onDismissActionError: () => void;
   onManage: () => void;
@@ -30,10 +31,10 @@ interface SkillDetailContentProps {
 
 export function SkillDetailContent({
   detail,
-  isRefreshing,
   actionErrorMessage,
   queryErrorMessage,
-  busyAction,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onClose,
   onDismissActionError,
   onManage,
@@ -47,6 +48,8 @@ export function SkillDetailContent({
   const showManagedStoreNote =
     (detail.displayStatus === "Managed" || detail.displayStatus === "Custom")
     && detail.locations.some((location) => location.kind === "shared");
+  const hasPendingHarnessToggles = pendingToggleHarnesses.size > 0;
+  const structuralLocked = pendingStructuralAction !== null;
 
   return (
     <>
@@ -58,23 +61,16 @@ export function SkillDetailContent({
               <button
                 type="button"
                 className="btn btn-primary skill-detail__manage-button"
-                disabled={busyAction !== null}
+                disabled={structuralLocked || hasPendingHarnessToggles}
                 onClick={onManage}
               >
-                {busyAction === "manage" ? <LoadingSpinner size="sm" label="Managing skill" /> : null}
+                {pendingStructuralAction === "manage" ? <LoadingSpinner size="sm" label="Managing skill" /> : null}
                 Bring Under Management
               </button>
             ) : undefined
           }
           meta={
             detail.sourceLinks ? <DetailSourceLinks sourceLinks={detail.sourceLinks} /> : undefined
-          }
-          utility={
-            isRefreshing ? (
-              <div className="skill-detail__refresh" aria-live="polite">
-                <LoadingSpinner size="sm" label="Refreshing skill details" />
-              </div>
-            ) : undefined
           }
           closeLabel="Close skill details"
           onClose={onClose}
@@ -83,7 +79,8 @@ export function SkillDetailContent({
         <SkillDetailHarnessMatrix
           skillName={detail.name}
           cells={detail.harnessCells}
-          disabled={busyAction !== null}
+          pendingToggleHarnesses={pendingToggleHarnesses}
+          pendingStructuralAction={pendingStructuralAction}
           onToggleCell={onToggleHarness}
         />
 
@@ -102,7 +99,8 @@ export function SkillDetailContent({
 
         <SkillDetailActionBar
           actions={detail.actions}
-          busyAction={busyAction}
+          pendingStructuralAction={pendingStructuralAction}
+          hasPendingHarnessToggles={hasPendingHarnessToggles}
           onUpdate={onUpdate}
           onRequestStopManaging={onRequestStopManaging}
           onRequestDelete={onRequestDelete}
@@ -123,11 +121,9 @@ export function SkillDetailContent({
         >
           <div className="skill-detail__document-surface">
             {detail.documentMarkdown ? (
-              <div className="skill-detail__markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {detail.documentMarkdown}
-                </ReactMarkdown>
-              </div>
+              <Suspense fallback={<LoadingSpinner size="sm" label="Loading document" />}>
+                <MarkdownDocument markdown={detail.documentMarkdown} />
+              </Suspense>
             ) : (
               <p className="skill-detail__copy">No SKILL.md document is available for this entry.</p>
             )}

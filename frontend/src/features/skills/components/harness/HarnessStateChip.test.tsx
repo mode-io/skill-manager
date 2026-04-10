@@ -49,4 +49,21 @@ describe("HarnessStateChip", () => {
     expect(screen.getByText("Built-in")).toBeInTheDocument();
     expect(container.querySelector(".harness-state-chip--builtin")).not.toBeNull();
   });
+
+  it("renders pending feedback inside the interactive chip without changing passive variants", () => {
+    render(
+      <HarnessStateChip
+        state="enabled"
+        interactive
+        pending
+        ariaLabel="Disable Shared Audit for Codex"
+        onCheckedChange={vi.fn()}
+      />,
+    );
+
+    const toggle = screen.getByRole("switch", { name: "Disable Shared Audit for Codex" });
+    expect(toggle).toBeDisabled();
+    expect(screen.getByText("Saving")).toBeInTheDocument();
+    expect(screen.getByLabelText("Saving harness state")).toBeInTheDocument();
+  });
 });

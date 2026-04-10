@@ -13,6 +13,7 @@ export interface SkillsSummary {
 export interface HarnessColumn {
   harness: string;
   label: string;
+  logoKey?: string | null;
 }
 
 export interface SkillRowActionsDto {
@@ -22,6 +23,7 @@ export interface SkillRowActionsDto {
 export interface HarnessCell {
   harness: string;
   label: string;
+  logoKey?: string | null;
   state: HarnessCellState;
   interactive: boolean;
 }

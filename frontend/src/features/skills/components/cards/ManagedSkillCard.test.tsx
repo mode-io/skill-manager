@@ -33,7 +33,8 @@ describe("ManagedSkillCard", () => {
       <ManagedSkillCard
         row={row}
         columns={columns}
-        busyId={null}
+        pendingToggleKeys={new Set()}
+        pendingStructuralAction={null}
         selected={false}
         onOpenSkill={onOpenSkill}
         onToggleCell={onToggleCell}
@@ -63,7 +64,8 @@ describe("ManagedSkillCard", () => {
       <ManagedSkillCard
         row={customRow}
         columns={columns}
-        busyId={null}
+        pendingToggleKeys={new Set()}
+        pendingStructuralAction={null}
         selected={false}
         onOpenSkill={vi.fn()}
         onToggleCell={vi.fn()}

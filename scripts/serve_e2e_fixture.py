@@ -13,18 +13,18 @@ if str(REPO_ROOT) not in sys.path:
 from skill_manager.application import build_backend_container
 from skill_manager.runtime.server import serve_foreground
 
-from tests.support import create_fake_home_spec, create_fixture_marketplace_service, seed_mixed_fixture
+from tests.support.fake_home import create_fake_home_spec, seed_mixed_fixture
+from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 def main() -> int:
     with TemporaryDirectory(prefix="skill-manager-e2e-") as temp_dir:
         spec = create_fake_home_spec(Path(temp_dir))
-        runner = seed_mixed_fixture(spec)
+        seed_mixed_fixture(spec)
         env = dict(os.environ)
         env.update(spec.env())
         container = build_backend_container(
             env,
-            command_runner=runner,
             marketplace_catalog=create_fixture_marketplace_service(),
         )
         return serve_foreground(

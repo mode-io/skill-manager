@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 
+import {
+  cellActionKey,
+  type BulkSkillsAction,
+  type CellActionKey,
+  type StructuralSkillAction,
+} from "./pending";
 import type { HarnessCell, HarnessCellState, SkillListRow } from "./types";
 import type { SkillsWorkspaceContextValue } from "./workspace-context";
 import {
@@ -24,7 +30,6 @@ export interface SkillsWorkspaceController {
   transitionDirection: SkillsPaneDirection;
   actionErrorMessage: string;
   queryErrorMessage: string;
-  isRefreshing: boolean;
   closeSelectedSkill: () => void;
   handleManageSkill: (skillRef: string) => Promise<void>;
   handleToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
@@ -47,12 +52,15 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
   const isMobileDetail = useCompactDetailLayout();
 
   const [actionErrorMessage, setActionErrorMessage] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingToggleKeys, setPendingToggleKeys] = useState<Set<CellActionKey>>(() => new Set());
+  const [pendingStructuralActions, setPendingStructuralActions] = useState<Map<string, StructuralSkillAction>>(
+    () => new Map(),
+  );
+  const [pendingBulkAction, setPendingBulkAction] = useState<BulkSkillsAction | null>(null);
 
   const data = listQuery.data ?? null;
   const hasData = data !== null;
   const isInitialLoading = listQuery.isPending && !hasData;
-  const isRefreshing = listQuery.isFetching && hasData;
   const queryErrorMessage = listQuery.error instanceof Error ? listQuery.error.message : "";
   const status: "loading" | "ready" | "error" = isInitialLoading
     ? "loading"
@@ -91,39 +99,136 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
     updateSelectedSkillRef(selectedSkillRef === skillRef ? null : skillRef);
   }, [selectedSkillRef, updateSelectedSkillRef]);
 
+  function addPendingToggle(key: CellActionKey): void {
+    setPendingToggleKeys((current) => {
+      if (current.has(key)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }
+
+  function removePendingToggle(key: CellActionKey): void {
+    setPendingToggleKeys((current) => {
+      if (!current.has(key)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  }
+
+  function setPendingStructuralAction(skillRef: string, action: StructuralSkillAction): void {
+    setPendingStructuralActions((current) => {
+      if (current.get(skillRef) === action) {
+        return current;
+      }
+      const next = new Map(current);
+      next.set(skillRef, action);
+      return next;
+    });
+  }
+
+  function clearPendingStructuralAction(skillRef: string): void {
+    setPendingStructuralActions((current) => {
+      if (!current.has(skillRef)) {
+        return current;
+      }
+      const next = new Map(current);
+      next.delete(skillRef);
+      return next;
+    });
+  }
+
+  async function runToggleSkill(
+    skillRef: string,
+    harness: string,
+    currentState: HarnessCellState,
+    reportError: boolean,
+  ): Promise<void> {
+    const nextState: HarnessCellState = currentState === "enabled" ? "disabled" : "enabled";
+    const key = cellActionKey(skillRef, harness);
+    addPendingToggle(key);
+    if (reportError) {
+      setActionErrorMessage("");
+    }
+    try {
+      await toggleMutation.mutateAsync({ skillRef, harness, nextState });
+    } catch (error) {
+      if (reportError) {
+        setActionErrorMessage(error instanceof Error ? error.message : "Unable to toggle the skill.");
+      }
+      throw error;
+    } finally {
+      removePendingToggle(key);
+    }
+  }
+
+  async function runStructuralAction(
+    skillRef: string,
+    action: StructuralSkillAction,
+    task: () => Promise<unknown>,
+    reportError: boolean,
+    onSuccess?: () => void,
+  ): Promise<void> {
+    setPendingStructuralAction(skillRef, action);
+    if (reportError) {
+      setActionErrorMessage("");
+    }
+    try {
+      await task();
+      onSuccess?.();
+    } catch (error) {
+      if (reportError) {
+        setActionErrorMessage(
+          error instanceof Error ? error.message : "Unable to complete the requested action.",
+        );
+      }
+      throw error;
+    } finally {
+      clearPendingStructuralAction(skillRef);
+    }
+  }
+
   async function handleToggleSkill(
     skillRef: string,
     harness: string,
     currentState: HarnessCellState,
   ): Promise<void> {
-    const nextState: HarnessCellState = currentState === "enabled" ? "disabled" : "enabled";
-    setBusyId(`${skillRef}:${harness}`);
-    setActionErrorMessage("");
-    try {
-      await toggleMutation.mutateAsync({ skillRef, harness, nextState });
-    } catch (error) {
-      setActionErrorMessage(error instanceof Error ? error.message : "Unable to toggle the skill.");
-      throw error;
-    } finally {
-      setBusyId(null);
-    }
+    await runToggleSkill(skillRef, harness, currentState, false);
   }
 
   async function handleManageSkill(skillRef: string): Promise<void> {
-    setBusyId(`manage:${skillRef}`);
-    setActionErrorMessage("");
-    try {
-      await manageMutation.mutateAsync({ skillRef });
-    } catch (error) {
-      setActionErrorMessage(error instanceof Error ? error.message : "Unable to manage the skill.");
-      throw error;
-    } finally {
-      setBusyId(null);
-    }
+    await runStructuralAction(
+      skillRef,
+      "manage",
+      () => manageMutation.mutateAsync({ skillRef }),
+      false,
+    );
+  }
+
+  async function handleManageSkillFromList(skillRef: string): Promise<void> {
+    await runStructuralAction(
+      skillRef,
+      "manage",
+      () => manageMutation.mutateAsync({ skillRef }),
+      true,
+    );
+  }
+
+  async function handleToggleSkillFromList(
+    skillRef: string,
+    harness: string,
+    currentState: HarnessCellState,
+  ): Promise<void> {
+    await runToggleSkill(skillRef, harness, currentState, true);
   }
 
   async function handleManageAll(): Promise<void> {
-    setBusyId("manage-all");
+    setPendingBulkAction("manage-all");
     setActionErrorMessage("");
     try {
       await manageAllMutation.mutateAsync();
@@ -131,66 +236,50 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
       setActionErrorMessage(error instanceof Error ? error.message : "Unable to manage all skills.");
       throw error;
     } finally {
-      setBusyId(null);
+      setPendingBulkAction(null);
     }
   }
 
   async function handleUpdateSkill(skillRef: string): Promise<void> {
-    setBusyId(`update:${skillRef}`);
-    setActionErrorMessage("");
-    try {
-      await updateMutation.mutateAsync({ skillRef });
-    } catch (error) {
-      setActionErrorMessage(error instanceof Error ? error.message : "Unable to update the skill.");
-      throw error;
-    } finally {
-      setBusyId(null);
-    }
+    await runStructuralAction(skillRef, "update", () => updateMutation.mutateAsync({ skillRef }), false);
   }
 
   async function handleDeleteSkill(skillRef: string): Promise<void> {
-    setBusyId(`delete:${skillRef}`);
-    setActionErrorMessage("");
-    try {
-      await deleteMutation.mutateAsync({ skillRef });
-      updateSelectedSkillRef(null, true);
-    } catch (error) {
-      setActionErrorMessage(error instanceof Error ? error.message : "Unable to delete the skill.");
-      throw error;
-    } finally {
-      setBusyId(null);
-    }
+    await runStructuralAction(
+      skillRef,
+      "delete",
+      () => deleteMutation.mutateAsync({ skillRef }),
+      false,
+      () => updateSelectedSkillRef(null, true),
+    );
   }
 
   async function handleUnmanageSkill(skillRef: string): Promise<void> {
-    setBusyId(`unmanage:${skillRef}`);
-    setActionErrorMessage("");
-    try {
-      await unmanageMutation.mutateAsync({ skillRef });
-      updateSelectedSkillRef(null, true);
-    } catch (error) {
-      setActionErrorMessage(error instanceof Error ? error.message : "Unable to stop managing the skill.");
-      throw error;
-    } finally {
-      setBusyId(null);
-    }
+    await runStructuralAction(
+      skillRef,
+      "unmanage",
+      () => unmanageMutation.mutateAsync({ skillRef }),
+      false,
+      () => updateSelectedSkillRef(null, true),
+    );
   }
 
   function handleToggleCell(row: SkillListRow, cell: HarnessCell): void {
-    void handleToggleSkill(row.skillRef, cell.harness, cell.state);
+    void handleToggleSkillFromList(row.skillRef, cell.harness, cell.state);
   }
 
   const context: SkillsWorkspaceContextValue = {
     data,
     hasData,
     isInitialLoading,
-    isRefreshing,
     status,
     errorMessage: actionErrorMessage || (hasData ? queryErrorMessage : ""),
-    busyId,
+    pendingToggleKeys,
+    pendingStructuralActions,
+    pendingBulkAction,
     selectedSkillRef,
     onManageAll: () => void handleManageAll(),
-    onManageSkill: handleManageSkill,
+    onManageSkill: handleManageSkillFromList,
     onOpenSkill: handleOpenSkill,
     onToggleCell: handleToggleCell,
   };
@@ -205,7 +294,6 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
     transitionDirection,
     actionErrorMessage,
     queryErrorMessage,
-    isRefreshing,
     closeSelectedSkill: () => updateSelectedSkillRef(null),
     handleManageSkill,
     handleToggleSkill,

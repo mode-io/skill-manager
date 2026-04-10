@@ -1,3 +1,4 @@
+import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCell } from "../../model/types";
 import { HarnessMark } from "../harness/HarnessMark";
 import { HarnessStateChip } from "../harness/HarnessStateChip";
@@ -5,14 +6,16 @@ import { HarnessStateChip } from "../harness/HarnessStateChip";
 interface SkillDetailHarnessMatrixProps {
   skillName: string;
   cells: HarnessCell[];
-  disabled: boolean;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onToggleCell: (cell: HarnessCell) => void;
 }
 
 export function SkillDetailHarnessMatrix({
   skillName,
   cells,
-  disabled,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onToggleCell,
 }: SkillDetailHarnessMatrixProps) {
   if (cells.length === 0) {
@@ -26,12 +29,18 @@ export function SkillDetailHarnessMatrix({
         {cells.map((cell) => (
           <article key={cell.harness} className="skill-detail__harness-card">
             <p className="skill-detail__harness-label">{cell.label}</p>
-            <HarnessMark harness={cell.harness} label={cell.label} className="skill-detail__harness-mark" />
+            <HarnessMark
+              harness={cell.harness}
+              label={cell.label}
+              logoKey={cell.logoKey}
+              className="skill-detail__harness-mark"
+            />
             <div className="skill-detail__harness-control">
               <HarnessCellControl
                 skillName={skillName}
                 cell={cell}
-                disabled={disabled}
+                pendingToggleHarnesses={pendingToggleHarnesses}
+                structuralLocked={pendingStructuralAction !== null}
                 onToggleCell={onToggleCell}
               />
             </div>
@@ -45,21 +54,26 @@ export function SkillDetailHarnessMatrix({
 interface HarnessCellControlProps {
   skillName: string;
   cell: HarnessCell;
-  disabled: boolean;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  structuralLocked: boolean;
   onToggleCell: (cell: HarnessCell) => void;
 }
 
 function HarnessCellControl({
   skillName,
   cell,
-  disabled,
+  pendingToggleHarnesses,
+  structuralLocked,
   onToggleCell,
 }: HarnessCellControlProps) {
+  const pending = pendingToggleHarnesses.has(cell.harness);
+
   return (
     <HarnessStateChip
       state={cell.state}
       interactive={cell.interactive}
-      disabled={disabled}
+      disabled={structuralLocked}
+      pending={pending}
       ariaLabel={`${cell.state === "enabled" ? "Disable" : "Enable"} ${skillName} for ${cell.label}`}
       onCheckedChange={() => onToggleCell(cell)}
     />

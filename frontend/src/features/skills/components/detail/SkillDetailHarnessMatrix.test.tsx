@@ -9,6 +9,7 @@ const cells: HarnessCell[] = [
   { harness: "claude", label: "Claude", state: "found", interactive: false },
   { harness: "cursor", label: "Cursor", state: "builtin", interactive: false },
   { harness: "opencode", label: "OpenCode", state: "empty", interactive: false },
+  { harness: "openclaw", label: "OpenClaw", state: "empty", interactive: false },
 ];
 
 describe("SkillDetailHarnessMatrix", () => {
@@ -18,18 +19,19 @@ describe("SkillDetailHarnessMatrix", () => {
       <SkillDetailHarnessMatrix
         skillName="Shared Audit"
         cells={cells}
-        disabled={false}
+        pendingToggleHarnesses={new Set()}
+        pendingStructuralAction={null}
         onToggleCell={onToggleCell}
       />,
     );
 
     expect(screen.getByText("Harness access")).toBeInTheDocument();
-    expect(container.querySelectorAll(".skill-harness-mark__logo")).toHaveLength(4);
+    expect(container.querySelectorAll(".skill-harness-mark__logo")).toHaveLength(5);
     expect(screen.getByText("Found")).toBeInTheDocument();
     expect(screen.getByText("Built-in")).toBeInTheDocument();
-    expect(screen.getByText("Not Found")).toBeInTheDocument();
+    expect(screen.getAllByText("Not Found")).toHaveLength(2);
     expect(screen.getByRole("switch", { name: "Enable Shared Audit for Codex" })).toBeInTheDocument();
-    expect(container.querySelectorAll(".harness-state-chip")).toHaveLength(4);
+    expect(container.querySelectorAll(".harness-state-chip")).toHaveLength(5);
 
     fireEvent.click(screen.getByRole("switch", { name: "Enable Shared Audit for Codex" }));
     expect(onToggleCell).toHaveBeenCalledWith(cells[0]);

@@ -7,10 +7,21 @@ import unittest
 
 from skill_manager.runtime.assets import resolve_frontend_dist
 from skill_manager.runtime.server import choose_port
+from skill_manager.runtime.startup import (
+    PACKAGED_STARTUP_TIMEOUT_SECONDS,
+    SOURCE_STARTUP_TIMEOUT_SECONDS,
+    startup_timeout_seconds,
+)
 from skill_manager.runtime.state import RuntimeState, clear_runtime_state, load_runtime_state, write_runtime_state
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_startup_timeout_uses_source_timeout_by_default(self) -> None:
+        self.assertEqual(startup_timeout_seconds(packaged=False), SOURCE_STARTUP_TIMEOUT_SECONDS)
+
+    def test_startup_timeout_uses_packaged_timeout_when_frozen(self) -> None:
+        self.assertEqual(startup_timeout_seconds(packaged=True), PACKAGED_STARTUP_TIMEOUT_SECONDS)
+
     def test_runtime_state_roundtrip_uses_override_directory(self) -> None:
         with TemporaryDirectory() as temp_dir:
             env = {"SKILL_MANAGER_STATE_DIR": temp_dir}

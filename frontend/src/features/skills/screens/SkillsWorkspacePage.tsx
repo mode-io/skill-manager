@@ -1,14 +1,14 @@
 import { Outlet } from "react-router-dom";
 
 import { ErrorBanner } from "../../../components/ErrorBanner";
-import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { SkillDetailDrawer } from "../components/detail/SkillDetailDrawer";
 import { SkillDetailPanel } from "../components/detail/SkillDetailPanel";
 import { SkillsPaneTransition } from "../components/pane/SkillsPaneTransition";
 import { SkillsWorkspaceTabs } from "../components/pane/SkillsWorkspaceTabs";
+import { pendingToggleHarnessesForSkill } from "../model/pending";
 import { useSkillsWorkspaceController } from "../model/use-skills-workspace-controller";
 
-export function SkillsWorkspacePage() {
+export default function SkillsWorkspacePage() {
   const {
     context,
     activeTab,
@@ -19,7 +19,6 @@ export function SkillsWorkspacePage() {
     transitionDirection,
     actionErrorMessage,
     queryErrorMessage,
-    isRefreshing,
     closeSelectedSkill,
     handleManageSkill,
     handleToggleSkill,
@@ -31,6 +30,12 @@ export function SkillsWorkspacePage() {
 
   const data = context.data;
   const hasData = context.hasData;
+  const selectedPendingToggleHarnesses = selectedSkillRef
+    ? pendingToggleHarnessesForSkill(context.pendingToggleKeys, selectedSkillRef)
+    : EMPTY_PENDING_TOGGLE_HARNESSES;
+  const selectedPendingStructuralAction = selectedSkillRef
+    ? context.pendingStructuralActions.get(selectedSkillRef) ?? null
+    : null;
 
   return (
     <>
@@ -46,11 +51,6 @@ export function SkillsWorkspacePage() {
                       <SkillsWorkspaceTabs summary={data?.summary ?? null} />
                     </div>
                   </div>
-                  {isRefreshing ? (
-                    <div className="skills-workspace__refresh" aria-live="polite">
-                      <LoadingSpinner size="sm" label="Refreshing skills" />
-                    </div>
-                  ) : null}
                 </div>
 
                 {actionErrorMessage ? (
@@ -76,6 +76,8 @@ export function SkillsWorkspacePage() {
             <SkillDetailPanel
               isOpen={isDesktopDetailOpen}
               skillRef={selectedSkillRef}
+              pendingToggleHarnesses={selectedPendingToggleHarnesses}
+              pendingStructuralAction={selectedPendingStructuralAction}
               onClose={closeSelectedSkill}
               onManageSkill={handleManageSkill}
               onToggleSkill={handleToggleSkill}
@@ -90,6 +92,8 @@ export function SkillsWorkspacePage() {
       {isMobileDetail ? (
         <SkillDetailDrawer
           skillRef={selectedSkillRef}
+          pendingToggleHarnesses={selectedPendingToggleHarnesses}
+          pendingStructuralAction={selectedPendingStructuralAction}
           onClose={closeSelectedSkill}
           onManageSkill={handleManageSkill}
           onToggleSkill={handleToggleSkill}
@@ -101,3 +105,5 @@ export function SkillsWorkspacePage() {
     </>
   );
 }
+
+const EMPTY_PENDING_TOGGLE_HARNESSES = new Set<string>();

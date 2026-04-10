@@ -43,9 +43,9 @@ const data: SkillsWorkspaceData = {
       cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
     },
     {
-      skillRef: "builtin:scout",
-      name: "Scout",
-      description: "Built-in scouting workflow",
+      skillRef: "builtin:review-helper",
+      name: "Review Helper",
+      description: "Bundled with OpenCode",
       displayStatus: "Built-in",
       attentionMessage: null,
       canManage: false,
@@ -61,7 +61,7 @@ describe("skills workspace model", () => {
     const unmanagedRows = filterUnmanagedRows(data, resetUnmanagedSkillsFilters());
 
     expect(managedRows.map((row) => row.name)).toEqual(["Shared Audit", "Audit Skill"]);
-    expect(builtInRows.map((row) => row.name)).toEqual(["Scout"]);
+    expect(builtInRows.map((row) => row.name)).toEqual(["Review Helper"]);
     expect(unmanagedRows.map((row) => row.name)).toEqual(["Trace Lens"]);
   });
 

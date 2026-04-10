@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 
 from ..skills.mutations import SkillsMutationService
 from .catalog import MarketplaceCatalog

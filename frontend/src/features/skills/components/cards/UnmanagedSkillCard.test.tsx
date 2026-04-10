@@ -25,7 +25,8 @@ describe("UnmanagedSkillCard", () => {
     render(
       <UnmanagedSkillCard
         row={row}
-        busyId={null}
+        pendingStructuralAction={null}
+        bulkActionPending={false}
         selected={false}
         onOpenSkill={onOpenSkill}
         onManageSkill={onManageSkill}

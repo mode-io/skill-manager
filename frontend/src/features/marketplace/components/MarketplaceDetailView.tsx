@@ -1,6 +1,4 @@
-import { useId, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { lazy, Suspense, useId, useMemo } from "react";
 
 import { DetailDisclosure } from "../../../components/detail/DetailDisclosure";
 import { DetailHeader } from "../../../components/detail/DetailHeader";
@@ -13,10 +11,12 @@ import type { MarketplaceDetailDto, MarketplaceItemDto } from "../api/types";
 import { formatMarketplaceInstalls, formatMarketplaceStars } from "../model/formatters";
 import { MarketplaceDetailPendingDocument, MarketplaceDetailSkeleton } from "./MarketplaceDetailSkeleton";
 
+const MarkdownDocument = lazy(() => import("../../../components/MarkdownDocument"));
+
 interface MarketplaceDetailViewProps {
   itemId: string;
   initialItem: MarketplaceItemDto | null;
-  busyInstallItemId: string | null;
+  installPending: boolean;
   actionErrorMessage: string;
   onDismissActionError: () => void;
   onClose: () => void;
@@ -27,7 +27,7 @@ interface MarketplaceDetailViewProps {
 export function MarketplaceDetailView({
   itemId,
   initialItem,
-  busyInstallItemId,
+  installPending,
   actionErrorMessage,
   onDismissActionError,
   onClose,
@@ -38,10 +38,8 @@ export function MarketplaceDetailView({
   const detailQuery = useMarketplaceDetailQuery(itemId);
   const documentQuery = useMarketplaceDocumentQuery(itemId);
   const detail = detailQuery.data ?? fallbackDetail(initialItem);
-  const isInstalling = busyInstallItemId === itemId;
   const queryErrorMessage = detailQuery.error instanceof Error ? detailQuery.error.message : "";
   const isInitialPreviewLoading = detailQuery.isPending && !detailQuery.data && Boolean(detail);
-  const isRefreshing = detailQuery.isFetching && !detailQuery.isPending;
   const documentMarkdown = documentQuery.data?.documentMarkdown ?? null;
   const isDocumentLoading = documentQuery.isPending;
 
@@ -63,17 +61,17 @@ export function MarketplaceDetailView({
     }
 
     return (
-      <button
-        type="button"
-        className="btn btn-primary marketplace-detail__action"
-        disabled={isInstalling}
-        onClick={() => void onInstall(detail)}
-      >
-        {isInstalling ? <LoadingSpinner size="sm" label={`Installing ${detail.name}`} /> : null}
-        Install
-      </button>
-    );
-  }, [detail, isInstalling, onInstall, onOpenInstalledSkill]);
+        <button
+          type="button"
+          className="btn btn-primary marketplace-detail__action"
+          disabled={installPending}
+          onClick={() => void onInstall(detail)}
+        >
+          {installPending ? <LoadingSpinner size="sm" label={`Installing ${detail.name}`} /> : null}
+          Install
+        </button>
+      );
+  }, [detail, installPending, onInstall, onOpenInstalledSkill]);
 
   if (!detail && detailQuery.isPending) {
     return <MarketplaceDetailSkeleton onClose={onClose} />;
@@ -111,10 +109,6 @@ export function MarketplaceDetailView({
           utility={
             isInitialPreviewLoading ? (
               <DetailLoadingChip label="Loading Preview" withSpinner />
-            ) : isRefreshing ? (
-              <div className="skill-detail__refresh" aria-live="polite">
-                <LoadingSpinner size="sm" label="Refreshing preview" />
-              </div>
             ) : undefined
           }
           eyebrow="Marketplace skill"
@@ -151,11 +145,9 @@ export function MarketplaceDetailView({
             className="skill-detail__disclosure skill-detail__disclosure--document"
           >
             <div className="skill-detail__document-surface">
-              <div className="skill-detail__markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {documentMarkdown}
-                </ReactMarkdown>
-              </div>
+              <Suspense fallback={<LoadingSpinner size="sm" label="Loading document" />}>
+                <MarkdownDocument markdown={documentMarkdown} />
+              </Suspense>
             </div>
           </DetailDisclosure>
         ) : null}

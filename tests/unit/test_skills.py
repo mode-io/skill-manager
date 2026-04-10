@@ -6,7 +6,7 @@ import unittest
 
 from skill_manager.domain import SourceDescriptor, SkillParseError, fingerprint_package, parse_skill_manifest_text, parse_skill_package
 
-from tests.support import seed_skill_package
+from tests.support.fake_home import seed_skill_package
 
 
 class SkillParsingTests(unittest.TestCase):

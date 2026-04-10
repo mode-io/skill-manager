@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MarketplacePage } from "./MarketplacePage";
+import MarketplacePage from "./MarketplacePage";
 
 const fetchMock = vi.fn();
 const observers: MockIntersectionObserver[] = [];
@@ -55,6 +55,7 @@ describe("MarketplacePage", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
     fetchMock.mockReset();
     observers.length = 0;
   });
@@ -94,6 +95,8 @@ describe("MarketplacePage", () => {
   });
 
   it("replaces the result set when a new search is submitted", async () => {
+    const pendingSearch = deferred<ReturnType<typeof okJson>>();
+
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/popular?limit=20&offset=0")) {
@@ -104,11 +107,7 @@ describe("MarketplacePage", () => {
         });
       }
       if (url.includes("/api/marketplace/search") && url.includes("q=trace") && url.includes("limit=20") && url.includes("offset=0")) {
-        return okJson({
-          items: [baseItem("trace-skill", "Trace Skill", 41)],
-          nextOffset: null,
-          hasMore: false,
-        });
+        return pendingSearch.promise;
       }
       throw new Error(`Unhandled URL ${url}`);
     });
@@ -120,10 +119,28 @@ describe("MarketplacePage", () => {
     fireEvent.change(screen.getByPlaceholderText("Search skills.sh by skill name or topic"), {
       target: { value: "trace" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    const searchButton = screen.getByRole("button", { name: "Search" });
+    fireEvent.click(searchButton);
+
+    await waitFor(() => expect(searchButton).toHaveAttribute("aria-busy", "true"));
+    expect(searchButton).toBeDisabled();
+    expect(within(searchButton).getByRole("status", { name: "Searching marketplace" })).toBeInTheDocument();
+
+    await act(async () => {
+      pendingSearch.resolve(
+        okJson({
+          items: [baseItem("trace-skill", "Trace Skill", 41)],
+          nextOffset: null,
+          hasMore: false,
+        }),
+      );
+    });
 
     await waitFor(() => expect(screen.getByText("Trace Skill")).toBeInTheDocument());
     expect(screen.queryByText("Skill One")).not.toBeInTheDocument();
+    expect(searchButton).not.toBeDisabled();
+    expect(searchButton).toHaveAttribute("aria-busy", "false");
+    expect(screen.queryByRole("status", { name: "Searching marketplace" })).not.toBeInTheDocument();
   });
 
   it("opens the marketplace detail overlay and loads the item preview", async () => {

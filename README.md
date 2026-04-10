@@ -1,128 +1,151 @@
 # skill-manager
 
-`skill-manager` is a local-first control plane for discovering, previewing, managing, and installing agent skills across multiple harnesses from one interface.
+<p align="center">
+  <img src="assets/Skill-Manager-Hero-shadow.svg" alt="skill-manager hero" width="960" />
+</p>
 
-It combines a FastAPI backend with a React/Vite frontend to give you a unified workspace for:
+Manage AI skills across Codex, Claude, Cursor, OpenCode, and OpenClaw from one local app.
 
-- auditing what skills exist on your machine
-- bringing unmanaged skills under a shared managed store
-- enabling or disabling managed skills per harness
-- previewing source-backed skills from `skills.sh`
-- updating, unmanaging, or deleting managed skills safely
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" /></a>
+  <a href="#from-source"><img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
+  <a href="#install"><img alt="Install with npm" src="https://img.shields.io/badge/install-npm-CB3837?style=flat-square&logo=npm&logoColor=white" /></a>
+  <a href="#install"><img alt="macOS-first packaging" src="https://img.shields.io/badge/platform-macOS--first-111827?style=flat-square&logo=apple&logoColor=white" /></a>
+  <a href="#safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
+</p>
 
-## Preview
+If you use more than one agent harness, skills end up scattered across different folders, install flows, and local states. `skill-manager` gives you one place to see what is installed, bring unmanaged skills under control, enable or disable skills per harness, and install new ones safely without turning your local setup into guesswork.
 
-Screenshots / demo GIF coming soon.
+## Why skill-manager exists
 
-## What skill-manager does
+- Skills get duplicated across multiple harness folders.
+- Local skill copies drift out of sync and become hard to reason about.
+- It is easy to lose track of what is managed, unmanaged, built in, or custom.
+- Editing local skill directories by hand is risky when you are not sure which tool depends on which copy.
 
-- Scans local skill directories across supported harnesses and groups matching skill packages into one inventory.
-- Distinguishes managed, unmanaged, custom, and built-in skills in a single workspace.
-- Lets you bring local unmanaged skills under a shared managed store.
-- Lets you toggle managed skills on or off per harness.
-- Lets you stop managing a skill, delete a managed skill, or update it from source when supported.
-- Lets you browse a marketplace overlay backed by `skills.sh` and install source-backed skills into the managed store.
+## What you can do
 
-## Core workflows
+- Discover supported harnesses on your machine automatically.
+- See managed and unmanaged skills in one inventory.
+- Bring local unmanaged skills under management without losing visibility.
+- Enable or disable managed skills per harness.
+- Install new skills from the marketplace and open them directly in `Skills`.
 
-### Skills workspace
+## Product tour
 
-The `Skills` surface is split into:
+<p align="center">
+  <img src="assets/Skill-Manager.png" alt="skill-manager managed skills view" width="960" />
+</p>
 
-- `Managed`: skills already under the shared managed store
-- `Unmanaged`: local skill copies discovered in harness directories but not yet managed
+The `Skills` workspace gives you one place to review managed and unmanaged skills, inspect local state, and control harness access.
 
-Opening a skill shows a detail panel or mobile drawer with:
+<p align="center">
+  <img src="assets/Skill-Manager-Marketplace.png" alt="skill-manager marketplace view" width="960" />
+</p>
 
-- source links
-- harness access state
-- local locations
-- `SKILL.md` content when available
-- management actions such as update, stop-managing, or delete
+The `Marketplace` view lets you browse, preview, and install new skills without leaving the app.
 
-### Marketplace
+Typical flow:
 
-The `Marketplace` surface is browse-first:
+1. Open `Skills` to see what is already installed across your supported harnesses.
+2. Bring an unmanaged skill under management so it becomes part of one shared local inventory.
+3. Enable that managed skill only for the harnesses you want.
 
-- leaderboard and search are backed by `skills.sh`
-- clicking a card opens an overlay preview instead of shifting the main page
-- install actions stay on the marketplace page and switch to `Open in Skills` after installation
+## Install
 
-## Supported harnesses
+`skill-manager` is released under the MIT License. See [LICENSE](LICENSE).
 
-| Harness | Discovery model | Notes |
-| --- | --- | --- |
-| Codex | Filesystem-backed | User and optional global skill roots |
-| Claude | Filesystem-backed | User and optional global skill roots |
-| Cursor | Filesystem-backed | User and optional global skill roots |
-| OpenCode | Config-backed | Built-in catalog support |
-| OpenClaw | Config-backed | Built-in catalog support |
-| Gemini | CLI/config-assisted | User skills plus built-in discovery |
-
-The current detail-page harness matrix focuses the core SVG-backed UI set used in the app: Codex, Claude, Cursor, and OpenCode.
-
-## Architecture at a glance
-
-- **Frontend:** React 19 + Vite + TanStack Query
-- **Backend:** FastAPI served through `python -m skill_manager`
-- **Inventory model:** shared-store scan + per-harness scans merged into one read model
-- **Marketplace model:** `skills.sh` catalog + GitHub-backed source resolution
-- **Storage:** shared managed packages are stored under XDG data and linked into harness roots as needed
-
-## Safety and local data
-
-`skill-manager` is a local desktop-style tool. It reads from, and can mutate, local harness skill directories on your machine.
-
-Operations that change local state include:
-
-- `Bring Under Management`
-- enable / disable for managed harness links
-- `Update From Source`
-- `Stop Managing`
-- `Delete Skill`
-- marketplace installs into the shared managed store
-
-If you use this on a real workstation, treat it like any other local configuration management tool: point it at the correct skill roots, understand what is managed vs unmanaged, and review destructive actions before confirming them.
-
-## Installation
-
-### Public install channels
-
-The public install contract is designed around:
-
-- npm
-- Homebrew via a custom Mode IO tap
-
-On tagged public releases, the installed user flow is:
+### npm
 
 ```bash
 npm install -g skill-manager
 skill-manager
 ```
 
-The Homebrew formula is generated from the same release artifacts. The exact tap command will be documented once the public tap is live.
+### Homebrew
 
-On macOS, the very first launch of an unsigned release artifact can be noticeably slower because the system performs first-run verification on that binary path. Subsequent launches are much faster.
+Homebrew support uses the same release artifacts. The public tap command is not documented yet, but Homebrew remains part of the intended public install surface.
 
-### Installed CLI
+On macOS, the first launch of an unsigned release artifact can be noticeably slower while the system performs first-run verification. Later launches are much faster.
 
-The installed command surface is:
+## Quick start
+
+1. Install `skill-manager`.
+2. Run `skill-manager`.
+3. Open `Skills`.
+4. Review the `Unmanaged` list and bring one local skill under management.
+5. Open that skill and enable it for the harnesses you want.
+
+Common installed-app commands:
 
 ```bash
 skill-manager
-skill-manager serve
 skill-manager start
 skill-manager stop
 skill-manager status
-skill-manager --version
 ```
 
-- `skill-manager` starts the app in the foreground
-- `start` launches one managed background instance
-- `stop` stops only that managed background instance
-- `status` reports the managed background instance if it is running
+- `skill-manager` launches the app in the foreground.
+- `skill-manager start` launches one managed background instance.
+- `skill-manager stop` stops that managed background instance.
+- `skill-manager status` shows whether the managed background instance is running.
 
-## Source checkout quickstart
+## Supported harnesses
+
+<table align="center">
+  <tr>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/codex-logo.svg" alt="Codex CLI" height="56" /><br />
+      <strong>Codex CLI</strong><br />
+      <a href="https://developers.openai.com/codex/cli">Docs</a>
+    </td>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/claude-code-logo.svg" alt="Claude Code" height="56" /><br />
+      <strong>Claude Code</strong><br />
+      <a href="https://code.claude.com/docs/en/overview">Docs</a>
+    </td>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/cursor-logo.svg" alt="Cursor" height="56" /><br />
+      <strong>Cursor</strong><br />
+      <a href="https://cursor.com/docs">Docs</a>
+    </td>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/opencode-logo.svg" alt="OpenCode" height="56" /><br />
+      <strong>OpenCode</strong><br />
+      <a href="https://opencode.ai/docs">Docs</a>
+    </td>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/openclaw-logo.svg" alt="OpenClaw" height="56" /><br />
+      <strong>OpenClaw</strong><br />
+      <a href="https://docs.openclaw.ai/start/getting-started">Docs</a>
+    </td>
+  </tr>
+</table>
+
+## Safety
+
+`skill-manager` is a local-first desktop-style tool. It reads from, and can mutate, local harness skill directories on your machine.
+
+Actions that change local state include:
+
+- `Bring Under Management`
+- enable or disable for managed harness links
+- `Update From Source`
+- `Stop Managing`
+- `Delete Skill`
+- marketplace installs into the managed local inventory
+
+Use it like any other local configuration-management tool: point it at the correct skill roots, understand what is managed versus unmanaged, and review destructive actions before confirming them.
+
+## How it works
+
+Before you bring a skill under management, each harness just points at its own local copy. After you bring that skill under management, `skill-manager` stores one managed copy in its shared local inventory and rewires each supported harness to that shared copy with symlinks. That gives you one canonical package to update, disable, or delete while still controlling harness access individually.
+
+<p align="center">
+  <img src="assets/skill_manager_before_after.svg" alt="Before and after skill management flow" width="960" />
+</p>
+
+## From source
 
 ### Requirements
 
@@ -130,24 +153,15 @@ skill-manager --version
 - Node.js 18+
 - npm
 
-### Install dependencies
+`skill-manager` supports Python 3.11+. CI validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-npm install
-```
-
-### Run from the repo
-
-One-command contributor setup:
+### Contributor setup
 
 ```bash
 scripts/install-dev.sh
 ```
 
-One-command local app start:
+### Run locally
 
 ```bash
 scripts/start-dev.sh
@@ -159,7 +173,20 @@ Stop the managed local instance:
 scripts/stop-dev.sh
 ```
 
-The traditional split dev flow still exists when you want Vite hot reload:
+The traditional split dev flow is still available when you want Vite hot reload:
+
+```bash
+npm run dev
+npm run dev:backend
+```
+
+If you stop the local dev app and want to bring it back:
+
+```bash
+scripts/start-dev.sh
+```
+
+If you are using the split dev flow instead, restart both sides:
 
 ```bash
 npm run dev
@@ -199,27 +226,21 @@ By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_H
 
 ### OpenClaw
 
-- `SKILL_MANAGER_OPENCLAW_ROOT`
-- `SKILL_MANAGER_OPENCLAW_GLOBAL_ROOT`
-- `SKILL_MANAGER_OPENCLAW_BUILTINS`
+- `SKILL_MANAGER_OPENCLAW_CONFIG`
 
-### Gemini
-
-- `SKILL_MANAGER_GEMINI_ROOT`
-- `SKILL_MANAGER_GEMINI_BUILTINS`
-
-These overrides are useful when your harness skill directories live outside the default dot-config locations.
+These overrides are useful when your harness skill directories or OpenClaw config file live outside the defaults.
 
 ## Development
 
 Useful local commands:
 
 ```bash
+scripts/install-dev.sh
 npm run typecheck
+bash scripts/test_backend.sh
 npm test
 npm run build
 ./.venv/bin/python -m skill_manager serve --host 127.0.0.1 --port 8000 --no-open-browser
-python3 -m unittest discover tests
 scripts/ci_validate.sh
 ```
 
@@ -229,41 +250,19 @@ Test coverage currently includes:
 - backend unit and integration tests
 - Playwright smoke coverage
 
-## Repository layout
+## Community
 
-- `frontend/` — React/Vite UI, including `skills` and `marketplace` feature modules
-- `skill_manager/` — FastAPI app, read-model logic, mutation services, harness adapters, and source/store integrations
-- `tests/` — backend integration fixtures plus unit and integration coverage
-- `scripts/` — local validation and fixture-serving utilities
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+- See [SECURITY.md](SECURITY.md) to report vulnerabilities privately.
 
-## Public API surface
-
-The backend serves the frontend build and exposes app APIs under `/api`.
-
-Common endpoints:
-
-- `/api/health`
-- `/api/settings`
-- `/api/skills`
-- `/api/marketplace/popular`
-
-The main frontend routes are:
-
-- `/skills/managed`
-- `/skills/unmanaged`
-- `/marketplace`
-
-## Current limitations
+## Limitations
 
 - This is a local-first app, not a hosted service.
 - Source-backed operations are currently centered on GitHub-backed skills.
 - Marketplace content is sourced from `skills.sh`.
-- The repo does not yet include public screenshots or demo assets.
 - Public packaging is macOS-first for the first release pass.
-- The first packaged public release is expected to be unsigned / not notarized.
+- The first packaged public release is expected to be unsigned or not notarized.
 
 ## Project status
 
-This repository is in active development and is being prepared for public open-source release, including npm/Homebrew installation support backed by native release artifacts.
-
-License: to be added before public release.
+This repository is in active development as the public `skill-manager` project, with npm and Homebrew packaging support backed by native release artifacts.

@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
+import { ScopedReconciliationTracker } from "../../../lib/async/scoped-reconciliation";
 import {
   deleteSkill,
   disableSkill,
@@ -13,7 +15,8 @@ import {
   updateSkill,
 } from "./client";
 import { mapSkillDetail, mapSkillsPage } from "./mappers";
-import type { HarnessCellState, SkillsWorkspaceData } from "../model/types";
+import type { HarnessCellState } from "../model/types";
+import type { HarnessCell, SkillDetailDto, SkillsPageDto } from "./types";
 
 const SKILLS_STALE_TIME_MS = 60_000;
 const SKILLS_GC_TIME_MS = 15 * 60_000;
@@ -71,6 +74,11 @@ export async function invalidateSkillsQueries(queryClient: QueryClient): Promise
 
 export function useToggleSkillMutation() {
   const queryClient = useQueryClient();
+  const reconciliationRef = useRef<ScopedReconciliationTracker<string> | null>(null);
+
+  if (reconciliationRef.current === null) {
+    reconciliationRef.current = new ScopedReconciliationTracker<string>();
+  }
 
   return useMutation({
     mutationFn: async ({
@@ -88,32 +96,86 @@ export function useToggleSkillMutation() {
       return disableSkill(skillRef, harness);
     },
     onMutate: async ({ skillRef, harness, nextState }) => {
+      reconciliationRef.current?.begin(skillRef);
+
       await Promise.all([
         queryClient.cancelQueries({ queryKey: skillsKeys.list() }),
+        queryClient.cancelQueries({ queryKey: skillsKeys.detail(skillRef) }),
       ]);
 
-      const previousList = queryClient.getQueryData<SkillsWorkspaceData>(skillsKeys.list());
+      const previousList = queryClient.getQueryData<SkillsPageDto>(skillsKeys.list());
+      const previousDetail = queryClient.getQueryData<SkillDetailDto>(skillsKeys.detail(skillRef));
+      const previousListCellState = getListCellState(previousList, skillRef, harness);
+      const previousDetailCellState = getDetailCellState(previousDetail, harness);
 
       if (previousList) {
-        queryClient.setQueryData<SkillsWorkspaceData>(
+        queryClient.setQueryData<SkillsPageDto>(
           skillsKeys.list(),
           patchSkillsListToggle(previousList, skillRef, harness, nextState),
         );
       }
+      if (previousDetail) {
+        queryClient.setQueryData<SkillDetailDto>(
+          skillsKeys.detail(skillRef),
+          patchSkillDetailToggle(previousDetail, harness, nextState),
+        );
+      }
 
-      return { previousList, skillRef };
+      return {
+        skillRef,
+        harness,
+        previousListCellState,
+        previousDetailCellState,
+      };
     },
     onError: (_error, variables, context) => {
-      if (context?.previousList) {
-        queryClient.setQueryData(skillsKeys.list(), context.previousList);
+      if (!context) {
+        return;
+      }
+
+      if (context.previousListCellState !== null) {
+        const previousListCellState = context.previousListCellState;
+        queryClient.setQueryData<SkillsPageDto>(
+          skillsKeys.list(),
+          (current) => current ? patchSkillsListToggle(
+            current,
+            context.skillRef,
+            context.harness,
+            previousListCellState,
+          ) : current,
+        );
+      }
+      if (context.previousDetailCellState !== null) {
+        const previousDetailCellState = context.previousDetailCellState;
+        queryClient.setQueryData<SkillDetailDto>(
+          skillsKeys.detail(context.skillRef),
+          (current) => current ? patchSkillDetailToggle(
+            current,
+            context.harness,
+            previousDetailCellState,
+          ) : current,
+        );
       }
     },
     onSettled: async (_data, _error, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
-        queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }),
-        queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }),
-      ]);
+      const decision = reconciliationRef.current?.finish(variables.skillRef) ?? {
+        invalidateAll: true,
+        invalidateScope: true,
+      };
+      const invalidations: Promise<unknown>[] = [];
+
+      if (decision.invalidateScope) {
+        invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }));
+        invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }));
+      }
+
+      if (decision.invalidateAll) {
+        invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.list() }));
+      }
+
+      if (invalidations.length > 0) {
+        await Promise.all(invalidations);
+      }
     },
   });
 }
@@ -179,11 +241,11 @@ export function useDeleteSkillMutation() {
         queryClient.cancelQueries({ queryKey: skillsKeys.sourceStatus(skillRef) }),
       ]);
 
-      const previousList = queryClient.getQueryData<SkillsWorkspaceData>(skillsKeys.list());
+      const previousList = queryClient.getQueryData<SkillsPageDto>(skillsKeys.list());
       const previousDetail = queryClient.getQueryData(skillsKeys.detail(skillRef));
 
       if (previousList) {
-        queryClient.setQueryData<SkillsWorkspaceData>(skillsKeys.list(), removeSkillFromList(previousList, skillRef));
+        queryClient.setQueryData<SkillsPageDto>(skillsKeys.list(), removeSkillFromList(previousList, skillRef));
       }
       queryClient.removeQueries({ queryKey: skillsKeys.detail(skillRef), exact: true });
       queryClient.removeQueries({ queryKey: skillsKeys.sourceStatus(skillRef), exact: true });
@@ -207,11 +269,11 @@ export function useDeleteSkillMutation() {
 }
 
 function patchSkillsListToggle(
-  data: SkillsWorkspaceData,
+  data: SkillsPageDto,
   skillRef: string,
   harness: string,
   nextState: HarnessCellState,
-): SkillsWorkspaceData {
+): SkillsPageDto {
   return {
     ...data,
     rows: data.rows.map((row) =>
@@ -227,7 +289,45 @@ function patchSkillsListToggle(
   };
 }
 
-function removeSkillFromList(data: SkillsWorkspaceData, skillRef: string): SkillsWorkspaceData {
+function patchSkillDetailToggle(
+  data: SkillDetailDto,
+  harness: string,
+  nextState: HarnessCellState,
+): SkillDetailDto {
+  return {
+    ...data,
+    harnessCells: data.harnessCells.map((cell) =>
+      cell.harness !== harness ? cell : { ...cell, state: nextState },
+    ),
+  };
+}
+
+function getListCellState(
+  data: SkillsPageDto | undefined,
+  skillRef: string,
+  harness: string,
+): HarnessCellState | null {
+  return findHarnessCell(
+    data?.rows.find((row) => row.skillRef === skillRef)?.cells,
+    harness,
+  )?.state ?? null;
+}
+
+function getDetailCellState(
+  data: SkillDetailDto | undefined,
+  harness: string,
+): HarnessCellState | null {
+  return findHarnessCell(data?.harnessCells, harness)?.state ?? null;
+}
+
+function findHarnessCell(
+  cells: HarnessCell[] | undefined,
+  harness: string,
+): HarnessCell | undefined {
+  return cells?.find((cell) => cell.harness === harness);
+}
+
+function removeSkillFromList(data: SkillsPageDto, skillRef: string): SkillsPageDto {
   const removedRow = data.rows.find((row) => row.skillRef === skillRef);
   if (!removedRow) {
     return data;

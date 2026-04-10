@@ -8,7 +8,7 @@ import unittest
 from skill_manager.application.marketplace.skillssh import extract_detail_description, parse_homepage_leaderboard
 from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator, github_skill_dir_from_locator
 
-from tests.support import seed_skill_package
+from tests.support.fake_home import seed_skill_package
 
 
 class ParseLocatorTests(unittest.TestCase):

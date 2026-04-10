@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 from skill_manager.sources import GitHubSource
 
 

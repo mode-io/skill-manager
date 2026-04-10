@@ -1,5 +1,6 @@
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
+import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCellState } from "../../model/types";
 import { useSkillDetailController } from "../../model/use-skill-detail-controller";
 import { SkillDeleteDialog } from "../dialogs/SkillDeleteDialog";
@@ -9,6 +10,8 @@ import { SkillDetailSkeleton } from "./SkillDetailSkeleton";
 
 interface SkillDetailViewProps {
   skillRef: string;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onClose: () => void;
   onManageSkill: (skillRef: string) => Promise<void>;
   onToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
@@ -19,6 +22,8 @@ interface SkillDetailViewProps {
 
 export function SkillDetailView({
   skillRef,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onClose,
   onManageSkill,
   onToggleSkill,
@@ -27,15 +32,13 @@ export function SkillDetailView({
   onDeleteSkill,
 }: SkillDetailViewProps) {
   const {
-    detail,
-    isInitialLoading,
-    isRefreshing,
-    queryErrorMessage,
-    actionErrorMessage,
-    busyAction,
-    isStopManagingDialogOpen,
-    isDeleteDialogOpen,
-    dismissActionError,
+      detail,
+      isInitialLoading,
+      queryErrorMessage,
+      actionErrorMessage,
+      isStopManagingDialogOpen,
+      isDeleteDialogOpen,
+      dismissActionError,
     onManage,
     onToggleHarness,
     onUpdate,
@@ -81,10 +84,10 @@ export function SkillDetailView({
     <>
       <SkillDetailContent
         detail={detail}
-        isRefreshing={isRefreshing}
         actionErrorMessage={actionErrorMessage}
         queryErrorMessage={queryErrorMessage}
-        busyAction={busyAction}
+        pendingToggleHarnesses={pendingToggleHarnesses}
+        pendingStructuralAction={pendingStructuralAction}
         onClose={onClose}
         onDismissActionError={dismissActionError}
         onManage={onManage}
@@ -98,7 +101,7 @@ export function SkillDetailView({
           open={isStopManagingDialogOpen}
           skillName={detail.name}
           harnessLabels={detail.actions.stopManagingHarnessLabels}
-          isPending={busyAction === "unmanage"}
+          isPending={pendingStructuralAction === "unmanage"}
           onOpenChange={setStopManagingDialogOpen}
           onConfirm={handleConfirmStopManaging}
         />
@@ -108,7 +111,7 @@ export function SkillDetailView({
           open={isDeleteDialogOpen}
           skillName={detail.name}
           harnessLabels={detail.actions.deleteHarnessLabels}
-          isDeleting={busyAction === "delete"}
+          isDeleting={pendingStructuralAction === "delete"}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
         />

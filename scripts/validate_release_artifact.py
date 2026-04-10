@@ -6,11 +6,16 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
-import time
 from pathlib import Path
-from urllib.request import urlopen
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from skill_manager.runtime.startup import healthcheck_ready
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -24,16 +29,27 @@ def run(command: list[str], *, timeout: float = 30.0) -> subprocess.CompletedPro
     return subprocess.run(command, check=True, capture_output=True, text=True, timeout=timeout)
 
 
-def wait_for_health(base_url: str, *, timeout_seconds: float = 15.0) -> None:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(f"{base_url}/api/health", timeout=2.0) as response:
-                if response.status == 200:
-                    return
-        except Exception:  # noqa: BLE001
-            time.sleep(0.1)
-    raise RuntimeError(f"timed out waiting for {base_url}/api/health")
+def format_called_process_error(
+    error: subprocess.CalledProcessError,
+    *,
+    runtime_dir: Path | None = None,
+) -> str:
+    parts = [
+        f"command failed with exit code {error.returncode}: {' '.join(error.cmd)}",
+    ]
+    stdout = (error.stdout or "").strip()
+    stderr = (error.stderr or "").strip()
+    if stdout:
+        parts.append(f"stdout:\n{stdout}")
+    if stderr:
+        parts.append(f"stderr:\n{stderr}")
+    if runtime_dir is not None:
+        log_path = runtime_dir / "server.log"
+        if log_path.is_file():
+            log_text = log_path.read_text(encoding="utf-8", errors="replace").strip()
+            if log_text:
+                parts.append(f"runtime log ({log_path}):\n{log_text}")
+    return "\n\n".join(parts)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,8 +65,13 @@ def main(argv: list[str] | None = None) -> int:
 
         bundle_dir = tmp_path / "skill-manager"
         binary = bundle_dir / "skill-manager"
+        license_file = bundle_dir / "LICENSE"
         if not binary.exists():
             raise RuntimeError(f"packaged executable missing: {binary}")
+        if not license_file.exists():
+            raise RuntimeError(f"packaged license missing: {license_file}")
+        if license_file.read_text(encoding="utf-8") != (REPO_ROOT / "LICENSE").read_text(encoding="utf-8"):
+            raise RuntimeError("packaged license did not match the repo root LICENSE")
 
         # Unsigned macOS binaries can pay a heavy first-run verification cost on a fresh path.
         version_output = run([str(binary), "--version"], timeout=120.0).stdout.strip()
@@ -59,24 +80,28 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError(f"unexpected version output: expected {expected_version!r}, got {version_output!r}")
 
         runtime_dir = tmp_path / "runtime"
-        start_output = run(
-            [
-                str(binary),
-                "start",
-                "--state-dir",
-                str(runtime_dir),
-                "--no-open-browser",
-                "--port",
-                "0",
-            ],
-            timeout=120.0,
-        ).stdout.strip()
+        try:
+            start_output = run(
+                [
+                    str(binary),
+                    "start",
+                    "--state-dir",
+                    str(runtime_dir),
+                    "--no-open-browser",
+                    "--port",
+                    "0",
+                ],
+                timeout=240.0,
+            ).stdout.strip()
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(format_called_process_error(error, runtime_dir=runtime_dir)) from error
         match = re.search(r"(http://127\.0\.0\.1:\d+)", start_output)
         if not match:
             raise RuntimeError(f"failed to parse runtime URL from start output: {start_output!r}")
         base_url = match.group(1)
         try:
-            wait_for_health(base_url)
+            if not healthcheck_ready(base_url):
+                raise RuntimeError(f"packaged start returned before {base_url}/api/health was ready")
 
             status_output = run(
                 [str(binary), "status", "--state-dir", str(runtime_dir)],
@@ -90,7 +115,10 @@ def main(argv: list[str] | None = None) -> int:
             if state.get("base_url") != base_url:
                 raise RuntimeError("runtime.json base_url did not match the running server")
         finally:
-            run([str(binary), "stop", "--state-dir", str(runtime_dir)], timeout=60.0)
+            try:
+                run([str(binary), "stop", "--state-dir", str(runtime_dir)], timeout=60.0)
+            except subprocess.CalledProcessError:
+                pass
             shutil.rmtree(runtime_dir, ignore_errors=True)
 
     return 0

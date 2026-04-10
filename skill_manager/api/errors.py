@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 
 
 def install_error_handlers(app: FastAPI) -> None:

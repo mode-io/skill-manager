@@ -5,8 +5,6 @@ import os
 import subprocess
 import sys
 import time
-from urllib.error import URLError
-from urllib.request import urlopen
 
 from skill_manager import __version__
 from skill_manager.runtime.browser import maybe_open_browser
@@ -19,6 +17,7 @@ from skill_manager.runtime.state import (
     runtime_log_path,
     write_runtime_state,
 )
+from skill_manager.runtime.startup import startup_timeout_seconds, wait_for_health
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -138,8 +137,13 @@ def start_command(args: argparse.Namespace) -> int:
             env=env,
             start_new_session=True,
         )
-    if not wait_for_health(url):
-        print(f"skill-manager failed to start. See log: {log_path}", file=sys.stderr)
+    timeout_seconds = startup_timeout_seconds()
+    if not wait_for_health(url, timeout_seconds=timeout_seconds):
+        terminate_process(process.pid)
+        print(
+            f"skill-manager failed to start within {timeout_seconds:.0f} seconds. See log: {log_path}",
+            file=sys.stderr,
+        )
         return 1
 
     write_runtime_state(
@@ -187,20 +191,6 @@ def status_command(args: argparse.Namespace) -> int:
         return 0
     print(f"skill-manager is running at {state.base_url} (pid {state.pid})")
     return 0
-
-
-def wait_for_health(base_url: str, *, timeout_seconds: float = 10.0) -> bool:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(f"{base_url}/api/health") as response:
-                if response.status == 200:
-                    return True
-        except URLError:
-            time.sleep(0.1)
-        except Exception:  # noqa: BLE001
-            time.sleep(0.1)
-    return False
 
 
 def runtime_env(state_dir: str | None) -> dict[str, str]:

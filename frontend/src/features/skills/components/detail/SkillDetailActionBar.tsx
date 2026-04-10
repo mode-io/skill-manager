@@ -1,3 +1,4 @@
+import type { StructuralSkillAction } from "../../model/pending";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import type { SkillActions } from "../../model/types";
 import { SkillDetailStopManagingAction } from "./SkillDetailStopManagingAction";
@@ -5,7 +6,8 @@ import { SkillDetailUpdateControl } from "./SkillDetailUpdateControl";
 
 interface SkillDetailActionBarProps {
   actions: SkillActions;
-  busyAction: string | null;
+  pendingStructuralAction: StructuralSkillAction | null;
+  hasPendingHarnessToggles: boolean;
   onUpdate: () => void;
   onRequestStopManaging: () => void;
   onRequestDelete: () => void;
@@ -13,7 +15,8 @@ interface SkillDetailActionBarProps {
 
 export function SkillDetailActionBar({
   actions,
-  busyAction,
+  pendingStructuralAction,
+  hasPendingHarnessToggles,
   onUpdate,
   onRequestStopManaging,
   onRequestDelete,
@@ -25,6 +28,8 @@ export function SkillDetailActionBar({
     return null;
   }
 
+  const controlsDisabled = pendingStructuralAction !== null || hasPendingHarnessToggles;
+
   return (
     <div className="skill-detail__primary-actions">
       <div className="skill-detail__action-row">
@@ -32,8 +37,8 @@ export function SkillDetailActionBar({
           {actions.updateStatus ? (
             <SkillDetailUpdateControl
               updateStatus={actions.updateStatus}
-              isBusy={busyAction === "update"}
-              disabled={busyAction !== null}
+              pending={pendingStructuralAction === "update"}
+              disabled={controlsDisabled}
               onUpdate={onUpdate}
             />
           ) : null}
@@ -43,7 +48,7 @@ export function SkillDetailActionBar({
             {actions.stopManagingStatus !== null ? (
               <SkillDetailStopManagingAction
                 status={actions.stopManagingStatus}
-                disabled={busyAction !== null}
+                disabled={controlsDisabled}
                 onRequestStopManaging={onRequestStopManaging}
               />
             ) : null}
@@ -51,10 +56,10 @@ export function SkillDetailActionBar({
               <button
                 type="button"
                 className="btn btn-danger"
-                disabled={busyAction !== null}
+                disabled={controlsDisabled}
                 onClick={onRequestDelete}
               >
-                {busyAction === "delete" ? <LoadingSpinner size="sm" label="Deleting skill" /> : null}
+                {pendingStructuralAction === "delete" ? <LoadingSpinner size="sm" label="Deleting skill" /> : null}
                 Delete Skill
               </button>
             ) : null}

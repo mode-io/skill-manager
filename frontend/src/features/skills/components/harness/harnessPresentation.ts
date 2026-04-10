@@ -1,16 +1,17 @@
 import claudeLogo from "../../../../assets/harness-logos/claude-code-logo.svg";
 import codexLogo from "../../../../assets/harness-logos/codex-logo.svg";
 import cursorLogo from "../../../../assets/harness-logos/cursor-logo.svg";
+import openclawLogo from "../../../../assets/harness-logos/openclaw-logo.svg";
 import opencodeLogo from "../../../../assets/harness-logos/opencode-logo.svg";
 
-export type HarnessLogoVariant = "claude" | "codex" | "cursor" | "opencode";
+export type HarnessLogoKey = "claude" | "codex" | "cursor" | "opencode" | "openclaw";
 
 interface HarnessPresentation {
   logoSrc: string;
-  variant: HarnessLogoVariant;
+  variant: HarnessLogoKey;
 }
 
-const HARNESS_PRESENTATION: Record<string, HarnessPresentation> = {
+const HARNESS_LOGO_ASSETS: Record<HarnessLogoKey, HarnessPresentation> = {
   claude: {
     logoSrc: claudeLogo,
     variant: "claude",
@@ -27,8 +28,15 @@ const HARNESS_PRESENTATION: Record<string, HarnessPresentation> = {
     logoSrc: opencodeLogo,
     variant: "opencode",
   },
+  openclaw: {
+    logoSrc: openclawLogo,
+    variant: "openclaw",
+  },
 };
 
-export function getHarnessPresentation(harness: string): HarnessPresentation | null {
-  return HARNESS_PRESENTATION[harness] ?? null;
+export function getHarnessPresentation(logoKey: string | null | undefined): HarnessPresentation | null {
+  if (!logoKey) {
+    return null;
+  }
+  return HARNESS_LOGO_ASSETS[logoKey as HarnessLogoKey] ?? null;
 }

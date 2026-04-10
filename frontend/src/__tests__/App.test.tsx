@@ -31,10 +31,11 @@ function stubDesktopMatchMedia() {
   });
 }
 
-function mockSkillsPage() {
+function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
   let sharedAuditState: "managed" | "unmanaged" | "deleted" = "managed";
+  let codexSupportEnabled = options?.codexSupportEnabled ?? true;
 
-  fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+  fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url === "/api/skills") {
       return {
@@ -46,7 +47,7 @@ function mockSkillsPage() {
             custom: 1,
             builtIn: 1,
           },
-          harnessColumns: [{ harness: "codex", label: "Codex" }],
+          harnessColumns: codexSupportEnabled ? [{ harness: "codex", label: "Codex", logoKey: "codex" }] : [],
           rows: [
             ...(sharedAuditState === "managed" ? [{
               skillRef: "shared:shared-audit",
@@ -55,7 +56,7 @@ function mockSkillsPage() {
               displayStatus: "Managed",
               attentionMessage: null,
               actions: { canManage: false },
-              cells: [{ harness: "codex", label: "Codex", state: "disabled", interactive: true }],
+              cells: codexSupportEnabled ? [{ harness: "codex", label: "Codex", logoKey: "codex", state: "disabled", interactive: true }] : [],
             }] : []),
             ...(sharedAuditState === "unmanaged" ? [{
               skillRef: "unmanaged:shared-audit-restored",
@@ -64,7 +65,7 @@ function mockSkillsPage() {
               displayStatus: "Unmanaged",
               attentionMessage: null,
               actions: { canManage: true },
-              cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
+              cells: codexSupportEnabled ? [{ harness: "codex", label: "Codex", logoKey: "codex", state: "found", interactive: false }] : [],
             }] : []),
             {
               skillRef: "shared:audit-skill",
@@ -73,7 +74,7 @@ function mockSkillsPage() {
               displayStatus: "Custom",
               attentionMessage: "Modified locally; source updates are disabled.",
               actions: { canManage: false },
-              cells: [{ harness: "codex", label: "Codex", state: "enabled", interactive: true }],
+              cells: codexSupportEnabled ? [{ harness: "codex", label: "Codex", logoKey: "codex", state: "enabled", interactive: true }] : [],
             },
             {
               skillRef: "unmanaged:trace-lens",
@@ -82,16 +83,16 @@ function mockSkillsPage() {
               displayStatus: "Unmanaged",
               attentionMessage: null,
               actions: { canManage: true },
-              cells: [{ harness: "codex", label: "Codex", state: "found", interactive: false }],
+              cells: codexSupportEnabled ? [{ harness: "codex", label: "Codex", logoKey: "codex", state: "found", interactive: false }] : [],
             },
             {
-              skillRef: "builtin:scout",
-              name: "Scout",
-              description: "Built-in scouting workflow",
+              skillRef: "builtin:review-helper",
+              name: "Review Helper",
+              description: "Bundled with OpenCode",
               displayStatus: "Built-in",
               attentionMessage: null,
               actions: { canManage: false },
-              cells: [{ harness: "codex", label: "Codex", state: "builtin", interactive: false }],
+              cells: [{ harness: "opencode", label: "OpenCode", state: "builtin", interactive: false }],
             },
           ],
         }),
@@ -146,6 +147,7 @@ function mockSkillsPage() {
             { harness: "claude", label: "Claude", state: "disabled", interactive: true },
             { harness: "cursor", label: "Cursor", state: "disabled", interactive: true },
             { harness: "opencode", label: "OpenCode", state: "disabled", interactive: true },
+            { harness: "openclaw", label: "OpenClaw", state: "disabled", interactive: true },
           ],
           locations: [
             {
@@ -224,16 +226,21 @@ function mockSkillsPage() {
             {
               harness: "codex",
               label: "Codex",
+              logoKey: "codex",
+              supportEnabled: codexSupportEnabled,
               detected: true,
-              manageable: true,
-              builtinSupport: false,
-              issues: [],
-              diagnostics: { discoveryMode: "filesystem", detectionDetails: [] },
+              managedLocation: "/tmp/home/.codex/skills",
             },
           ],
-          storeIssues: [],
-          bulkActions: { canManageAll: true },
         }),
+      };
+    }
+    if (url === "/api/settings/harnesses/codex/support") {
+      const body = init?.body && typeof init.body === "string" ? JSON.parse(init.body) : null;
+      codexSupportEnabled = body?.enabled ?? codexSupportEnabled;
+      return {
+        ok: true,
+        json: async () => ({ ok: true, enabled: codexSupportEnabled }),
       };
     }
     return { ok: true, json: async () => ({ ok: true }) };
@@ -263,7 +270,7 @@ describe("App routing", () => {
     expect(screen.getByRole("switch", { name: "Enable Shared Audit for Codex" })).toBeInTheDocument();
     expect(screen.getByText("Audit Skill")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Built-in skills" })).toBeInTheDocument();
-    expect(screen.getByText("Scout")).toBeInTheDocument();
+    expect(screen.getByText("Review Helper")).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Bring All Eligible Skills Under Management" })).not.toBeInTheDocument();
   });
@@ -309,13 +316,120 @@ describe("App routing", () => {
     expect(screen.getByRole("link", { name: "mode-io/shared-audit" })).toBeInTheDocument();
   });
 
-  it("opens the Settings popover", async () => {
+  it("shows the manual refresh spinner inside the header button only", async () => {
+    const pendingRefresh = deferred<{
+      ok: boolean;
+      json: () => Promise<object>;
+    }>();
+    let skillsRequestCount = 0;
+
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url === "/api/skills") {
+        skillsRequestCount += 1;
+        if (skillsRequestCount === 1) {
+          return {
+            ok: true,
+            json: async () => ({
+              summary: { managed: 1, unmanaged: 0, custom: 0, builtIn: 0 },
+              harnessColumns: [{ harness: "codex", label: "Codex", logoKey: "codex" }],
+              rows: [{
+                skillRef: "shared:shared-audit",
+                name: "Shared Audit",
+                description: "Shared audit workflow",
+                displayStatus: "Managed",
+                attentionMessage: null,
+                actions: { canManage: false },
+                cells: [{ harness: "codex", label: "Codex", logoKey: "codex", state: "enabled", interactive: true }],
+              }],
+            }),
+          };
+        }
+        return pendingRefresh.promise;
+      }
+      throw new Error(`Unhandled URL ${url}`);
+    });
+
+    renderApp("/");
+
+    await waitFor(() => expect(screen.getByText("Shared Audit")).toBeInTheDocument());
+
+    const refreshButton = screen.getByRole("button", { name: "Refresh Data" });
+    fireEvent.click(refreshButton);
+
+    await waitFor(() => expect(refreshButton).toHaveAttribute("aria-busy", "true"));
+    expect(refreshButton).toBeDisabled();
+    expect(within(refreshButton).getByRole("status", { name: "Refreshing data" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Refreshing skills")).not.toBeInTheDocument();
+
+    pendingRefresh.resolve({
+      ok: true,
+      json: async () => ({
+        summary: { managed: 1, unmanaged: 0, custom: 0, builtIn: 0 },
+        harnessColumns: [{ harness: "codex", label: "Codex", logoKey: "codex" }],
+        rows: [{
+          skillRef: "shared:shared-audit",
+          name: "Shared Audit",
+          description: "Shared audit workflow",
+          displayStatus: "Managed",
+          attentionMessage: null,
+          actions: { canManage: false },
+          cells: [{ harness: "codex", label: "Codex", logoKey: "codex", state: "enabled", interactive: true }],
+        }],
+      }),
+    });
+
+    await waitFor(() => expect(refreshButton).not.toBeDisabled());
+    expect(screen.getByRole("button", { name: "Refresh Data" })).toBeInTheDocument();
+  });
+
+  it("navigates to the Settings page", async () => {
     mockSkillsPage();
     renderApp("/");
-    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
-    await waitFor(() => expect(screen.getByText("Tools")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("link", { name: "Open settings" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Harnesses" })).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
-    expect(screen.getByText("Tools")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Harnesses" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Enable Codex support" })).toBeInTheDocument();
+    expect(screen.getByText("/tmp/home/.codex/skills")).toBeInTheDocument();
+    expect(screen.queryByText("Support toggles are non-destructive.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ready for skill discovery and management on this computer.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Store Network" })).not.toBeInTheDocument();
+    expect(screen.queryByText("filesystem")).not.toBeInTheDocument();
+  });
+
+  it("shows the enabled-state harness support tooltip on toggle focus", async () => {
+    mockSkillsPage();
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.focus(codexSwitch);
+
+    expect(
+      screen.getByText("Turn off to make skill-manager ignore this harness. Your local files stay unchanged."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the disabled-state harness support tooltip on toggle focus", async () => {
+    mockSkillsPage({ codexSupportEnabled: false });
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.focus(codexSwitch);
+
+    expect(
+      screen.getByText("Turn on to let skill-manager discover and manage skills for this harness. Nothing is moved or deleted."),
+    ).toBeInTheDocument();
+  });
+
+  it("clears settings toggle pending state after a successful support update", async () => {
+    mockSkillsPage();
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.click(codexSwitch);
+
+    await waitFor(() => expect(codexSwitch).not.toBeDisabled());
   });
 
   it("reuses the cached skills workspace and preserves managed search when returning from marketplace", async () => {
@@ -371,11 +485,10 @@ describe("App routing", () => {
     expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for Claude" })).toBeInTheDocument();
     expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for Cursor" })).toBeInTheDocument();
     expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for OpenCode" })).toBeInTheDocument();
+    expect(within(panel).getByRole("switch", { name: "Enable Shared Audit for OpenClaw" })).toBeInTheDocument();
     expect(within(panel).getByRole("button", { name: "Stop Managing" })).toBeInTheDocument();
     expect(within(panel).getByRole("button", { name: "Delete Skill" })).toBeInTheDocument();
     expect(within(panel).queryByRole("button", { name: /Advanced details/i })).not.toBeInTheDocument();
-    expect(within(panel).queryByText("OpenClaw")).not.toBeInTheDocument();
-    expect(within(panel).queryByText("Gemini")).not.toBeInTheDocument();
     expect(within(panel).queryByText("Overview")).not.toBeInTheDocument();
     expect(within(panel).getByText("Shared Store is the canonical physical package. Tool locations are symlinks to it when enabled.")).toBeInTheDocument();
     expect(within(panel).getByText("Canonical physical package")).toBeInTheDocument();
@@ -500,3 +613,11 @@ describe("App routing", () => {
     );
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}

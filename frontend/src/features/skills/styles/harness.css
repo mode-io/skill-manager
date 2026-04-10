@@ -110,6 +110,14 @@
   opacity: 0.55;
 }
 
+.harness-state-chip[data-pending] {
+  gap: 6px;
+}
+
+.harness-state-chip .spinner {
+  flex-shrink: 0;
+}
+
 .harness-state-chip--static {
   cursor: default;
 }
@@ -151,4 +159,3 @@
   letter-spacing: 0.005em;
   line-height: 1;
 }
-

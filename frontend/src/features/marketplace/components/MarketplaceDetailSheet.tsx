@@ -6,7 +6,7 @@ import { MarketplaceDetailView } from "./MarketplaceDetailView";
 interface MarketplaceDetailSheetProps {
   itemId: string | null;
   initialItem: MarketplaceItemDto | null;
-  busyInstallItemId: string | null;
+  installPending: boolean;
   actionErrorMessage: string;
   onDismissActionError: () => void;
   onClose: () => void;
@@ -17,7 +17,7 @@ interface MarketplaceDetailSheetProps {
 export function MarketplaceDetailSheet({
   itemId,
   initialItem,
-  busyInstallItemId,
+  installPending,
   actionErrorMessage,
   onDismissActionError,
   onClose,
@@ -45,7 +45,7 @@ export function MarketplaceDetailSheet({
           <MarketplaceDetailView
             itemId={itemId}
             initialItem={initialItem}
-            busyInstallItemId={busyInstallItemId}
+            installPending={installPending}
             actionErrorMessage={actionErrorMessage}
             onDismissActionError={onDismissActionError}
             onClose={onClose}

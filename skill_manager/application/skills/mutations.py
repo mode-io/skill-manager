@@ -4,7 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from skill_manager.domain import SourceDescriptor, parse_skill_package
-from skill_manager.harness.link_operator import LinkOperator, MutationError
+from skill_manager.errors import MutationError
+from skill_manager.harness import HarnessManager
 
 from ..read_model_service import ReadModelService
 from ..source_fetch_service import SourceFetchService
@@ -30,13 +31,8 @@ class SkillsMutationService:
             raise MutationError(f"only managed skills can be toggled; this is {display_status(entry)}", status=400)
         if entry.package_path is None:
             raise MutationError("managed skill is missing its shared package path", status=500)
-        adapter = self.read_models.find_adapter(harness)
-        if adapter is None:
-            raise MutationError(f"unknown harness: {harness}", status=400)
-        LinkOperator().link_shared(
-            package_path=entry.package_path,
-            harness_skills_root=adapter.user_skills_root,
-        )
+        manager = self.read_models.require_enabled_manager(harness)
+        manager.enable_shared_package(entry.package_path)
         self.read_models.invalidate()
         return {"ok": True}
 
@@ -46,13 +42,8 @@ class SkillsMutationService:
             raise MutationError(f"only managed skills can be toggled; this is {display_status(entry)}", status=400)
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
-        adapter = self.read_models.find_adapter(harness)
-        if adapter is None:
-            raise MutationError(f"unknown harness: {harness}", status=400)
-        LinkOperator().unlink_shared(
-            package_dir=entry.package_dir,
-            harness_skills_root=adapter.user_skills_root,
-        )
+        manager = self.read_models.require_enabled_manager(harness)
+        manager.disable_shared_package(entry.package_dir)
         self.read_models.invalidate()
         return {"ok": True}
 
@@ -123,31 +114,26 @@ class SkillsMutationService:
         if entry.package_dir is None or entry.package_path is None:
             raise MutationError("managed skill is missing its shared package metadata", status=500)
 
-        linked_sightings = [
-            sighting
-            for sighting in entry.sightings
-            if sighting.kind == "harness" and sighting.path is not None
-        ]
-        if not linked_sightings:
+        enabled_bindings, disabled_bindings = self._partition_bound_managers(entry.package_dir)
+        if disabled_bindings:
+            raise MutationError(
+                "cannot stop managing while disabled harnesses still have bindings: "
+                f"{self._describe_harnesses(disabled_bindings)}; re-enable support or clean them manually",
+                status=409,
+            )
+        if not enabled_bindings:
             raise MutationError("turn on at least one harness before stopping management", status=400)
 
-        operator = LinkOperator()
         try:
             self.read_models.store.ensure_deletable(entry.package_dir)
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
 
-        for sighting in linked_sightings:
-            operator.ensure_shared_link_materializable(
-                existing_link=sighting.path,
-                expected_target=entry.package_path,
-            )
+        for _harness, manager in enabled_bindings:
+            manager.prepare_materialize(entry.package_dir, entry.package_path)
 
-        for sighting in linked_sightings:
-            operator.materialize_shared_link(
-                existing_link=sighting.path,
-                source_path=entry.package_path,
-            )
+        for _harness, manager in enabled_bindings:
+            manager.materialize_binding(entry.package_dir, entry.package_path)
 
         try:
             self.read_models.store.delete(entry.package_dir)
@@ -166,22 +152,21 @@ class SkillsMutationService:
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
 
-        operator = LinkOperator()
-        adapters = tuple(self.read_models.harness_adapters)
+        _enabled_bindings, disabled_bindings = self._partition_bound_managers(entry.package_dir)
+        if disabled_bindings:
+            raise MutationError(
+                "cannot delete while disabled harnesses still have bindings: "
+                f"{self._describe_harnesses(disabled_bindings)}; re-enable support or clean them manually",
+                status=409,
+            )
         try:
             self.read_models.store.ensure_deletable(entry.package_dir)
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
-        for adapter in adapters:
-            operator.ensure_shared_link_removable(
-                package_dir=entry.package_dir,
-                harness_skills_root=adapter.user_skills_root,
-            )
-        for adapter in adapters:
-            operator.unlink_shared(
-                package_dir=entry.package_dir,
-                harness_skills_root=adapter.user_skills_root,
-            )
+        for _harness, manager in self.read_models.enabled_managers():
+            manager.prepare_remove(entry.package_dir)
+        for _harness, manager in self.read_models.enabled_managers():
+            manager.remove_binding(entry.package_dir)
         try:
             self.read_models.store.delete(entry.package_dir)
         except ValueError as error:
@@ -231,6 +216,26 @@ class SkillsMutationService:
             )
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
-        operator = LinkOperator()
         for sighting in harness_sightings:
-            operator.replace_with_link(existing_dir=sighting.path, target_path=ingested)
+            manager = self.read_models.require_enabled_manager(sighting.harness)
+            manager.adopt_local_copy(existing_dir=sighting.path, package_path=ingested)
+
+    def _partition_bound_managers(self, package_dir: str) -> tuple[list[tuple[str, HarnessManager]], list[tuple[str, HarnessManager]]]:
+        enabled = set(self.read_models.enabled_harnesses())
+        enabled_bindings: list[tuple[str, HarnessManager]] = []
+        disabled_bindings: list[tuple[str, HarnessManager]] = []
+        for harness, manager in self.read_models.all_managers():
+            if not manager.has_binding(package_dir):
+                continue
+            if harness in enabled:
+                enabled_bindings.append((harness, manager))
+            else:
+                disabled_bindings.append((harness, manager))
+        return enabled_bindings, disabled_bindings
+
+    def _describe_harnesses(self, bindings: list[tuple[str, HarnessManager]]) -> str:
+        labels: list[str] = []
+        for harness, _manager in bindings:
+            driver = self.read_models.find_driver(harness)
+            labels.append(driver.label if driver is not None else harness)
+        return ", ".join(labels)

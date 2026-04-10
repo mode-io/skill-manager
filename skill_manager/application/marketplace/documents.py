@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 
 from ..document_utils import read_skill_document_markdown
 from ..source_fetch_service import SourceFetchService

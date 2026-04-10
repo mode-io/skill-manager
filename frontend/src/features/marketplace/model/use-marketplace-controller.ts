@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { usePendingRegistry } from "../../../lib/async/pending-registry";
 import {
   flattenMarketplaceItems,
   useInstallMarketplaceSkillMutation,
   useMarketplaceFeedQuery,
 } from "../api/queries";
 import type { MarketplaceItemDto } from "../api/types";
+import { marketplaceInstallActionKey, marketplaceSearchActionKey } from "./pending";
 
 const LOADING_SUMMARY = "Summary loading from skills.sh…";
 
@@ -14,7 +16,6 @@ export interface MarketplaceController {
   query: string;
   submittedQuery: string;
   errorMessage: string;
-  busyInstallItemId: string | null;
   selectedItemId: string | null;
   selectedItem: MarketplaceItemDto | null;
   items: MarketplaceItemDto[];
@@ -23,12 +24,14 @@ export interface MarketplaceController {
   status: "loading" | "ready" | "error";
   hasMore: boolean;
   loadingMore: boolean;
+  searchSubmitPending: boolean;
   resultLabel: string;
   setQuery: (value: string) => void;
   submitSearch: () => Promise<void>;
   openItem: (itemId: string) => void;
   closeItem: () => void;
   installItem: (item: Pick<MarketplaceItemDto, "id" | "installToken">) => Promise<void>;
+  isInstallPending: (itemId: string) => boolean;
   openInstalledSkill: (skillRef: string) => void;
   dismissError: () => void;
   hasLoadingSummaries: boolean;
@@ -40,11 +43,13 @@ export function useMarketplaceController(): MarketplaceController {
   const [errorMessage, setErrorMessage] = useState("");
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
-  const [busyInstallItemId, setBusyInstallItemId] = useState<string | null>(null);
+  const [pendingSearchActionKey, setPendingSearchActionKey] = useState<string | null>(null);
+  const pendingRegistry = usePendingRegistry<string>();
 
   const feedQuery = useMarketplaceFeedQuery(submittedQuery);
   const installMutation = useInstallMarketplaceSkillMutation();
   const items = useMemo(() => flattenMarketplaceItems(feedQuery.data), [feedQuery.data]);
+  const activeSearchActionKey = marketplaceSearchActionKey(submittedQuery);
   const mode = submittedQuery.trim() ? "search" : "popular";
   const status: "loading" | "ready" | "error" = feedQuery.isPending
     ? "loading"
@@ -60,6 +65,16 @@ export function useMarketplaceController(): MarketplaceController {
     return submittedQuery ? `Search results for “${submittedQuery}”` : "Search results";
   }, [mode, submittedQuery]);
 
+  useEffect(() => {
+    if (pendingSearchActionKey === null || activeSearchActionKey !== pendingSearchActionKey) {
+      return;
+    }
+    if (feedQuery.fetchStatus === "idle") {
+      pendingRegistry.finish(pendingSearchActionKey);
+      setPendingSearchActionKey(null);
+    }
+  }, [activeSearchActionKey, feedQuery.fetchStatus, pendingRegistry, pendingSearchActionKey]);
+
   function updateSelectedItem(itemId: string | null, replace = false): void {
     const nextParams = new URLSearchParams(searchParams);
     if (itemId) {
@@ -73,6 +88,13 @@ export function useMarketplaceController(): MarketplaceController {
   async function submitSearch(): Promise<void> {
     const trimmed = query.trim();
     if (!trimmed) {
+      if (!submittedQuery) {
+        setErrorMessage("");
+        return;
+      }
+      const nextSearchActionKey = marketplaceSearchActionKey("");
+      pendingRegistry.begin(nextSearchActionKey);
+      setPendingSearchActionKey(nextSearchActionKey);
       setSubmittedQuery("");
       setErrorMessage("");
       return;
@@ -81,20 +103,27 @@ export function useMarketplaceController(): MarketplaceController {
       setErrorMessage("Enter at least 2 characters to search skills.sh.");
       return;
     }
+    if (trimmed === submittedQuery) {
+      setErrorMessage("");
+      return;
+    }
+    const nextSearchActionKey = marketplaceSearchActionKey(trimmed);
+    pendingRegistry.begin(nextSearchActionKey);
+    setPendingSearchActionKey(nextSearchActionKey);
     setSubmittedQuery(trimmed);
     setErrorMessage("");
   }
 
   async function installItem(item: Pick<MarketplaceItemDto, "id" | "installToken">): Promise<void> {
     try {
-      setBusyInstallItemId(item.id);
       setErrorMessage("");
-      await installMutation.mutateAsync({ installToken: item.installToken });
+      await pendingRegistry.run(
+        marketplaceInstallActionKey(item.id),
+        () => installMutation.mutateAsync({ installToken: item.installToken }),
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to install the skill.");
       throw error;
-    } finally {
-      setBusyInstallItemId(null);
     }
   }
 
@@ -106,7 +135,6 @@ export function useMarketplaceController(): MarketplaceController {
     query,
     submittedQuery,
     errorMessage,
-    busyInstallItemId,
     selectedItemId,
     selectedItem,
     items,
@@ -115,6 +143,7 @@ export function useMarketplaceController(): MarketplaceController {
     status,
     hasMore: Boolean(feedQuery.hasNextPage),
     loadingMore: feedQuery.isFetchingNextPage,
+    searchSubmitPending: pendingSearchActionKey !== null && pendingRegistry.isPending(pendingSearchActionKey),
     resultLabel,
     setQuery,
     submitSearch,
@@ -124,6 +153,7 @@ export function useMarketplaceController(): MarketplaceController {
     },
     closeItem: () => updateSelectedItem(null),
     installItem,
+    isInstallPending: (itemId) => pendingRegistry.isPending(marketplaceInstallActionKey(itemId)),
     openInstalledSkill,
     dismissError: () => setErrorMessage(""),
     hasLoadingSummaries: items.some((item) => item.description === LOADING_SUMMARY),

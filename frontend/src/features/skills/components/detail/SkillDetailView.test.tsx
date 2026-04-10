@@ -15,10 +15,8 @@ describe("SkillDetailView", () => {
     useSkillDetailControllerMock.mockReturnValue({
       detail: null,
       isInitialLoading: false,
-      isRefreshing: false,
       queryErrorMessage: "boom",
       actionErrorMessage: "",
-      busyAction: null,
       isStopManagingDialogOpen: false,
       isDeleteDialogOpen: false,
       dismissActionError: vi.fn(),
@@ -36,6 +34,8 @@ describe("SkillDetailView", () => {
     render(
       <SkillDetailView
         skillRef="shared:trace-lens"
+        pendingToggleHarnesses={new Set()}
+        pendingStructuralAction={null}
         onClose={vi.fn()}
         onManageSkill={vi.fn(async () => undefined)}
         onToggleSkill={vi.fn(async () => undefined)}

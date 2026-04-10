@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from urllib.request import urlopen
 
-from tests.support import create_fake_home_spec
+from tests.support.fake_home import create_fake_home_spec
 
 
 class CliRuntimeTests(unittest.TestCase):

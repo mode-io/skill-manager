@@ -10,10 +10,10 @@ import "./styles/app.css";
 import "./styles/ui.css";
 import "./components/detail/index.css";
 import "./features/marketplace/styles/index.css";
+import "./features/settings/styles/index.css";
 import "./features/skills/styles/index.css";
 import "./styles/dialogs.css";
 import "./styles/drawers.css";
-import "./styles/settings.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

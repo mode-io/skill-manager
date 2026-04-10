@@ -22,6 +22,16 @@ trap cleanup EXIT
 cd "$TMP_DIR"
 npm init -y >/dev/null 2>&1
 
+PACK_OUTPUT="$(npm pack --json "$REPO_ROOT/packaging/npm")"
+PACK_FILE="$(printf '%s' "$PACK_OUTPUT" | python3 -c 'import json, sys; print(json.load(sys.stdin)[0]["filename"])')"
+if [[ ! -f "$PACK_FILE" ]]; then
+  echo "npm pack did not produce an archive: $PACK_OUTPUT" >&2
+  exit 1
+fi
+tar -tzf "$PACK_FILE" | grep -q '^package/LICENSE$'
+tar -xOf "$PACK_FILE" package/LICENSE | cmp -s - "$REPO_ROOT/LICENSE"
+rm -f "$PACK_FILE"
+
 export SKILL_MANAGER_LOCAL_ARTIFACT_PATH="$ARTIFACT_PATH"
 npm install --no-package-lock "$REPO_ROOT/packaging/npm" >/dev/null
 

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from tests.support import AppTestHarness, create_fixture_marketplace_service
+from tests.support.app_harness import AppTestHarness
+from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 class MarketplaceApiTests(unittest.TestCase):

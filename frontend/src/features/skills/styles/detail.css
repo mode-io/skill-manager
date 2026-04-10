@@ -71,12 +71,6 @@
   flex: 0 0 auto;
 }
 
-.skill-detail__refresh {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-}
-
 .skill-detail__header h2 {
   margin: 0;
   font-size: 1.48rem;
@@ -202,7 +196,7 @@
 
 .skill-detail__harness-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 10px;
 }
 
@@ -569,4 +563,3 @@
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.04);
 }
-

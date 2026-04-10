@@ -1,11 +1,13 @@
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 
+import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import type { HarnessCellState } from "../../model/types";
 
 interface HarnessStateChipProps {
   state: HarnessCellState;
   interactive: boolean;
   disabled?: boolean;
+  pending?: boolean;
   ariaLabel?: string;
   onCheckedChange?: (checked: boolean) => void;
 }
@@ -14,6 +16,7 @@ export function HarnessStateChip({
   state,
   interactive,
   disabled = false,
+  pending = false,
   ariaLabel,
   onCheckedChange,
 }: HarnessStateChipProps) {
@@ -23,12 +26,14 @@ export function HarnessStateChip({
       <SwitchPrimitive.Root
         className="harness-state-chip"
         checked={checked}
-        disabled={disabled}
+        disabled={disabled || pending}
+        data-pending={pending ? "" : undefined}
         aria-label={ariaLabel}
         onCheckedChange={onCheckedChange}
       >
+        {pending ? <LoadingSpinner size="sm" label="Saving harness state" /> : null}
         <span className="harness-state-chip__label" aria-hidden="true">
-          {checked ? "On" : "Off"}
+          {pending ? "Saving" : checked ? "On" : "Off"}
         </span>
       </SwitchPrimitive.Root>
     );

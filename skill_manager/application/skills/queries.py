@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import Literal
 
 from skill_manager.domain import fingerprint_package
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 from skill_manager.sources import github_repo_from_locator, github_repo_url, github_skill_dir_from_locator
 
 from ..document_utils import read_skill_document_markdown
@@ -13,7 +13,7 @@ from ..read_model_service import ReadModelService
 from ..source_fetch_service import SourceFetchService
 from .inventory import InventoryEntry, SkillInventory
 from .policy import can_stop_managing, can_update
-from .presenters import settings_payload, skill_detail_payload, skills_page_payload, source_status_payload
+from .presenters import skill_detail_payload, skills_page_payload, source_status_payload
 
 
 class SkillsQueryService:
@@ -55,9 +55,6 @@ class SkillsQueryService:
         if entry is None:
             return None
         return source_status_payload(self.resolve_update_status(entry))
-
-    def settings(self) -> dict[str, object]:
-        return settings_payload(self.inventory())
 
     def inventory(self) -> SkillInventory:
         snapshot = self.read_models.snapshot()

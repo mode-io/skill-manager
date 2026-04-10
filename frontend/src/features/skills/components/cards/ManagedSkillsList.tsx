@@ -1,3 +1,4 @@
+import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
 import type { HarnessCell, HarnessColumn, SkillListRow } from "../../model/types";
 import { ManagedSkillCard } from "./ManagedSkillCard";
 
@@ -5,7 +6,8 @@ interface ManagedSkillsListProps {
   ariaLabel?: string;
   columns: HarnessColumn[];
   rows: SkillListRow[];
-  busyId: string | null;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  pendingStructuralActions: ReadonlyMap<string, StructuralSkillAction>;
   selectedSkillRef: string | null;
   onOpenSkill: (skillRef: string) => void;
   onToggleCell: (row: SkillListRow, cell: HarnessCell) => void;
@@ -15,7 +17,8 @@ export function ManagedSkillsList({
   ariaLabel = "Managed skills list",
   columns,
   rows,
-  busyId,
+  pendingToggleKeys,
+  pendingStructuralActions,
   selectedSkillRef,
   onOpenSkill,
   onToggleCell,
@@ -27,7 +30,8 @@ export function ManagedSkillsList({
           key={row.skillRef}
           row={row}
           columns={columns}
-          busyId={busyId}
+          pendingToggleKeys={pendingToggleKeys}
+          pendingStructuralAction={pendingStructuralActions.get(row.skillRef) ?? null}
           selected={selectedSkillRef === row.skillRef}
           onOpenSkill={onOpenSkill}
           onToggleCell={onToggleCell}

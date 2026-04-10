@@ -23,6 +23,7 @@ const detail: SkillDetail = {
     { harness: "claude", label: "Claude", state: "empty", interactive: false },
     { harness: "cursor", label: "Cursor", state: "empty", interactive: false },
     { harness: "opencode", label: "OpenCode", state: "empty", interactive: false },
+    { harness: "openclaw", label: "OpenClaw", state: "empty", interactive: false },
   ],
   locations: [],
   sourceLinks: {
@@ -35,13 +36,13 @@ const detail: SkillDetail = {
 
 describe("SkillDetailContent", () => {
   it("renders the manage action in the title row and uses the detail close control", () => {
-    render(
+    const { container } = render(
       <SkillDetailContent
         detail={detail}
-        isRefreshing={false}
         actionErrorMessage=""
         queryErrorMessage=""
-        busyAction={null}
+        pendingToggleHarnesses={new Set()}
+        pendingStructuralAction={null}
         onClose={vi.fn()}
         onDismissActionError={vi.fn()}
         onManage={vi.fn()}
@@ -63,5 +64,7 @@ describe("SkillDetailContent", () => {
     expect(closeButton).toHaveClass("skill-detail__close-button");
     expect(closeButton).not.toHaveClass("icon-button");
     expect(screen.getByRole("link", { name: /mode-io\/trace-lens/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Refreshing skill details")).not.toBeInTheDocument();
+    expect(container.querySelector(".skill-harness-mark--openclaw .skill-harness-mark__logo")).not.toBeNull();
   });
 });

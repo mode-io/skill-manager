@@ -4,60 +4,32 @@ from concurrent.futures import ThreadPoolExecutor
 
 from skill_manager.domain import HarnessScan
 
-from .adapters.config_backed import ConfigHarnessAdapter
-from .adapters.filesystem_backed import FilesystemHarnessAdapter
-from .adapters.gemini_cli import GeminiCliHarnessAdapter
-from .command_runner import CommandRunner, SubprocessCommandRunner
-from .contracts import AdapterConfig, HarnessAdapter
-from .path_resolver import resolve_harness_paths
+from .catalog import supported_harness_definitions
+from .contracts import HarnessDriver, HarnessStatus
+from .resolution import resolve_context
 
 
-def create_default_adapters(
+def create_default_drivers(
     env: dict[str, str] | None = None,
-    *,
-    command_runner: CommandRunner | None = None,
-) -> tuple[HarnessAdapter, ...]:
-    paths = resolve_harness_paths(env)
-    runner = command_runner or SubprocessCommandRunner()
-    return (
-        FilesystemHarnessAdapter(
-            config=AdapterConfig("codex", "Codex", "filesystem", False),
-            user_skills_root=paths.codex_user_root,
-            global_skills_root=paths.codex_global_root,
-        ),
-        FilesystemHarnessAdapter(
-            config=AdapterConfig("claude", "Claude", "filesystem", False),
-            user_skills_root=paths.claude_user_root,
-            global_skills_root=paths.claude_global_root,
-        ),
-        FilesystemHarnessAdapter(
-            config=AdapterConfig("cursor", "Cursor", "filesystem", False),
-            user_skills_root=paths.cursor_user_root,
-            global_skills_root=paths.cursor_global_root,
-        ),
-        ConfigHarnessAdapter(
-            config=AdapterConfig("opencode", "OpenCode", "config", True),
-            user_skills_root=paths.opencode_user_root,
-            global_skills_root=paths.opencode_global_root,
-            builtins_path=paths.opencode_builtins,
-        ),
-        ConfigHarnessAdapter(
-            config=AdapterConfig("openclaw", "OpenClaw", "config", True),
-            user_skills_root=paths.openclaw_user_root,
-            global_skills_root=paths.openclaw_global_root,
-            builtins_path=paths.openclaw_builtins,
-        ),
-        GeminiCliHarnessAdapter(
-            command_runner=runner,
-            user_skills_root=paths.gemini_user_root,
-            builtins_path=paths.gemini_builtins,
-        ),
+) -> tuple[HarnessDriver, ...]:
+    context = resolve_context(env)
+    return tuple(
+        definition.create_driver(context)
+        for definition in supported_harness_definitions()
     )
 
 
-def scan_all_harnesses(adapters: tuple[HarnessAdapter, ...]) -> tuple[HarnessScan, ...]:
-    if not adapters:
+def scan_all_harnesses(drivers: tuple[HarnessDriver, ...]) -> tuple[HarnessScan, ...]:
+    if not drivers:
         return ()
-    with ThreadPoolExecutor(max_workers=len(adapters)) as executor:
-        scans = executor.map(lambda adapter: adapter.scan(), adapters)
+    with ThreadPoolExecutor(max_workers=len(drivers)) as executor:
+        scans = executor.map(lambda driver: driver.scan(), drivers)
         return tuple(scans)
+
+
+def collect_harness_statuses(drivers: tuple[HarnessDriver, ...]) -> tuple[HarnessStatus, ...]:
+    if not drivers:
+        return ()
+    with ThreadPoolExecutor(max_workers=len(drivers)) as executor:
+        statuses = executor.map(lambda driver: driver.status(), drivers)
+        return tuple(statuses)
