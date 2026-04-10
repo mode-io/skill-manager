@@ -222,6 +222,12 @@ Test coverage currently includes:
 - backend unit and integration tests
 - Playwright smoke coverage
 
+## Community
+
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+- See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations.
+- See [SECURITY.md](SECURITY.md) to report vulnerabilities privately.
+
 ## Repository layout
 
 - `frontend/` — React/Vite UI, including `skills` and `marketplace` feature modules
