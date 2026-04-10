@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <defs>
+    <linearGradient id="cloudGrad" x1="320" y1="60" x2="320" y2="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#AAA6FF"/>
+      <stop offset="50%" stop-color="#7D9EFF"/>
+      <stop offset="100%" stop-color="#3C45FF"/>
+    </linearGradient>
+    <clipPath id="cloudClip">
+      <circle cx="398" cy="242" r="133"/>
+      <circle cx="284" cy="211" r="129"/>
+      <circle cx="201" cy="294" r="123"/>
+      <circle cx="232" cy="408" r="119"/>
+      <circle cx="346" cy="439" r="123"/>
+      <circle cx="429" cy="356" r="129"/>
+    </clipPath>
+  </defs>
+  <!-- Cloud shape -->
+  <rect x="0" y="0" width="640" height="640" fill="url(#cloudGrad)" clip-path="url(#cloudClip)"/>
+  <!-- > chevron -->
+  <polyline points="211,250 247,320 211,390" fill="none" stroke="white" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- _ dash -->
+  <line x1="333" y1="388" x2="434" y2="388" stroke="white" stroke-width="26" stroke-linecap="round"/>
+</svg>

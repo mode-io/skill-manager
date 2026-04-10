@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1312 736" shape-rendering="crispEdges">
+  <defs>
+    <!-- Subtle spotlight vignette so the shadow has something to fall onto -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#272C35"/>
+      <stop offset="100%" stop-color="#14171D"/>
+    </radialGradient>
+
+    <!-- Soft mint bloom for the accent dot -->
+    <filter id="bloom" x="-500%" y="-500%" width="1100%" height="1100%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+
+    <!-- Declared once, re-stamped for each shadow layer + the main fill -->
+    <g id="letters">
+      <!-- S -->
+      <rect x="386" y="218" width="80" height="20"/>
+      <rect x="366" y="238" width="20" height="40"/>
+      <rect x="386" y="278" width="60" height="20"/>
+      <rect x="446" y="298" width="20" height="40"/>
+      <rect x="366" y="338" width="80" height="20"/>
+      <!-- K -->
+      <rect x="486" y="218" width="20" height="140"/>
+      <rect x="566" y="218" width="20" height="20"/>
+      <rect x="546" y="238" width="20" height="20"/>
+      <rect x="526" y="258" width="20" height="20"/>
+      <rect x="506" y="278" width="20" height="20"/>
+      <rect x="526" y="298" width="20" height="20"/>
+      <rect x="546" y="318" width="20" height="20"/>
+      <rect x="566" y="338" width="20" height="20"/>
+      <!-- I (stem) -->
+      <rect x="646" y="258" width="20" height="100"/>
+      <!-- L -->
+      <rect x="726" y="218" width="20" height="120"/>
+      <rect x="726" y="338" width="100" height="20"/>
+      <!-- L -->
+      <rect x="846" y="218" width="20" height="120"/>
+      <rect x="846" y="338" width="100" height="20"/>
+      <!-- M -->
+      <rect x="246" y="378" width="20" height="140"/>
+      <rect x="326" y="378" width="20" height="140"/>
+      <rect x="266" y="398" width="20" height="20"/>
+      <rect x="306" y="398" width="20" height="20"/>
+      <rect x="286" y="418" width="20" height="40"/>
+      <!-- A -->
+      <rect x="386" y="378" width="60" height="20"/>
+      <rect x="366" y="398" width="20" height="120"/>
+      <rect x="446" y="398" width="20" height="120"/>
+      <rect x="386" y="438" width="60" height="20"/>
+      <!-- N -->
+      <rect x="486" y="378" width="20" height="140"/>
+      <rect x="566" y="378" width="20" height="140"/>
+      <rect x="506" y="398" width="20" height="20"/>
+      <rect x="526" y="418" width="20" height="40"/>
+      <rect x="546" y="458" width="20" height="20"/>
+      <!-- A -->
+      <rect x="626" y="378" width="60" height="20"/>
+      <rect x="606" y="398" width="20" height="120"/>
+      <rect x="686" y="398" width="20" height="120"/>
+      <rect x="626" y="438" width="60" height="20"/>
+      <!-- G -->
+      <rect x="746" y="378" width="80" height="20"/>
+      <rect x="726" y="398" width="20" height="100"/>
+      <rect x="766" y="438" width="60" height="20"/>
+      <rect x="806" y="458" width="20" height="40"/>
+      <rect x="746" y="498" width="60" height="20"/>
+      <!-- E -->
+      <rect x="846" y="378" width="20" height="140"/>
+      <rect x="866" y="378" width="80" height="20"/>
+      <rect x="866" y="438" width="60" height="20"/>
+      <rect x="866" y="498" width="80" height="20"/>
+      <!-- R -->
+      <rect x="966" y="378" width="20" height="140"/>
+      <rect x="986" y="378" width="60" height="20"/>
+      <rect x="1046" y="398" width="20" height="40"/>
+      <rect x="986" y="438" width="60" height="20"/>
+      <rect x="1006" y="458" width="20" height="20"/>
+      <rect x="1026" y="478" width="20" height="20"/>
+      <rect x="1046" y="498" width="20" height="20"/>
+    </g>
+
+    <rect id="dot" x="646" y="218" width="20" height="20"/>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1312" height="736" fill="url(#bg)"/>
+
+  <!-- Pixel drop shadow: 2 stepped layers for depth.
+       Far layer (2 cells) is darkest; near layer (1 cell) is a touch lighter.
+       The dot is intentionally excluded so the "i" gap stays visible. -->
+  <use href="#letters" transform="translate(40 40)" fill="#03050A"/>
+  <use href="#letters" transform="translate(20 20)" fill="#0D1017"/>
+
+  <!-- Main letterforms -->
+  <use href="#letters" fill="#F0F2F5"/>
+
+  <!-- Mint dot: soft bloom halo, then sharp pixel on top -->
+  <use href="#dot" fill="#A8F0DD" filter="url(#bloom)" opacity="0.9"/>
+  <use href="#dot" fill="#A8F0DD"/>
+</svg>
