@@ -9,15 +9,14 @@ export function SettingsPage() {
   return (
     <div className="settings-page">
       <section className="page-panel settings-page__hero">
-            <div className="page-header">
-              <div>
-                <p className="page-header__eyebrow">System Configuration</p>
-                <h2>Settings</h2>
-                <p className="page-header__copy">
-                  Configure supported harnesses for skill discovery and management on this computer.
-                </p>
-              </div>
-            </div>
+        <div className="page-header">
+          <div>
+            <h2>Settings</h2>
+            <p className="page-header__copy">
+              Configure supported harnesses for skill discovery and management on this computer.
+            </p>
+          </div>
+        </div>
       </section>
 
       {controller.errorMessage ? (
@@ -36,21 +35,14 @@ export function SettingsPage() {
         <>
           <section className="page-panel">
             <div className="settings-section__header">
-              <div>
-                <p className="page-header__eyebrow">Harnesses</p>
-                <h3>Harnesses</h3>
-              </div>
-              <p className="muted-text">
-                Support toggles are non-destructive. Disabled harnesses stay visible here, but skill-manager
-                stops scanning and mutating them until re-enabled.
-              </p>
+              <h3>Harnesses</h3>
             </div>
             <div className="settings-harness-grid">
               {controller.data.harnesses.map((harness) => (
                 <SettingsHarnessCard
                   key={harness.harness}
                   harness={harness}
-                  pending={controller.pendingHarness === harness.harness}
+                  pending={controller.isHarnessPending(harness.harness)}
                   onToggle={controller.handleSupportToggle}
                 />
               ))}

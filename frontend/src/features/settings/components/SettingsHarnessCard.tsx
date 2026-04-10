@@ -1,3 +1,4 @@
+import { HoverTooltip } from "../../../components/ui/HoverTooltip";
 import { ToggleSwitch } from "../../../components/ToggleSwitch";
 import { HarnessMark } from "../../skills/components/harness/HarnessMark";
 import type { SettingsHarness } from "../api/types";
@@ -6,6 +7,13 @@ interface SettingsHarnessCardProps {
   harness: SettingsHarness;
   pending: boolean;
   onToggle: (harness: string, nextEnabled: boolean) => void;
+}
+
+function supportTooltipCopy(harness: SettingsHarness): string {
+  if (harness.supportEnabled) {
+    return "Turn off to make skill-manager ignore this harness. Your local files stay unchanged.";
+  }
+  return "Turn on to let skill-manager discover and manage skills for this harness. Nothing is moved or deleted.";
 }
 
 export function SettingsHarnessCard({
@@ -22,32 +30,32 @@ export function SettingsHarnessCard({
             {harness.detected ? "Detected" : "Not detected"}
           </span>
         </div>
-        <ToggleSwitch
-          checked={harness.supportEnabled}
-          disabled={pending}
-          label="Enabled"
-          ariaLabel={`Enable ${harness.label} support`}
-          pendingLabel="Saving..."
-          onCheckedChange={(checked) => onToggle(harness.harness, checked)}
-        />
+        <HoverTooltip copy={supportTooltipCopy(harness)} disabled={pending} align="end" side="top">
+          <span className="settings-harness-card__toggle">
+            <ToggleSwitch
+              checked={harness.supportEnabled}
+              disabled={pending}
+              label="Enabled"
+              ariaLabel={`Enable ${harness.label} support`}
+              pendingLabel="Saving..."
+              onCheckedChange={(checked) => onToggle(harness.harness, checked)}
+            />
+          </span>
+        </HoverTooltip>
       </div>
 
       <div className="settings-harness-card__body">
-        <p className="settings-harness-card__copy">
-          {harness.detected
-            ? "Ready for skill discovery and management on this computer."
-            : "skill-manager can keep this harness available, but it is not currently detected on this computer."}
-        </p>
-
         <dl className="settings-harness-card__locations">
-          {harness.managedLocation ? (
-            <div className="settings-harness-card__location-row">
-              <dt>Managed location</dt>
-              <dd>
+          <div className="settings-harness-card__location-row">
+            <dt>Managed location</dt>
+            <dd>
+              {harness.managedLocation ? (
                 <span className="settings-harness-card__path">{harness.managedLocation}</span>
-              </dd>
-            </div>
-          ) : null}
+              ) : (
+                <span className="settings-harness-card__path settings-harness-card__path--muted">Unavailable</span>
+              )}
+            </dd>
+          </div>
         </dl>
       </div>
     </article>

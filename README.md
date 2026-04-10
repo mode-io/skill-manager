@@ -87,6 +87,8 @@ If you use this on a real workstation, treat it like any other local configurati
 
 ### Public install channels
 
+`skill-manager` is released under the MIT License. See [`LICENSE`](LICENSE).
+
 The public install contract is designed around:
 
 - npm
@@ -227,6 +229,10 @@ Test coverage currently includes:
 - `skill_manager/` — FastAPI app, read-model logic, mutation services, harness adapters, and source/store integrations
 - `tests/` — backend integration fixtures plus unit and integration coverage
 - `scripts/` — local validation and fixture-serving utilities
+
+## Packaging note
+
+The root `package.json` remains private because it is the repo-local frontend workspace. The public npm package that installs `skill-manager` lives under `packaging/npm/`.
 
 ## Public API surface
 

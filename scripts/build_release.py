@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = REPO_ROOT / "skill_manager" / "VERSION"
 SPEC_FILE = REPO_ROOT / "packaging" / "pyinstaller" / "skill-manager.spec"
 ARTIFACTS_DIR = REPO_ROOT / ".artifacts" / "release"
+LICENSE_FILE = REPO_ROOT / "LICENSE"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -50,6 +51,12 @@ def sync_versions() -> None:
     run([sys.executable, "scripts/sync_version.py", "--check"])
 
 
+def copy_license(bundle_dir: Path) -> None:
+    if not LICENSE_FILE.exists():
+        raise RuntimeError(f"missing repo license file: {LICENSE_FILE}")
+    shutil.copy2(LICENSE_FILE, bundle_dir / "LICENSE")
+
+
 def build_bundle() -> Path:
     dist_dir = REPO_ROOT / "dist"
     build_dir = REPO_ROOT / "build"
@@ -60,6 +67,7 @@ def build_bundle() -> Path:
     binary = bundle_dir / "skill-manager"
     if not binary.exists():
         raise RuntimeError("PyInstaller did not produce dist/skill-manager/skill-manager")
+    copy_license(bundle_dir)
     return bundle_dir
 
 

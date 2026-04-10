@@ -24,5 +24,6 @@ trap 'rm -f "$TMP_FORMULA"' EXIT
   --output "$TMP_FORMULA"
 
 ruby -c "$TMP_FORMULA" >/dev/null
+grep -q 'license "MIT"' "$TMP_FORMULA"
 grep -q 'libexec.install Dir\["skill-manager/\*"\]' "$TMP_FORMULA"
 grep -q 'bin.install_symlink libexec/"skill-manager" => "skill-manager"' "$TMP_FORMULA"

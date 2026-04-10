@@ -31,9 +31,9 @@ function stubDesktopMatchMedia() {
   });
 }
 
-function mockSkillsPage() {
+function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
   let sharedAuditState: "managed" | "unmanaged" | "deleted" = "managed";
-  let codexSupportEnabled = true;
+  let codexSupportEnabled = options?.codexSupportEnabled ?? true;
 
   fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
@@ -392,8 +392,44 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { name: "Harnesses" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Enable Codex support" })).toBeInTheDocument();
     expect(screen.getByText("/tmp/home/.codex/skills")).toBeInTheDocument();
+    expect(screen.queryByText("Support toggles are non-destructive.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ready for skill discovery and management on this computer.")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Store Network" })).not.toBeInTheDocument();
     expect(screen.queryByText("filesystem")).not.toBeInTheDocument();
+  });
+
+  it("shows the enabled-state harness support tooltip on toggle focus", async () => {
+    mockSkillsPage();
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.focus(codexSwitch);
+
+    expect(
+      screen.getByText("Turn off to make skill-manager ignore this harness. Your local files stay unchanged."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the disabled-state harness support tooltip on toggle focus", async () => {
+    mockSkillsPage({ codexSupportEnabled: false });
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.focus(codexSwitch);
+
+    expect(
+      screen.getByText("Turn on to let skill-manager discover and manage skills for this harness. Nothing is moved or deleted."),
+    ).toBeInTheDocument();
+  });
+
+  it("clears settings toggle pending state after a successful support update", async () => {
+    mockSkillsPage();
+    renderApp("/settings");
+
+    const codexSwitch = await screen.findByRole("switch", { name: "Enable Codex support" });
+    fireEvent.click(codexSwitch);
+
+    await waitFor(() => expect(codexSwitch).not.toBeDisabled());
   });
 
   it("reuses the cached skills workspace and preserves managed search when returning from marketplace", async () => {

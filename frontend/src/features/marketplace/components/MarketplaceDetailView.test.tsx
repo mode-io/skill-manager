@@ -51,7 +51,7 @@ describe("MarketplaceDetailView", () => {
       <MarketplaceDetailView
         itemId="skillssh:mode-io/skills:mode-switch"
         initialItem={null}
-        busyInstallItemId={null}
+        installPending={false}
         actionErrorMessage=""
         onDismissActionError={vi.fn()}
         onClose={vi.fn()}

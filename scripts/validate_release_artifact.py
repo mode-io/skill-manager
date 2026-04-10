@@ -12,6 +12,8 @@ import time
 from pathlib import Path
 from urllib.request import urlopen
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate a packaged skill-manager release artifact.")
@@ -49,8 +51,13 @@ def main(argv: list[str] | None = None) -> int:
 
         bundle_dir = tmp_path / "skill-manager"
         binary = bundle_dir / "skill-manager"
+        license_file = bundle_dir / "LICENSE"
         if not binary.exists():
             raise RuntimeError(f"packaged executable missing: {binary}")
+        if not license_file.exists():
+            raise RuntimeError(f"packaged license missing: {license_file}")
+        if license_file.read_text(encoding="utf-8") != (REPO_ROOT / "LICENSE").read_text(encoding="utf-8"):
+            raise RuntimeError("packaged license did not match the repo root LICENSE")
 
         # Unsigned macOS binaries can pay a heavy first-run verification cost on a fresh path.
         version_output = run([str(binary), "--version"], timeout=120.0).stdout.strip()

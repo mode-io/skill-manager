@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
+import { ScopedReconciliationTracker } from "../../../lib/async/scoped-reconciliation";
 import {
   deleteSkill,
   disableSkill,
@@ -14,7 +15,6 @@ import {
   updateSkill,
 } from "./client";
 import { mapSkillDetail, mapSkillsPage } from "./mappers";
-import { ToggleReconciliationTracker } from "./toggle-reconciliation";
 import type { HarnessCellState } from "../model/types";
 import type { HarnessCell, SkillDetailDto, SkillsPageDto } from "./types";
 
@@ -74,10 +74,10 @@ export async function invalidateSkillsQueries(queryClient: QueryClient): Promise
 
 export function useToggleSkillMutation() {
   const queryClient = useQueryClient();
-  const reconciliationRef = useRef<ToggleReconciliationTracker | null>(null);
+  const reconciliationRef = useRef<ScopedReconciliationTracker<string> | null>(null);
 
   if (reconciliationRef.current === null) {
-    reconciliationRef.current = new ToggleReconciliationTracker();
+    reconciliationRef.current = new ScopedReconciliationTracker<string>();
   }
 
   return useMutation({
@@ -159,17 +159,17 @@ export function useToggleSkillMutation() {
     },
     onSettled: async (_data, _error, variables) => {
       const decision = reconciliationRef.current?.finish(variables.skillRef) ?? {
-        invalidateList: true,
-        invalidateSkill: true,
+        invalidateAll: true,
+        invalidateScope: true,
       };
       const invalidations: Promise<unknown>[] = [];
 
-      if (decision.invalidateSkill) {
+      if (decision.invalidateScope) {
         invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }));
         invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }));
       }
 
-      if (decision.invalidateList) {
+      if (decision.invalidateAll) {
         invalidations.push(queryClient.invalidateQueries({ queryKey: skillsKeys.list() }));
       }
 

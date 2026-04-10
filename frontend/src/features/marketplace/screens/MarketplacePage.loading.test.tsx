@@ -17,7 +17,6 @@ describe("MarketplacePage loading ownership", () => {
       query: "",
       submittedQuery: "",
       errorMessage: "",
-      busyInstallItemId: null,
       selectedItemId: null,
       selectedItem: null,
       items: [
@@ -54,6 +53,7 @@ describe("MarketplacePage loading ownership", () => {
       openItem: vi.fn(),
       closeItem: vi.fn(),
       installItem: vi.fn(async () => undefined),
+      isInstallPending: vi.fn(() => false),
       openInstalledSkill: vi.fn(),
       dismissError: vi.fn(),
       hasLoadingSummaries: false,

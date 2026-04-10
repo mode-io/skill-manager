@@ -16,7 +16,7 @@ import { MarketplaceDetailPendingDocument, MarketplaceDetailSkeleton } from "./M
 interface MarketplaceDetailViewProps {
   itemId: string;
   initialItem: MarketplaceItemDto | null;
-  busyInstallItemId: string | null;
+  installPending: boolean;
   actionErrorMessage: string;
   onDismissActionError: () => void;
   onClose: () => void;
@@ -27,7 +27,7 @@ interface MarketplaceDetailViewProps {
 export function MarketplaceDetailView({
   itemId,
   initialItem,
-  busyInstallItemId,
+  installPending,
   actionErrorMessage,
   onDismissActionError,
   onClose,
@@ -38,7 +38,6 @@ export function MarketplaceDetailView({
   const detailQuery = useMarketplaceDetailQuery(itemId);
   const documentQuery = useMarketplaceDocumentQuery(itemId);
   const detail = detailQuery.data ?? fallbackDetail(initialItem);
-  const isInstalling = busyInstallItemId === itemId;
   const queryErrorMessage = detailQuery.error instanceof Error ? detailQuery.error.message : "";
   const isInitialPreviewLoading = detailQuery.isPending && !detailQuery.data && Boolean(detail);
   const documentMarkdown = documentQuery.data?.documentMarkdown ?? null;
@@ -62,17 +61,17 @@ export function MarketplaceDetailView({
     }
 
     return (
-      <button
-        type="button"
-        className="btn btn-primary marketplace-detail__action"
-        disabled={isInstalling}
-        onClick={() => void onInstall(detail)}
-      >
-        {isInstalling ? <LoadingSpinner size="sm" label={`Installing ${detail.name}`} /> : null}
-        Install
-      </button>
-    );
-  }, [detail, isInstalling, onInstall, onOpenInstalledSkill]);
+        <button
+          type="button"
+          className="btn btn-primary marketplace-detail__action"
+          disabled={installPending}
+          onClick={() => void onInstall(detail)}
+        >
+          {installPending ? <LoadingSpinner size="sm" label={`Installing ${detail.name}`} /> : null}
+          Install
+        </button>
+      );
+  }, [detail, installPending, onInstall, onOpenInstalledSkill]);
 
   if (!detail && detailQuery.isPending) {
     return <MarketplaceDetailSkeleton onClose={onClose} />;

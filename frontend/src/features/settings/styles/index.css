@@ -37,7 +37,7 @@
 .settings-harness-card {
   display: grid;
   gap: 16px;
-  min-height: 220px;
+  min-height: 168px;
 }
 
 .settings-harness-card__identity {
@@ -49,13 +49,7 @@
 
 .settings-harness-card__body {
   display: grid;
-  gap: 16px;
-}
-
-.settings-harness-card__copy {
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.55;
+  gap: 12px;
 }
 
 .settings-harness-card__locations {
@@ -88,4 +82,12 @@
 .settings-harness-card__path {
   font-family: var(--font-mono);
   word-break: break-word;
+}
+
+.settings-harness-card__path--muted {
+  color: var(--color-text-muted);
+}
+
+.settings-harness-card__toggle {
+  display: inline-flex;
 }

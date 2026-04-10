@@ -13,7 +13,6 @@ export function MarketplacePage() {
   const {
     query,
     errorMessage,
-    busyInstallItemId,
     selectedItemId,
     selectedItem,
     items,
@@ -29,6 +28,7 @@ export function MarketplacePage() {
     openItem,
     closeItem,
     installItem,
+    isInstallPending,
     openInstalledSkill,
     dismissError,
     hasLoadingSummaries,
@@ -127,7 +127,7 @@ export function MarketplacePage() {
                   key={item.id}
                   item={item}
                   selected={item.id === selectedItemId}
-                  installing={busyInstallItemId === item.id}
+                  installing={isInstallPending(item.id)}
                   onOpenDetail={() => openItem(item.id)}
                   onInstall={() => void installItem(item)}
                   onOpenInstalledSkill={openInstalledSkill}
@@ -147,7 +147,7 @@ export function MarketplacePage() {
       <MarketplaceDetailSheet
         itemId={selectedItemId}
         initialItem={selectedItem}
-        busyInstallItemId={busyInstallItemId}
+        installPending={selectedItemId ? isInstallPending(selectedItemId) : false}
         actionErrorMessage={selectedItemId ? errorMessage : ""}
         onDismissActionError={dismissError}
         onClose={closeItem}
