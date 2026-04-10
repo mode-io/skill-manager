@@ -62,7 +62,7 @@ The supported public install paths are npm and Homebrew on macOS. Only the lates
 ### npm
 
 ```bash
-npm install -g skill-manager
+npm install -g @mode-io/skill-manager
 skill-manager
 ```
 

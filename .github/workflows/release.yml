@@ -10,15 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    strategy:
-      matrix:
-        include:
-          - runner: macos-13
-            artifact_suffix: x64
-          - runner: macos-14
-            artifact_suffix: arm64
-    runs-on: ${{ matrix.runner }}
+  build-macos-arm64:
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -47,22 +40,68 @@ jobs:
       - name: Validate packaged binary
         run: |
           VERSION="$(cat skill_manager/VERSION)"
-          ARTIFACT="$(find .artifacts/release -name "*darwin-${{ matrix.artifact_suffix }}.tar.gz" -print -quit)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
           python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
 
       - name: Validate npm wrapper with local artifact
         run: |
-          ARTIFACT="$(find .artifacts/release -name "*darwin-${{ matrix.artifact_suffix }}.tar.gz" -print -quit)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
 
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.artifact_suffix }}
+          name: release-arm64
+          path: .artifacts/release/*
+
+  build-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Release packaging stays on one stable builder version.
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt .[build]
+          npm ci
+
+      - name: Check version sync
+        run: python scripts/sync_version.py --check
+
+      - name: Build release artifact
+        run: python scripts/build_release.py
+
+      - name: Validate packaged binary
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
+
+      - name: Validate npm wrapper with local artifact
+        run: |
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-x64
           path: .artifacts/release/*
 
   publish-release:
-    needs: build-macos
+    needs:
+      - build-macos-arm64
+      - build-macos-x64
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
