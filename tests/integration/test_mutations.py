@@ -6,7 +6,8 @@ import unittest
 from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
-from tests.support import AppTestHarness, seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
+from tests.support.app_harness import AppTestHarness
+from tests.support.fake_home import seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
 
 
 def seed_custom_fixture(spec):
@@ -151,6 +152,18 @@ class MutationTests(unittest.TestCase):
             self.assertIn("turn on at least one harness", result["error"])
             self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
 
+    def test_unmanage_refuses_to_touch_disabled_harness_bindings(self) -> None:
+        with AppTestHarness(fixture_factory=seed_unmanage_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+            harness.put_json("/api/settings/harnesses/codex/support", {"enabled": False})
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/unmanage", expected_status=409)
+
+            self.assertIn("disabled harnesses still have bindings", result["error"])
+            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
+
     def test_unmanage_rejects_unmanaged_and_builtin_skills(self) -> None:
         with AppTestHarness(mixed=True) as harness:
             skills = harness.get_json("/api/skills")
@@ -201,6 +214,18 @@ class MutationTests(unittest.TestCase):
 
             self.assertIn("only managed or custom", unmanaged_result["error"])
             self.assertIn("only managed or custom", builtin_result["error"])
+
+    def test_delete_refuses_to_touch_disabled_harness_bindings(self) -> None:
+        with AppTestHarness(fixture_factory=seed_delete_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+            shared_entry = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+            harness.put_json("/api/settings/harnesses/openclaw/support", {"enabled": False})
+
+            result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/delete", expected_status=409)
+
+            self.assertIn("disabled harnesses still have bindings", result["error"])
+            self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
+            self.assertTrue((harness.spec.openclaw_managed_root / "shared-audit").exists())
 
     def test_delete_aborts_before_mutation_when_any_target_is_real_directory(self) -> None:
         with AppTestHarness(fixture_factory=seed_delete_preflight_failure_fixture) as harness:

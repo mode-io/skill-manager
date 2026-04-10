@@ -8,15 +8,15 @@ from skill_manager.application import build_backend_container
 from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
-from tests.support import (
+from tests.support.fake_home import (
     create_fake_home_spec,
-    create_fixture_marketplace_service,
     seed_divergent_source_fixture,
     seed_managed_linked_fixture,
     seed_mixed_fixture,
     seed_skill_package,
     seed_store_manifest,
 )
+from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 class BackendContainerTests(unittest.TestCase):

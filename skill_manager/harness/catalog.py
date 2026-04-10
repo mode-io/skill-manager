@@ -1,38 +1,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
-from .adapters.config_backed import ConfigHarnessAdapter
-from .adapters.filesystem_backed import FilesystemHarnessAdapter
-from .adapters.openclaw import OpenClawCliClient, OpenClawConfigResolver, OpenClawHarnessAdapter
-from .contracts import AdapterConfig, HarnessAdapter
-from .path_resolver import ResolvedHarnessPaths
+from .contracts import HarnessDefinitionLike, HarnessDriver
+from .drivers import CatalogHarnessDriver, FilesystemHarnessDriver
+from .openclaw import OpenClawCliClient, OpenClawConfigResolver, OpenClawHarnessDriver
+from .resolution import CatalogResolver, DirectoryResolver, ResolutionContext
 
 
-AdapterFactory = Callable[[dict[str, str], ResolvedHarnessPaths, AdapterConfig], HarnessAdapter]
+DriverFactory = Callable[[ResolutionContext, "HarnessDefinition"], HarnessDriver]
 
 
 @dataclass(frozen=True)
-class HarnessDefinition:
+class HarnessDefinition(HarnessDefinitionLike):
     harness: str
     label: str
     logo_key: str | None
-    adapter_factory: AdapterFactory
+    driver_factory: DriverFactory
 
-    def adapter_config(self) -> AdapterConfig:
-        return AdapterConfig(
-            harness=self.harness,
-            label=self.label,
-            logo_key=self.logo_key,
-        )
-
-    def create_adapter(
+    def create_driver(
         self,
-        env: dict[str, str],
-        paths: ResolvedHarnessPaths,
-    ) -> HarnessAdapter:
-        return self.adapter_factory(env, paths, self.adapter_config())
+        context: ResolutionContext,
+    ) -> HarnessDriver:
+        return self.driver_factory(context, self)
 
 
 def supported_harness_definitions() -> tuple[HarnessDefinition, ...]:
@@ -43,37 +35,50 @@ def supported_harness_ids() -> tuple[str, ...]:
     return tuple(definition.harness for definition in SUPPORTED_HARNESS_DEFINITIONS)
 
 
-def _filesystem_adapter(root_attr: str, global_attr: str) -> AdapterFactory:
-    def factory(env: dict[str, str], paths: ResolvedHarnessPaths, config: AdapterConfig) -> HarnessAdapter:
-        del env
-        return FilesystemHarnessAdapter(
-            config=config,
-            managed_skills_root=getattr(paths, root_attr),
-            global_skills_root=getattr(paths, global_attr),
+def _filesystem_driver(*, managed_env: str, managed_default: Callable[[ResolutionContext], Path], global_env: str) -> DriverFactory:
+    def factory(context: ResolutionContext, definition: HarnessDefinition) -> HarnessDriver:
+        return FilesystemHarnessDriver(
+            definition=definition,
+            resolver=DirectoryResolver(
+                context,
+                managed_env=managed_env,
+                managed_default=managed_default(context),
+                global_env=global_env,
+            ),
         )
 
     return factory
 
 
-def _config_adapter(root_attr: str, global_attr: str, builtins_attr: str) -> AdapterFactory:
-    def factory(env: dict[str, str], paths: ResolvedHarnessPaths, config: AdapterConfig) -> HarnessAdapter:
-        del env
-        return ConfigHarnessAdapter(
-            config=config,
-            managed_skills_root=getattr(paths, root_attr),
-            global_skills_root=getattr(paths, global_attr),
-            builtins_path=getattr(paths, builtins_attr),
+def _catalog_driver(
+    *,
+    managed_env: str,
+    managed_default: Callable[[ResolutionContext], Path],
+    global_env: str,
+    builtins_env: str,
+    builtins_default: Callable[[ResolutionContext], Path],
+) -> DriverFactory:
+    def factory(context: ResolutionContext, definition: HarnessDefinition) -> HarnessDriver:
+        return CatalogHarnessDriver(
+            definition=definition,
+            resolver=CatalogResolver(
+                context,
+                managed_env=managed_env,
+                managed_default=managed_default(context),
+                global_env=global_env,
+                builtins_env=builtins_env,
+                builtins_default=builtins_default(context),
+            ),
         )
 
     return factory
 
 
-def _openclaw_adapter(env: dict[str, str], paths: ResolvedHarnessPaths, config: AdapterConfig) -> HarnessAdapter:
-    del paths
-    return OpenClawHarnessAdapter(
-        config=config,
-        resolver=OpenClawConfigResolver(env),
-        cli_client=OpenClawCliClient(env),
+def _openclaw_driver(context: ResolutionContext, definition: HarnessDefinition) -> HarnessDriver:
+    return OpenClawHarnessDriver(
+        definition=definition,
+        resolver=OpenClawConfigResolver(context),
+        cli_client=OpenClawCliClient(context),
     )
 
 
@@ -82,30 +87,48 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
         harness="codex",
         label="Codex",
         logo_key="codex",
-        adapter_factory=_filesystem_adapter("codex_user_root", "codex_global_root"),
+        driver_factory=_filesystem_driver(
+            managed_env="SKILL_MANAGER_CODEX_ROOT",
+            managed_default=lambda context: context.home / ".codex" / "skills",
+            global_env="SKILL_MANAGER_CODEX_GLOBAL_ROOT",
+        ),
     ),
     HarnessDefinition(
         harness="claude",
         label="Claude",
         logo_key="claude",
-        adapter_factory=_filesystem_adapter("claude_user_root", "claude_global_root"),
+        driver_factory=_filesystem_driver(
+            managed_env="SKILL_MANAGER_CLAUDE_ROOT",
+            managed_default=lambda context: context.home / ".claude" / "skills",
+            global_env="SKILL_MANAGER_CLAUDE_GLOBAL_ROOT",
+        ),
     ),
     HarnessDefinition(
         harness="cursor",
         label="Cursor",
         logo_key="cursor",
-        adapter_factory=_filesystem_adapter("cursor_user_root", "cursor_global_root"),
+        driver_factory=_filesystem_driver(
+            managed_env="SKILL_MANAGER_CURSOR_ROOT",
+            managed_default=lambda context: context.home / ".cursor" / "skills",
+            global_env="SKILL_MANAGER_CURSOR_GLOBAL_ROOT",
+        ),
     ),
     HarnessDefinition(
         harness="opencode",
         label="OpenCode",
         logo_key="opencode",
-        adapter_factory=_config_adapter("opencode_user_root", "opencode_global_root", "opencode_builtins"),
+        driver_factory=_catalog_driver(
+            managed_env="SKILL_MANAGER_OPENCODE_ROOT",
+            managed_default=lambda context: context.xdg_config_home / "opencode" / "skills",
+            global_env="SKILL_MANAGER_OPENCODE_GLOBAL_ROOT",
+            builtins_env="SKILL_MANAGER_OPENCODE_BUILTINS",
+            builtins_default=lambda context: context.xdg_config_home / "opencode" / "builtins.json",
+        ),
     ),
     HarnessDefinition(
         harness="openclaw",
         label="OpenClaw",
         logo_key="openclaw",
-        adapter_factory=_openclaw_adapter,
+        driver_factory=_openclaw_driver,
     ),
 )

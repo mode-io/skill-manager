@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 from skill_manager.application import build_backend_container
 from skill_manager.application.marketplace import MarketplaceCatalog
-from skill_manager.runtime import serve_in_thread
+from skill_manager.runtime.server import serve_in_thread
 
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
 

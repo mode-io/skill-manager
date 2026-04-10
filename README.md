@@ -209,11 +209,12 @@ These overrides are useful when your harness skill directories or OpenClaw confi
 Useful local commands:
 
 ```bash
+scripts/install-dev.sh
 npm run typecheck
+bash scripts/test_backend.sh
 npm test
 npm run build
 ./.venv/bin/python -m skill_manager serve --host 127.0.0.1 --port 8000 --no-open-browser
-python3 -m unittest discover tests
 scripts/ci_validate.sh
 ```
 

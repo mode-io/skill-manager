@@ -7,7 +7,7 @@ from unittest import mock
 
 from skill_manager.store import SharedStore, default_shared_store_root, load_manifest
 
-from tests.support import create_fake_home_spec, seed_skill_package
+from tests.support.fake_home import create_fake_home_spec, seed_skill_package
 
 
 class SharedStoreIngestTests(unittest.TestCase):

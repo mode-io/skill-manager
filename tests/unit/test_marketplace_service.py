@@ -9,7 +9,7 @@ from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import RepoDisplayMetadata, SkillsShSkill
 from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
-from tests.support import create_fixture_marketplace_service
+from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 class MarketplaceServiceTests(unittest.TestCase):

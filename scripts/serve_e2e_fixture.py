@@ -13,7 +13,8 @@ if str(REPO_ROOT) not in sys.path:
 from skill_manager.application import build_backend_container
 from skill_manager.runtime.server import serve_foreground
 
-from tests.support import create_fake_home_spec, create_fixture_marketplace_service, seed_mixed_fixture
+from tests.support.fake_home import create_fake_home_spec, seed_mixed_fixture
+from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 def main() -> int:

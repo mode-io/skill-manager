@@ -4,9 +4,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.harness import create_default_adapters
+from skill_manager.harness import create_default_drivers
 
-from tests.support import create_fake_home_spec, seed_openclaw_cli_payload, seed_skill_package
+from tests.support.fake_home import create_fake_home_spec, seed_openclaw_cli_payload, seed_skill_package
 
 
 class AdapterTests(unittest.TestCase):
@@ -26,9 +26,9 @@ class AdapterTests(unittest.TestCase):
                 ],
             )
 
-            adapters = create_default_adapters(spec.env())
-            scans = {scan.harness: scan for scan in (adapter.scan() for adapter in adapters)}
-            statuses = {adapter.config.harness: adapter.status() for adapter in adapters}
+            drivers = create_default_drivers(spec.env())
+            scans = {scan.harness: scan for scan in (driver.scan() for driver in drivers)}
+            statuses = {driver.harness: driver.status() for driver in drivers}
 
             self.assertTrue(scans["codex"].detected)
             self.assertEqual(scans["codex"].skills[0].package.declared_name, "Trace Lens")

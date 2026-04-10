@@ -9,7 +9,9 @@ import time
 
 from skill_manager.domain import HarnessScan, SkillObservation, SkillParseError, SourceDescriptor, find_skill_roots, parse_skill_package
 
-from ..contracts import AdapterConfig, HarnessLocation, HarnessStatus
+from .contracts import HarnessDefinitionLike, HarnessDriver, HarnessLocation, HarnessManager, HarnessStatus
+from .managers import SymlinkHarnessManager
+from .resolution import ResolutionContext
 
 
 @dataclass(frozen=True)
@@ -44,11 +46,10 @@ class _CachedState:
 
 
 class OpenClawConfigResolver:
-    def __init__(self, env: dict[str, str] | None = None) -> None:
-        active_env = env or {}
-        self.home = Path(active_env.get("HOME", str(Path.home())))
+    def __init__(self, context: ResolutionContext) -> None:
+        self.home = context.home
         self.config_path = Path(
-            active_env.get("SKILL_MANAGER_OPENCLAW_CONFIG", self.home / ".openclaw" / "openclaw.json")
+            context.env.get("SKILL_MANAGER_OPENCLAW_CONFIG", self.home / ".openclaw" / "openclaw.json")
         )
 
     def resolve(self) -> OpenClawConfigState:
@@ -85,9 +86,8 @@ class OpenClawConfigResolver:
 
 
 class OpenClawCliClient:
-    def __init__(self, env: dict[str, str] | None = None, *, timeout_seconds: float = 6.0) -> None:
-        active_env = env or {}
-        self.executable = active_env.get("SKILL_MANAGER_OPENCLAW_CLI", "openclaw").strip()
+    def __init__(self, context: ResolutionContext, *, timeout_seconds: float = 6.0) -> None:
+        self.executable = context.env.get("SKILL_MANAGER_OPENCLAW_CLI", "openclaw").strip()
         self.timeout_seconds = timeout_seconds
 
     def list_skills(self) -> OpenClawCliSnapshot | None:
@@ -121,32 +121,33 @@ class OpenClawCliClient:
         )
 
 
-class OpenClawHarnessAdapter:
+class OpenClawHarnessDriver(HarnessDriver):
     def __init__(
         self,
         *,
-        config: AdapterConfig,
+        definition: HarnessDefinitionLike,
         resolver: OpenClawConfigResolver,
         cli_client: OpenClawCliClient | None = None,
         cache_ttl_seconds: float = 15.0,
     ) -> None:
-        self.config = config
+        self.harness = definition.harness
+        self.label = definition.label
+        self.logo_key = definition.logo_key
         self._resolver = resolver
         self._cli_client = cli_client
         self._cache_ttl_seconds = cache_ttl_seconds
         self._cached_state: _CachedState | None = None
         self._lock = Lock()
 
-    @property
-    def managed_skills_root(self) -> Path:
-        return self._resolve_state().managed_skills_root
+    def manager(self) -> HarnessManager | None:
+        return SymlinkHarnessManager(self._resolve_state().managed_skills_root)
 
     def status(self) -> HarnessStatus:
         resolved = self._resolve_state()
         return HarnessStatus(
-            harness=self.config.harness,
-            label=self.config.label,
-            logo_key=self.config.logo_key,
+            harness=self.harness,
+            label=self.label,
+            logo_key=self.logo_key,
             detected=resolved.detected,
             locations=tuple(_locations_from_resolved_state(resolved)),
         )
@@ -164,26 +165,26 @@ class OpenClawHarnessAdapter:
                         skill_root,
                         default_source=SourceDescriptor(
                             kind="harness-local",
-                            locator=f"{self.config.harness}:{scope}:{skill_root.name}",
+                            locator=f"{self.harness}:{scope}:{skill_root.name}",
                         ),
                     )
                 except SkillParseError:
                     continue
                 observations.append(
                     SkillObservation(
-                        harness=self.config.harness,
-                        label=self.config.label,
+                        harness=self.harness,
+                        label=self.label,
                         scope=scope,
                         package=package,
                     )
                 )
 
         return HarnessScan(
-            harness=self.config.harness,
-            label=self.config.label,
-            logo_key=self.config.logo_key,
+            harness=self.harness,
+            label=self.label,
+            logo_key=self.logo_key,
             detected=resolved.detected or bool(observations),
-            manageable=True,
+            manageable=self.manager() is not None,
             skills=tuple(observations),
         )
 

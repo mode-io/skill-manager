@@ -1,19 +1,17 @@
 from .catalog import HarnessDefinition, supported_harness_definitions, supported_harness_ids
-from .contracts import AdapterConfig, HarnessAdapter, HarnessLocation, HarnessStatus
-from .link_operator import LinkOperator, LinkResult, MutationError
-from .registry import collect_harness_statuses, create_default_adapters, scan_all_harnesses
+from .contracts import HarnessDriver, HarnessLocation, HarnessManager, HarnessStatus
+from .managers import SymlinkHarnessManager
+from .registry import collect_harness_statuses, create_default_drivers, scan_all_harnesses
 
 __all__ = [
-    "AdapterConfig",
-    "HarnessAdapter",
+    "HarnessDriver",
     "HarnessDefinition",
     "HarnessLocation",
+    "HarnessManager",
     "HarnessStatus",
-    "LinkOperator",
-    "LinkResult",
-    "MutationError",
+    "SymlinkHarnessManager",
     "collect_harness_statuses",
-    "create_default_adapters",
+    "create_default_drivers",
     "scan_all_harnesses",
     "supported_harness_definitions",
     "supported_harness_ids",

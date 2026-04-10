@@ -5,32 +5,31 @@ from concurrent.futures import ThreadPoolExecutor
 from skill_manager.domain import HarnessScan
 
 from .catalog import supported_harness_definitions
-from .contracts import HarnessAdapter, HarnessStatus
-from .path_resolver import resolve_harness_paths
+from .contracts import HarnessDriver, HarnessStatus
+from .resolution import resolve_context
 
 
-def create_default_adapters(
+def create_default_drivers(
     env: dict[str, str] | None = None,
-) -> tuple[HarnessAdapter, ...]:
-    active_env = env or {}
-    paths = resolve_harness_paths(active_env)
+) -> tuple[HarnessDriver, ...]:
+    context = resolve_context(env)
     return tuple(
-        definition.create_adapter(active_env, paths)
+        definition.create_driver(context)
         for definition in supported_harness_definitions()
     )
 
 
-def scan_all_harnesses(adapters: tuple[HarnessAdapter, ...]) -> tuple[HarnessScan, ...]:
-    if not adapters:
+def scan_all_harnesses(drivers: tuple[HarnessDriver, ...]) -> tuple[HarnessScan, ...]:
+    if not drivers:
         return ()
-    with ThreadPoolExecutor(max_workers=len(adapters)) as executor:
-        scans = executor.map(lambda adapter: adapter.scan(), adapters)
+    with ThreadPoolExecutor(max_workers=len(drivers)) as executor:
+        scans = executor.map(lambda driver: driver.scan(), drivers)
         return tuple(scans)
 
 
-def collect_harness_statuses(adapters: tuple[HarnessAdapter, ...]) -> tuple[HarnessStatus, ...]:
-    if not adapters:
+def collect_harness_statuses(drivers: tuple[HarnessDriver, ...]) -> tuple[HarnessStatus, ...]:
+    if not drivers:
         return ()
-    with ThreadPoolExecutor(max_workers=len(adapters)) as executor:
-        statuses = executor.map(lambda adapter: adapter.status(), adapters)
+    with ThreadPoolExecutor(max_workers=len(drivers)) as executor:
+        statuses = executor.map(lambda driver: driver.status(), drivers)
         return tuple(statuses)

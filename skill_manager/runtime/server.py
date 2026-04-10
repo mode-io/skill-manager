@@ -5,14 +5,15 @@ from pathlib import Path
 import socket
 from threading import Thread
 import time
-
-import uvicorn
+from typing import TYPE_CHECKING
 
 from skill_manager.application import BackendContainer
-from skill_manager.api.app import create_app
 
 from .assets import resolve_frontend_dist
 from .browser import maybe_open_browser
+
+if TYPE_CHECKING:
+    import uvicorn
 
 
 @dataclass
@@ -48,6 +49,18 @@ def bind_socket(host: str, port: int) -> tuple[socket.socket, str, int]:
     return sock, str(actual_host), int(actual_port)
 
 
+def _uvicorn():
+    import uvicorn
+
+    return uvicorn
+
+
+def _create_app():
+    from skill_manager.api.app import create_app
+
+    return create_app
+
+
 def serve_foreground(
     container: BackendContainer,
     *,
@@ -57,12 +70,14 @@ def serve_foreground(
     open_browser: bool = True,
 ) -> int:
     resolved_frontend = resolve_frontend_dist(frontend_dist)
+    create_app = _create_app()
     app = create_app(container, frontend_dist=resolved_frontend)
     sock, actual_host, actual_port = bind_socket(host, port)
     url = f"http://{actual_host}:{actual_port}"
     print(url, flush=True)
     maybe_open_browser(url, enabled=open_browser)
     try:
+        uvicorn = _uvicorn()
         config = uvicorn.Config(app, fd=sock.fileno(), log_level="info", access_log=False)
         server = uvicorn.Server(config)
         server.run()
@@ -79,8 +94,10 @@ def serve_in_thread(
     frontend_dist: str | Path | None = None,
 ) -> ServerHandle:
     resolved_frontend = resolve_frontend_dist(frontend_dist)
+    create_app = _create_app()
     app = create_app(container, frontend_dist=resolved_frontend)
     sock, actual_host, actual_port = bind_socket(host, port)
+    uvicorn = _uvicorn()
     config = uvicorn.Config(
         app,
         fd=sock.fileno(),

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from skill_manager.errors import MutationError
 from skill_manager.harness import supported_harness_ids
-from skill_manager.harness.link_operator import MutationError
 from skill_manager.store import HarnessSupportStore
 
 from ..read_model_service import ReadModelService

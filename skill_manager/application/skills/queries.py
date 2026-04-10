@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import Literal
 
 from skill_manager.domain import fingerprint_package
-from skill_manager.harness.link_operator import MutationError
+from skill_manager.errors import MutationError
 from skill_manager.sources import github_repo_from_locator, github_repo_url, github_skill_dir_from_locator
 
 from ..document_utils import read_skill_document_markdown
