@@ -131,6 +131,8 @@ skill-manager --version
 - Node.js 18+
 - npm
 
+`skill-manager` supports Python 3.11+. CI currently validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism.
+
 ### Install dependencies
 
 ```bash
