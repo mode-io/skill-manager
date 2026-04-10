@@ -4,7 +4,6 @@
   <img src="assets/Skill-Manager-Hero-shadow.svg" alt="skill-manager hero" width="960" />
 </p>
 
-Manage AI skills across Codex, Claude, Cursor, OpenCode, and OpenClaw from one local app.
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" /></a>
@@ -13,6 +12,8 @@ Manage AI skills across Codex, Claude, Cursor, OpenCode, and OpenClaw from one l
   <a href="#install"><img alt="macOS-first packaging" src="https://img.shields.io/badge/platform-macOS--first-111827?style=flat-square&logo=apple&logoColor=white" /></a>
   <a href="#safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
+
+Manage AI skills across Codex, Claude, Cursor, OpenCode, and OpenClaw from one local app.
 
 If you use more than one agent harness, skills end up scattered across different folders, install flows, and local states. `skill-manager` gives you one place to see what is installed, bring unmanaged skills under control, enable or disable skills per harness, and install new ones safely without turning your local setup into guesswork.
 
