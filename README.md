@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" /></a>
   <a href="#from-source"><img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
   <a href="#install"><img alt="Install with npm" src="https://img.shields.io/badge/install-npm-CB3837?style=flat-square&logo=npm&logoColor=white" /></a>
-  <a href="#install"><img alt="macOS-first packaging" src="https://img.shields.io/badge/platform-macOS--first-111827?style=flat-square&logo=apple&logoColor=white" /></a>
+  <a href="#install"><img alt="macOS" src="https://img.shields.io/badge/platform-macOS-111827?style=flat-square&logo=apple&logoColor=white" /></a>
   <a href="#safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
 
@@ -56,6 +56,8 @@ Typical flow:
 
 `skill-manager` is released under the MIT License. See [LICENSE](LICENSE).
 
+The supported public install path is npm on macOS. Only the latest released version is supported.
+
 ### npm
 
 ```bash
@@ -63,9 +65,7 @@ npm install -g skill-manager
 skill-manager
 ```
 
-### Homebrew
-
-Homebrew support uses the same release artifacts. The public tap command is not documented yet, but Homebrew remains part of the intended public install surface.
+The npm package installs the matching native `skill-manager` release artifact for your macOS architecture during `postinstall`.
 
 On macOS, the first launch of an unsigned release artifact can be noticeably slower while the system performs first-run verification. Later launches are much faster.
 
@@ -261,9 +261,9 @@ Test coverage currently includes:
 - This is a local-first app, not a hosted service.
 - Source-backed operations are currently centered on GitHub-backed skills.
 - Marketplace content is sourced from `skills.sh`.
-- Public packaging is macOS-first for the first release pass.
+- Public npm distribution is currently macOS-only.
 - The first packaged public release is expected to be unsigned or not notarized.
 
 ## Project status
 
-This repository is in active development as the public `skill-manager` project, with npm and Homebrew packaging support backed by native release artifacts.
+This repository is in active development as the public `skill-manager` project, with npm distribution backed by native release artifacts.
