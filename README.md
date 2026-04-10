@@ -10,10 +10,6 @@ It combines a FastAPI backend with a React/Vite frontend to give you a unified w
 - previewing source-backed skills from `skills.sh`
 - updating, unmanaging, or deleting managed skills safely
 
-## Preview
-
-Screenshots / demo GIF coming soon.
-
 ## What skill-manager does
 
 - Scans local skill directories across supported harnesses and groups matching skill packages into one inventory.
@@ -259,12 +255,9 @@ The main frontend routes are:
 - This is a local-first app, not a hosted service.
 - Source-backed operations are currently centered on GitHub-backed skills.
 - Marketplace content is sourced from `skills.sh`.
-- The repo does not yet include public screenshots or demo assets.
 - Public packaging is macOS-first for the first release pass.
 - The first packaged public release is expected to be unsigned / not notarized.
 
 ## Project status
 
-This repository is in active development and is being prepared for public open-source release, including npm/Homebrew installation support backed by native release artifacts.
-
-License: to be added before public release.
+This repository is in active development as the public `skill-manager` project, with npm/Homebrew installation support backed by native release artifacts.
