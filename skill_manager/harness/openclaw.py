@@ -200,8 +200,10 @@ class OpenClawHarnessDriver(HarnessDriver):
 
         config_state = self._resolver.resolve()
         cli_snapshot = self._cli_client.list_skills() if self._cli_client is not None else None
-        workspace_dir = cli_snapshot.workspace_dir or config_state.workspace_dir
-        managed_skills_root = cli_snapshot.managed_skills_root or config_state.managed_skills_root
+        cli_workspace_dir = cli_snapshot.workspace_dir if cli_snapshot is not None else None
+        cli_managed_skills_root = cli_snapshot.managed_skills_root if cli_snapshot is not None else None
+        workspace_dir = cli_workspace_dir or config_state.workspace_dir
+        managed_skills_root = cli_managed_skills_root or config_state.managed_skills_root
         scan_roots = _dedupe_roots(
             (
                 ("managed", managed_skills_root),

@@ -21,11 +21,12 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         *,
         frontend_dist: Path | None = None,
         mixed: bool = False,
+        seed_openclaw: bool = True,
         fixture_factory: Callable[[FakeHomeSpec], None] | None = None,
         marketplace: MarketplaceCatalog | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
-        self.spec = create_fake_home_spec(Path(self._tempdir.name))
+        self.spec = create_fake_home_spec(Path(self._tempdir.name), seed_openclaw_state=seed_openclaw)
         if mixed and fixture_factory is not None:
             raise ValueError("pass either mixed=True or fixture_factory, not both")
         seeder = fixture_factory or (seed_mixed_fixture if mixed else None)

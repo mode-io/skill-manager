@@ -28,6 +28,20 @@ class HttpApiTests(unittest.TestCase):
             self.assertNotIn("centralStore", settings)
             self.assertNotIn("topology", settings)
 
+    def test_health_skills_and_settings_work_without_openclaw_state(self) -> None:
+        with AppTestHarness(seed_openclaw=False) as harness:
+            health = harness.get_json("/api/health")
+            skills = harness.get_json("/api/skills")
+            settings = harness.get_json("/api/settings")
+
+            self.assertTrue(health["ok"])
+            self.assertEqual(skills["summary"]["managed"], 0)
+            self.assertEqual(skills["rows"], [])
+            openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
+            self.assertFalse(openclaw["detected"])
+            self.assertTrue(openclaw["supportEnabled"])
+            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw" / "skills"))
+
     def test_settings_support_toggle_hides_disabled_harness_from_skills_inventory(self) -> None:
         with AppTestHarness(mixed=True) as harness:
             settings = harness.get_json("/api/settings")

@@ -40,6 +40,22 @@ class AdapterTests(unittest.TestCase):
             self.assertEqual(statuses["openclaw"].locations[0].label, "Config")
             self.assertEqual(statuses["openclaw"].locations[2].label, "Managed skills root")
 
+    def test_openclaw_driver_handles_missing_cli_and_config(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir), seed_openclaw_state=False)
+
+            drivers = create_default_drivers(spec.env())
+            scans = {scan.harness: scan for scan in (driver.scan() for driver in drivers)}
+            statuses = {driver.harness: driver.status() for driver in drivers}
+
+            self.assertFalse(scans["openclaw"].detected)
+            self.assertEqual(scans["openclaw"].skills, ())
+            self.assertFalse(statuses["openclaw"].detected)
+            self.assertEqual(
+                statuses["openclaw"].locations[2].path,
+                spec.home / ".openclaw" / "skills",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

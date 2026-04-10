@@ -61,7 +61,7 @@ class FakeHomeSpec:
         }
 
 
-def create_fake_home_spec(root: Path) -> FakeHomeSpec:
+def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> FakeHomeSpec:
     spec = FakeHomeSpec(
         root=root,
         home=root / "home",
@@ -73,15 +73,19 @@ def create_fake_home_spec(root: Path) -> FakeHomeSpec:
         spec.home / ".claude" / "skills",
         spec.home / ".cursor" / "skills",
         spec.xdg_config_home / "opencode" / "skills",
-        spec.openclaw_workspace,
-        spec.openclaw_managed_root,
-        spec.bin_dir,
         spec.shared_store_root,
     ):
         path.mkdir(parents=True, exist_ok=True)
-    seed_openclaw_config(spec)
-    seed_openclaw_cli_payload(spec)
-    write_openclaw_cli_stub(spec)
+    if seed_openclaw_state:
+        for path in (
+            spec.openclaw_workspace,
+            spec.openclaw_managed_root,
+            spec.bin_dir,
+        ):
+            path.mkdir(parents=True, exist_ok=True)
+        seed_openclaw_config(spec)
+        seed_openclaw_cli_payload(spec)
+        write_openclaw_cli_stub(spec)
     return spec
 
 
