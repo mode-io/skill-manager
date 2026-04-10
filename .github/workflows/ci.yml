@@ -4,8 +4,23 @@ on:
   push:
     branches:
       - main
-      - "**"
+    paths-ignore:
+      - README.md
+      - CONTRIBUTING.md
+      - SECURITY.md
+      - LICENSE
+      - assets/**
   pull_request:
+    paths-ignore:
+      - README.md
+      - CONTRIBUTING.md
+      - SECURITY.md
+      - LICENSE
+      - assets/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend-compat:

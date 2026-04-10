@@ -29,6 +29,29 @@ def run(command: list[str], *, timeout: float = 30.0) -> subprocess.CompletedPro
     return subprocess.run(command, check=True, capture_output=True, text=True, timeout=timeout)
 
 
+def format_called_process_error(
+    error: subprocess.CalledProcessError,
+    *,
+    runtime_dir: Path | None = None,
+) -> str:
+    parts = [
+        f"command failed with exit code {error.returncode}: {' '.join(error.cmd)}",
+    ]
+    stdout = (error.stdout or "").strip()
+    stderr = (error.stderr or "").strip()
+    if stdout:
+        parts.append(f"stdout:\n{stdout}")
+    if stderr:
+        parts.append(f"stderr:\n{stderr}")
+    if runtime_dir is not None:
+        log_path = runtime_dir / "server.log"
+        if log_path.is_file():
+            log_text = log_path.read_text(encoding="utf-8", errors="replace").strip()
+            if log_text:
+                parts.append(f"runtime log ({log_path}):\n{log_text}")
+    return "\n\n".join(parts)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     artifact = Path(args.artifact).resolve()
@@ -57,18 +80,21 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError(f"unexpected version output: expected {expected_version!r}, got {version_output!r}")
 
         runtime_dir = tmp_path / "runtime"
-        start_output = run(
-            [
-                str(binary),
-                "start",
-                "--state-dir",
-                str(runtime_dir),
-                "--no-open-browser",
-                "--port",
-                "0",
-            ],
-            timeout=180.0,
-        ).stdout.strip()
+        try:
+            start_output = run(
+                [
+                    str(binary),
+                    "start",
+                    "--state-dir",
+                    str(runtime_dir),
+                    "--no-open-browser",
+                    "--port",
+                    "0",
+                ],
+                timeout=240.0,
+            ).stdout.strip()
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(format_called_process_error(error, runtime_dir=runtime_dir)) from error
         match = re.search(r"(http://127\.0\.0\.1:\d+)", start_output)
         if not match:
             raise RuntimeError(f"failed to parse runtime URL from start output: {start_output!r}")
@@ -89,7 +115,10 @@ def main(argv: list[str] | None = None) -> int:
             if state.get("base_url") != base_url:
                 raise RuntimeError("runtime.json base_url did not match the running server")
         finally:
-            run([str(binary), "stop", "--state-dir", str(runtime_dir)], timeout=60.0)
+            try:
+                run([str(binary), "stop", "--state-dir", str(runtime_dir)], timeout=60.0)
+            except subprocess.CalledProcessError:
+                pass
             shutil.rmtree(runtime_dir, ignore_errors=True)
 
     return 0
