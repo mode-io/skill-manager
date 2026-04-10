@@ -73,12 +73,14 @@ class MarketplaceCatalog:
         leaderboard_fetcher: LeaderboardFetcher | None = None,
         search_fetcher: SearchFetcher | None = None,
         detail_fetcher: DetailFetcher | None = None,
+        warm_on_init: bool = True,
     ) -> "MarketplaceCatalog":
         return cls(
             leaderboard_fetcher=leaderboard_fetcher,
             search_fetcher=search_fetcher,
             detail_fetcher=detail_fetcher,
             cache=MarketplaceCache.from_environment(env),
+            warm_on_init=warm_on_init,
         )
 
     @property

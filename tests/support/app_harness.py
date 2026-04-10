@@ -32,7 +32,10 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         if seeder is not None:
             seeder(self.spec)
         if marketplace is None:
-            self.container = build_backend_container(self.spec.env())
+            self.container = build_backend_container(
+                self.spec.env(),
+                marketplace_catalog=MarketplaceCatalog.from_environment(self.spec.env(), warm_on_init=False),
+            )
         else:
             self.container = build_backend_container(
                 self.spec.env(),
