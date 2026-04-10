@@ -3,7 +3,7 @@ import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { SettingsHarnessCard } from "../components/SettingsHarnessCard";
 import { useSettingsPageController } from "../model/use-settings-page-controller";
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const controller = useSettingsPageController();
 
   return (

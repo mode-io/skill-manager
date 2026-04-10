@@ -1,6 +1,4 @@
-import { useId } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { lazy, Suspense, useId } from "react";
 
 import { DetailDisclosure } from "../../../../components/detail/DetailDisclosure";
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
@@ -13,6 +11,8 @@ import type { HarnessCell, SkillDetail } from "../../model/types";
 import { skillStatusTone } from "../../model/status-mappings";
 import { SkillDetailActionBar } from "./SkillDetailActionBar";
 import { SkillDetailHarnessMatrix } from "./SkillDetailHarnessMatrix";
+
+const MarkdownDocument = lazy(() => import("../../../../components/MarkdownDocument"));
 
 interface SkillDetailContentProps {
   detail: SkillDetail;
@@ -121,11 +121,9 @@ export function SkillDetailContent({
         >
           <div className="skill-detail__document-surface">
             {detail.documentMarkdown ? (
-              <div className="skill-detail__markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {detail.documentMarkdown}
-                </ReactMarkdown>
-              </div>
+              <Suspense fallback={<LoadingSpinner size="sm" label="Loading document" />}>
+                <MarkdownDocument markdown={detail.documentMarkdown} />
+              </Suspense>
             ) : (
               <p className="skill-detail__copy">No SKILL.md document is available for this entry.</p>
             )}

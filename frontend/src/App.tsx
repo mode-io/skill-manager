@@ -1,17 +1,19 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "./components/AppShell";
-import { MarketplacePage } from "./features/marketplace/screens/MarketplacePage";
+import RouteLoadingPanel from "./components/RouteLoadingPanel";
 import { invalidateMarketplaceQueries } from "./features/marketplace/api/queries";
 import { invalidateSettingsQueries } from "./features/settings/queries";
-import { SettingsPage } from "./features/settings/screens/SettingsPage";
 import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
 import { invalidateSkillsQueries } from "./features/skills/api/queries";
-import { ManagedSkillsPage } from "./features/skills/screens/ManagedSkillsPage";
-import { SkillsWorkspacePage } from "./features/skills/screens/SkillsWorkspacePage";
-import { UnmanagedSkillsPage } from "./features/skills/screens/UnmanagedSkillsPage";
+import ManagedSkillsPage from "./features/skills/screens/ManagedSkillsPage";
+import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
+import UnmanagedSkillsPage from "./features/skills/screens/UnmanagedSkillsPage";
+
+const MarketplacePage = lazy(() => import("./features/marketplace/screens/MarketplacePage"));
+const SettingsPage = lazy(() => import("./features/settings/screens/SettingsPage"));
 
 export function App() {
   const [queryClient] = useState(
@@ -59,8 +61,22 @@ function AppContent() {
             <Route path="managed" element={<ManagedSkillsPage />} />
             <Route path="unmanaged" element={<UnmanagedSkillsPage />} />
           </Route>
-          <Route path="marketplace" element={<MarketplacePage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route
+            path="marketplace"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
+                <MarketplacePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading settings" />}>
+                <SettingsPage />
+              </Suspense>
+            }
+          />
         </Routes>
       </AppShell>
     </SkillsWorkspaceSessionProvider>

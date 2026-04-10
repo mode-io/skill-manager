@@ -8,7 +8,7 @@ import { SkillsWorkspaceTabs } from "../components/pane/SkillsWorkspaceTabs";
 import { pendingToggleHarnessesForSkill } from "../model/pending";
 import { useSkillsWorkspaceController } from "../model/use-skills-workspace-controller";
 
-export function SkillsWorkspacePage() {
+export default function SkillsWorkspacePage() {
   const {
     context,
     activeTab,

@@ -9,7 +9,7 @@ import { useMarketplaceController } from "../model/use-marketplace-controller";
 
 const ENRICHMENT_REFRESH_DELAY_MS = 1500;
 
-export function MarketplacePage() {
+export default function MarketplacePage() {
   const {
     query,
     errorMessage,

@@ -10,7 +10,7 @@ import { useSkillsWorkspace } from "../model/workspace-context";
 import { countManageableUnmanagedRows, countUnmanagedRows, filterUnmanagedRows, hasActiveUnmanagedFilters } from "../model/selectors";
 import { useSkillsTabScroll, useUnmanagedSkillsSession } from "../model/session";
 
-export function UnmanagedSkillsPage() {
+export default function UnmanagedSkillsPage() {
   const {
     data,
     status,

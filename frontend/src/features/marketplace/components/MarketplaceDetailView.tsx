@@ -1,6 +1,4 @@
-import { useId, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { lazy, Suspense, useId, useMemo } from "react";
 
 import { DetailDisclosure } from "../../../components/detail/DetailDisclosure";
 import { DetailHeader } from "../../../components/detail/DetailHeader";
@@ -12,6 +10,8 @@ import { useMarketplaceDetailQuery, useMarketplaceDocumentQuery } from "../api/q
 import type { MarketplaceDetailDto, MarketplaceItemDto } from "../api/types";
 import { formatMarketplaceInstalls, formatMarketplaceStars } from "../model/formatters";
 import { MarketplaceDetailPendingDocument, MarketplaceDetailSkeleton } from "./MarketplaceDetailSkeleton";
+
+const MarkdownDocument = lazy(() => import("../../../components/MarkdownDocument"));
 
 interface MarketplaceDetailViewProps {
   itemId: string;
@@ -145,11 +145,9 @@ export function MarketplaceDetailView({
             className="skill-detail__disclosure skill-detail__disclosure--document"
           >
             <div className="skill-detail__document-surface">
-              <div className="skill-detail__markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {documentMarkdown}
-                </ReactMarkdown>
-              </div>
+              <Suspense fallback={<LoadingSpinner size="sm" label="Loading document" />}>
+                <MarkdownDocument markdown={documentMarkdown} />
+              </Suspense>
             </div>
           </DetailDisclosure>
         ) : null}

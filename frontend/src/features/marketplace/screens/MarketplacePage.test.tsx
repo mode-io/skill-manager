@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MarketplacePage } from "./MarketplacePage";
+import MarketplacePage from "./MarketplacePage";
 
 const fetchMock = vi.fn();
 const observers: MockIntersectionObserver[] = [];

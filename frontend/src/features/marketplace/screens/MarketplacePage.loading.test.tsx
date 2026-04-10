@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { useMarketplaceController } from "../model/use-marketplace-controller";
-import { MarketplacePage } from "./MarketplacePage";
+import MarketplacePage from "./MarketplacePage";
 
 vi.mock("../model/use-marketplace-controller", () => ({
   useMarketplaceController: vi.fn(),

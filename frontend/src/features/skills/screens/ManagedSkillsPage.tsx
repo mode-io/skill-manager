@@ -13,7 +13,7 @@ import {
 } from "../model/selectors";
 import { useSkillsWorkspace } from "../model/workspace-context";
 
-export function ManagedSkillsPage() {
+export default function ManagedSkillsPage() {
   const {
     data,
     status,
