@@ -1,0 +1,24 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+
+import { App } from "./App";
+import "./styles/variables.css";
+import "./styles/reset.css";
+import "./styles/scrollbars.css";
+import "./styles/app.css";
+import "./styles/ui.css";
+import "./components/detail/index.css";
+import "./features/marketplace/styles/index.css";
+import "./features/settings/styles/index.css";
+import "./features/skills/styles/index.css";
+import "./styles/dialogs.css";
+import "./styles/drawers.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
+);

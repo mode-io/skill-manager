@@ -1,0 +1,26 @@
+class SkillManager < Formula
+  desc "Local app and browser UI for universal skill management across agent harnesses"
+  homepage "https://github.com/mode-io/skill-manager"
+  license "MIT"
+  version "__VERSION__"
+
+  on_arm do
+    url "__ARM64_URL__"
+    sha256 "__ARM64_SHA256__"
+  end
+
+  on_intel do
+    url "__X64_URL__"
+    sha256 "__X64_SHA256__"
+  end
+
+  def install
+    libexec.install Dir["skill-manager/*"]
+    bin.install_symlink libexec/"skill-manager" => "skill-manager"
+  end
+
+  test do
+    output = shell_output("#{bin}/skill-manager --version")
+    assert_match "__VERSION__", output
+  end
+end

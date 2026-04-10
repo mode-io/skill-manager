@@ -1,0 +1,31 @@
+:root {
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+  --color-bg: #090a0d;
+  --color-bg-overlay: rgba(243, 166, 102, 0.05);
+  --color-grid: rgba(255, 255, 255, 0.035);
+  --color-panel: rgba(15, 17, 22, 0.92);
+  --color-panel-strong: #141820;
+  --color-panel-elevated: #181d27;
+  --color-border: #282e39;
+  --color-border-strong: #3a4351;
+  --color-text: #f2f4f7;
+  --color-text-muted: #9aa4b2;
+  --color-accent: #f0a36b;
+  --color-accent-soft: rgba(240, 163, 107, 0.12);
+  --color-success: #6bc2a4;
+  --color-success-soft: rgba(107, 194, 164, 0.12);
+  --color-danger: #f08d79;
+  --color-danger-soft: rgba(240, 141, 121, 0.14);
+  --color-warning: #f3c969;
+  --color-warning-soft: rgba(243, 201, 105, 0.16);
+  --scrollbar-size: 10px;
+  --scrollbar-size-thin: 8px;
+  --scrollbar-track: rgba(255, 255, 255, 0.02);
+  --scrollbar-thumb: rgba(154, 164, 178, 0.34);
+  --scrollbar-thumb-hover: rgba(178, 188, 200, 0.5);
+  --scrollbar-thumb-active: rgba(208, 216, 226, 0.62);
+  --scrollbar-corner: rgba(9, 10, 13, 0.01);
+  --shadow-panel: 0 12px 28px rgba(0, 0, 0, 0.22);
+  --radius: 4px;
+}

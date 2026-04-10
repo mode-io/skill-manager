@@ -1,0 +1,219 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Release packaging stays on one stable builder version.
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt .[build]
+          npm ci
+
+      - name: Check version sync
+        run: python scripts/sync_version.py --check
+
+      - name: Build release artifact
+        run: python scripts/build_release.py
+
+      - name: Validate packaged binary
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
+
+      - name: Validate npm wrapper with local artifact
+        run: |
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-arm64
+          path: .artifacts/release/*
+
+  build-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Release packaging stays on one stable builder version.
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt .[build]
+          npm ci
+
+      - name: Check version sync
+        run: python scripts/sync_version.py --check
+
+      - name: Build release artifact
+        run: python scripts/build_release.py
+
+      - name: Validate packaged binary
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
+
+      - name: Validate npm wrapper with local artifact
+        run: |
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-x64
+          path: .artifacts/release/*
+
+  publish-release:
+    needs:
+      - build-macos-arm64
+      - build-macos-x64
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: .artifacts/release
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .artifacts/release/*
+
+  publish-npm:
+    needs: publish-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Publishing tooling stays pinned even though runtime compatibility is validated in CI.
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate npm publish secret
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NPM_TOKEN is required for tagged releases." >&2
+            exit 1
+          fi
+
+      - name: Publish npm wrapper
+        working-directory: packaging/npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  render-homebrew-formula:
+    needs: publish-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Formula rendering is deterministic on the same stable builder version.
+          python-version: "3.11"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: .artifacts/release
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Render Homebrew formula
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARM64_ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          X64_ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          ARM64_SHA="$(cut -d' ' -f1 "${ARM64_ARTIFACT}.sha256")"
+          X64_SHA="$(cut -d' ' -f1 "${X64_ARTIFACT}.sha256")"
+          ARM64_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$ARM64_ARTIFACT")"
+          X64_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$X64_ARTIFACT")"
+          python scripts/render_homebrew_formula.py \
+            --version "$VERSION" \
+            --arm64-url "$ARM64_URL" \
+            --arm64-sha256 "$ARM64_SHA" \
+            --x64-url "$X64_URL" \
+            --x64-sha256 "$X64_SHA" \
+            --output .artifacts/release/skill-manager.rb
+
+      - name: Validate rendered Homebrew formula
+        run: ruby -c .artifacts/release/skill-manager.rb
+
+      - name: Upload Homebrew formula artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-formula
+          path: .artifacts/release/skill-manager.rb
+
+      - name: Validate Homebrew tap config
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+        run: |
+          if [ -z "${HOMEBREW_TAP_TOKEN}" ] || [ -z "${HOMEBREW_TAP_REPO}" ]; then
+            echo "HOMEBREW_TAP_TOKEN and HOMEBREW_TAP_REPO are required for tagged releases." >&2
+            exit 1
+          fi
+
+      - name: Update custom Homebrew tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+        run: |
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${HOMEBREW_TAP_REPO}.git" tap-repo
+          cp .artifacts/release/skill-manager.rb tap-repo/Formula/skill-manager.rb
+          cd tap-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/skill-manager.rb
+          git commit -m "Update skill-manager formula for ${GITHUB_REF_NAME}" || exit 0
+          git push

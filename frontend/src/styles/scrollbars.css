@@ -1,0 +1,68 @@
+html {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.ui-scrollbar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.ui-scrollbar--thin,
+.skill-detail__markdown pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar,
+.ui-scrollbar::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.ui-scrollbar--thin::-webkit-scrollbar,
+.skill-detail__markdown pre::-webkit-scrollbar {
+  width: var(--scrollbar-size-thin);
+  height: var(--scrollbar-size-thin);
+}
+
+html::-webkit-scrollbar-track,
+.ui-scrollbar::-webkit-scrollbar-track,
+.ui-scrollbar--thin::-webkit-scrollbar-track,
+.skill-detail__markdown pre::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb,
+.ui-scrollbar::-webkit-scrollbar-thumb,
+.ui-scrollbar--thin::-webkit-scrollbar-thumb,
+.skill-detail__markdown pre::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.ui-scrollbar::-webkit-scrollbar-thumb:hover,
+.ui-scrollbar--thin::-webkit-scrollbar-thumb:hover,
+.skill-detail__markdown pre::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+html::-webkit-scrollbar-thumb:active,
+.ui-scrollbar::-webkit-scrollbar-thumb:active,
+.ui-scrollbar--thin::-webkit-scrollbar-thumb:active,
+.skill-detail__markdown pre::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+html::-webkit-scrollbar-corner,
+.ui-scrollbar::-webkit-scrollbar-corner,
+.ui-scrollbar--thin::-webkit-scrollbar-corner,
+.skill-detail__markdown pre::-webkit-scrollbar-corner {
+  background: var(--scrollbar-corner);
+}

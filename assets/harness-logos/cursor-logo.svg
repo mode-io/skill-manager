@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="640" height="640">
+  <!-- Regular pointy-top hexagon, center (600,600), R=500 -->
+  <!-- V0(600,100) V1(1033,350) V2(1033,850) V3(600,1100) V4(167,850) V5(167,350) -->
+  <!-- C=center(600,600) M=top-midpoint(600,350) Q=intersection(817,725) -->
+  <!-- Top-left face -->
+  <polygon points="600,100 600,350 167,350" fill="#757575"/>
+  <!-- Top-right face -->
+  <polygon points="600,100 1033,350 600,350" fill="#616161"/>
+  <!-- Cursor arrow -->
+  <polygon points="167,350 1033,350 600,1100 600,600" fill="#EDEDED"/>
+  <!-- Left face -->
+  <polygon points="167,350 600,600 167,850" fill="#616161"/>
+  <!-- Bottom-left face -->
+  <polygon points="600,600 167,850 600,1100" fill="#BCBCBC"/>
+  <!-- Right face -->
+  <polygon points="1033,350 1033,850 817,725" fill="#424242"/>
+  <!-- Bottom-right face -->
+  <polygon points="817,725 1033,850 600,1100" fill="#BCBCBC"/>
+</svg>

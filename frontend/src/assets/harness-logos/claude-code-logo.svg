@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="640" height="640" shape-rendering="crispEdges">
+  <!-- Orange body merged into one path to avoid anti-aliased seams between stacked blocks -->
+  <path
+    fill="#D97757"
+    d="M2 4H17V9H2z
+       M0 9H20V12H0z
+       M2 12H17V14H2z
+       M4 14H5V17H4z
+       M6 14H7V17H6z
+       M12 14H14V17H12z
+       M15 14H16V17H15z"
+  />
+  <!-- Left eye (row 7-8, col 5) -->
+  <rect x="5" y="7" width="1" height="2" fill="#1A1A1A"/>
+  <!-- Right eye (row 7-8, col 14) -->
+  <rect x="14" y="7" width="1" height="2" fill="#1A1A1A"/>
+</svg>

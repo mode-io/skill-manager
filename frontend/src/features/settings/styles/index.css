@@ -1,0 +1,93 @@
+.settings-page {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-page__hero {
+  padding-bottom: 18px;
+}
+
+.settings-section__header,
+.settings-harness-card__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-harness-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.settings-harness-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(26, 31, 40, 0.94), rgba(19, 23, 30, 0.9)),
+    rgba(20, 24, 32, 0.84);
+}
+
+.settings-harness-card {
+  padding: 18px;
+}
+
+.settings-harness-card {
+  display: grid;
+  gap: 16px;
+  min-height: 168px;
+}
+
+.settings-harness-card__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-harness-card__body {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-harness-card__locations {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.settings-harness-card__location-row {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-harness-card__location-row dt {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-harness-card__location-row dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-harness-card__path {
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+
+.settings-harness-card__path--muted {
+  color: var(--color-text-muted);
+}
+
+.settings-harness-card__toggle {
+  display: inline-flex;
+}
