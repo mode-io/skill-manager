@@ -76,8 +76,6 @@ brew tap mode-io/tap
 brew install skill-manager
 ```
 
-Homebrew installs the same native `skill-manager` release artifacts that back the npm wrapper.
-
 ## Quick start
 
 1. Install `skill-manager`.
