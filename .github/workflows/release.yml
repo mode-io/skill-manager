@@ -82,7 +82,7 @@ jobs:
   publish-npm:
     needs: publish-release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && secrets.NPM_TOKEN != ''
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
 
@@ -95,6 +95,15 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Validate npm publish secret
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NPM_TOKEN is required for tagged releases." >&2
+            exit 1
+          fi
 
       - name: Publish npm wrapper
         working-directory: packaging/npm
@@ -146,8 +155,17 @@ jobs:
           name: homebrew-formula
           path: .artifacts/release/skill-manager.rb
 
+      - name: Validate Homebrew tap config
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+        run: |
+          if [ -z "${HOMEBREW_TAP_TOKEN}" ] || [ -z "${HOMEBREW_TAP_REPO}" ]; then
+            echo "HOMEBREW_TAP_TOKEN and HOMEBREW_TAP_REPO are required for tagged releases." >&2
+            exit 1
+          fi
+
       - name: Update custom Homebrew tap
-        if: secrets.HOMEBREW_TAP_TOKEN != '' && vars.HOMEBREW_TAP_REPO != ''
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
