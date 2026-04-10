@@ -1,7 +1,7 @@
 {
-  "name": "skill-manager",
+  "name": "@mode-io/skill-manager",
   "version": "0.1.0",
-  "description": "Public macOS installer wrapper for the skill-manager native release artifact.",
+  "description": "Public macOS installer wrapper for the Mode IO skill-manager native release artifact.",
   "license": "MIT",
   "private": false,
   "bin": {
