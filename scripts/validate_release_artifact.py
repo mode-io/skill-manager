@@ -6,13 +6,16 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
-import time
 from pathlib import Path
-from urllib.request import urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from skill_manager.runtime.startup import healthcheck_ready
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -24,18 +27,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def run(command: list[str], *, timeout: float = 30.0) -> subprocess.CompletedProcess[str]:
     return subprocess.run(command, check=True, capture_output=True, text=True, timeout=timeout)
-
-
-def wait_for_health(base_url: str, *, timeout_seconds: float = 15.0) -> None:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(f"{base_url}/api/health", timeout=2.0) as response:
-                if response.status == 200:
-                    return
-        except Exception:  # noqa: BLE001
-            time.sleep(0.1)
-    raise RuntimeError(f"timed out waiting for {base_url}/api/health")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -76,14 +67,15 @@ def main(argv: list[str] | None = None) -> int:
                 "--port",
                 "0",
             ],
-            timeout=120.0,
+            timeout=180.0,
         ).stdout.strip()
         match = re.search(r"(http://127\.0\.0\.1:\d+)", start_output)
         if not match:
             raise RuntimeError(f"failed to parse runtime URL from start output: {start_output!r}")
         base_url = match.group(1)
         try:
-            wait_for_health(base_url)
+            if not healthcheck_ready(base_url):
+                raise RuntimeError(f"packaged start returned before {base_url}/api/health was ready")
 
             status_output = run(
                 [str(binary), "status", "--state-dir", str(runtime_dir)],
