@@ -12,7 +12,6 @@ from skill_manager.application import build_backend_container
 from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.runtime import serve_in_thread
 
-from .command_runner import StubCommandRunner
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
 
 
@@ -22,7 +21,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         *,
         frontend_dist: Path | None = None,
         mixed: bool = False,
-        fixture_factory: Callable[[FakeHomeSpec], StubCommandRunner] | None = None,
+        fixture_factory: Callable[[FakeHomeSpec], None] | None = None,
         marketplace: MarketplaceCatalog | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
@@ -30,13 +29,13 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         if mixed and fixture_factory is not None:
             raise ValueError("pass either mixed=True or fixture_factory, not both")
         seeder = fixture_factory or (seed_mixed_fixture if mixed else None)
-        self.runner = seeder(self.spec) if seeder is not None else StubCommandRunner()
+        if seeder is not None:
+            seeder(self.spec)
         if marketplace is None:
-            self.container = build_backend_container(self.spec.env(), command_runner=self.runner)
+            self.container = build_backend_container(self.spec.env())
         else:
             self.container = build_backend_container(
                 self.spec.env(),
-                command_runner=self.runner,
                 marketplace_catalog=marketplace,
             )
             # Ensure tests exercising a custom catalog use the same read-model root.
@@ -62,12 +61,18 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         return json.loads(payload)
 
     def post_json(self, path: str, body: object = None, *, expected_status: int = 200) -> object:
+        return self._send_json("POST", path, body, expected_status=expected_status)
+
+    def put_json(self, path: str, body: object = None, *, expected_status: int = 200) -> object:
+        return self._send_json("PUT", path, body, expected_status=expected_status)
+
+    def _send_json(self, method: str, path: str, body: object = None, *, expected_status: int = 200) -> object:
         data = json.dumps(body).encode("utf-8") if body is not None else b""
         request = Request(
             f"{self.base_url}{path}",
             data=data,
             headers={"Content-Type": "application/json"},
-            method="POST",
+            method=method,
         )
         try:
             with urlopen(request) as response:
@@ -78,5 +83,5 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             payload = error.read().decode("utf-8")
             error.close()
         if status != expected_status:
-            raise AssertionError(f"expected {expected_status} for POST {path}, got {status}: {payload}")
+            raise AssertionError(f"expected {expected_status} for {method} {path}, got {status}: {payload}")
         return json.loads(payload)

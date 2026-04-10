@@ -41,7 +41,6 @@ export function MarketplaceDetailView({
   const isInstalling = busyInstallItemId === itemId;
   const queryErrorMessage = detailQuery.error instanceof Error ? detailQuery.error.message : "";
   const isInitialPreviewLoading = detailQuery.isPending && !detailQuery.data && Boolean(detail);
-  const isRefreshing = detailQuery.isFetching && !detailQuery.isPending;
   const documentMarkdown = documentQuery.data?.documentMarkdown ?? null;
   const isDocumentLoading = documentQuery.isPending;
 
@@ -111,10 +110,6 @@ export function MarketplaceDetailView({
           utility={
             isInitialPreviewLoading ? (
               <DetailLoadingChip label="Loading Preview" withSpinner />
-            ) : isRefreshing ? (
-              <div className="skill-detail__refresh" aria-live="polite">
-                <LoadingSpinner size="sm" label="Refreshing preview" />
-              </div>
             ) : undefined
           }
           eyebrow="Marketplace skill"

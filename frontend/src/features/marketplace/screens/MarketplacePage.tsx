@@ -22,6 +22,7 @@ export function MarketplacePage() {
     status,
     hasMore,
     loadingMore,
+    searchSubmitPending,
     resultLabel,
     setQuery,
     submitSearch,
@@ -91,7 +92,7 @@ export function MarketplacePage() {
             onChange={setQuery}
             onSubmit={() => void submitSearch()}
             placeholder="Search skills.sh by skill name or topic"
-            loading={feedQuery.isFetching && items.length > 0 && !loadingMore}
+            submitPending={searchSubmitPending}
           />
         </div>
 

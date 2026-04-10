@@ -1,3 +1,4 @@
+import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
 import type { HarnessCell, HarnessColumn, SkillListRow } from "../../model/types";
 import { skillStatusTone } from "../../model/status-mappings";
 import { ManagedSkillCardBody } from "./ManagedSkillCardBody";
@@ -9,7 +10,8 @@ import { SkillStatusIndicator } from "./SkillStatusIndicator";
 interface ManagedSkillCardProps {
   row: SkillListRow;
   columns: HarnessColumn[];
-  busyId: string | null;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  pendingStructuralAction: StructuralSkillAction | null;
   selected: boolean;
   onOpenSkill: (skillRef: string) => void;
   onToggleCell: (row: SkillListRow, cell: HarnessCell) => void;
@@ -18,7 +20,8 @@ interface ManagedSkillCardProps {
 export function ManagedSkillCard({
   row,
   columns,
-  busyId,
+  pendingToggleKeys,
+  pendingStructuralAction,
   selected,
   onOpenSkill,
   onToggleCell,
@@ -50,7 +53,8 @@ export function ManagedSkillCard({
           <ManagedSkillHarnessCluster
             row={row}
             columns={columns}
-            busyId={busyId}
+            pendingToggleKeys={pendingToggleKeys}
+            structuralLocked={pendingStructuralAction !== null}
             onToggleCell={onToggleCell}
           />
         </>

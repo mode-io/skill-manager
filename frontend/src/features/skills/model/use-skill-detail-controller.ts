@@ -18,7 +18,6 @@ export function useSkillDetailController(
   const detailQuery = useSkillDetailQuery(skillRef);
   const sourceStatusQuery = useSkillSourceStatusQuery(skillRef);
   const [actionErrorMessage, setActionErrorMessage] = useState("");
-  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [isStopManagingDialogOpen, setStopManagingDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const isMountedRef = useRef(true);
@@ -33,7 +32,6 @@ export function useSkillDetailController(
       }
     : null;
   const isInitialLoading = detailQuery.isPending && detail === null;
-  const isRefreshing = (detailQuery.isFetching || sourceStatusQuery.isFetching) && detail !== null;
   const queryErrorMessage = detailQuery.error instanceof Error
     ? detailQuery.error.message
     : sourceStatusQuery.error instanceof Error
@@ -46,15 +44,13 @@ export function useSkillDetailController(
 
   useEffect(() => {
     setActionErrorMessage("");
-    setBusyAction(null);
     setStopManagingDialogOpen(false);
     setDeleteDialogOpen(false);
   }, [skillRef]);
 
-  async function runAction(actionKey: string, task: () => Promise<unknown>): Promise<boolean> {
+  async function runAction(task: () => Promise<unknown>): Promise<boolean> {
     try {
       if (isMountedRef.current) {
-        setBusyAction(actionKey);
         setActionErrorMessage("");
       }
       await task();
@@ -64,10 +60,6 @@ export function useSkillDetailController(
         setActionErrorMessage(error instanceof Error ? error.message : "Unable to complete the action.");
       }
       return false;
-    } finally {
-      if (isMountedRef.current) {
-        setBusyAction(null);
-      }
     }
   }
 
@@ -75,8 +67,8 @@ export function useSkillDetailController(
     if (!detail) {
       return;
     }
-    const didSucceed = await runAction("delete", () => handlers.onDeleteSkill(detail.skillRef));
-    if (!didSucceed) {
+    const didSucceed = await runAction(() => handlers.onDeleteSkill(detail.skillRef));
+    if (didSucceed && isMountedRef.current) {
       setDeleteDialogOpen(false);
     }
   }
@@ -85,8 +77,8 @@ export function useSkillDetailController(
     if (!detail) {
       return;
     }
-    const didSucceed = await runAction("unmanage", () => handlers.onUnmanageSkill(detail.skillRef));
-    if (!didSucceed) {
+    const didSucceed = await runAction(() => handlers.onUnmanageSkill(detail.skillRef));
+    if (didSucceed && isMountedRef.current) {
       setStopManagingDialogOpen(false);
     }
   }
@@ -94,17 +86,15 @@ export function useSkillDetailController(
   return {
     detail,
     isInitialLoading,
-    isRefreshing,
     queryErrorMessage,
     actionErrorMessage,
-    busyAction,
     isStopManagingDialogOpen,
     isDeleteDialogOpen,
     dismissActionError: () => setActionErrorMessage(""),
-    onManage: () => detail && void runAction("manage", () => handlers.onManageSkill(detail.skillRef)),
+    onManage: () => detail && void runAction(() => handlers.onManageSkill(detail.skillRef)),
     onToggleHarness: (harness: string, currentState: HarnessCellState) =>
-      detail && void runAction(`toggle:${harness}`, () => handlers.onToggleSkill(detail.skillRef, harness, currentState)),
-    onUpdate: () => detail && void runAction("update", () => handlers.onUpdateSkill(detail.skillRef)),
+      detail && void runAction(() => handlers.onToggleSkill(detail.skillRef, harness, currentState)),
+    onUpdate: () => detail && void runAction(() => handlers.onUpdateSkill(detail.skillRef)),
     requestStopManaging: () => {
       setActionErrorMessage("");
       setStopManagingDialogOpen(true);

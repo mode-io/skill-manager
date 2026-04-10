@@ -33,14 +33,11 @@ class StorePackageObservation:
 class HarnessScan:
     harness: str
     label: str
+    logo_key: str | None
     detected: bool
     manageable: bool
-    builtin_support: bool
-    discovery_mode: str
-    detection_details: tuple[str, ...] = ()
     skills: tuple[SkillObservation, ...] = ()
     builtins: tuple[BuiltinObservation, ...] = ()
-    issues: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

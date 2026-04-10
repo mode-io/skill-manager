@@ -18,7 +18,30 @@ class HttpApiTests(unittest.TestCase):
             self.assertTrue(health["ok"])
             self.assertEqual(skills["summary"]["managed"], 0)
             self.assertEqual(skills["rows"], [])
-            self.assertEqual(len(settings["harnesses"]), 6)
+            self.assertEqual(len(settings["harnesses"]), 5)
+            openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
+            self.assertTrue(openclaw["detected"])
+            self.assertTrue(openclaw["supportEnabled"])
+            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw" / "skills"))
+            self.assertNotIn("discoveryMode", openclaw)
+            self.assertNotIn("centralStore", settings)
+            self.assertNotIn("topology", settings)
+
+    def test_settings_support_toggle_hides_disabled_harness_from_skills_inventory(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            settings = harness.get_json("/api/settings")
+            codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
+
+            self.assertTrue(codex["supportEnabled"])
+
+            harness.put_json("/api/settings/harnesses/codex/support", {"enabled": False})
+
+            updated_settings = harness.get_json("/api/settings")
+            updated_codex = next(item for item in updated_settings["harnesses"] if item["harness"] == "codex")
+            skills = harness.get_json("/api/skills")
+
+            self.assertFalse(updated_codex["supportEnabled"])
+            self.assertNotIn("codex", [column["harness"] for column in skills["harnessColumns"]])
 
     def test_mixed_fixture_returns_skills_page_and_detail(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -27,16 +50,16 @@ class HttpApiTests(unittest.TestCase):
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
             source_status = harness.get_json(f"/api/skills/{shared_audit['skillRef']}/source-status")
-            scout = next(row for row in skills["rows"] if row["name"] == "Scout")
-            builtin_detail = harness.get_json(f"/api/skills/{scout['skillRef']}")
-            builtin_source_status = harness.get_json(f"/api/skills/{scout['skillRef']}/source-status")
+            review_helper = next(row for row in skills["rows"] if row["name"] == "Review Helper")
+            builtin_detail = harness.get_json(f"/api/skills/{review_helper['skillRef']}")
+            builtin_source_status = harness.get_json(f"/api/skills/{review_helper['skillRef']}/source-status")
 
             self.assertEqual(shared_audit["displayStatus"], "Managed")
             self.assertNotIn("isBuiltin", shared_audit)
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertEqual(
                 [cell["label"] for cell in detail["harnessCells"]],
-                ["Codex", "Claude", "OpenCode"],
+                ["Codex", "Claude", "Cursor", "OpenCode", "OpenClaw"],
             )
             self.assertNotIn("updateStatus", detail["actions"])
             self.assertEqual(source_status["updateStatus"], "no_update_available")
@@ -44,8 +67,6 @@ class HttpApiTests(unittest.TestCase):
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], [])
             self.assertTrue(detail["actions"]["canDelete"])
             self.assertEqual(detail["actions"]["deleteHarnessLabels"], [])
-            self.assertNotIn("OpenClaw", [cell["label"] for cell in detail["harnessCells"]])
-            self.assertNotIn("Gemini", [cell["label"] for cell in detail["harnessCells"]])
             self.assertIn("Shared package fixture.", detail["documentMarkdown"])
             self.assertNotIn("statusMessage", detail)
             self.assertNotIn("source", detail)
@@ -63,9 +84,11 @@ class HttpApiTests(unittest.TestCase):
             self.assertEqual(
                 builtin_detail["harnessCells"],
                 [
-                    {"harness": "codex", "label": "Codex", "state": "empty", "interactive": False},
-                    {"harness": "claude", "label": "Claude", "state": "empty", "interactive": False},
-                    {"harness": "opencode", "label": "OpenCode", "state": "empty", "interactive": False},
+                    {"harness": "codex", "label": "Codex", "logoKey": "codex", "state": "empty", "interactive": False},
+                    {"harness": "claude", "label": "Claude", "logoKey": "claude", "state": "empty", "interactive": False},
+                    {"harness": "cursor", "label": "Cursor", "logoKey": "cursor", "state": "empty", "interactive": False},
+                    {"harness": "opencode", "label": "OpenCode", "logoKey": "opencode", "state": "builtin", "interactive": False},
+                    {"harness": "openclaw", "label": "OpenClaw", "logoKey": "openclaw", "state": "empty", "interactive": False},
                 ],
             )
             self.assertIsNone(builtin_detail["documentMarkdown"])
@@ -102,7 +125,7 @@ class HttpApiTests(unittest.TestCase):
             (dist / "index.html").write_text("<!doctype html><html><body><div id='root'>skill-manager</div></body></html>", encoding="utf-8")
 
             with AppTestHarness(frontend_dist=dist) as harness:
-                for path in ("/", "/skills", "/skills/managed", "/skills/unmanaged", "/marketplace"):
+                for path in ("/", "/skills", "/skills/managed", "/skills/unmanaged", "/marketplace", "/settings"):
                     with urlopen(f"{harness.base_url}{path}") as response:
                         body = response.read().decode("utf-8")
                     self.assertEqual(response.status, 200)

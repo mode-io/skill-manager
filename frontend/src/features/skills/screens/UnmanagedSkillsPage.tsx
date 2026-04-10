@@ -14,7 +14,8 @@ export function UnmanagedSkillsPage() {
   const {
     data,
     status,
-    busyId,
+    pendingStructuralActions,
+    pendingBulkAction,
     selectedSkillRef,
     onManageAll,
     onManageSkill,
@@ -42,10 +43,10 @@ export function UnmanagedSkillsPage() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={busyId !== null || manageableCount === 0}
+                  disabled={pendingBulkAction !== null || manageableCount === 0}
                   onClick={onManageAll}
                 >
-                  {busyId === "manage-all" ? <LoadingSpinner size="sm" label="Managing all skills" /> : null}
+                  {pendingBulkAction === "manage-all" ? <LoadingSpinner size="sm" label="Managing all skills" /> : null}
                   Bring All Eligible Skills Under Management
                 </button>
                 <BulkManageHelp />
@@ -65,7 +66,8 @@ export function UnmanagedSkillsPage() {
               {rows.length > 0 ? (
                 <UnmanagedSkillsList
                   rows={rows}
-                  busyId={busyId}
+                  pendingStructuralActions={pendingStructuralActions}
+                  bulkActionPending={pendingBulkAction !== null}
                   selectedSkillRef={selectedSkillRef}
                   onOpenSkill={onOpenSkill}
                   onManageSkill={onManageSkill}

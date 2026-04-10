@@ -1,8 +1,11 @@
 import type { HarnessCellState } from "../../model/types";
+import type { StructuralSkillAction } from "../../model/pending";
 import { SkillDetailView } from "./SkillDetailView";
 
 interface SkillDetailDrawerProps {
   skillRef: string | null;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onClose: () => void;
   onManageSkill: (skillRef: string) => Promise<void>;
   onToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
@@ -13,6 +16,8 @@ interface SkillDetailDrawerProps {
 
 export function SkillDetailDrawer({
   skillRef,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onClose,
   onManageSkill,
   onToggleSkill,
@@ -30,6 +35,8 @@ export function SkillDetailDrawer({
       <aside className="drawer drawer--detail ui-scrollbar" aria-label="Skill details drawer">
         <SkillDetailView
           skillRef={skillRef}
+          pendingToggleHarnesses={pendingToggleHarnesses}
+          pendingStructuralAction={pendingStructuralAction}
           onClose={onClose}
           onManageSkill={onManageSkill}
           onToggleSkill={onToggleSkill}

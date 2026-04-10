@@ -9,7 +9,6 @@ from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
 from tests.support import (
-    StubCommandRunner,
     create_fake_home_spec,
     create_fixture_marketplace_service,
     seed_divergent_source_fixture,
@@ -24,8 +23,8 @@ class BackendContainerTests(unittest.TestCase):
     def test_list_skills_groups_identical_local_copies_and_preserves_builtins(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            runner = seed_mixed_fixture(spec)
-            container = build_backend_container(spec.env(), command_runner=runner)
+            seed_mixed_fixture(spec)
+            container = build_backend_container(spec.env())
             payload = container.skills_queries.list_skills()
 
             trace_lens = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
@@ -35,8 +34,8 @@ class BackendContainerTests(unittest.TestCase):
                 {"codex", "claude"},
             )
 
-            scout = next(row for row in payload["rows"] if row["name"] == "Scout")
-            self.assertEqual(scout["displayStatus"], "Built-in")
+            builtin = next(row for row in payload["rows"] if row["name"] == "Review Helper")
+            self.assertEqual(builtin["displayStatus"], "Built-in")
             self.assertNotIn("isBuiltin", trace_lens)
 
     def test_detail_and_source_status_are_split(self) -> None:
@@ -64,7 +63,7 @@ class BackendContainerTests(unittest.TestCase):
                 ],
             )
 
-            container = build_backend_container(spec.env(), command_runner=StubCommandRunner())
+            container = build_backend_container(spec.env())
             payload = container.skills_queries.list_skills()
             audit = next(row for row in payload["rows"] if row["name"] == "Audit Skill")
             detail = container.skills_queries.get_skill_detail(audit["skillRef"])
@@ -83,10 +82,8 @@ class BackendContainerTests(unittest.TestCase):
     def test_divergent_source_backed_local_copies_become_separate_found_rows(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            container = build_backend_container(
-                spec.env(),
-                command_runner=seed_divergent_source_fixture(spec),
-            )
+            seed_divergent_source_fixture(spec)
+            container = build_backend_container(spec.env())
 
             payload = container.skills_queries.list_skills()
             policy_rows = [row for row in payload["rows"] if row["name"] == "Policy Kit"]
@@ -97,24 +94,28 @@ class BackendContainerTests(unittest.TestCase):
     def test_settings_surface_store_issues(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            runner = seed_mixed_fixture(spec)
-            container = build_backend_container(spec.env(), command_runner=runner)
+            seed_mixed_fixture(spec)
+            container = build_backend_container(spec.env())
 
-            settings = container.skills_queries.settings()
+            settings = container.settings_queries.get_settings()
 
-            self.assertEqual(len(settings["harnesses"]), 6)
-            self.assertEqual(len(settings["storeIssues"]), 1)
+            self.assertEqual(len(settings["harnesses"]), 5)
+            codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
+            self.assertIn("managedLocation", codex)
+            self.assertNotIn("discoveryMode", codex)
+            self.assertNotIn("centralStore", settings)
+            self.assertNotIn("topology", settings)
 
     def test_skill_detail_exposes_document_markdown_for_local_and_shared_skills(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            runner = seed_mixed_fixture(spec)
-            container = build_backend_container(spec.env(), command_runner=runner)
+            seed_mixed_fixture(spec)
+            container = build_backend_container(spec.env())
 
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             found = next(row for row in payload["rows"] if row["name"] == "Trace Lens")
-            builtin = next(row for row in payload["rows"] if row["name"] == "Scout")
+            builtin = next(row for row in payload["rows"] if row["name"] == "Review Helper")
 
             shared_detail = container.skills_queries.get_skill_detail(shared["skillRef"])
             found_detail = container.skills_queries.get_skill_detail(found["skillRef"])
@@ -134,14 +135,14 @@ class BackendContainerTests(unittest.TestCase):
             self.assertIsNone(builtin_detail["actions"]["stopManagingStatus"])
             self.assertEqual(
                 [cell["state"] for cell in builtin_detail["harnessCells"]],
-                ["empty", "empty", "empty"],
+                ["empty", "empty", "empty", "builtin", "empty"],
             )
 
     def test_skill_detail_orders_managed_locations_with_shared_store_first(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            runner = seed_managed_linked_fixture(spec)
-            container = build_backend_container(spec.env(), command_runner=runner)
+            seed_managed_linked_fixture(spec)
+            container = build_backend_container(spec.env())
 
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
@@ -179,7 +180,7 @@ class BackendContainerTests(unittest.TestCase):
                 ],
             )
 
-            container = build_backend_container(spec.env(), command_runner=StubCommandRunner())
+            container = build_backend_container(spec.env())
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
@@ -221,7 +222,6 @@ class BackendContainerTests(unittest.TestCase):
 
             container = build_backend_container(
                 spec.env(),
-                command_runner=StubCommandRunner(),
                 marketplace_catalog=create_fixture_marketplace_service(),
             )
 

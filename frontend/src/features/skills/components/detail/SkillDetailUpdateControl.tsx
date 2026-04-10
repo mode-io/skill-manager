@@ -3,7 +3,7 @@ import type { SkillUpdateStatus } from "../../model/types";
 
 interface SkillDetailUpdateControlProps {
   updateStatus: SkillUpdateStatus;
-  isBusy: boolean;
+  pending: boolean;
   disabled: boolean;
   onUpdate: () => void;
 }
@@ -15,7 +15,7 @@ const UPDATE_STATUS_LABELS: Record<Exclude<SkillUpdateStatus, "update_available"
 
 export function SkillDetailUpdateControl({
   updateStatus,
-  isBusy,
+  pending,
   disabled,
   onUpdate,
 }: SkillDetailUpdateControlProps) {
@@ -27,7 +27,7 @@ export function SkillDetailUpdateControl({
         disabled={disabled}
         onClick={onUpdate}
       >
-        {isBusy ? <LoadingSpinner size="sm" label="Updating skill" /> : null}
+        {pending ? <LoadingSpinner size="sm" label="Updating skill" /> : null}
         Update From Source
       </button>
     );

@@ -19,12 +19,11 @@ from tests.support import create_fake_home_spec, create_fixture_marketplace_serv
 def main() -> int:
     with TemporaryDirectory(prefix="skill-manager-e2e-") as temp_dir:
         spec = create_fake_home_spec(Path(temp_dir))
-        runner = seed_mixed_fixture(spec)
+        seed_mixed_fixture(spec)
         env = dict(os.environ)
         env.update(spec.env())
         container = build_backend_container(
             env,
-            command_runner=runner,
             marketplace_catalog=create_fixture_marketplace_service(),
         )
         return serve_foreground(

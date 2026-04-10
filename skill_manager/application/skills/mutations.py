@@ -35,7 +35,7 @@ class SkillsMutationService:
             raise MutationError(f"unknown harness: {harness}", status=400)
         LinkOperator().link_shared(
             package_path=entry.package_path,
-            harness_skills_root=adapter.user_skills_root,
+            harness_skills_root=adapter.managed_skills_root,
         )
         self.read_models.invalidate()
         return {"ok": True}
@@ -51,7 +51,7 @@ class SkillsMutationService:
             raise MutationError(f"unknown harness: {harness}", status=400)
         LinkOperator().unlink_shared(
             package_dir=entry.package_dir,
-            harness_skills_root=adapter.user_skills_root,
+            harness_skills_root=adapter.managed_skills_root,
         )
         self.read_models.invalidate()
         return {"ok": True}
@@ -123,12 +123,13 @@ class SkillsMutationService:
         if entry.package_dir is None or entry.package_path is None:
             raise MutationError("managed skill is missing its shared package metadata", status=500)
 
-        linked_sightings = [
-            sighting
-            for sighting in entry.sightings
-            if sighting.kind == "harness" and sighting.path is not None
+        linked_paths = [
+            adapter.managed_skills_root / entry.package_dir
+            for adapter in self.read_models.harness_adapters
+            if (adapter.managed_skills_root / entry.package_dir).exists()
+            or (adapter.managed_skills_root / entry.package_dir).is_symlink()
         ]
-        if not linked_sightings:
+        if not linked_paths:
             raise MutationError("turn on at least one harness before stopping management", status=400)
 
         operator = LinkOperator()
@@ -137,15 +138,15 @@ class SkillsMutationService:
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
 
-        for sighting in linked_sightings:
+        for path in linked_paths:
             operator.ensure_shared_link_materializable(
-                existing_link=sighting.path,
+                existing_link=path,
                 expected_target=entry.package_path,
             )
 
-        for sighting in linked_sightings:
+        for path in linked_paths:
             operator.materialize_shared_link(
-                existing_link=sighting.path,
+                existing_link=path,
                 source_path=entry.package_path,
             )
 
@@ -175,12 +176,12 @@ class SkillsMutationService:
         for adapter in adapters:
             operator.ensure_shared_link_removable(
                 package_dir=entry.package_dir,
-                harness_skills_root=adapter.user_skills_root,
+                harness_skills_root=adapter.managed_skills_root,
             )
         for adapter in adapters:
             operator.unlink_shared(
                 package_dir=entry.package_dir,
-                harness_skills_root=adapter.user_skills_root,
+                harness_skills_root=adapter.managed_skills_root,
             )
         try:
             self.read_models.store.delete(entry.package_dir)

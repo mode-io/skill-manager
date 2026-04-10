@@ -17,7 +17,8 @@ export function ManagedSkillsPage() {
   const {
     data,
     status,
-    busyId,
+    pendingToggleKeys,
+    pendingStructuralActions,
     selectedSkillRef,
     onOpenSkill,
     onToggleCell,
@@ -61,7 +62,8 @@ export function ManagedSkillsPage() {
                 <ManagedSkillsList
                   columns={data.harnessColumns}
                   rows={rows}
-                  busyId={busyId}
+                  pendingToggleKeys={pendingToggleKeys}
+                  pendingStructuralActions={pendingStructuralActions}
                   selectedSkillRef={selectedSkillRef}
                   onOpenSkill={onOpenSkill}
                   onToggleCell={onToggleCell}
@@ -99,7 +101,8 @@ export function ManagedSkillsPage() {
                     ariaLabel="Built-in skills list"
                     columns={data.harnessColumns}
                     rows={builtInRows}
-                    busyId={busyId}
+                    pendingToggleKeys={pendingToggleKeys}
+                    pendingStructuralActions={pendingStructuralActions}
                     selectedSkillRef={selectedSkillRef}
                     onOpenSkill={onOpenSkill}
                     onToggleCell={onToggleCell}

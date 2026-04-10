@@ -1,12 +1,15 @@
 import type { HarnessCellState } from "../../model/types";
 import { useEffect, useRef, useState } from "react";
 
+import type { StructuralSkillAction } from "../../model/pending";
 import { SkillDetailSkeleton } from "./SkillDetailSkeleton";
 import { SkillDetailView } from "./SkillDetailView";
 
 interface SkillDetailPanelProps {
   isOpen: boolean;
   skillRef: string | null;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onClose: () => void;
   onManageSkill: (skillRef: string) => Promise<void>;
   onToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
@@ -18,6 +21,8 @@ interface SkillDetailPanelProps {
 export function SkillDetailPanel({
   isOpen,
   skillRef,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onClose,
   onManageSkill,
   onToggleSkill,
@@ -105,6 +110,8 @@ export function SkillDetailPanel({
           {isContentVisible && displayedSkillRef ? (
             <SkillDetailView
               skillRef={displayedSkillRef}
+              pendingToggleHarnesses={pendingToggleHarnesses}
+              pendingStructuralAction={pendingStructuralAction}
               onClose={onClose}
               onManageSkill={onManageSkill}
               onToggleSkill={onToggleSkill}

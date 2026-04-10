@@ -1,10 +1,11 @@
 from .app_harness import AppTestHarness
-from .command_runner import StubCommandRunner
 from .fake_home import (
     FakeHomeSpec,
     create_fake_home_spec,
     seed_builtin_catalog,
     seed_divergent_source_fixture,
+    seed_openclaw_cli_payload,
+    seed_openclaw_config,
     seed_malformed_shared_directory,
     seed_managed_linked_fixture,
     seed_mixed_fixture,
@@ -17,12 +18,13 @@ from .marketplace_fixture import create_fixture_marketplace_service, fixture_mar
 __all__ = [
     "AppTestHarness",
     "FakeHomeSpec",
-    "StubCommandRunner",
     "create_fixture_marketplace_service",
     "create_fake_home_spec",
     "fixture_marketplace_search",
     "seed_builtin_catalog",
     "seed_divergent_source_fixture",
+    "seed_openclaw_cli_payload",
+    "seed_openclaw_config",
     "seed_malformed_shared_directory",
     "seed_managed_linked_fixture",
     "seed_mixed_fixture",

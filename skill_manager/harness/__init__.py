@@ -1,17 +1,20 @@
-from .command_runner import CommandResult, CommandRunner, SubprocessCommandRunner
-from .contracts import AdapterConfig, HarnessAdapter
+from .catalog import HarnessDefinition, supported_harness_definitions, supported_harness_ids
+from .contracts import AdapterConfig, HarnessAdapter, HarnessLocation, HarnessStatus
 from .link_operator import LinkOperator, LinkResult, MutationError
-from .registry import create_default_adapters, scan_all_harnesses
+from .registry import collect_harness_statuses, create_default_adapters, scan_all_harnesses
 
 __all__ = [
     "AdapterConfig",
-    "CommandResult",
-    "CommandRunner",
     "HarnessAdapter",
+    "HarnessDefinition",
+    "HarnessLocation",
+    "HarnessStatus",
     "LinkOperator",
     "LinkResult",
     "MutationError",
-    "SubprocessCommandRunner",
+    "collect_harness_statuses",
     "create_default_adapters",
     "scan_all_harnesses",
+    "supported_harness_definitions",
+    "supported_harness_ids",
 ]

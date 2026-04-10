@@ -6,7 +6,7 @@ import unittest
 from skill_manager.domain import fingerprint_package
 from skill_manager.store import ManifestEntry
 
-from tests.support import AppTestHarness, StubCommandRunner, seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
+from tests.support import AppTestHarness, seed_mixed_fixture, seed_shared_only_fixture, seed_skill_package, seed_store_manifest
 
 
 def seed_custom_fixture(spec):
@@ -31,39 +31,35 @@ def seed_custom_fixture(spec):
             )
         ],
     )
-    return StubCommandRunner()
 
 
 def seed_delete_fixture(spec):
-    runner = seed_shared_only_fixture(spec)
+    seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
     for path in (
         spec.home / ".codex" / "skills" / "shared-audit",
         spec.home / ".claude" / "skills" / "shared-audit",
         spec.xdg_config_home / "opencode" / "skills" / "shared-audit",
-        spec.xdg_config_home / "openclaw" / "skills" / "shared-audit",
+        spec.openclaw_managed_root / "shared-audit",
     ):
         path.symlink_to(target)
-    return runner
 
 
 def seed_delete_preflight_failure_fixture(spec):
-    runner = seed_shared_only_fixture(spec)
+    seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
     (spec.home / ".codex" / "skills" / "shared-audit").symlink_to(target)
     seed_skill_package(spec.home / ".claude" / "skills", "shared-audit", "Shared Audit", body="local conflict")
-    return runner
 
 
 def seed_unmanage_fixture(spec):
-    runner = seed_shared_only_fixture(spec)
+    seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
     for path in (
         spec.home / ".codex" / "skills" / "shared-audit",
         spec.home / ".claude" / "skills" / "shared-audit",
     ):
         path.symlink_to(target)
-    return runner
 
 
 class MutationTests(unittest.TestCase):
@@ -159,7 +155,7 @@ class MutationTests(unittest.TestCase):
         with AppTestHarness(mixed=True) as harness:
             skills = harness.get_json("/api/skills")
             unmanaged = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
-            builtin = next(row for row in skills["rows"] if row["name"] == "Scout")
+            builtin = next(row for row in skills["rows"] if row["name"] == "Review Helper")
 
             unmanaged_result = harness.post_json(f"/api/skills/{unmanaged['skillRef']}/unmanage", expected_status=400)
             builtin_result = harness.post_json(f"/api/skills/{builtin['skillRef']}/unmanage", expected_status=400)
@@ -179,7 +175,7 @@ class MutationTests(unittest.TestCase):
             self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
             self.assertFalse((harness.spec.home / ".claude" / "skills" / "shared-audit").exists())
             self.assertFalse((harness.spec.xdg_config_home / "opencode" / "skills" / "shared-audit").exists())
-            self.assertFalse((harness.spec.xdg_config_home / "openclaw" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.openclaw_managed_root / "shared-audit").exists())
 
             refreshed = harness.get_json("/api/skills")
             self.assertNotIn(shared_entry["skillRef"], [row["skillRef"] for row in refreshed["rows"]])
@@ -198,7 +194,7 @@ class MutationTests(unittest.TestCase):
         with AppTestHarness(mixed=True) as harness:
             skills = harness.get_json("/api/skills")
             unmanaged = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
-            builtin = next(row for row in skills["rows"] if row["name"] == "Scout")
+            builtin = next(row for row in skills["rows"] if row["name"] == "Review Helper")
 
             unmanaged_result = harness.post_json(f"/api/skills/{unmanaged['skillRef']}/delete", expected_status=400)
             builtin_result = harness.post_json(f"/api/skills/{builtin['skillRef']}/delete", expected_status=400)

@@ -7,7 +7,7 @@ from dataclasses import replace
 
 from skill_manager.domain import BuiltinObservation, HarnessScan
 
-from ..contracts import AdapterConfig
+from ..contracts import AdapterConfig, HarnessStatus
 from .filesystem_backed import FilesystemHarnessAdapter
 
 
@@ -16,27 +16,29 @@ class ConfigHarnessAdapter(FilesystemHarnessAdapter):
         self,
         *,
         config: AdapterConfig,
-        user_skills_root: Path,
+        managed_skills_root: Path,
         builtins_path: Path | None = None,
         global_skills_root: Path | None = None,
     ) -> None:
         super().__init__(
             config=config,
-            user_skills_root=user_skills_root,
+            managed_skills_root=managed_skills_root,
             global_skills_root=global_skills_root,
         )
         self.builtins_path = builtins_path
 
+    def status(self) -> HarnessStatus:
+        base = super().status()
+        builtins_present = self.builtins_path is not None and self.builtins_path.exists()
+        return replace(base, detected=base.detected or builtins_present)
+
     def scan(self) -> HarnessScan:
+        status = self.status()
         base = super().scan()
         builtins = tuple(self._load_builtins())
-        detection_details = list(base.detection_details)
-        if self.builtins_path is not None and self.builtins_path.exists():
-            detection_details.append(f"builtins:{self.builtins_path}")
         return replace(
             base,
-            detected=base.detected or bool(builtins),
-            detection_details=tuple(detection_details),
+            detected=status.detected or bool(builtins),
             builtins=builtins,
         )
 

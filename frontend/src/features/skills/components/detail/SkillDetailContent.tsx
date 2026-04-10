@@ -8,6 +8,7 @@ import { DetailSourceLinks } from "../../../../components/detail/DetailSourceLin
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import { StatusBadge } from "../../../../components/ui/StatusBadge";
+import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCell, SkillDetail } from "../../model/types";
 import { skillStatusTone } from "../../model/status-mappings";
 import { SkillDetailActionBar } from "./SkillDetailActionBar";
@@ -15,10 +16,10 @@ import { SkillDetailHarnessMatrix } from "./SkillDetailHarnessMatrix";
 
 interface SkillDetailContentProps {
   detail: SkillDetail;
-  isRefreshing: boolean;
   actionErrorMessage: string;
   queryErrorMessage: string;
-  busyAction: string | null;
+  pendingToggleHarnesses: ReadonlySet<string>;
+  pendingStructuralAction: StructuralSkillAction | null;
   onClose: () => void;
   onDismissActionError: () => void;
   onManage: () => void;
@@ -30,10 +31,10 @@ interface SkillDetailContentProps {
 
 export function SkillDetailContent({
   detail,
-  isRefreshing,
   actionErrorMessage,
   queryErrorMessage,
-  busyAction,
+  pendingToggleHarnesses,
+  pendingStructuralAction,
   onClose,
   onDismissActionError,
   onManage,
@@ -47,6 +48,8 @@ export function SkillDetailContent({
   const showManagedStoreNote =
     (detail.displayStatus === "Managed" || detail.displayStatus === "Custom")
     && detail.locations.some((location) => location.kind === "shared");
+  const hasPendingHarnessToggles = pendingToggleHarnesses.size > 0;
+  const structuralLocked = pendingStructuralAction !== null;
 
   return (
     <>
@@ -58,23 +61,16 @@ export function SkillDetailContent({
               <button
                 type="button"
                 className="btn btn-primary skill-detail__manage-button"
-                disabled={busyAction !== null}
+                disabled={structuralLocked || hasPendingHarnessToggles}
                 onClick={onManage}
               >
-                {busyAction === "manage" ? <LoadingSpinner size="sm" label="Managing skill" /> : null}
+                {pendingStructuralAction === "manage" ? <LoadingSpinner size="sm" label="Managing skill" /> : null}
                 Bring Under Management
               </button>
             ) : undefined
           }
           meta={
             detail.sourceLinks ? <DetailSourceLinks sourceLinks={detail.sourceLinks} /> : undefined
-          }
-          utility={
-            isRefreshing ? (
-              <div className="skill-detail__refresh" aria-live="polite">
-                <LoadingSpinner size="sm" label="Refreshing skill details" />
-              </div>
-            ) : undefined
           }
           closeLabel="Close skill details"
           onClose={onClose}
@@ -83,7 +79,8 @@ export function SkillDetailContent({
         <SkillDetailHarnessMatrix
           skillName={detail.name}
           cells={detail.harnessCells}
-          disabled={busyAction !== null}
+          pendingToggleHarnesses={pendingToggleHarnesses}
+          pendingStructuralAction={pendingStructuralAction}
           onToggleCell={onToggleHarness}
         />
 
@@ -102,7 +99,8 @@ export function SkillDetailContent({
 
         <SkillDetailActionBar
           actions={detail.actions}
-          busyAction={busyAction}
+          pendingStructuralAction={pendingStructuralAction}
+          hasPendingHarnessToggles={hasPendingHarnessToggles}
           onUpdate={onUpdate}
           onRequestStopManaging={onRequestStopManaging}
           onRequestDelete={onRequestDelete}

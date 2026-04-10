@@ -10,9 +10,6 @@ from .policy import (
 )
 
 
-DETAIL_HARNESS_ORDER = ("codex", "claude", "cursor", "opencode")
-
-
 def skills_page_payload(inventory: SkillInventory) -> dict[str, object]:
     counts = {
         "managed": sum(1 for entry in inventory.entries if display_status(entry) == "Managed"),
@@ -47,7 +44,7 @@ def skill_detail_payload(
             "canDelete": can_delete(entry),
             "deleteHarnessLabels": linked_harness_labels(entry, columns),
         },
-        "harnessCells": [cell_payload(entry, column) for column in detail_columns(columns)],
+        "harnessCells": [cell_payload(entry, column) for column in columns],
         "locations": [sighting_payload(sighting) for sighting in entry.detail_sightings()],
         "sourceLinks": source_links,
         "documentMarkdown": document_markdown,
@@ -58,32 +55,8 @@ def source_status_payload(update_status: str | None) -> dict[str, object]:
     return {"updateStatus": update_status}
 
 
-def settings_payload(inventory: SkillInventory) -> dict[str, object]:
-    return {
-        "harnesses": [
-            {
-                "harness": scan.harness,
-                "label": scan.label,
-                "detected": scan.detected,
-                "manageable": scan.manageable,
-                "builtinSupport": scan.builtin_support,
-                "issues": list(scan.issues),
-                "diagnostics": {
-                    "discoveryMode": scan.discovery_mode,
-                    "detectionDetails": list(scan.detection_details),
-                },
-            }
-            for scan in inventory.harness_scans
-        ],
-        "storeIssues": list(inventory.store_issues),
-        "bulkActions": {
-            "canManageAll": any(can_manage(entry) for entry in inventory.entries),
-        },
-    }
-
-
-def column_payload(column: InventoryColumn) -> dict[str, str]:
-    return {"harness": column.harness, "label": column.label}
+def column_payload(column: InventoryColumn) -> dict[str, str | None]:
+    return {"harness": column.harness, "label": column.label, "logoKey": column.logo_key}
 
 
 def row_payload(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> dict[str, object]:
@@ -105,6 +78,7 @@ def cell_payload(entry: InventoryEntry, column: InventoryColumn) -> dict[str, ob
     return {
         "harness": column.harness,
         "label": column.label,
+        "logoKey": column.logo_key,
         "state": state,
         "interactive": state in {"enabled", "disabled"},
     }
@@ -122,17 +96,6 @@ def sighting_payload(sighting: InventorySighting) -> dict[str, str | None]:
         "sourceLocator": sighting.source.locator,
         "detail": sighting.detail or None,
     }
-
-
-def detail_columns(columns: tuple[InventoryColumn, ...]) -> tuple[InventoryColumn, ...]:
-    columns_by_harness = {column.harness: column for column in columns}
-    selected: list[InventoryColumn] = []
-    for harness in DETAIL_HARNESS_ORDER:
-        column = columns_by_harness.get(harness)
-        if column is None:
-            continue
-        selected.append(column)
-    return tuple(selected)
 
 
 def linked_harness_labels(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> list[str]:

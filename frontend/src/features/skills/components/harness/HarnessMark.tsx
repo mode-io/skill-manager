@@ -3,11 +3,12 @@ import { getHarnessPresentation } from "./harnessPresentation";
 interface HarnessMarkProps {
   harness: string;
   label: string;
+  logoKey?: string | null;
   className?: string;
 }
 
-export function HarnessMark({ harness, label, className }: HarnessMarkProps) {
-  const presentation = getHarnessPresentation(harness);
+export function HarnessMark({ harness, label, logoKey, className }: HarnessMarkProps) {
+  const presentation = getHarnessPresentation(logoKey ?? harness);
   const classes = ["skill-harness-mark", className].filter(Boolean).join(" ");
 
   if (!presentation) {

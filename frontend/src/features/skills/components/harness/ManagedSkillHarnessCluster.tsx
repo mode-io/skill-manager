@@ -1,3 +1,4 @@
+import { hasPendingToggleForCell, type CellActionKey } from "../../model/pending";
 import type { HarnessCell, HarnessColumn, SkillListRow } from "../../model/types";
 import { alignHarnessCells } from "../../model/selectors";
 import { HarnessMark } from "./HarnessMark";
@@ -6,14 +7,16 @@ import { HarnessStateChip } from "./HarnessStateChip";
 interface ManagedSkillHarnessClusterProps {
   row: SkillListRow;
   columns: HarnessColumn[];
-  busyId: string | null;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  structuralLocked: boolean;
   onToggleCell: (row: SkillListRow, cell: HarnessCell) => void;
 }
 
 export function ManagedSkillHarnessCluster({
   row,
   columns,
-  busyId,
+  pendingToggleKeys,
+  structuralLocked,
   onToggleCell,
 }: ManagedSkillHarnessClusterProps) {
   const items = alignHarnessCells(row, columns);
@@ -30,13 +33,21 @@ export function ManagedSkillHarnessCluster({
             <HarnessMark
               harness={column.harness}
               label={column.label}
+              logoKey={cell?.logoKey ?? column.logoKey}
               className="skill-harness-cluster__tool"
             />
             <div className="skill-harness-cluster__control">
               <ManagedHarnessClusterControl
                 row={row}
-                cell={cell ?? { harness: column.harness, label: column.label, state: "empty", interactive: false }}
-                busyId={busyId}
+                cell={cell ?? {
+                  harness: column.harness,
+                  label: column.label,
+                  logoKey: column.logoKey,
+                  state: "empty",
+                  interactive: false,
+                }}
+                pendingToggleKeys={pendingToggleKeys}
+                structuralLocked={structuralLocked}
                 onToggleCell={onToggleCell}
               />
             </div>
@@ -50,21 +61,26 @@ export function ManagedSkillHarnessCluster({
 interface ManagedHarnessClusterControlProps {
   row: SkillListRow;
   cell: HarnessCell;
-  busyId: string | null;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  structuralLocked: boolean;
   onToggleCell: (row: SkillListRow, cell: HarnessCell) => void;
 }
 
 function ManagedHarnessClusterControl({
   row,
   cell,
-  busyId,
+  pendingToggleKeys,
+  structuralLocked,
   onToggleCell,
 }: ManagedHarnessClusterControlProps) {
+  const pending = hasPendingToggleForCell(pendingToggleKeys, row.skillRef, cell.harness);
+
   return (
     <HarnessStateChip
       state={cell.state}
       interactive={cell.interactive}
-      disabled={busyId !== null}
+      disabled={structuralLocked}
+      pending={pending}
       ariaLabel={`${cell.state === "enabled" ? "Disable" : "Enable"} ${row.name} for ${cell.label}`}
       onCheckedChange={() => onToggleCell(row, cell)}
     />

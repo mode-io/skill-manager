@@ -4,7 +4,7 @@ from pathlib import Path
 
 from skill_manager.domain import HarnessScan, SkillObservation, SkillParseError, SourceDescriptor, find_skill_roots, parse_skill_package
 
-from ..contracts import AdapterConfig
+from ..contracts import AdapterConfig, HarnessLocation, HarnessStatus
 
 
 class FilesystemHarnessAdapter:
@@ -12,24 +12,47 @@ class FilesystemHarnessAdapter:
         self,
         *,
         config: AdapterConfig,
-        user_skills_root: Path,
+        managed_skills_root: Path,
         global_skills_root: Path | None = None,
     ) -> None:
         self.config = config
-        self.user_skills_root = user_skills_root
+        self.managed_skills_root = managed_skills_root
         self.global_skills_root = global_skills_root
 
-    def scan(self) -> HarnessScan:
-        observations: list[SkillObservation] = []
-        issues: list[str] = []
-        detection_details: list[str] = []
-        detected = False
+    def status(self) -> HarnessStatus:
+        locations: list[HarnessLocation] = [
+            HarnessLocation(
+                kind="managed-root",
+                label="Managed skills root",
+                path=self.managed_skills_root,
+                present=self.managed_skills_root.exists(),
+            )
+        ]
+        if self.global_skills_root is not None:
+            locations.append(
+                HarnessLocation(
+                    kind="global-root",
+                    label="Global skills root",
+                    path=self.global_skills_root,
+                    present=self.global_skills_root.exists(),
+                )
+            )
 
-        for scope, root in (("user", self.user_skills_root), ("global", self.global_skills_root)):
+        return HarnessStatus(
+            harness=self.config.harness,
+            label=self.config.label,
+            logo_key=self.config.logo_key,
+            detected=any(location.present for location in locations),
+            locations=tuple(locations),
+        )
+
+    def scan(self) -> HarnessScan:
+        status = self.status()
+        observations: list[SkillObservation] = []
+
+        for scope, root in (("user", self.managed_skills_root), ("global", self.global_skills_root)):
             if root is None:
                 continue
-            if root.exists():
-                detection_details.append(f"{scope}:{root}")
             for skill_root in find_skill_roots(root):
                 try:
                     package = parse_skill_package(
@@ -39,10 +62,8 @@ class FilesystemHarnessAdapter:
                             locator=f"{self.config.harness}:{scope}:{skill_root.name}",
                         ),
                     )
-                except SkillParseError as error:
-                    issues.append(str(error))
+                except SkillParseError:
                     continue
-                detected = True
                 observations.append(
                     SkillObservation(
                         harness=self.config.harness,
@@ -55,11 +76,11 @@ class FilesystemHarnessAdapter:
         return HarnessScan(
             harness=self.config.harness,
             label=self.config.label,
-            detected=detected,
+            logo_key=self.config.logo_key,
+            detected=status.detected or bool(observations),
             manageable=True,
-            builtin_support=self.config.builtin_support,
-            discovery_mode=self.config.discovery_mode,
-            detection_details=tuple(detection_details),
             skills=tuple(observations),
-            issues=tuple(issues),
         )
+
+    def invalidate(self) -> None:
+        return None

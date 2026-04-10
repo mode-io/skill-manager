@@ -18,6 +18,7 @@ export const marketplaceKeys = {
   all: ["marketplace"] as const,
   feed: (query: string) => ["marketplace", "feed", query] as const,
   detail: (itemId: string) => ["marketplace", "detail", itemId] as const,
+  document: (itemId: string) => ["marketplace", "document", itemId] as const,
 };
 
 export function useMarketplaceFeedQuery(query: string) {
@@ -50,13 +51,17 @@ export function useMarketplaceDetailQuery(itemId: string | null) {
 
 export function useMarketplaceDocumentQuery(itemId: string | null) {
   return useQuery({
-    queryKey: ["marketplace", "document", itemId ?? "__none__"],
+    queryKey: marketplaceKeys.document(itemId ?? "__none__"),
     queryFn: () => fetchMarketplaceDocument(itemId!),
     enabled: Boolean(itemId),
     staleTime: MARKETPLACE_STALE_TIME_MS,
     gcTime: MARKETPLACE_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
+}
+
+export async function invalidateMarketplaceQueries(queryClient: import("@tanstack/react-query").QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: marketplaceKeys.all });
 }
 
 export function flattenMarketplaceItems(data: { pages: MarketplacePageResultDto[] } | undefined): MarketplaceItemDto[] {

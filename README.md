@@ -56,10 +56,9 @@ The `Marketplace` surface is browse-first:
 | Claude | Filesystem-backed | User and optional global skill roots |
 | Cursor | Filesystem-backed | User and optional global skill roots |
 | OpenCode | Config-backed | Built-in catalog support |
-| OpenClaw | Config-backed | Built-in catalog support |
-| Gemini | CLI/config-assisted | User skills plus built-in discovery |
+| OpenClaw | CLI-first with config fallback | First-class harness access; bundled OpenClaw skills stay out of the inventory |
 
-The current detail-page harness matrix focuses the core SVG-backed UI set used in the app: Codex, Claude, Cursor, and OpenCode.
+The current detail-page harness matrix treats Codex, Claude, Cursor, OpenCode, and OpenClaw as first-class harnesses.
 
 ## Architecture at a glance
 
@@ -199,16 +198,9 @@ By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_H
 
 ### OpenClaw
 
-- `SKILL_MANAGER_OPENCLAW_ROOT`
-- `SKILL_MANAGER_OPENCLAW_GLOBAL_ROOT`
-- `SKILL_MANAGER_OPENCLAW_BUILTINS`
+- `SKILL_MANAGER_OPENCLAW_CONFIG`
 
-### Gemini
-
-- `SKILL_MANAGER_GEMINI_ROOT`
-- `SKILL_MANAGER_GEMINI_BUILTINS`
-
-These overrides are useful when your harness skill directories live outside the default dot-config locations.
+These overrides are useful when your harness skill directories or OpenClaw config file live outside the defaults.
 
 ## Development
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
@@ -23,6 +23,7 @@ export interface MarketplaceController {
   status: "loading" | "ready" | "error";
   hasMore: boolean;
   loadingMore: boolean;
+  searchSubmitPending: boolean;
   resultLabel: string;
   setQuery: (value: string) => void;
   submitSearch: () => Promise<void>;
@@ -41,10 +42,12 @@ export function useMarketplaceController(): MarketplaceController {
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [busyInstallItemId, setBusyInstallItemId] = useState<string | null>(null);
+  const [pendingSearchKey, setPendingSearchKey] = useState<string | null>(null);
 
   const feedQuery = useMarketplaceFeedQuery(submittedQuery);
   const installMutation = useInstallMarketplaceSkillMutation();
   const items = useMemo(() => flattenMarketplaceItems(feedQuery.data), [feedQuery.data]);
+  const activeFeedKey = submittedQuery.trim() || "__popular__";
   const mode = submittedQuery.trim() ? "search" : "popular";
   const status: "loading" | "ready" | "error" = feedQuery.isPending
     ? "loading"
@@ -60,6 +63,15 @@ export function useMarketplaceController(): MarketplaceController {
     return submittedQuery ? `Search results for “${submittedQuery}”` : "Search results";
   }, [mode, submittedQuery]);
 
+  useEffect(() => {
+    if (pendingSearchKey === null || activeFeedKey !== pendingSearchKey) {
+      return;
+    }
+    if (feedQuery.fetchStatus === "idle") {
+      setPendingSearchKey(null);
+    }
+  }, [activeFeedKey, feedQuery.fetchStatus, pendingSearchKey]);
+
   function updateSelectedItem(itemId: string | null, replace = false): void {
     const nextParams = new URLSearchParams(searchParams);
     if (itemId) {
@@ -73,6 +85,11 @@ export function useMarketplaceController(): MarketplaceController {
   async function submitSearch(): Promise<void> {
     const trimmed = query.trim();
     if (!trimmed) {
+      if (!submittedQuery) {
+        setErrorMessage("");
+        return;
+      }
+      setPendingSearchKey("__popular__");
       setSubmittedQuery("");
       setErrorMessage("");
       return;
@@ -81,6 +98,11 @@ export function useMarketplaceController(): MarketplaceController {
       setErrorMessage("Enter at least 2 characters to search skills.sh.");
       return;
     }
+    if (trimmed === submittedQuery) {
+      setErrorMessage("");
+      return;
+    }
+    setPendingSearchKey(trimmed);
     setSubmittedQuery(trimmed);
     setErrorMessage("");
   }
@@ -115,6 +137,7 @@ export function useMarketplaceController(): MarketplaceController {
     status,
     hasMore: Boolean(feedQuery.hasNextPage),
     loadingMore: feedQuery.isFetchingNextPage,
+    searchSubmitPending: pendingSearchKey !== null,
     resultLabel,
     setQuery,
     submitSearch,

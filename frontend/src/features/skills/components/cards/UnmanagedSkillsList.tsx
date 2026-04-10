@@ -1,9 +1,11 @@
+import type { StructuralSkillAction } from "../../model/pending";
 import type { SkillListRow } from "../../model/types";
 import { UnmanagedSkillCard } from "./UnmanagedSkillCard";
 
 interface UnmanagedSkillsListProps {
   rows: SkillListRow[];
-  busyId: string | null;
+  pendingStructuralActions: ReadonlyMap<string, StructuralSkillAction>;
+  bulkActionPending: boolean;
   selectedSkillRef: string | null;
   onOpenSkill: (skillRef: string) => void;
   onManageSkill: (skillRef: string) => Promise<void>;
@@ -11,7 +13,8 @@ interface UnmanagedSkillsListProps {
 
 export function UnmanagedSkillsList({
   rows,
-  busyId,
+  pendingStructuralActions,
+  bulkActionPending,
   selectedSkillRef,
   onOpenSkill,
   onManageSkill,
@@ -22,7 +25,8 @@ export function UnmanagedSkillsList({
         <UnmanagedSkillCard
           key={row.skillRef}
           row={row}
-          busyId={busyId}
+          pendingStructuralAction={pendingStructuralActions.get(row.skillRef) ?? null}
+          bulkActionPending={bulkActionPending}
           selected={selectedSkillRef === row.skillRef}
           onOpenSkill={onOpenSkill}
           onManageSkill={onManageSkill}

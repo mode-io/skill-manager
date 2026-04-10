@@ -10,7 +10,7 @@ describe("SkillDetailUpdateControl", () => {
     render(
       <SkillDetailUpdateControl
         updateStatus="update_available"
-        isBusy={false}
+        pending={false}
         disabled={false}
         onUpdate={onUpdate}
       />,
@@ -24,7 +24,7 @@ describe("SkillDetailUpdateControl", () => {
     const { rerender } = render(
       <SkillDetailUpdateControl
         updateStatus="no_update_available"
-        isBusy={false}
+        pending={false}
         disabled={false}
         onUpdate={() => undefined}
       />,
@@ -36,7 +36,7 @@ describe("SkillDetailUpdateControl", () => {
     rerender(
       <SkillDetailUpdateControl
         updateStatus="no_source_available"
-        isBusy={false}
+        pending={false}
         disabled={false}
         onUpdate={() => undefined}
       />,

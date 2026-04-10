@@ -5,8 +5,8 @@ from threading import Lock
 import time
 
 from skill_manager.domain import HarnessScan, StoreScan
-from skill_manager.harness import CommandRunner, HarnessAdapter, create_default_adapters, scan_all_harnesses
-from skill_manager.store import SharedStore, default_shared_store_root
+from skill_manager.harness import HarnessAdapter, HarnessStatus, collect_harness_statuses, create_default_adapters, scan_all_harnesses, supported_harness_ids
+from skill_manager.store import HarnessSupportStore, SharedStore, default_harness_support_path, default_shared_store_root
 
 
 @dataclass(frozen=True)
@@ -27,10 +27,12 @@ class ReadModelService:
         *,
         store: SharedStore,
         harness_adapters: tuple[HarnessAdapter, ...],
+        support_store: HarnessSupportStore,
         snapshot_ttl_seconds: float = 1.0,
     ) -> None:
         self.store = store
         self.harness_adapters = harness_adapters
+        self.support_store = support_store
         self.snapshot_ttl_seconds = snapshot_ttl_seconds
         self._snapshot_cache: CachedSnapshot | None = None
         self._lock = Lock()
@@ -40,15 +42,24 @@ class ReadModelService:
         cls,
         env: dict[str, str] | None = None,
         *,
-        command_runner: CommandRunner | None = None,
+        support_store: HarnessSupportStore | None = None,
     ) -> "ReadModelService":
         active_env = env or {}
         store = SharedStore(default_shared_store_root(active_env))
-        adapters = create_default_adapters(active_env, command_runner=command_runner)
-        return cls(store=store, harness_adapters=adapters)
+        active_support_store = support_store or HarnessSupportStore(default_harness_support_path(active_env))
+        adapters = create_default_adapters(active_env)
+        return cls(store=store, harness_adapters=adapters, support_store=active_support_store)
 
     def find_adapter(self, harness: str) -> HarnessAdapter | None:
+        if harness not in self.enabled_harnesses():
+            return None
         return next((a for a in self.harness_adapters if a.config.harness == harness), None)
+
+    def enabled_harnesses(self) -> tuple[str, ...]:
+        return self.support_store.enabled_harnesses(supported_harness_ids())
+
+    def harness_statuses(self) -> tuple[HarnessStatus, ...]:
+        return collect_harness_statuses(self.harness_adapters)
 
     def snapshot(self) -> ReadModelSnapshot:
         with self._lock:
@@ -57,7 +68,11 @@ class ReadModelService:
                 return cached.snapshot
 
         store_scan = self.store.scan()
-        harness_scans = scan_all_harnesses(self.harness_adapters)
+        enabled = set(self.enabled_harnesses())
+        active_adapters = tuple(
+            adapter for adapter in self.harness_adapters if adapter.config.harness in enabled
+        )
+        harness_scans = scan_all_harnesses(active_adapters)
         snapshot = ReadModelSnapshot(
             store_scan=store_scan,
             harness_scans=harness_scans,
@@ -69,3 +84,5 @@ class ReadModelService:
     def invalidate(self) -> None:
         with self._lock:
             self._snapshot_cache = None
+        for adapter in self.harness_adapters:
+            adapter.invalidate()

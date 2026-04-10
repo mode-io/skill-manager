@@ -14,6 +14,7 @@ EntryKind = Literal["managed", "unmanaged", "builtin"]
 class InventoryColumn:
     harness: str
     label: str
+    logo_key: str | None
 
 
 @dataclass(frozen=True)
@@ -85,7 +86,7 @@ class SkillInventory:
         from .policy import sort_entries
 
         columns = tuple(
-            InventoryColumn(harness=scan.harness, label=scan.label)
+            InventoryColumn(harness=scan.harness, label=scan.label, logo_key=scan.logo_key)
             for scan in harness_scans
             if scan.detected and scan.manageable
         )
@@ -194,6 +195,9 @@ class SkillInventory:
 
     def find(self, skill_ref: str) -> InventoryEntry | None:
         return self._by_ref.get(skill_ref)
+
+    def entries_by_kind(self, kind: EntryKind) -> tuple[InventoryEntry, ...]:
+        return tuple(entry for entry in self.entries if entry.kind == kind)
 
 
 def _unmanaged_entry_key(declared_name: str, source: SourceDescriptor, revision: str) -> str:

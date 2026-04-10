@@ -1,12 +1,16 @@
 import type { ReactNode } from "react";
+import { Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface AppShellProps {
   children: ReactNode;
-  settingsControl?: ReactNode;
+  onRefreshData?: () => void | Promise<void>;
+  refreshPending?: boolean;
 }
 
-export function AppShell({ children, settingsControl }: AppShellProps) {
+export function AppShell({ children, onRefreshData, refreshPending = false }: AppShellProps) {
   const location = useLocation();
   const isSkillsRoute = location.pathname.startsWith("/skills");
 
@@ -25,7 +29,25 @@ export function AppShell({ children, settingsControl }: AppShellProps) {
             <span className="nav-link__label">Marketplace</span>
           </NavLink>
         </nav>
-        {settingsControl ?? null}
+        <div className="app-header__actions">
+          <button
+            type="button"
+            className="nav-link app-header__refresh"
+            onClick={() => void onRefreshData?.()}
+            disabled={refreshPending}
+            aria-busy={refreshPending}
+          >
+            {refreshPending ? <LoadingSpinner size="sm" label="Refreshing data" /> : null}
+            <span className="nav-link__label">{refreshPending ? "Refreshing..." : "Refresh Data"}</span>
+          </button>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `icon-button app-header__settings${isActive ? " is-active" : ""}`}
+            aria-label="Open settings"
+          >
+            <Settings size={18} />
+          </NavLink>
+        </div>
       </header>
       <main className={`app-main${isSkillsRoute ? " app-main--skills" : ""}`}>{children}</main>
     </div>
