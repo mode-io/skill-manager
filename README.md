@@ -56,7 +56,7 @@ Typical flow:
 
 `skill-manager` is released under the MIT License. See [LICENSE](LICENSE).
 
-The supported public install path is npm on macOS. Only the latest released version is supported.
+The supported public install paths are npm and Homebrew on macOS. Only the latest released version is supported.
 
 ### npm
 
@@ -68,6 +68,15 @@ skill-manager
 The npm package installs the matching native `skill-manager` release artifact for your macOS architecture during `postinstall`.
 
 On macOS, the first launch of an unsigned release artifact can be noticeably slower while the system performs first-run verification. Later launches are much faster.
+
+### Homebrew
+
+```bash
+brew tap mode-io/tap
+brew install skill-manager
+```
+
+Homebrew installs the same native `skill-manager` release artifacts that back the npm wrapper.
 
 ## Quick start
 
@@ -261,9 +270,8 @@ Test coverage currently includes:
 - This is a local-first app, not a hosted service.
 - Source-backed operations are currently centered on GitHub-backed skills.
 - Marketplace content is sourced from `skills.sh`.
-- Public npm distribution is currently macOS-only.
-- The first packaged public release is expected to be unsigned or not notarized.
+- Public distribution is currently macOS-only.
 
 ## Project status
 
-This repository is in active development as the public `skill-manager` project, with npm distribution backed by native release artifacts.
+This repository is in active development as the public `skill-manager` project, with npm and Homebrew distribution backed by native release artifacts.
