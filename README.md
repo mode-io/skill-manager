@@ -7,9 +7,8 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" /></a>
-  <a href="https://github.com/mode-io/skill-manager/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/mode-io/skill-manager?display_name=tag&sort=semver&style=flat-square" /></a>
+  <a href="https://github.com/mode-io/skill-manager/releases/tag/v0.1.0"><img alt="Release v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-EA580C?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/@mode-io/skill-manager"><img alt="npm version" src="https://img.shields.io/npm/v/%40mode-io%2Fskill-manager?style=flat-square&logo=npm&logoColor=white" /></a>
-  <a href="https://github.com/mode-io/skill-manager/actions/workflows/ci.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/mode-io/skill-manager/ci.yml?branch=main&style=flat-square&label=ci" /></a>
   <a href="#install"><img alt="Install with Homebrew" src="https://img.shields.io/badge/install-homebrew-FBBF24?style=flat-square&logo=homebrew&logoColor=111827" /></a>
   <a href="#install"><img alt="macOS" src="https://img.shields.io/badge/platform-macOS-111827?style=flat-square&logo=apple&logoColor=white" /></a>
   <a href="#safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
@@ -56,49 +55,20 @@ Typical flow:
 
 ## Install
 
-`skill-manager` is released under the MIT License. See [LICENSE](LICENSE).
+### Homebrew (Recommended)
 
-The supported public install paths are npm and Homebrew on macOS. Only the latest released version is supported.
+```bash
+brew tap mode-io/tap
+brew install skill-manager
+skill-manager start
+```
 
 ### npm
 
 ```bash
 npm install -g @mode-io/skill-manager
-skill-manager
-```
-
-The npm package installs the matching native `skill-manager` release artifact for your macOS architecture during `postinstall`.
-
-On macOS, the first launch of an unsigned release artifact can be noticeably slower while the system performs first-run verification. Later launches are much faster.
-
-### Homebrew
-
-```bash
-brew tap mode-io/tap
-brew install skill-manager
-```
-
-## Quick start
-
-1. Install `skill-manager`.
-2. Run `skill-manager`.
-3. Open `Skills`.
-4. Review the `Unmanaged` list and bring one local skill under management.
-5. Open that skill and enable it for the harnesses you want.
-
-Common installed-app commands:
-
-```bash
-skill-manager
 skill-manager start
-skill-manager stop
-skill-manager status
 ```
-
-- `skill-manager` launches the app in the foreground.
-- `skill-manager start` launches one managed background instance.
-- `skill-manager stop` stops that managed background instance.
-- `skill-manager status` shows whether the managed background instance is running.
 
 ## Supported harnesses
 
