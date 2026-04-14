@@ -24,6 +24,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         seed_openclaw: bool = True,
         fixture_factory: Callable[[FakeHomeSpec], None] | None = None,
         marketplace: MarketplaceCatalog | None = None,
+        env_overrides: dict[str, str] | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name), seed_openclaw_state=seed_openclaw)
@@ -32,14 +33,17 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         seeder = fixture_factory or (seed_mixed_fixture if mixed else None)
         if seeder is not None:
             seeder(self.spec)
+        active_env = self.spec.env()
+        if env_overrides:
+            active_env.update(env_overrides)
         if marketplace is None:
             self.container = build_backend_container(
-                self.spec.env(),
-                marketplace_catalog=MarketplaceCatalog.from_environment(self.spec.env(), warm_on_init=False),
+                active_env,
+                marketplace_catalog=MarketplaceCatalog.from_environment(active_env, warm_on_init=False),
             )
         else:
             self.container = build_backend_container(
-                self.spec.env(),
+                active_env,
                 marketplace_catalog=marketplace,
             )
             # Ensure tests exercising a custom catalog use the same read-model root.

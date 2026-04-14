@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from skill_manager.errors import MutationError
+from skill_manager.errors import MarketplaceUpstreamError, MutationError
 
 
 def install_error_handlers(app: FastAPI) -> None:
@@ -15,6 +15,10 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(MutationError)
     async def handle_mutation_error(_request: Request, exc: MutationError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status, content={"error": str(exc)})
+
+    @app.exception_handler(MarketplaceUpstreamError)
+    async def handle_marketplace_upstream_error(_request: Request, exc: MarketplaceUpstreamError) -> JSONResponse:
         return JSONResponse(status_code=exc.status, content={"error": str(exc)})
 
     @app.exception_handler(RequestValidationError)

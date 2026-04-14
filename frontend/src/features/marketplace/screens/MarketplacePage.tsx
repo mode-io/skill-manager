@@ -33,6 +33,7 @@ export default function MarketplacePage() {
     dismissError,
     hasLoadingSummaries,
   } = useMarketplaceController();
+  const feedErrorMessage = feedQuery.error instanceof Error ? feedQuery.error.message : "";
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const pagingRef = useRef(false);
 
@@ -115,7 +116,7 @@ export default function MarketplacePage() {
 
         {status === "error" ? (
           <div className="panel-state">
-            <p>Unable to load the marketplace.</p>
+            <ErrorBanner message={feedErrorMessage || "Unable to load the marketplace."} />
           </div>
         ) : null}
 

@@ -256,12 +256,37 @@ describe("MarketplacePage", () => {
 
     await waitFor(() => expect(screen.getByText("Full Preview Loaded")).toBeInTheDocument());
   });
+
+  it("surfaces the backend marketplace error message", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/marketplace/popular?limit=20&offset=0")) {
+        return errorJson("Marketplace is temporarily unavailable. Check your network connection or reinstall skill-manager if the problem persists.");
+      }
+      throw new Error(`Unhandled URL ${url}`);
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText("Marketplace is temporarily unavailable. Check your network connection or reinstall skill-manager if the problem persists.")).toBeInTheDocument();
+    });
+  });
 });
 
 function okJson(payload: object) {
   return {
     ok: true,
     json: async () => payload,
+  };
+}
+
+function errorJson(message: string) {
+  return {
+    ok: false,
+    status: 503,
+    statusText: "Service Unavailable",
+    json: async () => ({ error: message }),
   };
 }
 

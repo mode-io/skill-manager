@@ -8,6 +8,7 @@
     "skill-manager": "bin/skill-manager.js"
   },
   "scripts": {
+    "preinstall": "node scripts/preinstall.js",
     "prepack": "python3 ../../scripts/sync_public_metadata.py --write",
     "postpack": "rm -f LICENSE",
     "postinstall": "node scripts/install.js"
