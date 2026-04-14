@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 from skill_manager.application import build_backend_container
 from skill_manager.application.marketplace import MarketplaceCatalog
+from skill_manager.application.source_fetch_service import SourceFetchService
 from skill_manager.runtime.server import serve_in_thread
 
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
@@ -25,6 +26,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         fixture_factory: Callable[[FakeHomeSpec], None] | None = None,
         marketplace: MarketplaceCatalog | None = None,
         env_overrides: dict[str, str] | None = None,
+        source_fetcher: SourceFetchService | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name), seed_openclaw_state=seed_openclaw)
@@ -40,11 +42,13 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             self.container = build_backend_container(
                 active_env,
                 marketplace_catalog=MarketplaceCatalog.from_environment(active_env, warm_on_init=False),
+                source_fetcher=source_fetcher,
             )
         else:
             self.container = build_backend_container(
                 active_env,
                 marketplace_catalog=marketplace,
+                source_fetcher=source_fetcher,
             )
             # Ensure tests exercising a custom catalog use the same read-model root.
             self.container.read_models.invalidate()

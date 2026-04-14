@@ -12,8 +12,8 @@ export interface MarketplaceItemDto {
   installs: number;
   stars: number | null;
   repoLabel: string;
+  repoUrl: string;
   repoImageUrl: string | null;
-  githubFolderUrl: string | null;
   skillsDetailUrl: string;
   installToken: string;
   installation: MarketplaceInstallationState;

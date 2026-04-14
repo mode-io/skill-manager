@@ -6,5 +6,8 @@ export async function fetchSettings(): Promise<SettingsData> {
 }
 
 export async function updateHarnessSupport(harness: string, enabled: boolean): Promise<{ ok: boolean; enabled: boolean }> {
-  return putJson<{ ok: boolean; enabled: boolean }>(`/settings/harnesses/${encodeURIComponent(harness)}/support`, { enabled });
+  return putJson<{ ok: boolean; enabled: boolean }>(
+    `/settings/harnesses/${encodeURIComponent(harness)}/support`,
+    { enabled },
+  );
 }

@@ -26,7 +26,7 @@ describe("MarketplaceDetailView", () => {
         sourceLinks: {
           repoLabel: "mode-io/skills",
           repoUrl: "https://github.com/mode-io/skills",
-          folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+          folderUrl: null,
           skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
         },
         installation: {
@@ -61,6 +61,7 @@ describe("MarketplaceDetailView", () => {
     );
 
     expect(screen.getByText("Marketplace is temporarily unavailable. Check your network connection or reinstall skill-manager if the problem persists.")).toBeInTheDocument();
+    expect(screen.queryByText("Open Skill Folder")).not.toBeInTheDocument();
   });
 
   it("does not render a refresh spinner for background detail refetches", () => {

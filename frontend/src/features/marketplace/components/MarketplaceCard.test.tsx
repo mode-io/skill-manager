@@ -11,8 +11,8 @@ const baseItem: MarketplaceItemDto = {
   installs: 128,
   stars: 512,
   repoLabel: "mode-io/skills",
+  repoUrl: "https://github.com/mode-io/skills",
   repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-  githubFolderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
   skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
   installToken: "token-mode-switch",
   installation: {
@@ -35,9 +35,10 @@ describe("MarketplaceCard", () => {
     );
 
     expect(screen.getByAltText("Avatar for mode-io/skills")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "mode-io/skills" })).toHaveAttribute("href", baseItem.githubFolderUrl);
+    expect(screen.getByRole("link", { name: "mode-io/skills" })).toHaveAttribute("href", baseItem.repoUrl);
     expect(screen.getByText("512")).toBeInTheDocument();
     expect(screen.getByText("128 installs")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View on skills.sh" })).toHaveAttribute("href", baseItem.skillsDetailUrl);
   });
 
   it("opens marketplace detail from the preview surface", () => {
@@ -59,10 +60,10 @@ describe("MarketplaceCard", () => {
     expect(onOpenDetail).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the skills.sh fallback link when an exact github folder url is not available", () => {
+  it("always keeps the repo and skills.sh links stable", () => {
     render(
       <MarketplaceCard
-        item={{ ...baseItem, githubFolderUrl: null }}
+        item={baseItem}
         selected={false}
         installing={false}
         onOpenDetail={() => {}}
@@ -71,7 +72,7 @@ describe("MarketplaceCard", () => {
       />,
     );
 
-    expect(screen.getByText("mode-io/skills")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "mode-io/skills" })).toHaveAttribute("href", baseItem.repoUrl);
     expect(screen.getByRole("link", { name: "View on skills.sh" })).toHaveAttribute("href", baseItem.skillsDetailUrl);
   });
 

@@ -78,19 +78,15 @@ export function MarketplaceCard({
               <div className="marketplace-card__title-row">
                 <h4>{item.name}</h4>
               </div>
-              {item.githubFolderUrl ? (
-                <a
-                  href={item.githubFolderUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="marketplace-card__repo-link"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  {item.repoLabel}
-                </a>
-              ) : (
-                <p className="marketplace-card__repo-link">{item.repoLabel}</p>
-              )}
+              <a
+                href={item.repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="marketplace-card__repo-link"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {item.repoLabel}
+              </a>
             </div>
           </div>
           {stars > 0 ? (
@@ -101,21 +97,19 @@ export function MarketplaceCard({
           ) : null}
         </div>
 
-        <p className="marketplace-card__description">{item.description || "Summary loading from skills.sh…"}</p>
+        <p className="marketplace-card__description">{item.description || "No summary available on skills.sh."}</p>
 
         <div className="marketplace-card__meta">
           <span className="marketplace-card__meta-item">{installs} installs</span>
-          {!item.githubFolderUrl ? (
-            <a
-              href={item.skillsDetailUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="marketplace-card__meta-link"
-              onClick={(event) => event.stopPropagation()}
-            >
-              View on skills.sh
-            </a>
-          ) : null}
+          <a
+            href={item.skillsDetailUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="marketplace-card__meta-link"
+            onClick={(event) => event.stopPropagation()}
+          >
+            View on skills.sh
+          </a>
         </div>
       </div>
 

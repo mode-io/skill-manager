@@ -203,8 +203,8 @@ function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
               installs: 44,
               stars: 33,
               repoLabel: "mode-io/shared-audit",
+              repoUrl: "https://github.com/mode-io/shared-audit",
               repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-              githubFolderUrl: "https://github.com/mode-io/shared-audit/tree/main/shared-audit",
               skillsDetailUrl: "https://skills.sh/mode-io/shared-audit/shared-audit",
               installToken: "token-shared-audit",
               installation: {

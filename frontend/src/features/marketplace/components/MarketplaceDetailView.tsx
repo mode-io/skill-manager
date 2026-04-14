@@ -133,9 +133,9 @@ export function MarketplaceDetailView({
           </div>
         </section>
 
-        {isInitialPreviewLoading || isDocumentLoading ? <MarketplaceDetailPendingDocument /> : null}
+        {isDocumentLoading ? <MarketplaceDetailPendingDocument /> : null}
 
-        {!isInitialPreviewLoading && !isDocumentLoading && documentMarkdown ? (
+        {!isDocumentLoading && documentMarkdown ? (
           <DetailDisclosure
             title="SKILL.md"
             eyebrow="Remote document"
@@ -169,8 +169,8 @@ function fallbackDetail(item: MarketplaceItemDto | null): MarketplaceDetailDto |
     repoImageUrl: item.repoImageUrl,
     sourceLinks: {
       repoLabel: item.repoLabel,
-      repoUrl: `https://github.com/${item.repoLabel}`,
-      folderUrl: item.githubFolderUrl,
+      repoUrl: item.repoUrl,
+      folderUrl: null,
       skillsDetailUrl: item.skillsDetailUrl,
     },
     installation: item.installation,
