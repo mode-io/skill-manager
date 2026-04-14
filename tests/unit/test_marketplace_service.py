@@ -7,10 +7,24 @@ import unittest
 from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import SkillsShSkill
+from skill_manager.application.marketplace.repo_snapshots import GitHubRepoSnapshotService
 from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MarketplaceUpstreamError
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
+
+
+def _resolver(
+    *,
+    metadata_fetcher=None,
+    cache: MarketplaceCache | None = None,
+) -> GitHubSkillResolver:
+    snapshot_cache = cache or MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-")))
+    snapshot_service = GitHubRepoSnapshotService(
+        cache=snapshot_cache,
+        metadata_client=GitHubRepoMetadataClient(metadata_fetcher=metadata_fetcher or (lambda repo: None)),
+    )
+    return GitHubSkillResolver(snapshot_service)
 
 
 class MarketplaceServiceTests(unittest.TestCase):
@@ -87,16 +101,12 @@ class MarketplaceServiceTests(unittest.TestCase):
         service = MarketplaceCatalog(
             leaderboard_fetcher=lambda: [],
             search_fetcher=searcher,
-            github_resolver=GitHubSkillResolver(
-                GitHubRepoMetadataClient(
-                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
-                        repo=repo,
-                        repo_url=f"https://github.com/{repo}",
-                        owner_login="mode-io",
-                        owner_avatar_url=None,
-                        stars=42,
-                        default_branch="main",
-                    ),
+            github_resolver=_resolver(
+                metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                    repo=repo,
+                    repo_url=f"https://github.com/{repo}",
+                    stars=42,
+                    default_branch="main",
                 ),
             ),
             cache=MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-"))),
@@ -120,15 +130,13 @@ class MarketplaceServiceTests(unittest.TestCase):
                   <p>Switch between supported skill execution modes.</p>
                 </section>
             """,
-            github_resolver=GitHubSkillResolver(
-                GitHubRepoMetadataClient(metadata_fetcher=lambda repo: GitHubRepoMetadata(
+            github_resolver=_resolver(
+                metadata_fetcher=lambda repo: GitHubRepoMetadata(
                     repo=repo,
                     repo_url=f"https://github.com/{repo}",
-                    owner_login="mode-io",
-                    owner_avatar_url=None,
                     stars=42,
                     default_branch="main",
-                )),
+                ),
             ),
             cache=cache,
             warm_on_init=False,
@@ -158,7 +166,7 @@ class MarketplaceServiceTests(unittest.TestCase):
                   <p>Build React components from Stitch designs.</p>
                 </section>
             """,
-            github_resolver=GitHubSkillResolver(GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None)),
+            github_resolver=_resolver(),
             cache=MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-"))),
             warm_on_init=False,
         )
@@ -166,6 +174,47 @@ class MarketplaceServiceTests(unittest.TestCase):
         payload = service.search_page("react")["items"]
 
         self.assertEqual(payload[0]["description"], "Build React components from Stitch designs.")
+
+    def test_search_page_tolerates_missing_upstream_detail_pages(self) -> None:
+        good = SkillsShSkill(
+            repo="google-labs-code/stitch-skills",
+            skill_id="react-components",
+            name="React Components",
+            installs=12,
+            description_hint="",
+        )
+        broken = SkillsShSkill(
+            repo="broken-org/ui-ux-pro-max-skill",
+            skill_id="ui-ux-pro-max",
+            name="ui-ux-pro-max",
+            installs=8,
+            description_hint="",
+        )
+
+        def detail_fetcher(detail_url: str) -> str:
+            if detail_url == good.detail_url:
+                return """
+                    <section>
+                      <h2>SKILL.md</h2>
+                      <p>React Components</p>
+                      <p>Build React components from Stitch designs.</p>
+                    </section>
+                """
+            raise MarketplaceUpstreamError("bad_status", detail_url, "upstream returned HTTP 404", upstream_status=404)
+
+        service = MarketplaceCatalog(
+            leaderboard_fetcher=lambda: [],
+            search_fetcher=lambda query, limit: [good, broken],
+            detail_fetcher=detail_fetcher,
+            github_resolver=_resolver(),
+            cache=MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-"))),
+            warm_on_init=False,
+        )
+
+        payload = service.search_page("ui")["items"]
+
+        self.assertEqual(payload[0]["description"], "Build React components from Stitch designs.")
+        self.assertEqual(payload[1]["description"], MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
 
     def test_detail_enrichment_returns_summary_when_folder_resolution_fails(self) -> None:
         record = SkillsShSkill(
@@ -184,7 +233,7 @@ class MarketplaceServiceTests(unittest.TestCase):
                   <p>Build React components from Stitch designs.</p>
                 </section>
             """,
-            github_resolver=GitHubSkillResolver(GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None)),
+            github_resolver=_resolver(),
             cache=MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-"))),
             warm_on_init=False,
         )
@@ -193,6 +242,31 @@ class MarketplaceServiceTests(unittest.TestCase):
         detail = service.detail_enrichment(record)
 
         self.assertEqual(detail.description, "Build React components from Stitch designs.")
+        self.assertIsNone(detail.github_folder_url)
+        self.assertTrue(detail.folder_resolution_complete)
+
+    def test_detail_enrichment_falls_back_when_summary_fetch_fails(self) -> None:
+        record = SkillsShSkill(
+            repo="broken-org/ui-ux-pro-max-skill",
+            skill_id="ui-ux-pro-max",
+            name="ui-ux-pro-max",
+            installs=12,
+        )
+        service = MarketplaceCatalog(
+            leaderboard_fetcher=lambda: [record],
+            search_fetcher=lambda query, limit: [record],
+            detail_fetcher=lambda detail_url: (_ for _ in ()).throw(
+                MarketplaceUpstreamError("bad_status", detail_url, "upstream returned HTTP 404", upstream_status=404)
+            ),
+            github_resolver=_resolver(),
+            cache=MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-"))),
+            warm_on_init=False,
+        )
+        service._resolver.github_folder_url = lambda repo, skill_id, default_branch=None: None  # type: ignore[method-assign]
+
+        detail = service.detail_enrichment(record)
+
+        self.assertEqual(detail.description, MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
         self.assertIsNone(detail.github_folder_url)
         self.assertTrue(detail.folder_resolution_complete)
 
@@ -214,16 +288,12 @@ class MarketplaceServiceTests(unittest.TestCase):
                   <p>Switch between supported skill execution modes.</p>
                 </section>
             """,
-            github_resolver=GitHubSkillResolver(
-                GitHubRepoMetadataClient(
-                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
-                        repo=repo,
-                        repo_url=f"https://github.com/{repo}",
-                        owner_login="mode-io",
-                        owner_avatar_url=None,
-                        stars=42,
-                        default_branch="main",
-                    ),
+            github_resolver=_resolver(
+                metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                    repo=repo,
+                    repo_url=f"https://github.com/{repo}",
+                    stars=42,
+                    default_branch="main",
                 ),
             ),
             cache=cache,

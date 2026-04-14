@@ -24,6 +24,13 @@ class CachedPayload:
         return self.age_seconds <= 0
 
 
+@dataclass(frozen=True)
+class StoredPayload:
+    payload: object
+    fetched_at: float
+    age_seconds: float
+
+
 class MarketplaceCache:
     def __init__(self, root: Path | None = None) -> None:
         self.root = root
@@ -33,13 +40,19 @@ class MarketplaceCache:
         return cls(default_marketplace_cache_root(env))
 
     def read(self, namespace: str, key: str, *, ttl_seconds: int) -> CachedPayload | None:
+        stored = self.load(namespace, key)
+        if stored is None:
+            return None
+        return CachedPayload(payload=stored.payload, age_seconds=max(0.0, stored.age_seconds - ttl_seconds))
+
+    def load(self, namespace: str, key: str) -> StoredPayload | None:
         path = self._path_for(namespace, key)
         if path is None or not path.is_file():
             return None
         payload = json.loads(path.read_text(encoding="utf-8"))
         fetched_at = float(payload.get("fetchedAt", 0))
-        age = time.time() - fetched_at
-        return CachedPayload(payload=payload.get("payload"), age_seconds=max(0.0, age - ttl_seconds))
+        age = max(0.0, time.time() - fetched_at)
+        return StoredPayload(payload=payload.get("payload"), fetched_at=fetched_at, age_seconds=age)
 
     def write(self, namespace: str, key: str, payload: object) -> None:
         path = self._path_for(namespace, key)

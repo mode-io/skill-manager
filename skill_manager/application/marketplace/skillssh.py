@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from html import unescape
 from html.parser import HTMLParser
+from dataclasses import dataclass
 import json
 import re
 from urllib.parse import quote
 
 from skill_manager.errors import MarketplaceUpstreamError
+from skill_manager.sources import is_valid_github_repo
 
 from .client import DEFAULT_SKILLS_SH_BASE_URL, SkillsShClient
 from .models import SkillsShSkill
@@ -19,6 +21,15 @@ _DETAIL_STOP_MARKERS = frozenset({
     "Security Audits",
     "Installed on",
 })
+
+
+@dataclass(frozen=True)
+class RawSkillsShSkill:
+    source: str
+    skill_id: str
+    name: str
+    installs: int
+    description_hint: str = ""
 
 
 def fetch_all_time_leaderboard(*, client: SkillsShClient | None = None) -> list[SkillsShSkill]:
@@ -40,18 +51,14 @@ def search_skills(query: str, *, limit: int = 20, client: SkillsShClient | None 
     raw_items = payload.get("skills")
     if not isinstance(raw_items, list):
         raise MarketplaceUpstreamError("payload", active_client.absolute_url(path), "skills.sh search payload is malformed")
-    return [
-        SkillsShSkill(
-            repo=item["source"],
-            skill_id=item["skillId"],
-            name=item.get("name", item["skillId"]),
-            installs=int(item.get("installs", 0) or 0),
-            description_hint=item.get("description", ""),
-            detail_base_url=active_client.base_url,
-        )
-        for item in raw_items
-        if isinstance(item, dict) and item.get("source") and item.get("skillId")
-    ]
+    return normalize_skills(
+        raw_skills=[
+            raw_skill_from_payload(item)
+            for item in raw_items
+            if isinstance(item, dict)
+        ],
+        detail_base_url=active_client.base_url,
+    )
 
 
 def fetch_detail_page(detail_url: str, *, client: SkillsShClient | None = None) -> str:
@@ -73,17 +80,14 @@ def parse_homepage_leaderboard(
         raise ValueError("skills.sh homepage leaderboard payload is malformed")
     raw_items = _extract_bracketed(document, array_start)
     items = json.loads(bytes(raw_items, "utf-8").decode("unicode_escape"))
-    return [
-        SkillsShSkill(
-            repo=item["source"],
-            skill_id=item["skillId"],
-            name=item.get("name", item["skillId"]),
-            installs=int(item.get("installs", 0) or 0),
-            detail_base_url=detail_base_url,
-        )
-        for item in items
-        if isinstance(item, dict) and item.get("source") and item.get("skillId")
-    ]
+    return normalize_skills(
+        raw_skills=[
+            raw_skill_from_payload(item)
+            for item in items
+            if isinstance(item, dict)
+        ],
+        detail_base_url=detail_base_url,
+    )
 
 
 def extract_detail_description(document: str, *, skill_name: str, description_hint: str) -> str:
@@ -95,6 +99,48 @@ def extract_detail_description(document: str, *, skill_name: str, description_hi
     if fallback:
         return fallback
     return description_hint
+
+
+def normalize_skills(*, raw_skills: list[RawSkillsShSkill | None], detail_base_url: str) -> list[SkillsShSkill]:
+    normalized: list[SkillsShSkill] = []
+    for raw_skill in raw_skills:
+        skill = normalize_skill(raw_skill, detail_base_url=detail_base_url)
+        if skill is not None:
+            normalized.append(skill)
+    return normalized
+
+
+def normalize_skill(raw_skill: RawSkillsShSkill | None, *, detail_base_url: str) -> SkillsShSkill | None:
+    if raw_skill is None or not is_valid_github_repo(raw_skill.source):
+        return None
+    return SkillsShSkill(
+        repo=raw_skill.source,
+        skill_id=raw_skill.skill_id,
+        name=raw_skill.name,
+        installs=raw_skill.installs,
+        description_hint=raw_skill.description_hint,
+        detail_base_url=detail_base_url,
+    )
+
+
+def raw_skill_from_payload(payload: dict[str, object]) -> RawSkillsShSkill | None:
+    source = payload.get("source")
+    skill_id = payload.get("skillId")
+    if not isinstance(source, str) or not source or not isinstance(skill_id, str) or not skill_id:
+        return None
+    installs = payload.get("installs", 0)
+    try:
+        install_count = int(installs or 0)
+    except (TypeError, ValueError):
+        install_count = 0
+    name = payload.get("name", skill_id)
+    return RawSkillsShSkill(
+        source=source,
+        skill_id=skill_id,
+        name=name if isinstance(name, str) and name else skill_id,
+        installs=install_count,
+        description_hint=payload.get("description", "") if isinstance(payload.get("description", ""), str) else "",
+    )
 
 
 def _extract_bracketed(document: str, start_index: int) -> str:

@@ -5,8 +5,21 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.application.marketplace.skillssh import extract_detail_description, parse_homepage_leaderboard
-from skill_manager.sources.github import GitHubSource, _find_skill, _parse_locator, github_repo_from_locator, github_skill_dir_from_locator
+from skill_manager.application.marketplace.skillssh import (
+    extract_detail_description,
+    normalize_skill,
+    parse_homepage_leaderboard,
+    raw_skill_from_payload,
+)
+from skill_manager.sources.github import (
+    GitHubSource,
+    _find_skill,
+    _parse_locator,
+    github_owner_avatar_url,
+    github_repo_from_locator,
+    github_skill_dir_from_locator,
+    is_valid_github_repo,
+)
 
 from tests.support.fake_home import seed_skill_package
 
@@ -103,6 +116,40 @@ class SkillsShParsingTests(unittest.TestCase):
             ("mode-io/skills", "mode-switch", 128),
             ("vercel-labs/skills", "trace-scout", 84),
         ])
+
+    def test_parse_homepage_leaderboard_filters_unsupported_sources(self) -> None:
+        html = """
+        <html>
+          <body>
+            <script>
+              self.__next_f.push([1,"{\\"initialSkills\\":[{\\"source\\":\\"smithery.ai\\",\\"skillId\\":\\"ui-ux-pro-max\\",\\"name\\":\\"ui-ux-pro-max\\",\\"installs\\":128},{\\"source\\":\\"mode-io/skills\\",\\"skillId\\":\\"mode-switch\\",\\"name\\":\\"Mode Switch\\",\\"installs\\":64}]}"])
+            </script>
+          </body>
+        </html>
+        """
+
+        skills = parse_homepage_leaderboard(html)
+
+        self.assertEqual([(item.repo, item.skill_id) for item in skills], [("mode-io/skills", "mode-switch")])
+
+    def test_normalize_skill_rejects_unsupported_source(self) -> None:
+        raw = raw_skill_from_payload({
+            "source": "smithery.ai",
+            "skillId": "ui-ux-pro-max",
+            "name": "ui-ux-pro-max",
+            "installs": 128,
+        })
+
+        self.assertIsNone(normalize_skill(raw, detail_base_url="https://skills.sh"))
+
+    def test_github_repo_helpers_validate_and_derive_owner_avatar(self) -> None:
+        self.assertTrue(is_valid_github_repo("mode-io/skills"))
+        self.assertFalse(is_valid_github_repo("smithery.ai"))
+        self.assertEqual(
+            github_owner_avatar_url("mode-io/skills"),
+            "https://github.com/mode-io.png?size=96",
+        )
+        self.assertIsNone(github_owner_avatar_url("smithery.ai"))
 
     def test_extract_detail_description_prefers_summary_then_skill_body_then_hint(self) -> None:
         summary_html = """
