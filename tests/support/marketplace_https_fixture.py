@@ -6,20 +6,19 @@ import json
 from pathlib import Path
 import signal
 import ssl
-import subprocess
-from tempfile import TemporaryDirectory
 from threading import Thread
 from types import FrameType
 from urllib.parse import parse_qs, urlparse
 
 from tests.support.marketplace_payloads import fixture_detail_html, fixture_homepage_html, fixture_search_payload
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURE_TLS_ROOT = REPO_ROOT / "tests" / "fixtures" / "marketplace_tls"
+
 
 class MarketplaceFixtureServer(AbstractContextManager["MarketplaceFixtureServer"]):
     def __init__(self) -> None:
-        self._tempdir = TemporaryDirectory(prefix="skill-manager-marketplace-fixture-")
-        self._root = Path(self._tempdir.name)
-        self._httpd = _build_server(self._root)
+        self._httpd = _build_server()
         self._thread = Thread(target=self._httpd.serve_forever, daemon=True)
         self._started = False
 
@@ -30,7 +29,7 @@ class MarketplaceFixtureServer(AbstractContextManager["MarketplaceFixtureServer"
 
     @property
     def ca_cert_path(self) -> Path:
-        return self._root / "ca.pem"
+        return _fixture_tls_path("ca.pem")
 
     def env(self) -> dict[str, str]:
         return {
@@ -53,7 +52,6 @@ class MarketplaceFixtureServer(AbstractContextManager["MarketplaceFixtureServer"
             self._httpd.server_close()
             self._thread.join(timeout=5)
             self._started = False
-        self._tempdir.cleanup()
 
 
 def serve_fixture_forever(*, manifest_path: Path) -> None:
@@ -80,8 +78,9 @@ def serve_fixture_forever(*, manifest_path: Path) -> None:
             signal.pause()
 
 
-def _build_server(root: Path) -> ThreadingHTTPServer:
-    cert_path, key_path = _generate_tls_chain(root)
+def _build_server() -> ThreadingHTTPServer:
+    cert_path = _fixture_tls_path("server.pem")
+    key_path = _fixture_tls_path("server.key")
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -133,107 +132,11 @@ def _build_server(root: Path) -> ThreadingHTTPServer:
     return server
 
 
-def _generate_tls_chain(root: Path) -> tuple[Path, Path]:
-    ca_key = root / "ca.key"
-    ca_config = root / "ca.cnf"
-    ca_cert = root / "ca.pem"
-    server_key = root / "server.key"
-    server_csr = root / "server.csr"
-    server_cert = root / "server.pem"
-    server_ext = root / "server.ext"
-
-    ca_config.write_text(
-        "\n".join(
-            [
-                "[req]",
-                "prompt = no",
-                "distinguished_name = req_distinguished_name",
-                "x509_extensions = v3_ca",
-                "",
-                "[req_distinguished_name]",
-                "CN = skill-manager-test-ca",
-                "",
-                "[v3_ca]",
-                "subjectKeyIdentifier = hash",
-                "authorityKeyIdentifier = keyid:always,issuer",
-                "basicConstraints = critical, CA:true",
-                "keyUsage = critical, keyCertSign, cRLSign",
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    server_ext.write_text(
-        "\n".join(
-            [
-                "authorityKeyIdentifier=keyid,issuer",
-                "basicConstraints=CA:FALSE",
-                "keyUsage = digitalSignature, keyEncipherment",
-                "extendedKeyUsage = serverAuth",
-                "subjectAltName = @alt_names",
-                "",
-                "[alt_names]",
-                "DNS.1 = localhost",
-                "IP.1 = 127.0.0.1",
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    _run_openssl(["genrsa", "-out", str(ca_key), "2048"])
-    _run_openssl([
-        "req",
-        "-x509",
-        "-new",
-        "-nodes",
-        "-key",
-        str(ca_key),
-        "-sha256",
-        "-days",
-        "3650",
-        "-config",
-        str(ca_config),
-        "-extensions",
-        "v3_ca",
-        "-out",
-        str(ca_cert),
-    ])
-    _run_openssl(["genrsa", "-out", str(server_key), "2048"])
-    _run_openssl([
-        "req",
-        "-new",
-        "-key",
-        str(server_key),
-        "-subj",
-        "/CN=localhost",
-        "-out",
-        str(server_csr),
-    ])
-    _run_openssl([
-        "x509",
-        "-req",
-        "-in",
-        str(server_csr),
-        "-CA",
-        str(ca_cert),
-        "-CAkey",
-        str(ca_key),
-        "-CAcreateserial",
-        "-out",
-        str(server_cert),
-        "-days",
-        "365",
-        "-sha256",
-        "-extfile",
-        str(server_ext),
-    ])
-    return server_cert, server_key
-
-
-def _run_openssl(args: list[str]) -> None:
-    subprocess.run(["openssl", *args], capture_output=True, check=True, text=True)
+def _fixture_tls_path(filename: str) -> Path:
+    path = FIXTURE_TLS_ROOT / filename
+    if not path.is_file():
+        raise FileNotFoundError(f"missing marketplace TLS fixture: {path}")
+    return path
 
 
 def _parse_detail_path(path: str) -> tuple[str | None, str | None]:
