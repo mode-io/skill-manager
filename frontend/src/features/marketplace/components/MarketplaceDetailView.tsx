@@ -120,9 +120,7 @@ export function MarketplaceDetailView({
           <ErrorBanner message={actionErrorMessage} onDismiss={onDismissActionError} />
         ) : null}
         {!actionErrorMessage && queryErrorMessage ? (
-          <ErrorBanner
-            message={detailQuery.data ? "Unable to refresh full preview. Showing marketplace summary." : "Unable to load full preview. Showing marketplace summary."}
-          />
+          <ErrorBanner message={queryErrorMessage} />
         ) : null}
       </div>
 

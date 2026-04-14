@@ -1,47 +1,20 @@
 import type { BulkManageResult, SkillDetailDto, SkillsPageDto, SkillSourceStatusDto } from "./types";
-import { apiPath } from "../../../api/paths";
+import { fetchJson, postJson } from "../../../api/http";
 
 interface OkResponse {
   ok: boolean;
 }
 
-async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
-  const response = await responsePromise;
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = (
-      payload
-      && typeof payload === "object"
-      && "error" in payload
-      && typeof payload.error === "string"
-    )
-      ? payload.error
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-  return payload as T;
-}
-
-async function postJson<T>(path: string, body?: object): Promise<T> {
-  return expectJson<T>(
-    fetch(apiPath(path), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-  );
-}
-
 export async function fetchSkillsPage(): Promise<SkillsPageDto> {
-  return expectJson<SkillsPageDto>(fetch(apiPath("/skills")));
+  return fetchJson<SkillsPageDto>("/skills");
 }
 
 export async function fetchSkillDetail(skillRef: string): Promise<SkillDetailDto> {
-  return expectJson<SkillDetailDto>(fetch(apiPath(`/skills/${encodeURIComponent(skillRef)}`)));
+  return fetchJson<SkillDetailDto>(`/skills/${encodeURIComponent(skillRef)}`);
 }
 
 export async function fetchSkillSourceStatus(skillRef: string): Promise<SkillSourceStatusDto> {
-  return expectJson<SkillSourceStatusDto>(fetch(apiPath(`/skills/${encodeURIComponent(skillRef)}/source-status`)));
+  return fetchJson<SkillSourceStatusDto>(`/skills/${encodeURIComponent(skillRef)}/source-status`);
 }
 
 export async function enableSkill(skillRef: string, harness: string): Promise<OkResponse> {

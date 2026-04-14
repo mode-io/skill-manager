@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "fastapi>=0.135,<0.136",
   "uvicorn>=0.44,<0.45",
+  "certifi>=2024.8.30,<2026",
 ]
 
 [project.optional-dependencies]

@@ -31,7 +31,7 @@ class MarketplaceQueryService:
             return None
 
         installation = self._installation_state("github", record.source_locator)
-        enrichment = self.catalog.summary_enrichment(record)
+        enrichment = self.catalog.detail_enrichment(record)
         repo_meta = self.catalog.repo_metadata(record.repo)
 
         return {

@@ -8,6 +8,7 @@ from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import RepoDisplayMetadata, SkillsShSkill
 from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
+from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MarketplaceUpstreamError
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
@@ -37,6 +38,20 @@ class MarketplaceServiceTests(unittest.TestCase):
     def test_search_requires_two_characters(self) -> None:
         with self.assertRaisesRegex(ValueError, "Enter at least 2 characters"):
             create_fixture_marketplace_service().search_page("a")
+
+    def test_find_item_propagates_marketplace_upstream_errors(self) -> None:
+        service = MarketplaceCatalog(
+            leaderboard_fetcher=lambda: [],
+            search_fetcher=lambda query, limit: (_ for _ in ()).throw(
+                MarketplaceUpstreamError("network", "https://fixture.local/api/search", "offline")
+            ),
+            warm_on_init=False,
+        )
+
+        with self.assertRaises(MarketplaceUpstreamError) as captured:
+            service.find_item("skillssh:mode-io/skills:mode-switch")
+
+        self.assertEqual(str(captured.exception), MARKETPLACE_UNAVAILABLE_MESSAGE)
 
     def test_search_results_are_sorted_by_installs(self) -> None:
         payload = create_fixture_marketplace_service().search_page("switch")["items"]
@@ -137,6 +152,51 @@ class MarketplaceServiceTests(unittest.TestCase):
         payload = cached.payload
         self.assertEqual(payload["description"], "Build React components from Stitch designs.")
         self.assertIsNone(payload["githubFolderUrl"])
+
+    def test_detail_enrichment_fetches_and_caches_on_first_access(self) -> None:
+        cache = MarketplaceCache(Path(mkdtemp(prefix="skill-manager-marketplace-test-cache-")))
+        record = SkillsShSkill(
+            repo="mode-io/skills",
+            skill_id="mode-switch",
+            name="Mode Switch",
+            installs=128,
+        )
+        service = MarketplaceCatalog(
+            leaderboard_fetcher=lambda: [record],
+            search_fetcher=lambda query, limit: [record],
+            detail_fetcher=lambda detail_url: """
+                <section>
+                  <h2>SKILL.md</h2>
+                  <p>Mode Switch</p>
+                  <p>Switch between supported skill execution modes.</p>
+                </section>
+            """,
+            github_resolver=GitHubSkillResolver(
+                GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                        repo=repo,
+                        repo_url=f"https://github.com/{repo}",
+                        owner_login="mode-io",
+                        owner_avatar_url=None,
+                        stars=42,
+                        default_branch="main",
+                    ),
+                ),
+            ),
+            cache=cache,
+            warm_on_init=False,
+        )
+        service._resolver.github_folder_url = lambda repo, skill_id, default_branch=None: f"https://github.com/{repo}/tree/{default_branch or 'main'}/skills/{skill_id}"  # type: ignore[method-assign]
+
+        detail = service.detail_enrichment(record)
+
+        self.assertEqual(detail.description, "Switch between supported skill execution modes.")
+        self.assertEqual(
+            detail.github_folder_url,
+            "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+        )
+        cached = cache.read("details", record.detail_url, ttl_seconds=3600)
+        self.assertIsNotNone(cached)
 
 
 if __name__ == "__main__":

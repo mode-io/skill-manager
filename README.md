@@ -63,12 +63,16 @@ brew install skill-manager
 skill-manager start
 ```
 
+Use one global install channel at a time. If you previously installed `@mode-io/skill-manager` with npm, uninstall it before switching to Homebrew.
+
 ### npm
 
 ```bash
 npm install -g @mode-io/skill-manager
 skill-manager start
 ```
+
+Global npm ownership is exclusive. If `skill-manager` is already installed with Homebrew, run `brew uninstall skill-manager` first or keep using the Homebrew install.
 
 ## Supported harnesses
 
@@ -208,7 +212,16 @@ By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_H
 
 - `SKILL_MANAGER_OPENCLAW_CONFIG`
 
-These overrides are useful when your harness skill directories or OpenClaw config file live outside the defaults.
+### Marketplace
+
+- `SKILL_MANAGER_MARKETPLACE_BASE_URL`
+
+These overrides are useful when your harness skill directories or OpenClaw config file live outside the defaults. `SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for deterministic tests and release validation; normal installs should continue to use the production `skills.sh` marketplace.
+
+## Troubleshooting
+
+- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection first. Packaged installs use the bundled CA bundle automatically; if failures persist after a reinstall, check whether your environment overrides `SSL_CERT_FILE`.
+- If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
 
 ## Development
 
