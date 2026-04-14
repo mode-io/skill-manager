@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import base64
+import subprocess
 from dataclasses import dataclass
 import json
 from threading import Lock, Thread
 import time
 from typing import Callable
 
+from skill_manager.errors import MarketplaceUpstreamError
+
 from .cache import MarketplaceCache
+from .client import DEFAULT_SKILLS_SH_BASE_URL, SkillsShClient
 from .models import MarketplaceCard, MarketplacePageResult, RepoDisplayMetadata, SkillsShSkill
 from .resolver import DetailEnrichment, GitHubSkillResolver
 from .skillssh import (
@@ -75,10 +79,11 @@ class MarketplaceCatalog:
         detail_fetcher: DetailFetcher | None = None,
         warm_on_init: bool = True,
     ) -> "MarketplaceCatalog":
+        client = SkillsShClient.from_environment(env)
         return cls(
-            leaderboard_fetcher=leaderboard_fetcher,
-            search_fetcher=search_fetcher,
-            detail_fetcher=detail_fetcher,
+            leaderboard_fetcher=leaderboard_fetcher or (lambda: fetch_all_time_leaderboard(client=client)),
+            search_fetcher=search_fetcher or (lambda query, limit: search_skills(query, limit=limit, client=client)),
+            detail_fetcher=detail_fetcher or (lambda detail_url: fetch_detail_page(detail_url, client=client)),
             cache=MarketplaceCache.from_environment(env),
             warm_on_init=warm_on_init,
         )
@@ -134,9 +139,7 @@ class MarketplaceCatalog:
                 return record
         try:
             snapshot = self._search_snapshot(skill_id, fetch_limit=self._SEARCH_FETCH_FLOOR)
-        except Exception:  # noqa: BLE001
-            snapshot = None
-        if snapshot is None:
+        except ValueError:
             return None
         for record in snapshot.items:
             if record.repo == repo and record.skill_id == skill_id:
@@ -156,6 +159,15 @@ class MarketplaceCatalog:
             description=record.description_hint or self.DETAIL_LOADING_PLACEHOLDER,
             github_folder_url=None,
         )
+
+    def detail_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
+        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
+        if detail_cache is not None and isinstance(detail_cache.payload, dict):
+            return DetailEnrichment.from_dict(detail_cache.payload)
+
+        detail = self._resolve_detail_enrichment(record, self.repo_metadata(record.repo))
+        self._cache.write("details", record.detail_url, detail.to_dict())
+        return detail
 
     @staticmethod
     def parse_item_id(item_id: str) -> tuple[str, str] | None:
@@ -291,6 +303,7 @@ class MarketplaceCatalog:
             "name": skill.name,
             "installs": skill.installs,
             "descriptionHint": skill.description_hint,
+            "detailBaseUrl": skill.detail_base_url,
         }
 
     @staticmethod
@@ -300,12 +313,18 @@ class MarketplaceCatalog:
         name = payload.get("name", skill_id)
         installs = payload.get("installs", 0)
         description_hint = payload.get("descriptionHint", "")
+        detail_base_url = payload.get("detailBaseUrl", "")
         return SkillsShSkill(
             repo=repo if isinstance(repo, str) else "",
             skill_id=skill_id if isinstance(skill_id, str) else "",
             name=name if isinstance(name, str) else "",
             installs=int(installs or 0),
             description_hint=description_hint if isinstance(description_hint, str) else "",
+            detail_base_url=(
+                detail_base_url
+                if isinstance(detail_base_url, str) and detail_base_url
+                else DEFAULT_SKILLS_SH_BASE_URL
+            ),
         )
 
     @staticmethod
@@ -338,7 +357,7 @@ class MarketplaceCatalog:
             )
             if extracted_description:
                 description = extracted_description
-        except Exception:  # noqa: BLE001
+        except MarketplaceUpstreamError:
             pass
 
         github_folder_url = None
@@ -348,7 +367,7 @@ class MarketplaceCatalog:
                 record.skill_id,
                 default_branch=repo_meta.default_branch,
             )
-        except Exception:  # noqa: BLE001
+        except (ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
             github_folder_url = None
 
         return DetailEnrichment(

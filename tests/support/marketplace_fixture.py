@@ -9,59 +9,15 @@ from skill_manager.application.marketplace.models import SkillsShSkill
 from skill_manager.application.marketplace.resolver import GitHubSkillResolver
 from skill_manager.application.marketplace.resolver import DetailEnrichment
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
-
-_FIXTURE_SKILLS = [
-    SkillsShSkill(
-        repo="mode-io/skills",
-        skill_id="mode-switch",
-        name="Mode Switch",
-        installs=128,
-        description_hint="Switch between supported skill execution modes.",
-    ),
-    SkillsShSkill(
-        repo="vercel-labs/skills",
-        skill_id="trace-scout",
-        name="Trace Scout",
-        installs=84,
-        description_hint="Review traces and highlight suspicious flows.",
-    ),
-    SkillsShSkill(
-        repo="microsoft/github-copilot-for-azure",
-        skill_id="azure-observability",
-        name="Azure Observability",
-        installs=32,
-        description_hint="Investigate Azure telemetry and platform health.",
-    ),
-    SkillsShSkill(
-        repo="mode-io/skills",
-        skill_id="switch-audit",
-        name="Switch Audit",
-        installs=12,
-        description_hint="Audit switch transitions across environments.",
-    ),
-]
-
-_FIXTURE_DETAIL_DESCRIPTIONS = {
-    "mode-switch": "Switch between supported skill execution modes.",
-    "trace-scout": "Review traces and highlight suspicious flows.",
-    "azure-observability": "Investigate Azure telemetry and platform health.",
-    "switch-audit": "Audit switch transitions across environments.",
-}
-
-_FIXTURE_FOLDER_URLS = {
-    "mode-switch": "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
-    "trace-scout": "https://github.com/vercel-labs/skills/tree/main/skills/trace-scout",
-    "azure-observability": "https://github.com/microsoft/github-copilot-for-azure/tree/main/skills/azure-observability",
-    "switch-audit": "https://github.com/mode-io/skills/tree/main/skills/switch-audit",
-}
+from tests.support.marketplace_payloads import FIXTURE_FOLDER_URLS, FIXTURE_SKILLS
 
 
 def fixture_marketplace_search(query: str, limit: int) -> list[SkillsShSkill]:
     needle = query.strip().lower()
     filtered = [
-        item
-        for item in _FIXTURE_SKILLS
-        if needle in item.name.lower() or needle in item.description_hint.lower()
+        item_from_payload(item)
+        for item in FIXTURE_SKILLS
+        if needle in item["name"].lower() or needle in item["description"].lower()
     ]
     return filtered[:limit]
 
@@ -69,19 +25,20 @@ def fixture_marketplace_search(query: str, limit: int) -> list[SkillsShSkill]:
 def create_fixture_marketplace_service() -> MarketplaceCatalog:
     cache_root = Path(mkdtemp(prefix="skill-manager-marketplace-cache-"))
     cache = MarketplaceCache(cache_root)
-    cache.write("leaderboard", "all-time", [skill_to_dict(item) for item in _FIXTURE_SKILLS])
-    for skill in _FIXTURE_SKILLS:
+    skills = [item_from_payload(item) for item in FIXTURE_SKILLS]
+    cache.write("leaderboard", "all-time", [skill_to_dict(item) for item in skills])
+    for skill in skills:
         cache.write(
             "details",
             skill.detail_url,
             DetailEnrichment(
-                description=_FIXTURE_DETAIL_DESCRIPTIONS[skill.skill_id],
-                github_folder_url=_FIXTURE_FOLDER_URLS[skill.skill_id],
+                description=next(item["description"] for item in FIXTURE_SKILLS if item["skillId"] == skill.skill_id),
+                github_folder_url=FIXTURE_FOLDER_URLS[skill.skill_id],
             ).to_dict(),
         )
     github_client = GitHubRepoMetadataClient(metadata_fetcher=_fixture_repo_metadata)
     return MarketplaceCatalog(
-        leaderboard_fetcher=lambda: list(_FIXTURE_SKILLS),
+        leaderboard_fetcher=lambda: list(skills),
         search_fetcher=fixture_marketplace_search,
         detail_fetcher=lambda detail_url: "",
         github_resolver=GitHubSkillResolver(github_client),
@@ -120,6 +77,16 @@ def _fixture_repo_metadata(repo: str) -> GitHubRepoMetadata | None:
     return metadata.get(repo)
 
 
+def item_from_payload(payload: dict[str, object]) -> SkillsShSkill:
+    return SkillsShSkill(
+        repo=str(payload["repo"]),
+        skill_id=str(payload["skillId"]),
+        name=str(payload["name"]),
+        installs=int(payload["installs"]),
+        description_hint=str(payload["description"]),
+    )
+
+
 def skill_to_dict(skill: SkillsShSkill) -> dict[str, object]:
     return {
         "repo": skill.repo,
@@ -127,4 +94,5 @@ def skill_to_dict(skill: SkillsShSkill) -> dict[str, object]:
         "name": skill.name,
         "installs": skill.installs,
         "descriptionHint": skill.description_hint,
+        "detailBaseUrl": skill.detail_base_url,
     }

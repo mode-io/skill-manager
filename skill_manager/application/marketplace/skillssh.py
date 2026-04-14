@@ -5,12 +5,12 @@ from html.parser import HTMLParser
 import json
 import re
 from urllib.parse import quote
-from urllib.request import Request, urlopen
 
+from skill_manager.errors import MarketplaceUpstreamError
+
+from .client import DEFAULT_SKILLS_SH_BASE_URL, SkillsShClient
 from .models import SkillsShSkill
 
-_TIMEOUT_SECONDS = 15
-_USER_AGENT = "skill-manager/0.1"
 _DETAIL_STOP_MARKERS = frozenset({
     "Weekly Installs",
     "Repository",
@@ -21,16 +21,25 @@ _DETAIL_STOP_MARKERS = frozenset({
 })
 
 
-def fetch_all_time_leaderboard() -> list[SkillsShSkill]:
-    html = _fetch_text("https://skills.sh/")
-    return parse_homepage_leaderboard(html)
+def fetch_all_time_leaderboard(*, client: SkillsShClient | None = None) -> list[SkillsShSkill]:
+    active_client = client or SkillsShClient.from_environment()
+    html = active_client.fetch_text("/")
+    try:
+        return parse_homepage_leaderboard(html, detail_base_url=active_client.base_url)
+    except ValueError as error:
+        raise MarketplaceUpstreamError("payload", active_client.absolute_url("/"), str(error)) from error
 
 
-def search_skills(query: str, *, limit: int = 20) -> list[SkillsShSkill]:
+def search_skills(query: str, *, limit: int = 20, client: SkillsShClient | None = None) -> list[SkillsShSkill]:
+    active_client = client or SkillsShClient.from_environment()
     trimmed = query.strip()
     if len(trimmed) < 2:
         raise ValueError("Enter at least 2 characters to search skills.sh.")
-    payload = _fetch_json(f"https://skills.sh/api/search?q={quote(trimmed)}&limit={limit}")
+    path = f"/api/search?q={quote(trimmed)}&limit={limit}"
+    payload = active_client.fetch_json(path)
+    raw_items = payload.get("skills")
+    if not isinstance(raw_items, list):
+        raise MarketplaceUpstreamError("payload", active_client.absolute_url(path), "skills.sh search payload is malformed")
     return [
         SkillsShSkill(
             repo=item["source"],
@@ -38,17 +47,23 @@ def search_skills(query: str, *, limit: int = 20) -> list[SkillsShSkill]:
             name=item.get("name", item["skillId"]),
             installs=int(item.get("installs", 0) or 0),
             description_hint=item.get("description", ""),
+            detail_base_url=active_client.base_url,
         )
-        for item in payload.get("skills", [])
+        for item in raw_items
         if isinstance(item, dict) and item.get("source") and item.get("skillId")
     ]
 
 
-def fetch_detail_page(detail_url: str) -> str:
-    return _fetch_text(detail_url)
+def fetch_detail_page(detail_url: str, *, client: SkillsShClient | None = None) -> str:
+    active_client = client or SkillsShClient.from_environment()
+    return active_client.fetch_text(detail_url)
 
 
-def parse_homepage_leaderboard(document: str) -> list[SkillsShSkill]:
+def parse_homepage_leaderboard(
+    document: str,
+    *,
+    detail_base_url: str = DEFAULT_SKILLS_SH_BASE_URL,
+) -> list[SkillsShSkill]:
     marker = "initialSkills"
     marker_index = document.find(marker)
     if marker_index < 0:
@@ -64,6 +79,7 @@ def parse_homepage_leaderboard(document: str) -> list[SkillsShSkill]:
             skill_id=item["skillId"],
             name=item.get("name", item["skillId"]),
             installs=int(item.get("installs", 0) or 0),
+            detail_base_url=detail_base_url,
         )
         for item in items
         if isinstance(item, dict) and item.get("source") and item.get("skillId")
@@ -79,18 +95,6 @@ def extract_detail_description(document: str, *, skill_name: str, description_hi
     if fallback:
         return fallback
     return description_hint
-
-
-def _fetch_json(url: str) -> dict[str, object]:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": _USER_AGENT})
-    with urlopen(request, timeout=_TIMEOUT_SECONDS) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
-def _fetch_text(url: str) -> str:
-    request = Request(url, headers={"User-Agent": _USER_AGENT})
-    with urlopen(request, timeout=_TIMEOUT_SECONDS) as response:
-        return response.read().decode("utf-8", "replace")
 
 
 def _extract_bracketed(document: str, start_index: int) -> str:

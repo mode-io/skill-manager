@@ -8,6 +8,7 @@ const https = require("node:https");
 const { spawnSync } = require("node:child_process");
 
 const packageJson = require("../package.json");
+const { assertNoHomebrewConflict, isGlobalNpmInstall } = require("./channel-ownership");
 
 function artifactArch() {
   if (process.platform !== "darwin") {
@@ -78,6 +79,8 @@ function extractArtifact(artifactPath, vendorDir) {
 }
 
 async function main() {
+  assertNoHomebrewConflict({ globalInstall: isGlobalNpmInstall() });
+
   const version = packageJson.version;
   const artifact = artifactName(version);
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "skill-manager-npm-"));
