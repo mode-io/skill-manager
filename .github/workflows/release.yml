@@ -48,6 +48,12 @@ jobs:
           ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
 
+      - name: Validate Homebrew formula install smoke
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
+
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -91,6 +97,12 @@ jobs:
         run: |
           ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Validate Homebrew formula install smoke
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
 
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4

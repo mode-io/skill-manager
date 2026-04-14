@@ -121,6 +121,12 @@ jobs:
           ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
 
+      - name: Validate Homebrew formula install smoke
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
+
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -165,29 +171,14 @@ jobs:
           ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
 
+      - name: Validate Homebrew formula install smoke
+        run: |
+          VERSION="$(cat skill_manager/VERSION)"
+          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
+          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
+
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4
         with:
           name: package-smoke-x64
           path: .artifacts/release/*
-
-  validate-homebrew-formula:
-    runs-on: ubuntu-latest
-    needs:
-      - package-smoke-arm64
-      - package-smoke-x64
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          path: .artifacts/release
-          pattern: package-smoke-*
-          merge-multiple: true
-
-      - name: Validate Homebrew formula template
-        run: |
-          VERSION="$(cat skill_manager/VERSION)"
-          ARM64_SHA="$(cut -d' ' -f1 "$(find .artifacts/release -name '*darwin-arm64.tar.gz.sha256' -print -quit)")"
-          X64_SHA="$(cut -d' ' -f1 "$(find .artifacts/release -name '*darwin-x64.tar.gz.sha256' -print -quit)")"
-          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARM64_SHA" "$X64_SHA"
