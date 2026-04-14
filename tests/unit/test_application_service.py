@@ -19,6 +19,14 @@ from tests.support.fake_home import (
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
+class _StaticGitHubSource:
+    def __init__(self, package_root: Path) -> None:
+        self.package_root = package_root
+
+    def fetch(self, locator: str, work_dir: Path) -> Path:
+        return self.package_root
+
+
 class BackendContainerTests(unittest.TestCase):
     def test_list_skills_groups_identical_local_copies_and_preserves_builtins(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -181,6 +189,7 @@ class BackendContainerTests(unittest.TestCase):
             )
 
             container = build_backend_container(spec.env())
+            container.source_fetcher._github = _StaticGitHubSource(package_root)  # type: ignore[assignment]
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
