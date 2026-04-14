@@ -27,8 +27,8 @@ describe("MarketplacePage loading ownership", () => {
           installs: 128,
           stars: 512,
           repoLabel: "mode-io/skills",
+          repoUrl: "https://github.com/mode-io/skills",
           repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-          githubFolderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
           skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
           installToken: "token-mode-switch",
           installation: {
@@ -56,7 +56,6 @@ describe("MarketplacePage loading ownership", () => {
       isInstallPending: vi.fn(() => false),
       openInstalledSkill: vi.fn(),
       dismissError: vi.fn(),
-      hasLoadingSummaries: false,
     } as unknown as ReturnType<typeof useMarketplaceController>);
 
     render(

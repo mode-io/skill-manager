@@ -306,8 +306,8 @@ function baseItem(id: string, name: string, installs: number) {
     installs,
     stars: 512,
     repoLabel: "mode-io/skills",
+    repoUrl: "https://github.com/mode-io/skills",
     repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-    githubFolderUrl: `https://github.com/mode-io/skills/tree/main/skills/${id}`,
     skillsDetailUrl: `https://skills.sh/mode-io/skills/${id}`,
     installToken: `token-${id}`,
     installation: {

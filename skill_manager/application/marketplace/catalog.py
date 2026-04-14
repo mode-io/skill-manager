@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import base64
-import subprocess
 from dataclasses import dataclass
 import json
-from threading import Lock, Thread
+import subprocess
+from threading import Thread
 import time
 from typing import Callable
 
 from skill_manager.errors import MarketplaceUpstreamError
+from skill_manager.sources import github_repo_url
 
 from .cache import MarketplaceCache
 from .client import DEFAULT_SKILLS_SH_BASE_URL, SkillsShClient
@@ -39,7 +40,6 @@ class SearchSnapshot:
 class MarketplaceCatalog:
     DEFAULT_PAGE_SIZE = 20
     MAX_PAGE_SIZE = 60
-    DETAIL_LOADING_PLACEHOLDER = "Summary loading from skills.sh…"
     DETAIL_MISSING_FALLBACK = "No summary available on skills.sh."
     _LEADERBOARD_TTL_SECONDS = 3600
     _DETAIL_TTL_SECONDS = 86400
@@ -47,6 +47,7 @@ class MarketplaceCatalog:
     _SEARCH_FETCH_FLOOR = 40
     _SEARCH_CACHE_LIMIT = 24
     _METADATA_WORKERS = 8
+    _SUMMARY_WORKERS = 6
 
     def __init__(
         self,
@@ -64,8 +65,6 @@ class MarketplaceCatalog:
         self._resolver = github_resolver or GitHubSkillResolver()
         self._cache = cache or MarketplaceCache()
         self._search_cache: dict[str, SearchSnapshot] = {}
-        self._warming_details: set[str] = set()
-        self._warming_lock = Lock()
         if warm_on_init:
             self._warm_leaderboard_async()
 
@@ -94,7 +93,7 @@ class MarketplaceCatalog:
 
     def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         records = self._leaderboard_records()
-        return self._page(records, limit=limit, offset=offset).to_dict()
+        return self._page(records, limit=limit, offset=offset, prefer_description_hints=False).to_dict()
 
     def search_page(self, query: str, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         trimmed = query.strip()
@@ -107,7 +106,7 @@ class MarketplaceCatalog:
         items = list(snapshot.items)
         page_items = items[page_offset:page_offset + page_limit]
         has_more = len(items) > (page_offset + page_limit) or snapshot.maybe_more
-        cards = tuple(self._build_cards(page_items))
+        cards = tuple(self._build_cards(page_items, prefer_description_hints=True))
         next_offset = page_offset + len(cards) if has_more and cards else None
         return MarketplacePageResult(items=cards, next_offset=next_offset, has_more=has_more and bool(cards)).to_dict()
 
@@ -149,23 +148,31 @@ class MarketplaceCatalog:
     def repo_metadata(self, repo: str) -> RepoDisplayMetadata:
         return self._resolver.repo_metadata(repo)
 
-    def summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
-        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
-        if detail_cache is not None and isinstance(detail_cache.payload, dict):
-            return DetailEnrichment.from_dict(detail_cache.payload)
-
-        self._warm_details_async([(record, self.repo_metadata(record.repo))])
-        return DetailEnrichment(
-            description=record.description_hint or self.DETAIL_LOADING_PLACEHOLDER,
-            github_folder_url=None,
-        )
-
     def detail_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
-        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
-        if detail_cache is not None and isinstance(detail_cache.payload, dict):
-            return DetailEnrichment.from_dict(detail_cache.payload)
+        cached = self._cached_detail(record)
+        if cached is not None and cached.folder_resolution_complete:
+            return cached
 
-        detail = self._resolve_detail_enrichment(record, self.repo_metadata(record.repo))
+        summary = cached
+        if summary is None or not self._is_usable_description(summary.description):
+            summary = self._resolve_summary_enrichment(record)
+
+        repo_meta = self.repo_metadata(record.repo)
+        folder_url = None
+        try:
+            folder_url = self._resolver.github_folder_url(
+                record.repo,
+                record.skill_id,
+                default_branch=repo_meta.default_branch,
+            )
+        except (ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+            folder_url = None
+
+        detail = DetailEnrichment(
+            description=summary.description,
+            github_folder_url=folder_url,
+            folder_resolution_complete=True,
+        )
         self._cache.write("details", record.detail_url, detail.to_dict())
         return detail
 
@@ -181,11 +188,18 @@ class MarketplaceCatalog:
             return None
         return repo, skill_id
 
-    def _page(self, records: list[SkillsShSkill], *, limit: int | None, offset: int) -> MarketplacePageResult:
+    def _page(
+        self,
+        records: list[SkillsShSkill],
+        *,
+        limit: int | None,
+        offset: int,
+        prefer_description_hints: bool,
+    ) -> MarketplacePageResult:
         page_limit = self._normalize_limit(limit)
         page_offset = max(offset, 0)
         page_records = records[page_offset:page_offset + page_limit]
-        cards = tuple(self._build_cards(page_records))
+        cards = tuple(self._build_cards(page_records, prefer_description_hints=prefer_description_hints))
         has_more = len(records) > (page_offset + page_limit)
         next_offset = page_offset + len(cards) if has_more and cards else None
         return MarketplacePageResult(items=cards, next_offset=next_offset, has_more=has_more and bool(cards))
@@ -215,35 +229,26 @@ class MarketplaceCatalog:
         self._prune_search_cache()
         return snapshot
 
-    def _build_cards(self, records: list[SkillsShSkill]) -> list[MarketplaceCard]:
+    def _build_cards(self, records: list[SkillsShSkill], *, prefer_description_hints: bool) -> list[MarketplaceCard]:
         metadata = self._repo_metadata(records)
+        descriptions = self._page_descriptions(records, prefer_description_hints=prefer_description_hints)
         cards: list[MarketplaceCard] = []
-        to_warm: list[tuple[SkillsShSkill, RepoDisplayMetadata]] = []
         for record in records:
-            detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
-            enrichment = None
-            if detail_cache is not None and isinstance(detail_cache.payload, dict):
-                enrichment = DetailEnrichment.from_dict(detail_cache.payload)
-            else:
-                to_warm.append((record, metadata[record.repo]))
-            token = self.install_token("github", record.source_locator)
             repo_meta = metadata[record.repo]
             cards.append(
                 MarketplaceCard(
                     id=f"skillssh:{record.repo}:{record.skill_id}",
                     name=record.name,
-                    description=self._description(record, enrichment),
+                    description=descriptions[record.detail_url],
                     installs=record.installs,
                     stars=repo_meta.stars,
                     repo_label=record.repo,
+                    repo_url=github_repo_url(record.repo),
                     repo_image_url=repo_meta.image_url,
-                    github_folder_url=enrichment.github_folder_url if enrichment is not None else None,
                     skills_detail_url=record.detail_url,
-                    install_token=token,
+                    install_token=self.install_token("github", record.source_locator),
                 )
             )
-        if to_warm:
-            self._warm_details_async(to_warm)
         return cards
 
     def _repo_metadata(self, records: list[SkillsShSkill]) -> dict[str, RepoDisplayMetadata]:
@@ -255,12 +260,54 @@ class MarketplaceCatalog:
             pairs = executor.map(lambda repo: (repo, self._resolver.repo_metadata(repo)), repos)
         return dict(pairs)
 
-    def _description(self, record: SkillsShSkill, enrichment: DetailEnrichment | None) -> str:
-        if enrichment is not None and enrichment.description:
-            return enrichment.description
-        if record.description_hint:
-            return record.description_hint
-        return self.DETAIL_LOADING_PLACEHOLDER
+    def _page_descriptions(self, records: list[SkillsShSkill], *, prefer_description_hints: bool) -> dict[str, str]:
+        if not records:
+            return {}
+        max_workers = min(self._SUMMARY_WORKERS, len(records))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            pairs = executor.map(
+                lambda record: (
+                    record.detail_url,
+                    self._description_for_card(record, prefer_description_hints=prefer_description_hints),
+                ),
+                records,
+            )
+        return dict(pairs)
+
+    def _description_for_card(self, record: SkillsShSkill, *, prefer_description_hints: bool) -> str:
+        cached = self._cached_detail(record)
+        if cached is not None and self._is_usable_description(cached.description):
+            return cached.description
+        if prefer_description_hints and self._is_usable_description(record.description_hint):
+            return record.description_hint.strip()
+        detail = self._resolve_summary_enrichment(record)
+        return detail.description
+
+    def _cached_detail(self, record: SkillsShSkill) -> DetailEnrichment | None:
+        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
+        if detail_cache is None or not isinstance(detail_cache.payload, dict):
+            return None
+        return DetailEnrichment.from_dict(detail_cache.payload)
+
+    def _resolve_summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
+        description = record.description_hint.strip() if self._is_usable_description(record.description_hint) else ""
+        document = self._detail_fetcher(record.detail_url)
+        extracted_description = extract_detail_description(
+            document,
+            skill_name=record.name,
+            description_hint=description,
+        )
+        if self._is_usable_description(extracted_description):
+            description = extracted_description.strip()
+        if not description:
+            description = self.DETAIL_MISSING_FALLBACK
+        detail = DetailEnrichment(
+            description=description,
+            github_folder_url=None,
+            folder_resolution_complete=False,
+        )
+        self._cache.write("details", record.detail_url, detail.to_dict())
+        return detail
 
     def _warm_leaderboard_async(self) -> None:
         Thread(target=self._refresh_leaderboard, daemon=True).start()
@@ -268,32 +315,9 @@ class MarketplaceCatalog:
     def _refresh_leaderboard(self) -> None:
         try:
             records = self._sort_records(self._leaderboard_fetcher())
-        except Exception:  # noqa: BLE001
+        except MarketplaceUpstreamError:
             return
         self._cache.write("leaderboard", "all-time", [self._skill_to_dict(item) for item in records])
-
-    def _warm_details_async(self, items: list[tuple[SkillsShSkill, RepoDisplayMetadata]]) -> None:
-        pending: list[tuple[SkillsShSkill, RepoDisplayMetadata]] = []
-        with self._warming_lock:
-            for record, repo_meta in items:
-                key = record.detail_url
-                if key in self._warming_details:
-                    continue
-                self._warming_details.add(key)
-                pending.append((record, repo_meta))
-        if not pending:
-            return
-        Thread(target=self._warm_details, args=(pending,), daemon=True).start()
-
-    def _warm_details(self, items: list[tuple[SkillsShSkill, RepoDisplayMetadata]]) -> None:
-        try:
-            for record, repo_meta in items:
-                detail = self._resolve_detail_enrichment(record, repo_meta)
-                self._cache.write("details", record.detail_url, detail.to_dict())
-        finally:
-            with self._warming_lock:
-                for record, _ in items:
-                    self._warming_details.discard(record.detail_url)
 
     @staticmethod
     def _skill_to_dict(skill: SkillsShSkill) -> dict[str, object]:
@@ -346,31 +370,6 @@ class MarketplaceCatalog:
         ordered = sorted(self._search_cache.items(), key=lambda item: item[1].fetched_at, reverse=True)
         self._search_cache = dict(ordered[:self._SEARCH_CACHE_LIMIT])
 
-    def _resolve_detail_enrichment(self, record: SkillsShSkill, repo_meta: RepoDisplayMetadata) -> DetailEnrichment:
-        description = record.description_hint or self.DETAIL_MISSING_FALLBACK
-        try:
-            document = self._detail_fetcher(record.detail_url)
-            extracted_description = extract_detail_description(
-                document,
-                skill_name=record.name,
-                description_hint=record.description_hint,
-            )
-            if extracted_description:
-                description = extracted_description
-        except MarketplaceUpstreamError:
-            pass
-
-        github_folder_url = None
-        try:
-            github_folder_url = self._resolver.github_folder_url(
-                record.repo,
-                record.skill_id,
-                default_branch=repo_meta.default_branch,
-            )
-        except (ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-            github_folder_url = None
-
-        return DetailEnrichment(
-            description=description,
-            github_folder_url=github_folder_url,
-        )
+    @staticmethod
+    def _is_usable_description(value: str | None) -> bool:
+        return isinstance(value, str) and bool(value.strip())

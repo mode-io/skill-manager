@@ -6,8 +6,7 @@ from tempfile import mkdtemp
 from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import SkillsShSkill
-from skill_manager.application.marketplace.resolver import GitHubSkillResolver
-from skill_manager.application.marketplace.resolver import DetailEnrichment
+from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_payloads import FIXTURE_FOLDER_URLS, FIXTURE_SKILLS
 
@@ -34,6 +33,7 @@ def create_fixture_marketplace_service() -> MarketplaceCatalog:
             DetailEnrichment(
                 description=next(item["description"] for item in FIXTURE_SKILLS if item["skillId"] == skill.skill_id),
                 github_folder_url=FIXTURE_FOLDER_URLS[skill.skill_id],
+                folder_resolution_complete=True,
             ).to_dict(),
         )
     github_client = GitHubRepoMetadataClient(metadata_fetcher=_fixture_repo_metadata)

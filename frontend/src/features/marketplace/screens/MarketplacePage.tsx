@@ -7,8 +7,6 @@ import { MarketplaceCard } from "../components/MarketplaceCard";
 import { MarketplaceDetailSheet } from "../components/MarketplaceDetailSheet";
 import { useMarketplaceController } from "../model/use-marketplace-controller";
 
-const ENRICHMENT_REFRESH_DELAY_MS = 1500;
-
 export default function MarketplacePage() {
   const {
     query,
@@ -31,9 +29,7 @@ export default function MarketplacePage() {
     isInstallPending,
     openInstalledSkill,
     dismissError,
-    hasLoadingSummaries,
   } = useMarketplaceController();
-  const feedErrorMessage = feedQuery.error instanceof Error ? feedQuery.error.message : "";
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const pagingRef = useRef(false);
 
@@ -60,18 +56,7 @@ export default function MarketplacePage() {
     observer.observe(node);
     return () => observer.disconnect();
   }, [feedQuery, hasMore, status]);
-
-  useEffect(() => {
-    if (status !== "ready" || items.length === 0 || !hasLoadingSummaries) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      void feedQuery.refetch().catch(() => {
-        // Keep the current cards stable if background enrichment refresh fails.
-      });
-    }, ENRICHMENT_REFRESH_DELAY_MS);
-    return () => window.clearTimeout(timeoutId);
-  }, [feedQuery, hasLoadingSummaries, items.length, status]);
+  const feedErrorMessage = feedQuery.error instanceof Error ? feedQuery.error.message : "Unable to load the marketplace.";
 
   return (
     <>
@@ -116,7 +101,7 @@ export default function MarketplacePage() {
 
         {status === "error" ? (
           <div className="panel-state">
-            <ErrorBanner message={feedErrorMessage || "Unable to load the marketplace."} />
+            <ErrorBanner message={feedErrorMessage} />
           </div>
         ) : null}
 

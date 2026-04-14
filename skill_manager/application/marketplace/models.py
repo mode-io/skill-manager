@@ -38,8 +38,8 @@ class MarketplaceCard:
     installs: int
     stars: int | None
     repo_label: str
+    repo_url: str
     repo_image_url: str | None
-    github_folder_url: str | None
     skills_detail_url: str
     install_token: str
 
@@ -51,8 +51,8 @@ class MarketplaceCard:
             "installs": self.installs,
             "stars": self.stars,
             "repoLabel": self.repo_label,
+            "repoUrl": self.repo_url,
             "repoImageUrl": self.repo_image_url,
-            "githubFolderUrl": self.github_folder_url,
             "skillsDetailUrl": self.skills_detail_url,
             "installToken": self.install_token,
         }

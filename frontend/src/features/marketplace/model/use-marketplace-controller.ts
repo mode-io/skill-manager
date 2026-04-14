@@ -10,8 +10,6 @@ import {
 import type { MarketplaceItemDto } from "../api/types";
 import { marketplaceInstallActionKey, marketplaceSearchActionKey } from "./pending";
 
-const LOADING_SUMMARY = "Summary loading from skills.sh…";
-
 export interface MarketplaceController {
   query: string;
   submittedQuery: string;
@@ -34,7 +32,6 @@ export interface MarketplaceController {
   isInstallPending: (itemId: string) => boolean;
   openInstalledSkill: (skillRef: string) => void;
   dismissError: () => void;
-  hasLoadingSummaries: boolean;
 }
 
 export function useMarketplaceController(): MarketplaceController {
@@ -156,6 +153,5 @@ export function useMarketplaceController(): MarketplaceController {
     isInstallPending: (itemId) => pendingRegistry.isPending(marketplaceInstallActionKey(itemId)),
     openInstalledSkill,
     dismissError: () => setErrorMessage(""),
-    hasLoadingSummaries: items.some((item) => item.description === LOADING_SUMMARY),
   };
 }
