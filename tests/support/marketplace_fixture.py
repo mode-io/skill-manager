@@ -6,6 +6,7 @@ from tempfile import mkdtemp
 from skill_manager.application.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace.cache import MarketplaceCache
 from skill_manager.application.marketplace.models import SkillsShSkill
+from skill_manager.application.marketplace.repo_snapshots import GitHubRepoSnapshotService
 from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_payloads import FIXTURE_FOLDER_URLS, FIXTURE_SKILLS
@@ -36,12 +37,17 @@ def create_fixture_marketplace_service() -> MarketplaceCatalog:
                 folder_resolution_complete=True,
             ).to_dict(),
         )
-    github_client = GitHubRepoMetadataClient(metadata_fetcher=_fixture_repo_metadata)
+    snapshot_service = GitHubRepoSnapshotService(
+        cache=cache,
+        metadata_client=GitHubRepoMetadataClient(metadata_fetcher=_fixture_repo_metadata),
+    )
+    for repo in {skill.repo for skill in skills}:
+        snapshot_service.refresh_repo_now(repo)
     return MarketplaceCatalog(
         leaderboard_fetcher=lambda: list(skills),
         search_fetcher=fixture_marketplace_search,
         detail_fetcher=lambda detail_url: "",
-        github_resolver=GitHubSkillResolver(github_client),
+        github_resolver=GitHubSkillResolver(snapshot_service),
         cache=cache,
         warm_on_init=False,
     )
@@ -52,24 +58,18 @@ def _fixture_repo_metadata(repo: str) -> GitHubRepoMetadata | None:
         "mode-io/skills": GitHubRepoMetadata(
             repo=repo,
             repo_url="https://github.com/mode-io/skills",
-            owner_login="mode-io",
-            owner_avatar_url="https://avatars.githubusercontent.com/u/424242?v=4",
             stars=512,
             default_branch="main",
         ),
         "vercel-labs/skills": GitHubRepoMetadata(
             repo=repo,
             repo_url="https://github.com/vercel-labs/skills",
-            owner_login="vercel-labs",
-            owner_avatar_url="https://avatars.githubusercontent.com/u/515151?v=4",
             stars=314,
             default_branch="main",
         ),
         "microsoft/github-copilot-for-azure": GitHubRepoMetadata(
             repo=repo,
             repo_url="https://github.com/microsoft/github-copilot-for-azure",
-            owner_login="microsoft",
-            owner_avatar_url="https://avatars.githubusercontent.com/u/615615?v=4",
             stars=271,
             default_branch="main",
         ),

@@ -10,6 +10,7 @@ from skill_manager.application.marketplace.models import RepoDisplayMetadata
 from skill_manager.application.marketplace.skillssh import fetch_all_time_leaderboard, fetch_detail_page, search_skills
 from skill_manager.application.source_fetch_service import SourceFetchService
 from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MutationError
+from skill_manager.sources import github_owner_avatar_url
 from tests.support.app_harness import AppTestHarness
 from tests.support.fake_home import seed_skill_package
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
@@ -21,12 +22,17 @@ class _FixtureResolver:
         self._broken_repos = broken_repos or set()
 
     def repo_metadata(self, repo: str) -> RepoDisplayMetadata:
-        owner = repo.split("/", 1)[0]
         return RepoDisplayMetadata(
             stars=512 if repo == "mode-io/skills" else 84,
-            image_url=f"https://avatars.githubusercontent.com/{owner}",
+            image_url=github_owner_avatar_url(repo),
             default_branch="main",
         )
+
+    def repo_metadata_for_repos(self, repos: list[str]) -> dict[str, RepoDisplayMetadata]:
+        return {repo: self.repo_metadata(repo) for repo in repos}
+
+    def close(self) -> None:
+        return None
 
     def github_folder_url(self, repo: str, skill_id: str, *, default_branch: str | None = None) -> str | None:
         if repo in self._broken_repos:
@@ -71,6 +77,7 @@ class MarketplaceApiTests(unittest.TestCase):
         self.assertEqual(first["description"], "Switch between supported skill execution modes.")
         self.assertEqual(first["repoUrl"], "https://github.com/mode-io/skills")
         self.assertEqual(first["skillsDetailUrl"], f"{fixture.base_url}/mode-io/skills/mode-switch")
+        self.assertTrue(all(item["repoLabel"] != "smithery.ai" for item in payload["items"]))
 
     def test_marketplace_search_uses_https_fixture_when_trusted(self) -> None:
         with MarketplaceFixtureServer() as fixture:
@@ -79,6 +86,16 @@ class MarketplaceApiTests(unittest.TestCase):
 
         self.assertEqual([item["name"] for item in payload["items"]], ["Trace Scout"])
         self.assertEqual(payload["items"][0]["description"], "Review traces and highlight suspicious flows.")
+
+    def test_marketplace_search_degrades_when_fixture_search_result_has_no_detail_page(self) -> None:
+        with MarketplaceFixtureServer() as fixture:
+            with AppTestHarness(marketplace=_fixture_catalog(fixture.env())) as harness:
+                payload = harness.get_json("/api/marketplace/search?q=ui-ux")
+
+        self.assertEqual(payload["items"][0]["name"], "ui-ux-pro-max")
+        self.assertEqual(payload["items"][0]["repoLabel"], "broken-org/ui-ux-pro-max-skill")
+        self.assertEqual(payload["items"][0]["description"], MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
+        self.assertTrue(all(item["repoLabel"] != "smithery.ai" for item in payload["items"]))
 
     def test_marketplace_popular_returns_503_when_fixture_is_untrusted(self) -> None:
         with MarketplaceFixtureServer() as fixture:
@@ -107,6 +124,15 @@ class MarketplaceApiTests(unittest.TestCase):
         self.assertEqual(payload["sourceLinks"]["folderUrl"], None)
         self.assertEqual(payload["sourceLinks"]["skillsDetailUrl"], f"{fixture.base_url}/vercel-labs/skills/trace-scout")
 
+    def test_marketplace_detail_degrades_when_summary_preview_is_missing(self) -> None:
+        with MarketplaceFixtureServer() as fixture:
+            with AppTestHarness(marketplace=_fixture_catalog(fixture.env())) as harness:
+                payload = harness.get_json("/api/marketplace/items/skillssh%3Abroken-org%2Fui-ux-pro-max-skill%3Aui-ux-pro-max")
+
+        self.assertEqual(payload["name"], "ui-ux-pro-max")
+        self.assertEqual(payload["description"], MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
+        self.assertEqual(payload["sourceLinks"]["repoUrl"], "https://github.com/broken-org/ui-ux-pro-max-skill")
+
     def test_marketplace_detail_returns_503_when_fixture_is_untrusted(self) -> None:
         with MarketplaceFixtureServer() as fixture:
             with AppTestHarness(env_overrides={"SKILL_MANAGER_MARKETPLACE_BASE_URL": fixture.base_url}) as harness:
@@ -117,6 +143,13 @@ class MarketplaceApiTests(unittest.TestCase):
     def test_marketplace_detail_returns_404_for_unknown_item(self) -> None:
         with AppTestHarness(marketplace=create_fixture_marketplace_service()) as harness:
             payload = harness.get_json("/api/marketplace/items/skillssh%3Aunknown%2Frepo%3Anope", expected_status=404)
+
+        self.assertIn("unknown marketplace item", payload["error"])
+
+    def test_marketplace_detail_returns_404_for_filtered_unsupported_source(self) -> None:
+        with MarketplaceFixtureServer() as fixture:
+            with AppTestHarness(marketplace=_fixture_catalog(fixture.env())) as harness:
+                payload = harness.get_json("/api/marketplace/items/skillssh%3Asmithery.ai%3Aui-ux-pro-max", expected_status=404)
 
         self.assertIn("unknown marketplace item", payload["error"])
 
