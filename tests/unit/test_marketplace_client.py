@@ -64,6 +64,31 @@ class MarketplaceProviderErrorTests(unittest.TestCase):
         self.assertEqual(str(captured.exception), MARKETPLACE_UNAVAILABLE_MESSAGE)
         self.assertEqual(captured.exception.kind, "payload")
 
+    def test_search_skills_filters_unsupported_sources(self) -> None:
+        client = mock.Mock()
+        client.fetch_json.return_value = {
+            "skills": [
+                {
+                    "source": "smithery.ai",
+                    "skillId": "ui-ux-pro-max",
+                    "name": "ui-ux-pro-max",
+                    "installs": 128,
+                },
+                {
+                    "source": "mode-io/skills",
+                    "skillId": "mode-switch",
+                    "name": "Mode Switch",
+                    "installs": 64,
+                },
+            ],
+        }
+        client.base_url = "https://fixture.local"
+        client.absolute_url.return_value = "https://fixture.local/api/search?q=mode&limit=20"
+
+        skills = search_skills("mode", client=client)
+
+        self.assertEqual([(item.repo, item.skill_id) for item in skills], [("mode-io/skills", "mode-switch")])
+
 
 class SkillsShClientErrorTests(unittest.TestCase):
     def test_fetch_json_maps_http_error_to_upstream_error(self) -> None:

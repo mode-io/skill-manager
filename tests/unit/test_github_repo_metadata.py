@@ -1,43 +1,41 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import time
 import unittest
 
-from skill_manager.sources import GitHubAvatarAsset, GitHubOwnerMetadata, GitHubRepoMetadata, GitHubRepoMetadataClient
+from skill_manager.application.marketplace.cache import MarketplaceCache
+from skill_manager.application.marketplace.repo_snapshots import GitHubRepoSnapshotService
+from skill_manager.sources import (
+    GitHubRepoMetadata,
+    GitHubRepoMetadataClient,
+    GitHubRepoMetadataError,
+    github_owner_avatar_url,
+)
 
 
 class GitHubRepoMetadataClientTests(unittest.TestCase):
-    def test_metadata_and_avatar_fetches_are_cached_per_repo(self) -> None:
-        metadata_calls: list[str] = []
-        avatar_calls: list[str] = []
+    def test_metadata_fetches_are_cached_per_repo(self) -> None:
+        calls: list[str] = []
 
         def metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
-            metadata_calls.append(repo)
+            calls.append(repo)
             return GitHubRepoMetadata(
                 repo=repo,
                 repo_url=f"https://github.com/{repo}",
-                owner_login="mode-io",
-                owner_avatar_url="https://avatars.githubusercontent.com/u/424242?v=4",
                 stars=512,
+                default_branch="main",
             )
 
-        def avatar_fetcher(avatar_url: str) -> GitHubAvatarAsset | None:
-            avatar_calls.append(avatar_url)
-            return GitHubAvatarAsset(content_type="image/svg+xml", body=b"<svg />")
+        client = GitHubRepoMetadataClient(metadata_fetcher=metadata_fetcher)
 
-        client = GitHubRepoMetadataClient(
-            metadata_fetcher=metadata_fetcher,
-            avatar_fetcher=avatar_fetcher,
-        )
+        first = client.metadata_for_repo("mode-io/skills")
+        second = client.metadata_for_repo("mode-io/skills")
 
-        first_metadata = client.metadata_for_repo("mode-io/skills")
-        second_metadata = client.metadata_for_repo("mode-io/skills")
-        first_avatar = client.avatar_for_repo("mode-io/skills")
-        second_avatar = client.avatar_for_repo("mode-io/skills")
-
-        self.assertEqual(first_metadata, second_metadata)
-        self.assertEqual(first_avatar, second_avatar)
-        self.assertEqual(metadata_calls, ["mode-io/skills"])
-        self.assertEqual(avatar_calls, ["https://avatars.githubusercontent.com/u/424242?v=4"])
+        self.assertEqual(first, second)
+        self.assertEqual(calls, ["mode-io/skills"])
 
     def test_invalid_repo_is_rejected_without_fetching(self) -> None:
         calls: list[str] = []
@@ -48,76 +46,165 @@ class GitHubRepoMetadataClientTests(unittest.TestCase):
 
         client = GitHubRepoMetadataClient(metadata_fetcher=metadata_fetcher)
 
-        self.assertIsNone(client.metadata_for_repo("not-a-valid-repo"))
-        self.assertIsNone(client.avatar_for_repo("still-not-valid"))
+        self.assertIsNone(client.metadata_for_repo("smithery.ai"))
         self.assertEqual(calls, [])
 
-    def test_owner_metadata_and_avatar_fetches_are_cached_per_login(self) -> None:
-        owner_calls: list[str] = []
-        avatar_calls: list[str] = []
-
-        def owner_fetcher(login: str) -> GitHubOwnerMetadata | None:
-            owner_calls.append(login)
-            return GitHubOwnerMetadata(
-                login=login,
-                profile_url=f"https://github.com/{login}",
-                avatar_url="https://avatars.githubusercontent.com/u/777777?v=4",
-            )
-
-        def avatar_fetcher(avatar_url: str) -> GitHubAvatarAsset | None:
-            avatar_calls.append(avatar_url)
-            return GitHubAvatarAsset(content_type="image/svg+xml", body=b"<svg />")
-
+    def test_transient_errors_are_propagated(self) -> None:
         client = GitHubRepoMetadataClient(
-            owner_fetcher=owner_fetcher,
-            avatar_fetcher=avatar_fetcher,
+            metadata_fetcher=lambda repo: (_ for _ in ()).throw(
+                GitHubRepoMetadataError(repo, "rate limit", status_code=403)
+            ),
         )
 
-        first_owner = client.owner_metadata_for_login("openclaw")
-        second_owner = client.owner_metadata_for_login("openclaw")
-        first_avatar = client.avatar_for_owner("openclaw")
-        second_avatar = client.avatar_for_owner("openclaw")
+        with self.assertRaises(GitHubRepoMetadataError) as captured:
+            client.metadata_for_repo("mode-io/skills")
 
-        self.assertEqual(first_owner, second_owner)
-        self.assertEqual(first_avatar, second_avatar)
-        self.assertEqual(owner_calls, ["openclaw"])
-        self.assertEqual(avatar_calls, ["https://avatars.githubusercontent.com/u/777777?v=4"])
+        self.assertEqual(captured.exception.status_code, 403)
 
-    def test_failed_avatar_fetch_does_not_poison_cache(self) -> None:
-        avatar_calls: list[str] = []
-        should_fail = True
 
-        def metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
-            return GitHubRepoMetadata(
-                repo=repo,
-                repo_url=f"https://github.com/{repo}",
-                owner_login="mode-io",
-                owner_avatar_url="https://avatars.githubusercontent.com/u/424242?v=4",
-                stars=512,
+class GitHubRepoSnapshotServiceTests(unittest.TestCase):
+    def test_metadata_for_repo_uses_deterministic_avatar_url(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            service = GitHubRepoSnapshotService(
+                cache=MarketplaceCache(Path(temp_dir)),
+                metadata_client=GitHubRepoMetadataClient(metadata_fetcher=lambda repo: None),
             )
+            try:
+                metadata = service.metadata_for_repo("mode-io/skills")
+            finally:
+                service.close()
 
-        def avatar_fetcher(avatar_url: str) -> GitHubAvatarAsset | None:
-            nonlocal should_fail
-            avatar_calls.append(avatar_url)
-            if should_fail:
-                should_fail = False
-                return None
-            return GitHubAvatarAsset(content_type="image/svg+xml", body=b"<svg />")
+        self.assertEqual(metadata.image_url, github_owner_avatar_url("mode-io/skills"))
+        self.assertIsNone(metadata.stars)
 
-        client = GitHubRepoMetadataClient(
-            metadata_fetcher=metadata_fetcher,
-            avatar_fetcher=avatar_fetcher,
-        )
+    def test_transient_failure_is_negative_cached(self) -> None:
+        calls: list[str] = []
+        with TemporaryDirectory() as temp_dir:
+            cache = MarketplaceCache(Path(temp_dir))
+            service = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: _raise_transient(calls, repo),
+                ),
+            )
+            try:
+                service.refresh_repo_now("mode-io/skills")
+                first = service.metadata_for_repo("mode-io/skills")
+                second = service.metadata_for_repo("mode-io/skills")
+            finally:
+                service.close()
 
-        self.assertIsNone(client.avatar_for_repo("mode-io/skills"))
-        self.assertIsNotNone(client.avatar_for_repo("mode-io/skills"))
-        self.assertEqual(
-            avatar_calls,
-            [
-                "https://avatars.githubusercontent.com/u/424242?v=4",
-                "https://avatars.githubusercontent.com/u/424242?v=4",
-            ],
-        )
+        self.assertEqual(calls, ["mode-io/skills"])
+        self.assertEqual(first.image_url, github_owner_avatar_url("mode-io/skills"))
+        self.assertIsNone(first.stars)
+        self.assertEqual(second.image_url, github_owner_avatar_url("mode-io/skills"))
+        self.assertIsNone(second.stars)
+
+    def test_permanent_failure_is_negative_cached(self) -> None:
+        calls: list[str] = []
+        with TemporaryDirectory() as temp_dir:
+            cache = MarketplaceCache(Path(temp_dir))
+            service = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: _record_none(calls, repo),
+                ),
+            )
+            try:
+                service.refresh_repo_now("mode-io/skills")
+                metadata = service.metadata_for_repo("mode-io/skills")
+            finally:
+                service.close()
+
+        self.assertEqual(calls, ["mode-io/skills"])
+        self.assertEqual(metadata.image_url, github_owner_avatar_url("mode-io/skills"))
+        self.assertIsNone(metadata.stars)
+
+    def test_stale_success_survives_transient_refresh_failure(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            cache = MarketplaceCache(Path(temp_dir))
+            seed = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                        repo=repo,
+                        repo_url=f"https://github.com/{repo}",
+                        stars=512,
+                        default_branch="main",
+                    ),
+                ),
+            )
+            service = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: (_ for _ in ()).throw(
+                        GitHubRepoMetadataError(repo, "rate limit", status_code=403)
+                    ),
+                ),
+            )
+            try:
+                seed.refresh_repo_now("mode-io/skills")
+                _age_cache_entry(cache, "repo-metadata", "mode-io/skills", seconds_ago=2 * 24 * 60 * 60)
+                service.refresh_repo_now("mode-io/skills")
+                metadata = service.metadata_for_repo("mode-io/skills")
+            finally:
+                seed.close()
+                service.close()
+
+        self.assertEqual(metadata.image_url, github_owner_avatar_url("mode-io/skills"))
+        self.assertEqual(metadata.stars, 512)
+        self.assertEqual(metadata.default_branch, "main")
+
+    def test_success_cache_is_persistent_across_service_instances(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            cache = MarketplaceCache(Path(temp_dir))
+            first = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                        repo=repo,
+                        repo_url=f"https://github.com/{repo}",
+                        stars=271,
+                        default_branch="main",
+                    ),
+                ),
+            )
+            second = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: (_ for _ in ()).throw(
+                        GitHubRepoMetadataError(repo, "rate limit", status_code=403)
+                    ),
+                ),
+            )
+            try:
+                first.refresh_repo_now("vercel-labs/skills")
+                metadata = second.metadata_for_repo("vercel-labs/skills")
+            finally:
+                first.close()
+                second.close()
+
+        self.assertEqual(metadata.image_url, github_owner_avatar_url("vercel-labs/skills"))
+        self.assertEqual(metadata.stars, 271)
+
+
+def _raise_transient(calls: list[str], repo: str) -> GitHubRepoMetadata | None:
+    calls.append(repo)
+    raise GitHubRepoMetadataError(repo, "rate limit", status_code=403)
+
+
+def _record_none(calls: list[str], repo: str) -> GitHubRepoMetadata | None:
+    calls.append(repo)
+    return None
+
+
+def _age_cache_entry(cache: MarketplaceCache, namespace: str, key: str, *, seconds_ago: int) -> None:
+    path = cache._path_for(namespace, key)
+    if path is None or not path.is_file():
+        raise AssertionError(f"missing cache entry for {namespace}:{key}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["fetchedAt"] = time.time() - seconds_ago
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":

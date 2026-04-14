@@ -46,7 +46,6 @@ class MarketplaceCatalog:
     _SEARCH_TTL_SECONDS = 900
     _SEARCH_FETCH_FLOOR = 40
     _SEARCH_CACHE_LIMIT = 24
-    _METADATA_WORKERS = 8
     _SUMMARY_WORKERS = 6
 
     def __init__(
@@ -90,6 +89,9 @@ class MarketplaceCatalog:
     @property
     def cache(self) -> MarketplaceCache:
         return self._cache
+
+    def close(self) -> None:
+        self._resolver.close()
 
     def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
         records = self._leaderboard_records()
@@ -150,12 +152,12 @@ class MarketplaceCatalog:
 
     def detail_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
         cached = self._cached_detail(record)
-        if cached is not None and cached.folder_resolution_complete:
+        if cached is not None and cached.folder_resolution_complete and not self._needs_folder_refresh(cached):
             return cached
 
         summary = cached
         if summary is None or not self._is_usable_description(summary.description):
-            summary = self._resolve_summary_enrichment(record)
+            summary = self._resolve_summary_enrichment_best_effort(record)
 
         repo_meta = self.repo_metadata(record.repo)
         folder_url = None
@@ -255,10 +257,7 @@ class MarketplaceCatalog:
         repos = sorted({record.repo for record in records})
         if not repos:
             return {}
-        max_workers = min(self._METADATA_WORKERS, len(repos))
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            pairs = executor.map(lambda repo: (repo, self._resolver.repo_metadata(repo)), repos)
-        return dict(pairs)
+        return self._resolver.repo_metadata_for_repos(repos)
 
     def _page_descriptions(self, records: list[SkillsShSkill], *, prefer_description_hints: bool) -> dict[str, str]:
         if not records:
@@ -280,7 +279,7 @@ class MarketplaceCatalog:
             return cached.description
         if prefer_description_hints and self._is_usable_description(record.description_hint):
             return record.description_hint.strip()
-        detail = self._resolve_summary_enrichment(record)
+        detail = self._resolve_summary_enrichment_best_effort(record)
         return detail.description
 
     def _cached_detail(self, record: SkillsShSkill) -> DetailEnrichment | None:
@@ -288,6 +287,10 @@ class MarketplaceCatalog:
         if detail_cache is None or not isinstance(detail_cache.payload, dict):
             return None
         return DetailEnrichment.from_dict(detail_cache.payload)
+
+    @staticmethod
+    def _needs_folder_refresh(detail: DetailEnrichment) -> bool:
+        return bool(detail.github_folder_url and "/tree/HEAD/" in detail.github_folder_url)
 
     def _resolve_summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
         description = record.description_hint.strip() if self._is_usable_description(record.description_hint) else ""
@@ -308,6 +311,18 @@ class MarketplaceCatalog:
         )
         self._cache.write("details", record.detail_url, detail.to_dict())
         return detail
+
+    def _resolve_summary_enrichment_best_effort(self, record: SkillsShSkill) -> DetailEnrichment:
+        try:
+            return self._resolve_summary_enrichment(record)
+        except MarketplaceUpstreamError:
+            detail = DetailEnrichment(
+                description=self._fallback_description(record),
+                github_folder_url=None,
+                folder_resolution_complete=False,
+            )
+            self._cache.write("details", record.detail_url, detail.to_dict())
+            return detail
 
     def _warm_leaderboard_async(self) -> None:
         Thread(target=self._refresh_leaderboard, daemon=True).start()
@@ -373,3 +388,8 @@ class MarketplaceCatalog:
     @staticmethod
     def _is_usable_description(value: str | None) -> bool:
         return isinstance(value, str) and bool(value.strip())
+
+    def _fallback_description(self, record: SkillsShSkill) -> str:
+        if self._is_usable_description(record.description_hint):
+            return record.description_hint.strip()
+        return self.DETAIL_MISSING_FALLBACK

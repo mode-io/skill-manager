@@ -40,6 +40,22 @@ FIXTURE_FOLDER_URLS = {
     "switch-audit": "https://github.com/mode-io/skills/tree/main/skills/switch-audit",
 }
 
+UNSUPPORTED_SOURCE_SKILL = {
+    "repo": "smithery.ai",
+    "skillId": "ui-ux-pro-max",
+    "name": "ui-ux-pro-max",
+    "installs": 2048,
+    "description": "",
+}
+
+BROKEN_GITHUB_SKILL = {
+    "repo": "broken-org/ui-ux-pro-max-skill",
+    "skillId": "ui-ux-pro-max",
+    "name": "ui-ux-pro-max",
+    "installs": 1024,
+    "description": "",
+}
+
 
 def fixture_homepage_html() -> str:
     payload = [
@@ -50,6 +66,13 @@ def fixture_homepage_html() -> str:
             "installs": item["installs"],
         }
         for item in FIXTURE_SKILLS
+    ] + [
+        {
+            "source": UNSUPPORTED_SOURCE_SKILL["repo"],
+            "skillId": UNSUPPORTED_SOURCE_SKILL["skillId"],
+            "name": UNSUPPORTED_SOURCE_SKILL["name"],
+            "installs": UNSUPPORTED_SOURCE_SKILL["installs"],
+        },
     ]
     return (
         "<html><body><script>"
@@ -60,8 +83,7 @@ def fixture_homepage_html() -> str:
 
 def fixture_search_payload(query: str, *, limit: int) -> dict[str, object]:
     needle = query.strip().lower()
-    return {
-        "skills": [
+    skills = [
             {
                 "source": item["repo"],
                 "skillId": item["skillId"],
@@ -71,8 +93,23 @@ def fixture_search_payload(query: str, *, limit: int) -> dict[str, object]:
             }
             for item in FIXTURE_SKILLS
             if needle in item["name"].lower() or needle in item["description"].lower()
-        ][:limit]
-    }
+    ]
+    if "ui-ux" in needle or "broken" in needle:
+        skills.insert(0, {
+            "source": BROKEN_GITHUB_SKILL["repo"],
+            "skillId": BROKEN_GITHUB_SKILL["skillId"],
+            "name": BROKEN_GITHUB_SKILL["name"],
+            "installs": BROKEN_GITHUB_SKILL["installs"],
+            "description": BROKEN_GITHUB_SKILL["description"],
+        })
+        skills.insert(0, {
+            "source": UNSUPPORTED_SOURCE_SKILL["repo"],
+            "skillId": UNSUPPORTED_SOURCE_SKILL["skillId"],
+            "name": UNSUPPORTED_SOURCE_SKILL["name"],
+            "installs": UNSUPPORTED_SOURCE_SKILL["installs"],
+            "description": UNSUPPORTED_SOURCE_SKILL["description"],
+        })
+    return {"skills": skills[:limit]}
 
 
 def fixture_detail_html(repo: str, skill_id: str) -> str | None:
