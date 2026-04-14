@@ -1,17 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 REPO_ROOT = Path(SPECPATH).resolve().parents[1]
 datas = [
     (str(REPO_ROOT / "frontend" / "dist"), "frontend_dist"),
     (str(REPO_ROOT / "skill_manager" / "VERSION"), "skill_manager"),
-]
+] + collect_data_files("certifi")
 hiddenimports = sorted(set(
     collect_submodules("uvicorn")
     + collect_submodules("fastapi")
     + collect_submodules("starlette")
+    + collect_submodules("certifi")
 ))
 
 a = Analysis(

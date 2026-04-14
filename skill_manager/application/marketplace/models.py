@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from urllib.parse import quote
+
+from .client import DEFAULT_SKILLS_SH_BASE_URL, skills_sh_detail_url
 
 
 @dataclass(frozen=True)
@@ -11,6 +12,7 @@ class SkillsShSkill:
     name: str
     installs: int
     description_hint: str = ""
+    detail_base_url: str = DEFAULT_SKILLS_SH_BASE_URL
 
     @property
     def source_locator(self) -> str:
@@ -18,7 +20,7 @@ class SkillsShSkill:
 
     @property
     def detail_url(self) -> str:
-        return f"https://skills.sh/{quote(self.repo, safe='/')}/{quote(self.skill_id, safe='')}"
+        return skills_sh_detail_url(self.repo, self.skill_id, base_url=self.detail_base_url)
 
 
 @dataclass(frozen=True)

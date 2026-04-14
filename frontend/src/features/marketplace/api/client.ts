@@ -1,4 +1,4 @@
-import { apiPath } from "../../../api/paths";
+import { fetchJson, postJson } from "../../../api/http";
 
 import type { MarketplaceDetailDto, MarketplaceDocumentDto, MarketplacePageResultDto } from "./types";
 
@@ -11,55 +11,20 @@ interface MarketplacePageParams {
   offset?: number;
 }
 
-async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
-  const response = await responsePromise;
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = (
-      payload
-      && typeof payload === "object"
-      && "error" in payload
-      && typeof payload.error === "string"
-    )
-      ? payload.error
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-  return payload as T;
-}
-
-async function postJson<T>(path: string, body?: object): Promise<T> {
-  return expectJson<T>(
-    fetch(apiPath(path), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-  );
-}
-
 export async function fetchMarketplacePopular(params: MarketplacePageParams = {}): Promise<MarketplacePageResultDto> {
-  return expectJson<MarketplacePageResultDto>(
-    fetch(apiPath(withQuery("/marketplace/popular", { limit: params.limit, offset: params.offset }))),
-  );
+  return fetchJson<MarketplacePageResultDto>(withQuery("/marketplace/popular", { limit: params.limit, offset: params.offset }));
 }
 
 export async function searchMarketplace(query: string, params: MarketplacePageParams = {}): Promise<MarketplacePageResultDto> {
-  return expectJson<MarketplacePageResultDto>(
-    fetch(apiPath(withQuery("/marketplace/search", { limit: params.limit, offset: params.offset, q: query }))),
-  );
+  return fetchJson<MarketplacePageResultDto>(withQuery("/marketplace/search", { limit: params.limit, offset: params.offset, q: query }));
 }
 
 export async function fetchMarketplaceDetail(itemId: string): Promise<MarketplaceDetailDto> {
-  return expectJson<MarketplaceDetailDto>(
-    fetch(apiPath(`/marketplace/items/${encodeURIComponent(itemId)}`)),
-  );
+  return fetchJson<MarketplaceDetailDto>(`/marketplace/items/${encodeURIComponent(itemId)}`);
 }
 
 export async function fetchMarketplaceDocument(itemId: string): Promise<MarketplaceDocumentDto> {
-  return expectJson<MarketplaceDocumentDto>(
-    fetch(apiPath(`/marketplace/items/${encodeURIComponent(itemId)}/document`)),
-  );
+  return fetchJson<MarketplaceDocumentDto>(`/marketplace/items/${encodeURIComponent(itemId)}/document`);
 }
 
 export async function installMarketplaceSkill(installToken: string): Promise<OkResponse> {
