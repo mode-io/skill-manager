@@ -11,7 +11,33 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_PATH="$(cd "$(dirname "$ARTIFACT_PATH")" && pwd)/$(basename "$ARTIFACT_PATH")"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/skill-manager-npm-XXXXXX")"
 FIXTURE_MANIFEST="$TMP_DIR/marketplace-fixture.json"
+FIXTURE_LOG="$TMP_DIR/marketplace-fixture.log"
 FIXTURE_PID=""
+
+resolve_python_bin() {
+  if [[ -n "${PYTHON_BIN:-}" ]]; then
+    printf '%s\n' "$PYTHON_BIN"
+    return 0
+  fi
+
+  if [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
+    printf '%s\n' "$REPO_ROOT/.venv/bin/python"
+    return 0
+  fi
+
+  if [[ -n "${VIRTUAL_ENV:-}" && -x "$VIRTUAL_ENV/bin/python" ]]; then
+    printf '%s\n' "$VIRTUAL_ENV/bin/python"
+    return 0
+  fi
+
+  command -v python3
+}
+
+PYTHON_BIN="$(resolve_python_bin)"
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "Python is required to validate the npm wrapper." >&2
+  exit 1
+fi
 
 cleanup() {
   if [[ -x "$TMP_DIR/node_modules/.bin/skill-manager" ]]; then
@@ -29,7 +55,7 @@ cd "$TMP_DIR"
 npm init -y >/dev/null 2>&1
 
 PACK_OUTPUT="$(npm pack --json "$REPO_ROOT/packaging/npm")"
-PACK_FILE="$(printf '%s' "$PACK_OUTPUT" | python3 -c 'import json, sys; print(json.load(sys.stdin)[0]["filename"])')"
+PACK_FILE="$(printf '%s' "$PACK_OUTPUT" | "$PYTHON_BIN" -c 'import json, sys; print(json.load(sys.stdin)[0]["filename"])')"
 if [[ ! -f "$PACK_FILE" ]]; then
   echo "npm pack did not produce an archive: $PACK_OUTPUT" >&2
   exit 1
@@ -37,21 +63,36 @@ fi
 tar -tzf "$PACK_FILE" | grep -q '^package/LICENSE$'
 tar -xOf "$PACK_FILE" package/LICENSE | cmp -s - "$REPO_ROOT/LICENSE"
 
-python3 "$REPO_ROOT/scripts/serve_marketplace_fixture.py" --manifest "$FIXTURE_MANIFEST" >/dev/null 2>&1 &
+"$PYTHON_BIN" "$REPO_ROOT/scripts/serve_marketplace_fixture.py" --manifest "$FIXTURE_MANIFEST" >"$FIXTURE_LOG" 2>&1 &
 FIXTURE_PID=$!
-for _ in {1..50}; do
+for _ in {1..150}; do
   [[ -f "$FIXTURE_MANIFEST" ]] && break
+  if ! kill -0 "$FIXTURE_PID" >/dev/null 2>&1; then
+    break
+  fi
   sleep 0.2
 done
 if [[ ! -f "$FIXTURE_MANIFEST" ]]; then
-  echo "Marketplace fixture did not start." >&2
+  if ! kill -0 "$FIXTURE_PID" >/dev/null 2>&1; then
+    set +e
+    wait "$FIXTURE_PID"
+    FIXTURE_EXIT_CODE=$?
+    set -e
+    echo "Marketplace fixture exited before writing its manifest (exit code $FIXTURE_EXIT_CODE)." >&2
+  else
+    echo "Marketplace fixture did not start within 30 seconds." >&2
+  fi
+  if [[ -s "$FIXTURE_LOG" ]]; then
+    echo "Fixture log:" >&2
+    cat "$FIXTURE_LOG" >&2
+  fi
   exit 1
 fi
 
 export SKILL_MANAGER_MARKETPLACE_BASE_URL
-SKILL_MANAGER_MARKETPLACE_BASE_URL="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["baseUrl"])' "$FIXTURE_MANIFEST")"
+SKILL_MANAGER_MARKETPLACE_BASE_URL="$("$PYTHON_BIN" -c 'import json, sys; print(json.load(open(sys.argv[1]))["baseUrl"])' "$FIXTURE_MANIFEST")"
 export SSL_CERT_FILE
-SSL_CERT_FILE="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["caCertPath"])' "$FIXTURE_MANIFEST")"
+SSL_CERT_FILE="$("$PYTHON_BIN" -c 'import json, sys; print(json.load(open(sys.argv[1]))["caCertPath"])' "$FIXTURE_MANIFEST")"
 export SKILL_MANAGER_LOCAL_ARTIFACT_PATH="$ARTIFACT_PATH"
 npm install --no-package-lock "./$PACK_FILE" >/dev/null
 
@@ -74,13 +115,13 @@ if [[ "$STATUS_OUTPUT" != *"skill-manager is running at http://127.0.0.1:"* ]]; 
   exit 1
 fi
 
-BASE_URL="$(printf '%s' "$STATUS_OUTPUT" | python3 -c 'import re, sys; match = re.search(r"(http://127\.0\.0\.1:\d+)", sys.stdin.read()); print(match.group(1) if match else "")')"
+BASE_URL="$(printf '%s' "$STATUS_OUTPUT" | "$PYTHON_BIN" -c 'import re, sys; match = re.search(r"(http://127\.0\.0\.1:\d+)", sys.stdin.read()); print(match.group(1) if match else "")')"
 if [[ -z "$BASE_URL" ]]; then
   echo "Unable to parse runtime URL from status output: $STATUS_OUTPUT" >&2
   exit 1
 fi
 
-python3 - "$BASE_URL" <<'PY'
+"$PYTHON_BIN" - "$BASE_URL" <<'PY'
 import json
 import sys
 from urllib.parse import quote
