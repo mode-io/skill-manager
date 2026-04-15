@@ -17,36 +17,8 @@
 }
 
 @media (max-width: 1180px) {
-  .skills-workspace-page {
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-  }
-
   .skills-workspace-shell {
     grid-template-columns: 1fr;
-    height: auto;
-    overflow: visible;
-  }
-
-  .skills-workspace-shell__main,
-  .skills-workspace-shell.is-detail-open .skills-workspace-shell__main {
-    padding-right: 0;
-  }
-
-  .skills-workspace,
-  .skills-pane,
-  .skills-workspace__content {
-    height: auto;
-    overflow: visible;
-  }
-
-  .skills-pane__scroll,
-  .skills-detail-panel,
-  .skills-detail-panel__inner {
-    overflow: visible;
-    height: auto;
-    min-height: 0;
   }
 
   .skills-pane__scroll {
@@ -55,10 +27,6 @@
 
   .skills-pane__chrome {
     padding-right: 0;
-  }
-
-  .skills-detail-panel__inner {
-    padding: 0;
   }
 
   .skill-detail__harness-grid {

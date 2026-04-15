@@ -1,19 +1,20 @@
 .skills-workspace-page {
-  display: block;
-  height: calc(100dvh - 158px);
-  min-height: 680px;
+  display: flex;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
 .skills-workspace-shell {
   --skills-detail-column: 0px;
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr) var(--skills-detail-column);
   gap: 0;
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  align-items: start;
   transition: grid-template-columns 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -50,13 +51,18 @@
 }
 
 .skills-workspace__content {
+  display: flex;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
 
 .skills-pane-transition {
+  display: flex;
+  flex: 1 1 auto;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
   animation-duration: 160ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   animation-fill-mode: both;
