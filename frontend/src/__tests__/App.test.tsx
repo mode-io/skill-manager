@@ -165,8 +165,8 @@ function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
               kind: "harness",
               harness: "codex",
               label: "Codex",
-              scope: "user",
-              path: "/tmp/home/.codex/skills/shared-audit",
+              scope: "canonical",
+              path: "/tmp/home/.agents/skills/shared-audit",
               revision: "abc",
               sourceKind: "github",
               sourceLocator: "github:mode-io/shared-audit",
@@ -228,8 +228,8 @@ function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
               label: "Codex",
               logoKey: "codex",
               supportEnabled: codexSupportEnabled,
-              detected: true,
-              managedLocation: "/tmp/home/.codex/skills",
+              installed: true,
+              managedLocation: "/tmp/home/.agents/skills",
             },
           ],
         }),
@@ -391,7 +391,7 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Harnesses" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Enable Codex support" })).toBeInTheDocument();
-    expect(screen.getByText("/tmp/home/.codex/skills")).toBeInTheDocument();
+    expect(screen.getByText("/tmp/home/.agents/skills")).toBeInTheDocument();
     expect(screen.queryByText("Support toggles are non-destructive.")).not.toBeInTheDocument();
     expect(screen.queryByText("Ready for skill discovery and management on this computer.")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Store Network" })).not.toBeInTheDocument();

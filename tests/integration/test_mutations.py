@@ -38,9 +38,9 @@ def seed_delete_fixture(spec):
     seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
     for path in (
-        spec.home / ".codex" / "skills" / "shared-audit",
-        spec.home / ".claude" / "skills" / "shared-audit",
-        spec.xdg_config_home / "opencode" / "skills" / "shared-audit",
+        spec.codex_root / "shared-audit",
+        spec.claude_root / "shared-audit",
+        spec.opencode_root / "shared-audit",
         spec.openclaw_managed_root / "shared-audit",
     ):
         path.symlink_to(target)
@@ -49,16 +49,16 @@ def seed_delete_fixture(spec):
 def seed_delete_preflight_failure_fixture(spec):
     seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
-    (spec.home / ".codex" / "skills" / "shared-audit").symlink_to(target)
-    seed_skill_package(spec.home / ".claude" / "skills", "shared-audit", "Shared Audit", body="local conflict")
+    (spec.codex_root / "shared-audit").symlink_to(target)
+    seed_skill_package(spec.claude_root, "shared-audit", "Shared Audit", body="local conflict")
 
 
 def seed_unmanage_fixture(spec):
     seed_shared_only_fixture(spec)
     target = spec.shared_store_root / "shared-audit"
     for path in (
-        spec.home / ".codex" / "skills" / "shared-audit",
-        spec.home / ".claude" / "skills" / "shared-audit",
+        spec.codex_root / "shared-audit",
+        spec.claude_root / "shared-audit",
     ):
         path.symlink_to(target)
 
@@ -72,7 +72,7 @@ class MutationTests(unittest.TestCase):
             result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
             self.assertTrue(result["ok"])
-            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
 
     def test_disable_managed_skill_removes_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
@@ -83,7 +83,7 @@ class MutationTests(unittest.TestCase):
             result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/disable", {"harness": "codex"})
 
             self.assertTrue(result["ok"])
-            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.codex_root / "shared-audit").exists())
 
     def test_manage_skill_replaces_found_local_copy_with_managed_links(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -96,8 +96,11 @@ class MutationTests(unittest.TestCase):
             self.assertTrue(result["ok"])
             managed_trace = next(row for row in refreshed["rows"] if row["name"] == "Trace Lens")
             self.assertEqual(managed_trace["displayStatus"], "Managed")
-            self.assertTrue((harness.spec.home / ".codex" / "skills" / "trace-lens").is_symlink())
-            self.assertTrue((harness.spec.home / ".claude" / "skills" / "trace-lens-copy").is_symlink())
+            self.assertTrue((harness.spec.codex_root / "trace-lens").is_symlink())
+            self.assertTrue((harness.spec.claude_root / "trace-lens-copy").is_symlink())
+            self.assertTrue((harness.spec.opencode_root / "trace-lens").is_symlink())
+            self.assertTrue((harness.spec.codex_legacy_root / "trace-lens").is_dir())
+            self.assertFalse((harness.spec.codex_legacy_root / "trace-lens").is_symlink())
 
     def test_manage_all_skills_centralizes_all_found_local_rows(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -108,6 +111,19 @@ class MutationTests(unittest.TestCase):
             self.assertGreater(result["managedCount"], 0)
             self.assertEqual(result["failures"], [])
             self.assertEqual(refreshed["summary"]["unmanaged"], 0)
+
+    def test_manage_rejects_missing_harness_install_before_creating_bindings(self) -> None:
+        with AppTestHarness(mixed=True) as harness:
+            (harness.spec.bin_dir / "codex").unlink()
+            skills = harness.get_json("/api/skills")
+            trace_lens = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
+
+            result = harness.post_json(f"/api/skills/{trace_lens['skillRef']}/manage", expected_status=400)
+
+            self.assertIn("Codex is not installed or not available on PATH", result["error"])
+            self.assertFalse((harness.spec.codex_root / "trace-lens").exists())
+            self.assertFalse((harness.spec.claude_root / "trace-lens-copy").is_symlink())
+            self.assertFalse((harness.spec.opencode_root / "trace-lens").exists())
 
     def test_manage_unknown_skill_returns_404(self) -> None:
         with AppTestHarness() as harness:
@@ -131,11 +147,11 @@ class MutationTests(unittest.TestCase):
 
             self.assertTrue(result["ok"])
             self.assertFalse((harness.spec.shared_store_root / "shared-audit").exists())
-            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_dir())
-            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
-            self.assertTrue((harness.spec.home / ".claude" / "skills" / "shared-audit").is_dir())
-            self.assertFalse((harness.spec.home / ".claude" / "skills" / "shared-audit").is_symlink())
-            self.assertFalse((harness.spec.home / ".cursor" / "skills" / "shared-audit").exists())
+            self.assertTrue((harness.spec.codex_root / "shared-audit").is_dir())
+            self.assertFalse((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.claude_root / "shared-audit").is_dir())
+            self.assertFalse((harness.spec.claude_root / "shared-audit").is_symlink())
+            self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
 
             refreshed = harness.get_json("/api/skills")
             restored = [row for row in refreshed["rows"] if row["name"] == "Shared Audit"]
@@ -161,7 +177,7 @@ class MutationTests(unittest.TestCase):
             result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/unmanage", expected_status=409)
 
             self.assertIn("disabled harnesses still have bindings", result["error"])
-            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
             self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
 
     def test_unmanage_rejects_unmanaged_and_builtin_skills(self) -> None:
@@ -185,9 +201,9 @@ class MutationTests(unittest.TestCase):
 
             self.assertTrue(result["ok"])
             self.assertFalse((harness.spec.shared_store_root / "shared-audit").exists())
-            self.assertFalse((harness.spec.home / ".codex" / "skills" / "shared-audit").exists())
-            self.assertFalse((harness.spec.home / ".claude" / "skills" / "shared-audit").exists())
-            self.assertFalse((harness.spec.xdg_config_home / "opencode" / "skills" / "shared-audit").exists())
+            self.assertFalse((harness.spec.codex_root / "shared-audit").exists())
+            self.assertFalse((harness.spec.claude_root / "shared-audit").exists())
+            self.assertFalse((harness.spec.opencode_root / "shared-audit").exists())
             self.assertFalse((harness.spec.openclaw_managed_root / "shared-audit").exists())
 
             refreshed = harness.get_json("/api/skills")
@@ -236,8 +252,8 @@ class MutationTests(unittest.TestCase):
 
             self.assertIn("not a symlink", result["error"])
             self.assertTrue((harness.spec.shared_store_root / "shared-audit").is_dir())
-            self.assertTrue((harness.spec.home / ".codex" / "skills" / "shared-audit").is_symlink())
-            self.assertTrue((harness.spec.home / ".claude" / "skills" / "shared-audit").is_dir())
+            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertTrue((harness.spec.claude_root / "shared-audit").is_dir())
 
 
 if __name__ == "__main__":

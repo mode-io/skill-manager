@@ -39,7 +39,7 @@ class BackendContainerTests(unittest.TestCase):
             self.assertEqual(trace_lens["displayStatus"], "Unmanaged")
             self.assertEqual(
                 {cell["harness"] for cell in trace_lens["cells"] if cell["state"] == "found"},
-                {"codex", "claude"},
+                {"codex", "claude", "opencode"},
             )
 
             builtin = next(row for row in payload["rows"] if row["name"] == "Review Helper")
@@ -110,6 +110,7 @@ class BackendContainerTests(unittest.TestCase):
             self.assertEqual(len(settings["harnesses"]), 5)
             codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
             self.assertIn("managedLocation", codex)
+            self.assertIn("installed", codex)
             self.assertNotIn("discoveryMode", codex)
             self.assertNotIn("centralStore", settings)
             self.assertNotIn("topology", settings)
@@ -158,9 +159,9 @@ class BackendContainerTests(unittest.TestCase):
 
             assert detail is not None
 
-            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex"])
+            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex", "OpenClaw", "OpenCode"])
             self.assertEqual(detail["locations"][0]["path"], str(spec.shared_store_root / "shared-audit"))
-            self.assertEqual(detail["locations"][1]["path"], str(spec.home / ".codex" / "skills" / "shared-audit"))
+            self.assertEqual(detail["locations"][1]["path"], str(spec.codex_root / "shared-audit"))
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
 

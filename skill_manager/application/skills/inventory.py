@@ -62,7 +62,7 @@ class InventoryEntry:
         return {
             sighting.harness
             for sighting in self.sightings
-            if sighting.kind == "harness" and sighting.harness is not None
+            if sighting.kind == "harness" and sighting.harness is not None and sighting.scope == "canonical"
         }
 
 
@@ -88,10 +88,11 @@ class SkillInventory:
         columns = tuple(
             InventoryColumn(harness=scan.harness, label=scan.label, logo_key=scan.logo_key)
             for scan in harness_scans
-            if scan.detected and scan.manageable
+            if scan.manageable
         )
         entries: list[InventoryEntry] = []
         shared_path_index: dict[Path, InventoryEntry] = {}
+        shared_match_index: dict[str, InventoryEntry] = {}
 
         for store_package in store_scan.packages:
             package = store_package.package
@@ -119,6 +120,7 @@ class SkillInventory:
             )
             entries.append(entry)
             shared_path_index[package.resolved_path] = entry
+            shared_match_index[_managed_entry_key(entry)] = entry
 
         unmanaged_entries: dict[str, InventoryEntry] = {}
         builtin_entries: dict[str, InventoryEntry] = {}
@@ -137,6 +139,10 @@ class SkillInventory:
                 )
                 if shared_entry is not None:
                     shared_entry.add_sighting(sighting)
+                    continue
+                shared_match = shared_match_index.get(_observation_match_key(observation.package))
+                if shared_match is not None:
+                    shared_match.add_sighting(sighting)
                     continue
 
                 key = _unmanaged_entry_key(
@@ -204,3 +210,15 @@ def _unmanaged_entry_key(declared_name: str, source: SourceDescriptor, revision:
     if source.is_source_backed:
         return stable_id("unmanaged", source.kind, source.locator, declared_name, revision)
     return stable_id("unmanaged", declared_name, revision)
+
+
+def _managed_entry_key(entry: InventoryEntry) -> str:
+    if entry.source.kind == "centralized":
+        return stable_id("managed-centralized", entry.name, entry.current_revision or "")
+    return stable_id("managed", entry.source.kind, entry.source.locator, entry.name, entry.current_revision or "")
+
+
+def _observation_match_key(package) -> str:
+    if package.source.is_source_backed:
+        return stable_id("managed", package.source.kind, package.source.locator, package.declared_name, package.revision)
+    return stable_id("managed-centralized", package.declared_name, package.revision)

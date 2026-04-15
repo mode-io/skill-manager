@@ -216,9 +216,18 @@ class SkillsMutationService:
             )
         except ValueError as error:
             raise MutationError(str(error), status=409) from error
+        canonical_bound_harnesses: set[str] = set()
         for sighting in harness_sightings:
             manager = self.read_models.require_enabled_manager(sighting.harness)
-            manager.adopt_local_copy(existing_dir=sighting.path, package_path=ingested)
+            if sighting.scope == "canonical":
+                manager.adopt_local_copy(existing_dir=sighting.path, package_path=ingested)
+                canonical_bound_harnesses.add(sighting.harness)
+        for sighting in harness_sightings:
+            if sighting.harness in canonical_bound_harnesses:
+                continue
+            manager = self.read_models.require_enabled_manager(sighting.harness)
+            manager.enable_shared_package(ingested)
+            canonical_bound_harnesses.add(sighting.harness)
 
     def _partition_bound_managers(self, package_dir: str) -> tuple[list[tuple[str, HarnessManager]], list[tuple[str, HarnessManager]]]:
         enabled = set(self.read_models.enabled_harnesses())

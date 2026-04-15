@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import time
 
@@ -18,8 +19,11 @@ def process_is_alive(pid: int) -> bool:
 
 
 def process_command(pid: int) -> str:
+    ps_executable = _resolve_ps_executable()
+    if not ps_executable:
+        return ""
     result = subprocess.run(
-        ["ps", "-p", str(pid), "-o", "command="],
+        [ps_executable, "-p", str(pid), "-o", "command="],
         check=False,
         capture_output=True,
         text=True,
@@ -51,3 +55,14 @@ def terminate_process(pid: int, *, timeout_seconds: float = 5.0) -> None:
             return
         time.sleep(0.05)
     os.kill(pid, signal.SIGKILL)
+
+
+def _resolve_ps_executable() -> str | None:
+    for path_env in (os.environ.get("PATH"), os.defpath):
+        executable = shutil.which("ps", path=path_env)
+        if executable:
+            return executable
+    for candidate in (Path("/bin/ps"), Path("/usr/bin/ps")):
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None

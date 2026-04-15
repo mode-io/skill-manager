@@ -14,6 +14,15 @@ class HarnessDefinitionLike:
 
 
 @dataclass(frozen=True)
+class HarnessDiscoveryRoot:
+    kind: str
+    scope: str
+    label: str
+    path: Path
+    writable: bool = False
+
+
+@dataclass(frozen=True)
 class HarnessLocation:
     kind: str
     label: str
@@ -26,7 +35,7 @@ class HarnessStatus:
     harness: str
     label: str
     logo_key: str | None
-    detected: bool
+    installed: bool
     locations: tuple[HarnessLocation, ...] = ()
 
 

@@ -56,7 +56,11 @@ def cell_state(entry: InventoryEntry, harness: str) -> HarnessCellState:
         return "builtin" if any(s.harness == harness for s in entry.sightings) else "empty"
     if entry.kind == "unmanaged":
         return "found" if any(s.harness == harness for s in entry.sightings) else "empty"
-    return "enabled" if any(s.harness == harness for s in entry.sightings if s.kind == "harness") else "disabled"
+    return (
+        "enabled"
+        if any(s.harness == harness and s.scope == "canonical" for s in entry.sightings if s.kind == "harness")
+        else "disabled"
+    )
 
 
 def stop_managing_status(entry: InventoryEntry) -> StopManagingStatus | None:
