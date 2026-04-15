@@ -66,6 +66,9 @@ class ReadModelService:
             raise MutationError(f"unknown harness: {harness}", status=400)
         if harness not in self.enabled_harnesses():
             raise MutationError(f"harness support is disabled: {harness}", status=400)
+        status = driver.status()
+        if not status.installed:
+            raise MutationError(f"{driver.label} is not installed or not available on PATH", status=400)
         manager = driver.manager()
         if manager is None:
             raise MutationError(f"harness cannot be managed: {harness}", status=400)

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import socket
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
+from skill_manager.runtime import process as runtime_process
 from skill_manager.runtime.assets import resolve_frontend_dist
 from skill_manager.runtime.server import choose_port
 from skill_manager.runtime.startup import (
@@ -55,6 +58,28 @@ class RuntimeTests(unittest.TestCase):
 
         self.assertNotEqual(chosen, busy_port)
         self.assertGreater(chosen, 0)
+
+    def test_process_command_falls_back_to_system_ps_when_path_is_isolated(self) -> None:
+        with patch.dict(os.environ, {"PATH": "/tmp/skill-manager-fake-bin"}):
+            with (
+                patch.object(runtime_process.shutil, "which", side_effect=[None, "/bin/ps"]) as which_mock,
+                patch.object(runtime_process.subprocess, "run") as run_mock,
+            ):
+                run_mock.return_value.stdout = "python -m skill_manager"
+
+                command = runtime_process.process_command(1234)
+
+        self.assertEqual(command, "python -m skill_manager")
+        self.assertEqual(which_mock.call_count, 2)
+        self.assertEqual(run_mock.call_args.args[0][0], "/bin/ps")
+
+    def test_process_command_returns_empty_string_when_ps_is_unavailable(self) -> None:
+        with (
+            patch.object(runtime_process.shutil, "which", return_value=None),
+            patch.object(runtime_process.Path, "is_file", return_value=False),
+            patch.object(runtime_process.os, "access", return_value=False),
+        ):
+            self.assertEqual(runtime_process.process_command(1234), "")
 
 
 if __name__ == "__main__":
