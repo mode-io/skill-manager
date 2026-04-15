@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 
 from skill_manager.domain import (
     BuiltinObservation,
@@ -13,137 +14,100 @@ from skill_manager.domain import (
     parse_skill_package,
 )
 
-from .contracts import HarnessDefinitionLike, HarnessDriver, HarnessLocation, HarnessManager, HarnessStatus
+from .contracts import HarnessDefinitionLike, HarnessDiscoveryRoot, HarnessDriver, HarnessLocation, HarnessManager, HarnessStatus
 from .managers import SymlinkHarnessManager
-from .resolution import CatalogResolution, CatalogResolver, DirectoryResolution, DirectoryResolver
 
 
-class FilesystemHarnessDriver(HarnessDriver):
+class GlobalHarnessDriver(HarnessDriver):
     def __init__(
         self,
         *,
         definition: HarnessDefinitionLike,
-        resolver: DirectoryResolver,
+        install_probe: str,
+        path_env: str | None,
+        discovery_roots: tuple[HarnessDiscoveryRoot, ...],
+        builtins_path: Path | None,
     ) -> None:
         self.harness = definition.harness
         self.label = definition.label
         self.logo_key = definition.logo_key
-        self._resolver = resolver
+        self._install_probe = install_probe
+        self._path_env = path_env
+        self._discovery_roots = _dedupe_roots(discovery_roots)
+        self._builtins_path = builtins_path
 
     def manager(self) -> HarnessManager | None:
-        return SymlinkHarnessManager(self._resolver.resolve().managed_root)
+        return SymlinkHarnessManager(self._managed_root())
 
     def status(self) -> HarnessStatus:
-        resolved = self._resolver.resolve()
-        locations: list[HarnessLocation] = [
+        locations = [
             HarnessLocation(
-                kind="managed-root",
-                label="Managed skills root",
-                path=resolved.managed_root,
-                present=resolved.managed_root.exists(),
+                kind=root.kind,
+                label=root.label,
+                path=root.path,
+                present=root.path.exists(),
             )
+            for root in self._discovery_roots
         ]
-        if resolved.global_root is not None:
+        if self._builtins_path is not None:
             locations.append(
                 HarnessLocation(
-                    kind="global-root",
-                    label="Global skills root",
-                    path=resolved.global_root,
-                    present=resolved.global_root.exists(),
+                    kind="builtins",
+                    label="Builtins catalog",
+                    path=self._builtins_path,
+                    present=self._builtins_path.is_file(),
                 )
             )
         return HarnessStatus(
             harness=self.harness,
             label=self.label,
             logo_key=self.logo_key,
-            detected=any(location.present for location in locations),
+            installed=self._is_installed(),
             locations=tuple(locations),
         )
 
     def scan(self) -> HarnessScan:
-        resolved = self._resolver.resolve()
         observations = _scan_skill_roots(
             harness=self.harness,
             label=self.label,
-            roots=(("user", resolved.managed_root), ("global", resolved.global_root)),
+            roots=self._discovery_roots,
         )
-        status = self.status()
+        builtins = tuple(_load_builtins(self.harness, self.label, self._builtins_path))
         return HarnessScan(
             harness=self.harness,
             label=self.label,
             logo_key=self.logo_key,
-            detected=status.detected or bool(observations),
+            installed=self._is_installed(),
             manageable=self.manager() is not None,
             skills=tuple(observations),
+            builtins=builtins,
         )
 
     def invalidate(self) -> None:
         return None
 
+    def _managed_root(self) -> Path:
+        return next(root.path for root in self._discovery_roots if root.writable)
 
-class CatalogHarnessDriver(FilesystemHarnessDriver):
-    def __init__(
-        self,
-        *,
-        definition: HarnessDefinitionLike,
-        resolver: CatalogResolver,
-    ) -> None:
-        self._catalog_resolver = resolver
-        super().__init__(definition=definition, resolver=resolver)
-
-    def status(self) -> HarnessStatus:
-        resolved = self._catalog_resolver.resolve()
-        locations = list(super().status().locations)
-        if resolved.builtins_path is not None:
-            locations.append(
-                HarnessLocation(
-                    kind="builtins",
-                    label="Builtins catalog",
-                    path=resolved.builtins_path,
-                    present=resolved.builtins_path.exists(),
-                )
-            )
-        detected = any(location.present for location in locations)
-        return HarnessStatus(
-            harness=self.harness,
-            label=self.label,
-            logo_key=self.logo_key,
-            detected=detected,
-            locations=tuple(locations),
-        )
-
-    def scan(self) -> HarnessScan:
-        resolved = self._catalog_resolver.resolve()
-        base = super().scan()
-        builtins = tuple(_load_builtins(self.harness, self.label, resolved))
-        return HarnessScan(
-            harness=base.harness,
-            label=base.label,
-            logo_key=base.logo_key,
-            detected=base.detected or bool(builtins),
-            manageable=base.manageable,
-            skills=base.skills,
-            builtins=builtins,
-        )
+    def _is_installed(self) -> bool:
+        return shutil.which(self._install_probe, path=self._path_env) is not None
 
 
 def _scan_skill_roots(
     *,
     harness: str,
     label: str,
-    roots: tuple[tuple[str, Path | None], ...],
+    roots: tuple[HarnessDiscoveryRoot, ...],
 ) -> list[SkillObservation]:
     observations: list[SkillObservation] = []
-    for scope, root in roots:
-        if root is None:
-            continue
-        for skill_root in find_skill_roots(root):
+    for root in roots:
+        for skill_root in find_skill_roots(root.path):
             try:
                 package = parse_skill_package(
                     skill_root,
                     default_source=SourceDescriptor(
                         kind="harness-local",
-                        locator=f"{harness}:{scope}:{skill_root.name}",
+                        locator=f"{harness}:{root.scope}:{skill_root.name}",
                     ),
                 )
             except SkillParseError:
@@ -152,17 +116,17 @@ def _scan_skill_roots(
                 SkillObservation(
                     harness=harness,
                     label=label,
-                    scope=scope,
+                    scope=root.scope,
                     package=package,
                 )
             )
     return observations
 
 
-def _load_builtins(harness: str, label: str, resolved: CatalogResolution) -> list[BuiltinObservation]:
-    if resolved.builtins_path is None or not resolved.builtins_path.is_file():
+def _load_builtins(harness: str, label: str, builtins_path: Path | None) -> list[BuiltinObservation]:
+    if builtins_path is None or not builtins_path.is_file():
         return []
-    payload = json.loads(resolved.builtins_path.read_text(encoding="utf-8"))
+    payload = json.loads(builtins_path.read_text(encoding="utf-8"))
     builtins: list[BuiltinObservation] = []
     for item in payload.get("builtins", payload.get("skills", [])):
         builtins.append(
@@ -175,3 +139,15 @@ def _load_builtins(harness: str, label: str, resolved: CatalogResolution) -> lis
             )
         )
     return builtins
+
+
+def _dedupe_roots(roots: tuple[HarnessDiscoveryRoot, ...]) -> tuple[HarnessDiscoveryRoot, ...]:
+    selected: list[HarnessDiscoveryRoot] = []
+    seen: set[Path] = set()
+    for root in roots:
+        resolved = root.path.resolve(strict=False)
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        selected.append(root)
+    return tuple(selected)

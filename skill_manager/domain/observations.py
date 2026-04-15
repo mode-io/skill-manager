@@ -34,7 +34,7 @@ class HarnessScan:
     harness: str
     label: str
     logo_key: str | None
-    detected: bool
+    installed: bool
     manageable: bool
     skills: tuple[SkillObservation, ...] = ()
     builtins: tuple[BuiltinObservation, ...] = ()

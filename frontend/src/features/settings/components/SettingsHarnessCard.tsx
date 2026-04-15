@@ -26,8 +26,8 @@ export function SettingsHarnessCard({
       <div className="settings-harness-card__header">
         <div className="settings-harness-card__identity">
           <HarnessMark harness={harness.harness} label={harness.label} logoKey={harness.logoKey} />
-          <span className={`ui-status-badge ${harness.detected ? "ui-status-badge--success" : "ui-status-badge--muted"}`}>
-            {harness.detected ? "Detected" : "Not detected"}
+          <span className={`ui-status-badge ${harness.installed ? "ui-status-badge--success" : "ui-status-badge--muted"}`}>
+            {harness.installed ? "Installed" : "Not installed"}
           </span>
         </div>
         <HoverTooltip copy={supportTooltipCopy(harness)} disabled={pending} align="end" side="top">

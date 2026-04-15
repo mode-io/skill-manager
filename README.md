@@ -190,33 +190,30 @@ By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_H
 ### Codex
 
 - `SKILL_MANAGER_CODEX_ROOT`
-- `SKILL_MANAGER_CODEX_GLOBAL_ROOT`
+- global scope defaults to `~/.agents/skills`
 
 ### Claude
 
 - `SKILL_MANAGER_CLAUDE_ROOT`
-- `SKILL_MANAGER_CLAUDE_GLOBAL_ROOT`
 
 ### Cursor
 
 - `SKILL_MANAGER_CURSOR_ROOT`
-- `SKILL_MANAGER_CURSOR_GLOBAL_ROOT`
 
 ### OpenCode
 
 - `SKILL_MANAGER_OPENCODE_ROOT`
-- `SKILL_MANAGER_OPENCODE_GLOBAL_ROOT`
 - `SKILL_MANAGER_OPENCODE_BUILTINS`
 
 ### OpenClaw
 
-- `SKILL_MANAGER_OPENCLAW_CONFIG`
+- global scope defaults to `~/.openclaw/skills`
 
 ### Marketplace
 
 - `SKILL_MANAGER_MARKETPLACE_BASE_URL`
 
-These overrides are useful when your harness skill directories or OpenClaw config file live outside the defaults. `SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for deterministic tests and release validation; normal installs should continue to use the production `skills.sh` marketplace.
+These overrides are useful when you need to relocate the canonical global skill roots in a controlled environment. `SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for deterministic tests and release validation; normal installs should continue to use the production `skills.sh` marketplace.
 
 ## Troubleshooting
 

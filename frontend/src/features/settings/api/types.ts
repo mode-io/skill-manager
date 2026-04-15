@@ -3,7 +3,7 @@ export interface SettingsHarness {
   label: string;
   logoKey?: string | null;
   supportEnabled: boolean;
-  detected: boolean;
+  installed: boolean;
   managedLocation: string | null;
 }
 

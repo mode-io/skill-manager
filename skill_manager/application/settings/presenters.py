@@ -27,7 +27,7 @@ def harness_payload(
         "label": status.label,
         "logoKey": status.logo_key,
         "supportEnabled": support_enabled,
-        "detected": status.detected,
+        "installed": status.installed,
         "managedLocation": managed_location_payload(status.locations),
     }
 
