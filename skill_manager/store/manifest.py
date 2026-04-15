@@ -12,15 +12,22 @@ class ManifestEntry:
     source_kind: str
     source_locator: str
     revision: str
+    source_ref: str | None = None
+    source_path: str | None = None
 
     def to_dict(self) -> dict[str, str]:
-        return {
+        payload = {
             "packageDir": self.package_dir,
             "declaredName": self.declared_name,
             "sourceKind": self.source_kind,
             "sourceLocator": self.source_locator,
             "revision": self.revision,
         }
+        if self.source_ref is not None:
+            payload["sourceRef"] = self.source_ref
+        if self.source_path is not None:
+            payload["sourcePath"] = self.source_path
+        return payload
 
 
 @dataclass(frozen=True)
@@ -42,6 +49,8 @@ def load_manifest(path: Path) -> StoreManifest:
             source_kind=item["sourceKind"],
             source_locator=item["sourceLocator"],
             revision=item["revision"],
+            source_ref=item.get("sourceRef") if isinstance(item.get("sourceRef"), str) else None,
+            source_path=item.get("sourcePath") if isinstance(item.get("sourcePath"), str) else None,
         )
         for item in payload.get("entries", [])
     )

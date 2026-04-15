@@ -8,6 +8,7 @@ import subprocess
 import time
 from typing import Callable
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 _CACHE_TTL_SECONDS = 900
@@ -19,6 +20,15 @@ class GitHubRepoMetadata:
     repo: str | None
     stars: int
     default_branch: str | None = None
+
+
+@dataclass(frozen=True)
+class ResolvedGitHubSkill:
+    repo: str
+    ref: str | None
+    relative_path: str
+    package_path: Path
+    clone_dir: Path
 
 
 class GitHubRepoMetadataError(Exception):
@@ -33,20 +43,18 @@ MetadataFetcher = Callable[[str], GitHubRepoMetadata | None]
 
 
 def _parse_locator(locator: str) -> tuple[str, str, str]:
-    parts = locator.split("/", 2)
-    if len(parts) != 3:
-        raise ValueError(f"invalid github locator (expected owner/repo/skill-dir): {locator}")
-    return parts[0], parts[1], parts[2]
+    owner, repo, skill_dir = _parse_repo_identity(locator)
+    if skill_dir is None or not skill_dir.strip():
+        raise ValueError(f"invalid github locator (expected owner/repo/<skill-path>): {locator}")
+    return owner, repo, skill_dir
 
 
 def _parse_repo_identity(locator: str) -> tuple[str, str, str | None]:
     stripped = locator.removeprefix("github:")
-    parts = stripped.split("/")
-    if len(parts) == 2:
-        return parts[0], parts[1], None
-    if len(parts) == 3:
-        return parts[0], parts[1], parts[2]
-    raise ValueError(f"invalid github locator (expected owner/repo or owner/repo/skill-dir): {locator}")
+    parts = stripped.split("/", 2)
+    if len(parts) < 2 or not parts[0] or not parts[1]:
+        raise ValueError(f"invalid github locator (expected owner/repo or owner/repo/<skill-path>): {locator}")
+    return parts[0], parts[1], parts[2] if len(parts) == 3 else None
 
 
 def github_repo_from_locator(locator: str) -> str | None:
@@ -55,14 +63,6 @@ def github_repo_from_locator(locator: str) -> str | None:
     except ValueError:
         return None
     return f"{owner}/{repo}"
-
-
-def github_skill_dir_from_locator(locator: str) -> str | None:
-    try:
-        _, _, skill_dir = _parse_repo_identity(locator)
-    except ValueError:
-        return None
-    return skill_dir
 
 
 def is_valid_github_repo(repo: str) -> bool:
@@ -80,6 +80,15 @@ def github_repo_owner(repo: str) -> str | None:
 
 def github_repo_url(repo: str) -> str:
     return f"https://github.com/{repo}"
+
+
+def github_folder_url(repo: str, *, ref: str | None, relative_path: str | None) -> str | None:
+    if not ref:
+        return None
+    normalized_path = _normalize_relative_path(relative_path)
+    if normalized_path == ".":
+        return None
+    return f"{github_repo_url(repo)}/tree/{quote(ref, safe='')}/{quote(normalized_path, safe='/')}"
 
 
 def github_owner_avatar_url(repo: str, *, size: int = 96) -> str | None:
@@ -181,17 +190,24 @@ def _find_skill(clone_dir: Path, skill_dir: str) -> Path | None:
     return None
 
 
+def _normalize_relative_path(relative_path: str | None) -> str:
+    if relative_path is None:
+        return "."
+    normalized = relative_path.strip().strip("/")
+    return normalized or "."
+
+
 class GitHubSource:
-    def fetch(self, locator: str, work_dir: Path) -> Path:
-        owner, repo, skill_dir = _parse_locator(locator)
-        clone_dir = work_dir / f"{owner}--{repo}"
+    def resolve(self, locator: str, work_dir: Path) -> ResolvedGitHubSkill:
+        owner, repo_name, skill_dir = _parse_locator(locator)
+        clone_dir = work_dir / f"{owner}--{repo_name}"
         subprocess.run(
             [
                 "git",
                 "clone",
                 "--depth",
                 "1",
-                f"https://github.com/{owner}/{repo}.git",
+                f"https://github.com/{owner}/{repo_name}.git",
                 str(clone_dir),
             ],
             check=True,
@@ -200,5 +216,34 @@ class GitHubSource:
         )
         skill_path = _find_skill(clone_dir, skill_dir)
         if skill_path is None:
-            raise ValueError(f"skill directory '{skill_dir}' not found in {owner}/{repo}")
-        return skill_path
+            raise ValueError(f"skill directory '{skill_dir}' not found in {owner}/{repo_name}")
+        return ResolvedGitHubSkill(
+            repo=f"{owner}/{repo_name}",
+            ref=self._checked_out_ref(clone_dir),
+            relative_path=_normalize_relative_path(skill_path.relative_to(clone_dir).as_posix()),
+            package_path=skill_path,
+            clone_dir=clone_dir,
+        )
+
+    def fetch(self, locator: str, work_dir: Path) -> Path:
+        return self.resolve(locator, work_dir).package_path
+
+    @staticmethod
+    def _checked_out_ref(clone_dir: Path) -> str | None:
+        branch = subprocess.run(
+            ["git", "-C", str(clone_dir), "rev-parse", "--abbrev-ref", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+        if branch and branch != "HEAD":
+            return branch
+        commit = subprocess.run(
+            ["git", "-C", str(clone_dir), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+        return commit or None

@@ -20,6 +20,8 @@ class SharedStoreIngestTests(unittest.TestCase):
                 declared_name="Audit Skill",
                 source_kind="centralized",
                 source_locator="centralized:Audit Skill",
+                source_ref="main",
+                source_path_hint="skills/audit",
             )
             self.assertTrue(dest.is_dir())
             self.assertTrue((dest / "SKILL.md").is_file())
@@ -27,6 +29,8 @@ class SharedStoreIngestTests(unittest.TestCase):
             self.assertEqual(len(manifest.entries), 1)
             self.assertEqual(manifest.entries[0].package_dir, "audit")
             self.assertEqual(manifest.entries[0].declared_name, "Audit Skill")
+            self.assertEqual(manifest.entries[0].source_ref, "main")
+            self.assertEqual(manifest.entries[0].source_path, "skills/audit")
 
     def test_ingest_refuses_existing_directory(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -66,12 +70,14 @@ class SharedStoreUpdateTests(unittest.TestCase):
             source_v1 = seed_skill_package(Path(temp_dir) / "v1", "audit", "Audit", body="version 1")
             store.ingest(source_path=source_v1, declared_name="Audit", source_kind="github", source_locator="github:test/test/audit")
             source_v2 = seed_skill_package(Path(temp_dir) / "v2", "audit", "Audit", body="version 2")
-            _, changed = store.update("audit", source_path=source_v2)
+            _, changed = store.update("audit", source_path=source_v2, source_ref="main", source_path_hint="skills/audit")
             self.assertTrue(changed)
             content = (spec.shared_store_root / "audit" / "SKILL.md").read_text()
             self.assertIn("version 2", content)
             manifest = load_manifest(store.manifest_path)
             self.assertEqual(len(manifest.entries), 1)
+            self.assertEqual(manifest.entries[0].source_ref, "main")
+            self.assertEqual(manifest.entries[0].source_path, "skills/audit")
 
     def test_update_noop_when_identical(self) -> None:
         with TemporaryDirectory() as temp_dir:

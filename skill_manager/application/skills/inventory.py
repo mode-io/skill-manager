@@ -38,6 +38,8 @@ class InventoryEntry:
     source: SourceDescriptor
     current_revision: str | None = None
     recorded_revision: str | None = None
+    source_ref: str | None = None
+    source_path: str | None = None
     package_dir: str | None = None
     package_path: Path | None = None
     sightings: list[InventorySighting] = field(default_factory=list)
@@ -104,6 +106,8 @@ class SkillInventory:
                 source=package.source,
                 current_revision=package.revision,
                 recorded_revision=store_package.recorded_revision,
+                source_ref=store_package.recorded_source_ref,
+                source_path=store_package.recorded_source_path,
                 package_dir=package.root_path.name,
                 package_path=package.root_path,
             )

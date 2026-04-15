@@ -34,6 +34,8 @@ class SharedStore:
                 StorePackageObservation(
                     package=parse_skill_package(path, default_source=source),
                     recorded_revision=entry.revision if entry else None,
+                    recorded_source_ref=entry.source_ref if entry else None,
+                    recorded_source_path=entry.source_path if entry else None,
                 )
             )
         return StoreScan(packages=tuple(packages), issues=tuple(issue.message for issue in self.check_integrity()))
@@ -45,6 +47,8 @@ class SharedStore:
         declared_name: str,
         source_kind: str,
         source_locator: str,
+        source_ref: str | None = None,
+        source_path_hint: str | None = None,
     ) -> Path:
         """Copy a skill package into the shared store and update the manifest."""
         self.root.mkdir(parents=True, exist_ok=True)
@@ -60,11 +64,20 @@ class SharedStore:
             source_kind=source_kind,
             source_locator=source_locator,
             revision=fingerprint,
+            source_ref=source_ref,
+            source_path=source_path_hint,
         )
         write_manifest(self.manifest_path, StoreManifest(entries=manifest.entries + (entry,)))
         return dest
 
-    def update(self, package_dir: str, *, source_path: Path) -> tuple[Path, bool]:
+    def update(
+        self,
+        package_dir: str,
+        *,
+        source_path: Path,
+        source_ref: str | None = None,
+        source_path_hint: str | None = None,
+    ) -> tuple[Path, bool]:
         """Replace a shared package with a new version. Returns (path, changed)."""
         dest = self.root / package_dir
         if not dest.is_dir():
@@ -77,7 +90,15 @@ class SharedStore:
         shutil.copytree(source_path, dest)
         manifest = load_manifest(self.manifest_path)
         updated = tuple(
-            ManifestEntry(e.package_dir, e.declared_name, e.source_kind, e.source_locator, new_fp)
+            ManifestEntry(
+                e.package_dir,
+                e.declared_name,
+                e.source_kind,
+                e.source_locator,
+                new_fp,
+                e.source_ref if source_ref is None else source_ref,
+                e.source_path if source_path_hint is None else source_path_hint,
+            )
             if e.package_dir == package_dir
             else e
             for e in manifest.entries

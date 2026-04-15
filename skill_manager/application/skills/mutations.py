@@ -92,13 +92,18 @@ class SkillsMutationService:
         if entry.package_dir is None:
             raise MutationError("managed skill is missing its package directory name", status=500)
         with TemporaryDirectory(prefix="skill-update-") as work_dir:
-            skill_path = self.source_fetcher.fetch(
+            fetched = self.source_fetcher.fetch_package(
                 source_kind=entry.source.kind,
                 source_locator=entry.source.locator,
                 work_dir=Path(work_dir),
             )
             try:
-                self.read_models.store.update(entry.package_dir, source_path=skill_path)
+                self.read_models.store.update(
+                    entry.package_dir,
+                    source_path=fetched.package_path,
+                    source_ref=fetched.source_ref,
+                    source_path_hint=fetched.source_path,
+                )
             except ValueError as error:
                 raise MutationError(str(error), status=409) from error
         self.read_models.invalidate()
@@ -176,21 +181,23 @@ class SkillsMutationService:
 
     def install_skill(self, *, source_kind: str, source_locator: str) -> dict[str, bool]:
         with TemporaryDirectory(prefix="skill-install-") as work_dir:
-            skill_path = self.source_fetcher.fetch(
+            fetched = self.source_fetcher.fetch_package(
                 source_kind=source_kind,
                 source_locator=source_locator,
                 work_dir=Path(work_dir),
             )
             package = parse_skill_package(
-                skill_path,
+                fetched.package_path,
                 default_source=SourceDescriptor(kind=source_kind, locator=source_locator),
             )
             try:
                 self.read_models.store.ingest(
-                    source_path=skill_path,
+                    source_path=fetched.package_path,
                     declared_name=package.declared_name,
                     source_kind=source_kind,
                     source_locator=source_locator,
+                    source_ref=fetched.source_ref,
+                    source_path_hint=fetched.source_path,
                 )
             except ValueError as error:
                 raise MutationError(str(error), status=409) from error

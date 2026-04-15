@@ -19,6 +19,8 @@ class ManifestTests(unittest.TestCase):
                         source_kind="github",
                         source_locator="github:mode-io/shared-audit",
                         revision="abc123",
+                        source_ref="main",
+                        source_path="skills/shared-audit",
                     ),
                 )
             )
