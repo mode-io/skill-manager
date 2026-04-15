@@ -27,6 +27,8 @@ class BuiltinObservation:
 class StorePackageObservation:
     package: SkillPackage
     recorded_revision: str | None = None
+    recorded_source_ref: str | None = None
+    recorded_source_path: str | None = None
 
 
 @dataclass(frozen=True)

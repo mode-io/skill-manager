@@ -6,6 +6,7 @@ import unittest
 
 from skill_manager.application import build_backend_container
 from skill_manager.domain import fingerprint_package
+from skill_manager.sources import ResolvedGitHubSkill
 from skill_manager.store import ManifestEntry
 
 from tests.support.fake_home import (
@@ -20,11 +21,30 @@ from tests.support.marketplace_fixture import create_fixture_marketplace_service
 
 
 class _StaticGitHubSource:
-    def __init__(self, package_root: Path) -> None:
+    def __init__(
+        self,
+        package_root: Path,
+        *,
+        repo: str = "mode-io/skills",
+        ref: str = "main",
+        relative_path: str = ".",
+    ) -> None:
         self.package_root = package_root
+        self.repo = repo
+        self.ref = ref
+        self.relative_path = relative_path
 
     def fetch(self, locator: str, work_dir: Path) -> Path:
         return self.package_root
+
+    def resolve(self, locator: str, work_dir: Path) -> ResolvedGitHubSkill:
+        return ResolvedGitHubSkill(
+            repo=self.repo,
+            ref=self.ref,
+            relative_path=self.relative_path,
+            package_path=self.package_root,
+            clone_dir=work_dir / self.repo.replace("/", "--"),
+        )
 
 
 class BackendContainerTests(unittest.TestCase):
@@ -165,7 +185,7 @@ class BackendContainerTests(unittest.TestCase):
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
 
-    def test_source_links_use_local_head_folder_url(self) -> None:
+    def test_source_links_use_persisted_exact_folder_url(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
             package_root = seed_skill_package(
@@ -185,12 +205,13 @@ class BackendContainerTests(unittest.TestCase):
                         source_kind="github",
                         source_locator="github:mode-io/skills/shared-audit",
                         revision=fingerprint_package(package_root)[0],
+                        source_ref="main",
+                        source_path="skills/shared-audit",
                     )
                 ],
             )
 
             container = build_backend_container(spec.env())
-            container.source_fetcher._github = _StaticGitHubSource(package_root)  # type: ignore[assignment]
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
@@ -202,9 +223,52 @@ class BackendContainerTests(unittest.TestCase):
             self.assertEqual(detail["sourceLinks"], {
                 "repoLabel": "mode-io/skills",
                 "repoUrl": "https://github.com/mode-io/skills",
-                "folderUrl": "https://github.com/mode-io/skills/tree/HEAD/shared-audit",
+                "folderUrl": "https://github.com/mode-io/skills/tree/main/skills/shared-audit",
             })
             self.assertEqual(source_status["updateStatus"], "no_update_available")
+
+    def test_source_links_fall_back_to_exact_github_resolution_for_legacy_entries(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package_root = seed_skill_package(
+                spec.shared_store_root,
+                "agent-browser",
+                "agent-browser",
+                body="Shared package fixture.",
+                source_kind="github",
+                source_locator="github:vercel-labs/agent-browser/agent-browser",
+            )
+            seed_store_manifest(
+                spec,
+                [
+                    ManifestEntry(
+                        package_dir="agent-browser",
+                        declared_name="agent-browser",
+                        source_kind="github",
+                        source_locator="github:vercel-labs/agent-browser/agent-browser",
+                        revision=fingerprint_package(package_root)[0],
+                    )
+                ],
+            )
+
+            container = build_backend_container(spec.env())
+            container.source_fetcher._github = _StaticGitHubSource(  # type: ignore[assignment]
+                package_root,
+                repo="vercel-labs/agent-browser",
+                ref="main",
+                relative_path="skills/agent-browser",
+            )
+            payload = container.skills_queries.list_skills()
+            shared = next(row for row in payload["rows"] if row["name"] == "agent-browser")
+            detail = container.skills_queries.get_skill_detail(shared["skillRef"])
+
+            assert detail is not None
+
+            self.assertEqual(detail["sourceLinks"], {
+                "repoLabel": "vercel-labs/agent-browser",
+                "repoUrl": "https://github.com/vercel-labs/agent-browser",
+                "folderUrl": "https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser",
+            })
 
     def test_marketplace_queries_mark_matching_managed_source_as_installed(self) -> None:
         with TemporaryDirectory() as temp_dir:

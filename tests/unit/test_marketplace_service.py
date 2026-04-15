@@ -143,7 +143,7 @@ class MarketplaceServiceTests(unittest.TestCase):
         payload = service.popular_page()["items"]
 
         self.assertEqual(payload[0]["description"], "Switch between supported skill execution modes.")
-        cached = cache.read("details-v2", record.detail_url, ttl_seconds=3600)
+        cached = cache.read("details-v3", record.detail_url, ttl_seconds=3600)
         self.assertIsNotNone(cached)
 
     def test_search_page_falls_back_to_detail_when_hint_is_missing(self) -> None:
@@ -302,7 +302,7 @@ class MarketplaceServiceTests(unittest.TestCase):
 
         self.assertEqual(detail.description, "Switch between supported skill execution modes.")
         self.assertEqual(detail.folder_url, "https://github.com/mode-io/skills/tree/main/skills/mode-switch")
-        cached = cache.read("details-v2", record.detail_url, ttl_seconds=3600)
+        cached = cache.read("details-v3", record.detail_url, ttl_seconds=3600)
         self.assertIsNotNone(cached)
 
 

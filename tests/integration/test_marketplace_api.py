@@ -10,7 +10,7 @@ from skill_manager.application.marketplace.models import RepoDisplayMetadata
 from skill_manager.application.marketplace.skillssh import fetch_all_time_leaderboard, fetch_detail_page, search_skills
 from skill_manager.application.source_fetch_service import SourceFetchService
 from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MutationError
-from skill_manager.sources import github_owner_avatar_url
+from skill_manager.sources import ResolvedGitHubSkill, github_owner_avatar_url
 from tests.support.app_harness import AppTestHarness
 from tests.support.fake_home import seed_skill_package
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
@@ -47,12 +47,22 @@ class _FixtureGitHubSource:
         self._failures = failures or set()
 
     def fetch(self, locator: str, work_dir: Path) -> Path:
+        return self.resolve(locator, work_dir).package_path
+
+    def resolve(self, locator: str, work_dir: Path) -> ResolvedGitHubSkill:
         if locator in self._failures:
             raise MutationError("unable to fetch source", status=400)
         root = self._roots.get(locator)
         if root is None:
             raise MutationError("unknown source", status=400)
-        return root
+        owner, repo_name, _skill = locator.split("/", 2)
+        return ResolvedGitHubSkill(
+            repo=f"{owner}/{repo_name}",
+            ref="main",
+            relative_path=f"skills/{root.name}",
+            package_path=root,
+            clone_dir=work_dir / f"{owner}--{repo_name}",
+        )
 
 
 def _fixture_catalog(env: dict[str, str], *, broken_repos: set[str] | None = None) -> MarketplaceCatalog:
