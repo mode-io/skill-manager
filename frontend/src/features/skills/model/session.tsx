@@ -110,20 +110,15 @@ export function useSkillsTabScroll(
   const targetScrollTop = tab === "managed" ? context.managedScrollTop : context.unmanagedScrollTop;
 
   useLayoutEffect(() => {
-    const usePaneScroll = shouldUsePaneScroll();
     if (!ready || restoredRef.current || targetScrollTop === null) {
       return;
     }
-    if (usePaneScroll && !scrollRef.current) {
+    if (!scrollRef.current) {
       return;
     }
     restoredRef.current = true;
     const frame = window.requestAnimationFrame(() => {
-      if (usePaneScroll) {
-        scrollRef.current?.scrollTo({ top: targetScrollTop, behavior: "auto" });
-        return;
-      }
-      window.scrollTo({ top: targetScrollTop, behavior: "auto" });
+      scrollRef.current?.scrollTo({ top: targetScrollTop, behavior: "auto" });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [ready, scrollRef, targetScrollTop]);
@@ -134,19 +129,10 @@ export function useSkillsTabScroll(
 
   useLayoutEffect(() => {
     return () => {
-      const nextScrollTop = shouldUsePaneScroll()
-        ? (scrollRef.current?.scrollTop ?? 0)
-        : window.scrollY;
+      const nextScrollTop = scrollRef.current?.scrollTop ?? 0;
       context.setScrollPosition(tab, nextScrollTop);
     };
   }, [context, scrollRef, tab]);
-}
-
-function shouldUsePaneScroll(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    return false;
-  }
-  return window.matchMedia("(min-width: 1181px)").matches;
 }
 
 function useSkillsWorkspaceSession(): SkillsWorkspaceSessionContextValue {
