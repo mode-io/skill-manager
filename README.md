@@ -185,7 +185,17 @@ Default local URLs:
 
 ## Configuration
 
-By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_HOME`. You can override individual roots with environment variables.
+`skill-manager` stores its own app data in standard per-user locations.
+
+On macOS, app-owned files live under `~/Library/Application Support/skill-manager`.
+
+Useful paths:
+
+- shared managed store: `~/Library/Application Support/skill-manager/shared`
+- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
+- app settings: `~/Library/Application Support/skill-manager/settings.json`
+
+Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual harness roots with environment variables.
 
 ### Codex
 
@@ -209,15 +219,9 @@ By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_H
 
 - global scope defaults to `~/.openclaw/skills`
 
-### Marketplace
-
-- `SKILL_MANAGER_MARKETPLACE_BASE_URL`
-
-These overrides are useful when you need to relocate the canonical global skill roots in a controlled environment. `SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for deterministic tests and release validation; normal installs should continue to use the production `skills.sh` marketplace.
-
 ## Troubleshooting
 
-- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection first. Packaged installs use the bundled CA bundle automatically; if failures persist after a reinstall, check whether your environment overrides `SSL_CERT_FILE`.
+- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try reinstalling `skill-manager` if the problem persists.
 - If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
 
 ## Development

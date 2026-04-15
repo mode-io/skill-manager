@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMarketplaceDetail, createMarketplaceItem } from "../test-fixtures";
 import MarketplacePage from "./MarketplacePage";
 
 const fetchMock = vi.fn();
@@ -160,26 +161,16 @@ describe("MarketplacePage", () => {
         });
       }
       if (url.includes("/api/marketplace/items/skillssh%3Amode-io%2Fskills%3Amode-switch")) {
-        return okJson({
-          id: "skillssh:mode-io/skills:mode-switch",
-          name: "Mode Switch",
-          description: "Switch between supported skill execution modes.",
-          installs: 128,
-          stars: 512,
-          repoLabel: "mode-io/skills",
-          repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-          sourceLinks: {
-            repoLabel: "mode-io/skills",
-            repoUrl: "https://github.com/mode-io/skills",
-            folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
-            skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
-          },
-          installation: {
-            status: "installable",
-            installedSkillRef: null,
-          },
-          installToken: "token-mode-switch",
-        });
+        return okJson(
+          createMarketplaceDetail({
+            sourceLinks: {
+              repoLabel: "mode-io/skills",
+              repoUrl: "https://github.com/mode-io/skills",
+              folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+              skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
+            },
+          }),
+        );
       }
       throw new Error(`Unhandled URL ${url}`);
     });
@@ -231,26 +222,16 @@ describe("MarketplacePage", () => {
 
     await act(async () => {
       pendingDetail.resolve(
-        okJson({
-          id: "skillssh:mode-io/skills:mode-switch",
-          name: "Mode Switch",
-          description: "Switch between supported skill execution modes.",
-          installs: 128,
-          stars: 512,
-          repoLabel: "mode-io/skills",
-          repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-          sourceLinks: {
-            repoLabel: "mode-io/skills",
-            repoUrl: "https://github.com/mode-io/skills",
-            folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
-            skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
-          },
-          installation: {
-            status: "installable",
-            installedSkillRef: null,
-          },
-          installToken: "token-mode-switch",
-        }),
+        okJson(
+          createMarketplaceDetail({
+            sourceLinks: {
+              repoLabel: "mode-io/skills",
+              repoUrl: "https://github.com/mode-io/skills",
+              folderUrl: "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
+              skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
+            },
+          }),
+        ),
       );
     });
 
@@ -299,20 +280,11 @@ function deferred<T>() {
 }
 
 function baseItem(id: string, name: string, installs: number) {
-  return {
+  return createMarketplaceItem({
     id: `skillssh:mode-io/skills:${id}`,
     name,
     description: `${name} description`,
     installs,
-    stars: 512,
-    repoLabel: "mode-io/skills",
-    repoUrl: "https://github.com/mode-io/skills",
-    repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-    skillsDetailUrl: `https://skills.sh/mode-io/skills/${id}`,
     installToken: `token-${id}`,
-    installation: {
-      status: "installable",
-      installedSkillRef: null,
-    },
-  };
+  });
 }

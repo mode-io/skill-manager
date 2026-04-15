@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 
+from skill_manager.storage_paths import default_harness_support_path
 from .marketplace import (
     MarketplaceCatalog,
     MarketplaceDocumentService,
@@ -13,7 +14,7 @@ from .read_model_service import ReadModelService
 from .settings import SettingsMutationService, SettingsQueryService
 from .skills import SkillsMutationService, SkillsQueryService
 from .source_fetch_service import SourceFetchService
-from skill_manager.store import HarnessSupportStore, default_harness_support_path
+from skill_manager.store import HarnessSupportStore
 
 
 @dataclass(frozen=True)

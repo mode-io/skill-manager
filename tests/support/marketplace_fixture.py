@@ -29,11 +29,11 @@ def create_fixture_marketplace_service() -> MarketplaceCatalog:
     cache.write("leaderboard", "all-time", [skill_to_dict(item) for item in skills])
     for skill in skills:
         cache.write(
-            "details",
+            "details-v2",
             skill.detail_url,
             DetailEnrichment(
                 description=next(item["description"] for item in FIXTURE_SKILLS if item["skillId"] == skill.skill_id),
-                github_folder_url=FIXTURE_FOLDER_URLS[skill.skill_id],
+                folder_url=FIXTURE_FOLDER_URLS[skill.skill_id],
                 folder_resolution_complete=True,
             ).to_dict(),
         )
@@ -57,19 +57,16 @@ def _fixture_repo_metadata(repo: str) -> GitHubRepoMetadata | None:
     metadata = {
         "mode-io/skills": GitHubRepoMetadata(
             repo=repo,
-            repo_url="https://github.com/mode-io/skills",
             stars=512,
             default_branch="main",
         ),
         "vercel-labs/skills": GitHubRepoMetadata(
             repo=repo,
-            repo_url="https://github.com/vercel-labs/skills",
             stars=314,
             default_branch="main",
         ),
         "microsoft/github-copilot-for-azure": GitHubRepoMetadata(
             repo=repo,
-            repo_url="https://github.com/microsoft/github-copilot-for-azure",
             stars=271,
             default_branch="main",
         ),

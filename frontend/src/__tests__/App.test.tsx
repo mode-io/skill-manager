@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
+import { createMarketplaceItem } from "../features/marketplace/test-fixtures";
 
 const fetchMock = vi.fn();
 
@@ -196,22 +197,15 @@ function mockSkillsPage(options?: { codexSupportEnabled?: boolean }) {
         ok: true,
         json: async () => ({
           items: [
-            {
+            createMarketplaceItem({
               id: "skillssh:mode-io/shared-audit:shared-audit",
               name: "Shared Audit",
               description: "Shared audit workflow",
               installs: 44,
               stars: 33,
               repoLabel: "mode-io/shared-audit",
-              repoUrl: "https://github.com/mode-io/shared-audit",
-              repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-              skillsDetailUrl: "https://skills.sh/mode-io/shared-audit/shared-audit",
               installToken: "token-shared-audit",
-              installation: {
-                status: "installable",
-                installedSkillRef: null,
-              },
-            },
+            }),
           ],
           nextOffset: null,
           hasMore: false,

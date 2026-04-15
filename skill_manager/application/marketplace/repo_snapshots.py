@@ -19,7 +19,6 @@ from .models import RepoDisplayMetadata
 @dataclass(frozen=True)
 class GitHubRepoSnapshot:
     repo: str
-    repo_url: str
     stars: int | None
     default_branch: str | None
 
@@ -27,7 +26,6 @@ class GitHubRepoSnapshot:
         return {
             "status": "success",
             "repo": self.repo,
-            "repoUrl": self.repo_url,
             "stars": self.stars,
             "defaultBranch": self.default_branch,
         }
@@ -37,16 +35,12 @@ class GitHubRepoSnapshot:
         if payload.get("status") != "success":
             return None
         repo = payload.get("repo")
-        repo_url = payload.get("repoUrl")
         stars = payload.get("stars")
         default_branch = payload.get("defaultBranch")
         if not isinstance(repo, str) or not repo:
             return None
-        if not isinstance(repo_url, str) or not repo_url:
-            return None
         return cls(
             repo=repo,
-            repo_url=repo_url,
             stars=stars if isinstance(stars, int) else None,
             default_branch=default_branch if isinstance(default_branch, str) and default_branch else None,
         )
@@ -81,8 +75,8 @@ class GitHubRepoSnapshotService:
     _TRANSIENT_FAILURE_SECONDS = 15 * 60
     _PERMANENT_FAILURE_SECONDS = 24 * 60 * 60
     _REFRESH_WORKERS = 4
-    _SUCCESS_NAMESPACE = "repo-metadata"
-    _FAILURE_NAMESPACE = "repo-metadata-failures"
+    _SUCCESS_NAMESPACE = "repo-metadata-v2"
+    _FAILURE_NAMESPACE = "repo-metadata-failures-v2"
 
     def __init__(
         self,
@@ -185,11 +179,9 @@ class GitHubRepoSnapshotService:
     @staticmethod
     def _snapshot_from_metadata(metadata: GitHubRepoMetadata) -> GitHubRepoSnapshot:
         repo = metadata.repo or ""
-        repo_url = metadata.repo_url or ""
         stars = metadata.stars if metadata.stars > 0 else None
         return GitHubRepoSnapshot(
             repo=repo,
-            repo_url=repo_url,
             stars=stars,
             default_branch=metadata.default_branch,
         )

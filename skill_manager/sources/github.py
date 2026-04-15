@@ -17,7 +17,6 @@ _TIMEOUT_SECONDS = 10
 @dataclass(frozen=True)
 class GitHubRepoMetadata:
     repo: str | None
-    repo_url: str | None
     stars: int
     default_branch: str | None = None
 
@@ -119,12 +118,9 @@ def _default_metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
     except OSError as error:
         raise GitHubRepoMetadataError(repo, str(error)) from error
 
-    repo_url = payload.get("html_url")
     stars = payload.get("stargazers_count", 0)
     default_branch = payload.get("default_branch")
 
-    if not isinstance(repo_url, str) or not repo_url:
-        repo_url = github_repo_url(repo)
     try:
         star_count = int(stars)
     except (TypeError, ValueError):
@@ -134,7 +130,6 @@ def _default_metadata_fetcher(repo: str) -> GitHubRepoMetadata | None:
 
     return GitHubRepoMetadata(
         repo=repo,
-        repo_url=repo_url,
         stars=star_count,
         default_branch=default_branch,
     )

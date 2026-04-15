@@ -1,25 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { MarketplaceItemDto } from "../api/types";
+import { createMarketplaceItem } from "../test-fixtures";
 import { MarketplaceCard } from "./MarketplaceCard";
 
-const baseItem: MarketplaceItemDto = {
-  id: "skillssh:mode-io/skills:mode-switch",
-  name: "Mode Switch",
-  description: "Switch between supported skill execution modes.",
-  installs: 128,
-  stars: 512,
-  repoLabel: "mode-io/skills",
-  repoUrl: "https://github.com/mode-io/skills",
-  repoImageUrl: "https://avatars.githubusercontent.com/u/424242?v=4",
-  skillsDetailUrl: "https://skills.sh/mode-io/skills/mode-switch",
-  installToken: "token-mode-switch",
-  installation: {
-    status: "installable",
-    installedSkillRef: null,
-  },
-};
+const baseItem = createMarketplaceItem();
 
 describe("MarketplaceCard", () => {
   it("renders repo identity, installs, and stars", () => {

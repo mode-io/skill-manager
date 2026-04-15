@@ -104,7 +104,6 @@ class MarketplaceServiceTests(unittest.TestCase):
             github_resolver=_resolver(
                 metadata_fetcher=lambda repo: GitHubRepoMetadata(
                     repo=repo,
-                    repo_url=f"https://github.com/{repo}",
                     stars=42,
                     default_branch="main",
                 ),
@@ -133,7 +132,6 @@ class MarketplaceServiceTests(unittest.TestCase):
             github_resolver=_resolver(
                 metadata_fetcher=lambda repo: GitHubRepoMetadata(
                     repo=repo,
-                    repo_url=f"https://github.com/{repo}",
                     stars=42,
                     default_branch="main",
                 ),
@@ -145,7 +143,7 @@ class MarketplaceServiceTests(unittest.TestCase):
         payload = service.popular_page()["items"]
 
         self.assertEqual(payload[0]["description"], "Switch between supported skill execution modes.")
-        cached = cache.read("details", record.detail_url, ttl_seconds=3600)
+        cached = cache.read("details-v2", record.detail_url, ttl_seconds=3600)
         self.assertIsNotNone(cached)
 
     def test_search_page_falls_back_to_detail_when_hint_is_missing(self) -> None:
@@ -242,7 +240,7 @@ class MarketplaceServiceTests(unittest.TestCase):
         detail = service.detail_enrichment(record)
 
         self.assertEqual(detail.description, "Build React components from Stitch designs.")
-        self.assertIsNone(detail.github_folder_url)
+        self.assertIsNone(detail.folder_url)
         self.assertTrue(detail.folder_resolution_complete)
 
     def test_detail_enrichment_falls_back_when_summary_fetch_fails(self) -> None:
@@ -267,7 +265,7 @@ class MarketplaceServiceTests(unittest.TestCase):
         detail = service.detail_enrichment(record)
 
         self.assertEqual(detail.description, MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
-        self.assertIsNone(detail.github_folder_url)
+        self.assertIsNone(detail.folder_url)
         self.assertTrue(detail.folder_resolution_complete)
 
     def test_detail_enrichment_fetches_and_caches_on_first_access(self) -> None:
@@ -291,7 +289,6 @@ class MarketplaceServiceTests(unittest.TestCase):
             github_resolver=_resolver(
                 metadata_fetcher=lambda repo: GitHubRepoMetadata(
                     repo=repo,
-                    repo_url=f"https://github.com/{repo}",
                     stars=42,
                     default_branch="main",
                 ),
@@ -304,11 +301,8 @@ class MarketplaceServiceTests(unittest.TestCase):
         detail = service.detail_enrichment(record)
 
         self.assertEqual(detail.description, "Switch between supported skill execution modes.")
-        self.assertEqual(
-            detail.github_folder_url,
-            "https://github.com/mode-io/skills/tree/main/skills/mode-switch",
-        )
-        cached = cache.read("details", record.detail_url, ttl_seconds=3600)
+        self.assertEqual(detail.folder_url, "https://github.com/mode-io/skills/tree/main/skills/mode-switch")
+        cached = cache.read("details-v2", record.detail_url, ttl_seconds=3600)
         self.assertIsNotNone(cached)
 
 
