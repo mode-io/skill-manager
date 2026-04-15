@@ -13,14 +13,14 @@ jobs:
   build-macos-arm64:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           # Release packaging stays on one stable builder version.
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
@@ -55,7 +55,7 @@ jobs:
           bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
 
       - name: Upload packaged artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-arm64
           path: .artifacts/release/*
@@ -63,14 +63,14 @@ jobs:
   build-macos-x64:
     runs-on: macos-15-intel
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           # Release packaging stays on one stable builder version.
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
@@ -105,7 +105,7 @@ jobs:
           bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
 
       - name: Upload packaged artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-x64
           path: .artifacts/release/*
@@ -117,9 +117,9 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: .artifacts/release
           pattern: release-*
@@ -135,14 +135,14 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           # Publishing tooling stays pinned even though runtime compatibility is validated in CI.
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
@@ -167,14 +167,14 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           # Formula rendering is deterministic on the same stable builder version.
           python-version: "3.11"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: .artifacts/release
           pattern: release-*
@@ -201,7 +201,7 @@ jobs:
         run: ruby -c .artifacts/release/skill-manager.rb
 
       - name: Upload Homebrew formula artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: homebrew-formula
           path: .artifacts/release/skill-manager.rb
