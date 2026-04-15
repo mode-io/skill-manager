@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import os
 import shutil
 from pathlib import Path
 
-from skill_manager.app_paths import app_data_dir
 from skill_manager.domain import (
     CheckIssue,
     SourceDescriptor,
@@ -16,22 +14,6 @@ from skill_manager.domain import (
 )
 
 from .manifest import ManifestEntry, StoreManifest, load_manifest, write_manifest
-
-
-def default_shared_store_root(env: dict[str, str] | None = None) -> Path:
-    active_env = _active_env(env)
-    default_root = app_data_dir(active_env) / "shared"
-    if active_env.get("XDG_DATA_HOME"):
-        return default_root
-    legacy_root = _legacy_shared_store_root(active_env)
-    if legacy_root == default_root:
-        return default_root
-    if _store_location_initialized(default_root):
-        return default_root
-    if _store_location_initialized(legacy_root):
-        return legacy_root
-    return default_root
-
 
 class SharedStore:
     def __init__(self, root: Path, manifest_path: Path | None = None) -> None:
@@ -133,24 +115,3 @@ class SharedStore:
                     )
                 )
         return tuple(issues)
-
-
-def _legacy_shared_store_root(env: dict[str, str]) -> Path:
-    home = Path(env.get("HOME", str(Path.home())))
-    return home / ".local" / "share" / "skill-manager" / "shared"
-
-
-def _store_location_initialized(root: Path) -> bool:
-    manifest_path = root.parent / "manifest.json"
-    if manifest_path.is_file():
-        return True
-    if not root.is_dir():
-        return False
-    return any(root.iterdir())
-
-
-def _active_env(env: dict[str, str] | None) -> dict[str, str]:
-    active_env = dict(os.environ)
-    if env is not None:
-        active_env.update(env)
-    return active_env

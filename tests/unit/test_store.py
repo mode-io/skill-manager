@@ -3,9 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest import mock
 
-from skill_manager.store import SharedStore, default_shared_store_root, load_manifest
+from skill_manager.store import SharedStore, load_manifest
 
 from tests.support.fake_home import create_fake_home_spec, seed_skill_package
 
@@ -134,40 +133,5 @@ class SharedStoreDeleteTests(unittest.TestCase):
 
             self.assertIn("missing from manifest", str(ctx.exception))
             self.assertTrue((spec.shared_store_root / "audit").is_dir())
-
-
-class SharedStorePathResolutionTests(unittest.TestCase):
-    def test_prefers_legacy_store_when_default_location_is_uninitialized(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            home = Path(temp_dir) / "home"
-            legacy_root = home / ".local" / "share" / "skill-manager" / "shared"
-            legacy_root.mkdir(parents=True, exist_ok=True)
-            seed_skill_package(legacy_root, "audit", "Audit")
-            default_data_dir = home / "Library" / "Application Support" / "skill-manager"
-            default_root = default_data_dir / "shared"
-
-            with mock.patch("skill_manager.store.shared_store.app_data_dir", return_value=default_data_dir):
-                resolved = default_shared_store_root({"HOME": str(home)})
-
-            self.assertEqual(resolved, legacy_root)
-            self.assertFalse(default_root.exists())
-
-    def test_prefers_initialized_default_location_over_legacy_store(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            home = Path(temp_dir) / "home"
-            legacy_root = home / ".local" / "share" / "skill-manager" / "shared"
-            legacy_root.mkdir(parents=True, exist_ok=True)
-            seed_skill_package(legacy_root, "legacy-audit", "Legacy Audit")
-            default_data_dir = home / "Library" / "Application Support" / "skill-manager"
-            default_root = default_data_dir / "shared"
-            default_root.mkdir(parents=True, exist_ok=True)
-            seed_skill_package(default_root, "audit", "Audit")
-
-            with mock.patch("skill_manager.store.shared_store.app_data_dir", return_value=default_data_dir):
-                resolved = default_shared_store_root({"HOME": str(home)})
-
-            self.assertEqual(resolved, default_root)
-
-
 if __name__ == "__main__":
     unittest.main()

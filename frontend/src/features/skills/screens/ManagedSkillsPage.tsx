@@ -75,7 +75,7 @@ export default function ManagedSkillsPage() {
                   <div>
                     <p className="skills-empty-state__eyebrow">No managed skills yet</p>
                     <h3>Your shared inventory is empty.</h3>
-                    <p>Review detected local skills or install something from the marketplace to start managing coverage here.</p>
+                    <p>Review unmanaged skills found in supported global roots or install something from the marketplace to start managing coverage here.</p>
                   </div>
                   <div className="skills-empty-state__actions">
                     <Link to="/skills/unmanaged" className="btn btn-primary">

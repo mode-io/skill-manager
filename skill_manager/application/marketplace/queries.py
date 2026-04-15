@@ -45,7 +45,7 @@ class MarketplaceQueryService:
             "sourceLinks": {
                 "repoLabel": record.repo,
                 "repoUrl": github_repo_url(record.repo),
-                "folderUrl": enrichment.github_folder_url,
+                "folderUrl": enrichment.folder_url,
                 "skillsDetailUrl": record.detail_url,
             },
             "installation": installation,

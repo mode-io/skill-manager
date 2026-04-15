@@ -185,7 +185,26 @@ Default local URLs:
 
 ## Configuration
 
-By default, `skill-manager` resolves harness paths from `HOME` and `XDG_CONFIG_HOME`. You can override individual roots with environment variables.
+`skill-manager` resolves its own app paths through:
+
+- config: `app_config_dir(env)`
+- data: `app_data_dir(env)`
+- state: `app_state_dir(env)`
+
+On macOS, those all resolve under `~/Library/Application Support/skill-manager`.
+
+App-owned storage layout:
+
+- shared managed store: `~/Library/Application Support/skill-manager/shared`
+- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
+- harness support settings: `~/Library/Application Support/skill-manager/settings.json`
+
+Compatibility behavior is intentionally narrow:
+
+- managed shared skills still fall back to an initialized legacy shared store at `~/.local/share/skill-manager/shared`
+- marketplace cache does not use a legacy fallback because it is disposable and rehydrates cleanly
+
+You can still override individual harness roots with environment variables when you need to test or relocate a specific global skill directory.
 
 ### Codex
 
