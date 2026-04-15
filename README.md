@@ -137,7 +137,7 @@ Before you bring a skill under management, each harness just points at its own l
 - Node.js 18+
 - npm
 
-`skill-manager` supports Python 3.11+. CI validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism.
+`skill-manager` supports Python 3.11+. CI validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism. GitHub-hosted workflows track the latest stable major versions of the GitHub-maintained actions, while the project build toolchain remains pinned separately inside each workflow.
 
 ### Contributor setup
 
