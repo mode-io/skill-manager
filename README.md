@@ -185,26 +185,17 @@ Default local URLs:
 
 ## Configuration
 
-`skill-manager` resolves its own app paths through:
+`skill-manager` stores its own app data in standard per-user locations.
 
-- config: `app_config_dir(env)`
-- data: `app_data_dir(env)`
-- state: `app_state_dir(env)`
+On macOS, app-owned files live under `~/Library/Application Support/skill-manager`.
 
-On macOS, those all resolve under `~/Library/Application Support/skill-manager`.
-
-App-owned storage layout:
+Useful paths:
 
 - shared managed store: `~/Library/Application Support/skill-manager/shared`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
-- harness support settings: `~/Library/Application Support/skill-manager/settings.json`
+- app settings: `~/Library/Application Support/skill-manager/settings.json`
 
-Compatibility behavior is intentionally narrow:
-
-- managed shared skills still fall back to an initialized legacy shared store at `~/.local/share/skill-manager/shared`
-- marketplace cache does not use a legacy fallback because it is disposable and rehydrates cleanly
-
-You can still override individual harness roots with environment variables when you need to test or relocate a specific global skill directory.
+You can override individual harness roots with environment variables when you need to relocate a supported global skill directory.
 
 ### Codex
 
@@ -232,11 +223,11 @@ You can still override individual harness roots with environment variables when 
 
 - `SKILL_MANAGER_MARKETPLACE_BASE_URL`
 
-These overrides are useful when you need to relocate the canonical global skill roots in a controlled environment. `SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for deterministic tests and release validation; normal installs should continue to use the production `skills.sh` marketplace.
+`SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for custom or local marketplace endpoints. Normal installs should keep using the default `skills.sh` marketplace.
 
 ## Troubleshooting
 
-- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection first. Packaged installs use the bundled CA bundle automatically; if failures persist after a reinstall, check whether your environment overrides `SSL_CERT_FILE`.
+- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection first and reinstall if the problem persists.
 - If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
 
 ## Development
