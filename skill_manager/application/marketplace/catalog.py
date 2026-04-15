@@ -43,7 +43,7 @@ class MarketplaceCatalog:
     DETAIL_MISSING_FALLBACK = "No summary available on skills.sh."
     _LEADERBOARD_TTL_SECONDS = 3600
     _DETAIL_TTL_SECONDS = 86400
-    _DETAIL_NAMESPACE = "details-v2"
+    _DETAIL_NAMESPACE = "details-v3"
     _SEARCH_TTL_SECONDS = 900
     _SEARCH_FETCH_FLOOR = 40
     _SEARCH_CACHE_LIMIT = 24
@@ -153,7 +153,7 @@ class MarketplaceCatalog:
 
     def detail_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
         cached = self._cached_detail(record)
-        if cached is not None and cached.folder_resolution_complete and not self._needs_folder_refresh(cached):
+        if cached is not None and cached.folder_resolution_complete:
             return cached
 
         summary = cached
@@ -288,10 +288,6 @@ class MarketplaceCatalog:
         if detail_cache is None or not isinstance(detail_cache.payload, dict):
             return None
         return DetailEnrichment.from_dict(detail_cache.payload)
-
-    @staticmethod
-    def _needs_folder_refresh(detail: DetailEnrichment) -> bool:
-        return bool(detail.folder_url and "/tree/HEAD/" in detail.folder_url)
 
     def _resolve_summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
         description = record.description_hint.strip() if self._is_usable_description(record.description_hint) else ""

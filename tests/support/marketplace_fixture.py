@@ -29,7 +29,7 @@ def create_fixture_marketplace_service() -> MarketplaceCatalog:
     cache.write("leaderboard", "all-time", [skill_to_dict(item) for item in skills])
     for skill in skills:
         cache.write(
-            "details-v2",
+            "details-v3",
             skill.detail_url,
             DetailEnrichment(
                 description=next(item["description"] for item in FIXTURE_SKILLS if item["skillId"] == skill.skill_id),

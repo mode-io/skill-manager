@@ -6,7 +6,7 @@ from typing import Literal
 
 from skill_manager.domain import fingerprint_package
 from skill_manager.errors import MutationError
-from skill_manager.sources import github_repo_from_locator, github_repo_url, github_skill_dir_from_locator
+from skill_manager.sources import github_folder_url, github_repo_from_locator, github_repo_url
 
 from ..document_utils import read_skill_document_markdown
 from ..read_model_service import ReadModelService
@@ -101,16 +101,27 @@ class SkillsQueryService:
         if repo is None:
             return None
 
-        skill_dir = github_skill_dir_from_locator(entry.source.locator)
-        folder_url = None
-        if skill_dir:
-            folder_url = f"{github_repo_url(repo)}/tree/HEAD/{skill_dir}"
-
         return {
             "repoLabel": repo,
             "repoUrl": github_repo_url(repo),
-            "folderUrl": folder_url,
+            "folderUrl": self._github_folder_url(entry, repo),
         }
+
+    def _github_folder_url(self, entry: InventoryEntry, repo: str) -> str | None:
+        if entry.source_ref is not None and entry.source_path is not None:
+            return github_folder_url(repo, ref=entry.source_ref, relative_path=entry.source_path)
+        if entry.source.locator.removeprefix("github:").count("/") < 2:
+            return None
+        with TemporaryDirectory(prefix="skill-source-links-") as work_dir:
+            try:
+                fetched = self.source_fetcher.fetch_package(
+                    source_kind=entry.source.kind,
+                    source_locator=entry.source.locator,
+                    work_dir=Path(work_dir),
+                )
+            except MutationError:
+                return None
+        return github_folder_url(repo, ref=fetched.source_ref, relative_path=fetched.source_path)
 
     def resolve_update_status(
         self,

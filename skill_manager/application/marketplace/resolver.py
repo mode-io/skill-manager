@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
 from tempfile import TemporaryDirectory
-from urllib.parse import quote
 
-from skill_manager.sources import GitHubSource
+from skill_manager.sources import GitHubSource, github_folder_url as build_github_folder_url
 from .repo_snapshots import GitHubRepoSnapshotService
 
 from .models import RepoDisplayMetadata
@@ -55,20 +53,9 @@ class GitHubSkillResolver:
         locator = f"{owner}/{repo_name}/{skill_id}"
         with TemporaryDirectory(prefix="skill-manager-marketplace-") as temp_dir:
             work_dir = Path(temp_dir)
-            skill_path = GitHubSource().fetch(locator, work_dir)
-            clone_dir = work_dir / f"{owner}--{repo_name}"
-            branch = default_branch or self._checked_out_branch(clone_dir) or "HEAD"
-            relative_path = skill_path.relative_to(clone_dir).as_posix()
-        return f"https://github.com/{repo}/tree/{quote(branch, safe='')}/{quote(relative_path, safe='/')}"
-
-    @staticmethod
-    def _checked_out_branch(clone_dir: Path) -> str | None:
-        result = subprocess.run(
-            ["git", "-C", str(clone_dir), "branch", "--show-current"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=10,
+            resolved = GitHubSource().resolve(locator, work_dir)
+        return build_github_folder_url(
+            repo,
+            ref=default_branch or resolved.ref,
+            relative_path=resolved.relative_path,
         )
-        branch = result.stdout.strip()
-        return branch or None

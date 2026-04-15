@@ -13,11 +13,12 @@ from skill_manager.application.marketplace.skillssh import (
 )
 from skill_manager.sources.github import (
     GitHubSource,
+    ResolvedGitHubSkill,
     _find_skill,
     _parse_locator,
+    github_folder_url,
     github_owner_avatar_url,
     github_repo_from_locator,
-    github_skill_dir_from_locator,
     is_valid_github_repo,
 )
 
@@ -31,6 +32,12 @@ class ParseLocatorTests(unittest.TestCase):
         self.assertEqual(repo, "skills")
         self.assertEqual(skill_dir, "commit-message")
 
+    def test_parse_locator_preserves_nested_skill_hint(self) -> None:
+        owner, repo, skill_dir = _parse_locator("vercel-labs/agent-browser/agent-browser")
+        self.assertEqual(owner, "vercel-labs")
+        self.assertEqual(repo, "agent-browser")
+        self.assertEqual(skill_dir, "agent-browser")
+
     def test_parse_rejects_two_parts(self) -> None:
         with self.assertRaises(ValueError):
             _parse_locator("anthropics/skills")
@@ -41,9 +48,21 @@ class ParseLocatorTests(unittest.TestCase):
     def test_github_repo_from_two_part_locator(self) -> None:
         self.assertEqual(github_repo_from_locator("github:mode-io/shared-audit"), "mode-io/shared-audit")
 
-    def test_github_skill_dir_from_locator(self) -> None:
-        self.assertEqual(github_skill_dir_from_locator("github:anthropics/skills/commit-message"), "commit-message")
-        self.assertIsNone(github_skill_dir_from_locator("github:mode-io/shared-audit"))
+    def test_github_repo_from_nested_locator(self) -> None:
+        self.assertEqual(github_repo_from_locator("github:vercel-labs/agent-browser/skills/agent-browser"), "vercel-labs/agent-browser")
+
+    def test_github_folder_url_omits_repo_root(self) -> None:
+        self.assertIsNone(github_folder_url("mode-io/shared-audit", ref="main", relative_path="."))
+
+    def test_github_folder_url_uses_exact_relative_path(self) -> None:
+        self.assertEqual(
+            github_folder_url(
+                "vercel-labs/agent-browser",
+                ref="main",
+                relative_path="skills/agent-browser",
+            ),
+            "https://github.com/vercel-labs/agent-browser/tree/main/skills/agent-browser",
+        )
 
 
 class FindSkillTests(unittest.TestCase):
@@ -99,6 +118,18 @@ class GitHubSourceTests(unittest.TestCase):
             result = local_fetch("test/test-repo/my-skill", work)
             self.assertIsNotNone(result)
             self.assertTrue((result / "SKILL.md").is_file())
+
+    def test_resolved_skill_keeps_nested_repo_path(self) -> None:
+        resolved = ResolvedGitHubSkill(
+            repo="vercel-labs/agent-browser",
+            ref="main",
+            relative_path="skills/agent-browser",
+            package_path=Path("/tmp/agent-browser/skills/agent-browser"),
+            clone_dir=Path("/tmp/agent-browser"),
+        )
+
+        self.assertEqual(resolved.repo, "vercel-labs/agent-browser")
+        self.assertEqual(resolved.relative_path, "skills/agent-browser")
 
 class SkillsShParsingTests(unittest.TestCase):
     def test_parse_homepage_leaderboard_reads_embedded_initial_skills_payload(self) -> None:
