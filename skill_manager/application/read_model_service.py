@@ -7,7 +7,8 @@ import time
 from skill_manager.domain import HarnessScan, StoreScan
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessDriver, HarnessManager, HarnessStatus, collect_harness_statuses, create_default_drivers, scan_all_harnesses, supported_harness_ids
-from skill_manager.store import HarnessSupportStore, SharedStore, default_harness_support_path, default_shared_store_root
+from skill_manager.storage_paths import default_harness_support_path, resolve_shared_store_root
+from skill_manager.store import HarnessSupportStore, SharedStore
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ class ReadModelService:
         support_store: HarnessSupportStore | None = None,
     ) -> "ReadModelService":
         active_env = env or {}
-        store = SharedStore(default_shared_store_root(active_env))
+        store = SharedStore(resolve_shared_store_root(active_env))
         active_support_store = support_store or HarnessSupportStore(default_harness_support_path(active_env))
         drivers = create_default_drivers(active_env)
         return cls(store=store, harness_drivers=drivers, support_store=active_support_store)

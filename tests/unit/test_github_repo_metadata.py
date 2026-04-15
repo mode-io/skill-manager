@@ -24,7 +24,6 @@ class GitHubRepoMetadataClientTests(unittest.TestCase):
             calls.append(repo)
             return GitHubRepoMetadata(
                 repo=repo,
-                repo_url=f"https://github.com/{repo}",
                 stars=512,
                 default_branch="main",
             )
@@ -128,7 +127,6 @@ class GitHubRepoSnapshotServiceTests(unittest.TestCase):
                 metadata_client=GitHubRepoMetadataClient(
                     metadata_fetcher=lambda repo: GitHubRepoMetadata(
                         repo=repo,
-                        repo_url=f"https://github.com/{repo}",
                         stars=512,
                         default_branch="main",
                     ),
@@ -144,7 +142,7 @@ class GitHubRepoSnapshotServiceTests(unittest.TestCase):
             )
             try:
                 seed.refresh_repo_now("mode-io/skills")
-                _age_cache_entry(cache, "repo-metadata", "mode-io/skills", seconds_ago=2 * 24 * 60 * 60)
+                _age_cache_entry(cache, "repo-metadata-v2", "mode-io/skills", seconds_ago=2 * 24 * 60 * 60)
                 service.refresh_repo_now("mode-io/skills")
                 metadata = service.metadata_for_repo("mode-io/skills")
             finally:
@@ -163,7 +161,6 @@ class GitHubRepoSnapshotServiceTests(unittest.TestCase):
                 metadata_client=GitHubRepoMetadataClient(
                     metadata_fetcher=lambda repo: GitHubRepoMetadata(
                         repo=repo,
-                        repo_url=f"https://github.com/{repo}",
                         stars=271,
                         default_branch="main",
                     ),
@@ -186,6 +183,38 @@ class GitHubRepoSnapshotServiceTests(unittest.TestCase):
 
         self.assertEqual(metadata.image_url, github_owner_avatar_url("vercel-labs/skills"))
         self.assertEqual(metadata.stars, 271)
+
+    def test_success_snapshot_cache_persists_only_runtime_fields(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            cache = MarketplaceCache(Path(temp_dir))
+            service = GitHubRepoSnapshotService(
+                cache=cache,
+                metadata_client=GitHubRepoMetadataClient(
+                    metadata_fetcher=lambda repo: GitHubRepoMetadata(
+                        repo=repo,
+                        stars=271,
+                        default_branch="main",
+                    ),
+                ),
+            )
+            try:
+                service.refresh_repo_now("vercel-labs/skills")
+            finally:
+                service.close()
+
+            stored = cache.load("repo-metadata-v2", "vercel-labs/skills")
+
+        assert stored is not None
+        assert isinstance(stored.payload, dict)
+        self.assertEqual(
+            stored.payload,
+            {
+                "status": "success",
+                "repo": "vercel-labs/skills",
+                "stars": 271,
+                "defaultBranch": "main",
+            },
+        )
 
 
 def _raise_transient(calls: list[str], repo: str) -> GitHubRepoMetadata | None:

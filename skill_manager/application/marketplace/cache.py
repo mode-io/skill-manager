@@ -6,12 +6,7 @@ import json
 import time
 from pathlib import Path
 
-
-def default_marketplace_cache_root(env: dict[str, str] | None = None) -> Path:
-    active_env = env or {}
-    home = Path(active_env.get("HOME", str(Path.home())))
-    xdg_data_home = Path(active_env.get("XDG_DATA_HOME", home / ".local" / "share"))
-    return xdg_data_home / "skill-manager" / "marketplace"
+from skill_manager.storage_paths import canonical_marketplace_cache_root
 
 
 @dataclass(frozen=True)
@@ -37,7 +32,7 @@ class MarketplaceCache:
 
     @classmethod
     def from_environment(cls, env: dict[str, str] | None = None) -> "MarketplaceCache":
-        return cls(default_marketplace_cache_root(env))
+        return cls(canonical_marketplace_cache_root(env))
 
     def read(self, namespace: str, key: str, *, ttl_seconds: int) -> CachedPayload | None:
         stored = self.load(namespace, key)

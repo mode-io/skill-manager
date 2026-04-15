@@ -43,6 +43,7 @@ class MarketplaceCatalog:
     DETAIL_MISSING_FALLBACK = "No summary available on skills.sh."
     _LEADERBOARD_TTL_SECONDS = 3600
     _DETAIL_TTL_SECONDS = 86400
+    _DETAIL_NAMESPACE = "details-v2"
     _SEARCH_TTL_SECONDS = 900
     _SEARCH_FETCH_FLOOR = 40
     _SEARCH_CACHE_LIMIT = 24
@@ -172,10 +173,10 @@ class MarketplaceCatalog:
 
         detail = DetailEnrichment(
             description=summary.description,
-            github_folder_url=folder_url,
+            folder_url=folder_url,
             folder_resolution_complete=True,
         )
-        self._cache.write("details", record.detail_url, detail.to_dict())
+        self._cache.write(self._DETAIL_NAMESPACE, record.detail_url, detail.to_dict())
         return detail
 
     @staticmethod
@@ -283,14 +284,14 @@ class MarketplaceCatalog:
         return detail.description
 
     def _cached_detail(self, record: SkillsShSkill) -> DetailEnrichment | None:
-        detail_cache = self._cache.read("details", record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
+        detail_cache = self._cache.read(self._DETAIL_NAMESPACE, record.detail_url, ttl_seconds=self._DETAIL_TTL_SECONDS)
         if detail_cache is None or not isinstance(detail_cache.payload, dict):
             return None
         return DetailEnrichment.from_dict(detail_cache.payload)
 
     @staticmethod
     def _needs_folder_refresh(detail: DetailEnrichment) -> bool:
-        return bool(detail.github_folder_url and "/tree/HEAD/" in detail.github_folder_url)
+        return bool(detail.folder_url and "/tree/HEAD/" in detail.folder_url)
 
     def _resolve_summary_enrichment(self, record: SkillsShSkill) -> DetailEnrichment:
         description = record.description_hint.strip() if self._is_usable_description(record.description_hint) else ""
@@ -306,10 +307,10 @@ class MarketplaceCatalog:
             description = self.DETAIL_MISSING_FALLBACK
         detail = DetailEnrichment(
             description=description,
-            github_folder_url=None,
+            folder_url=None,
             folder_resolution_complete=False,
         )
-        self._cache.write("details", record.detail_url, detail.to_dict())
+        self._cache.write(self._DETAIL_NAMESPACE, record.detail_url, detail.to_dict())
         return detail
 
     def _resolve_summary_enrichment_best_effort(self, record: SkillsShSkill) -> DetailEnrichment:
@@ -318,10 +319,10 @@ class MarketplaceCatalog:
         except MarketplaceUpstreamError:
             detail = DetailEnrichment(
                 description=self._fallback_description(record),
-                github_folder_url=None,
+                folder_url=None,
                 folder_resolution_complete=False,
             )
-            self._cache.write("details", record.detail_url, detail.to_dict())
+            self._cache.write(self._DETAIL_NAMESPACE, record.detail_url, detail.to_dict())
             return detail
 
     def _warm_leaderboard_async(self) -> None:

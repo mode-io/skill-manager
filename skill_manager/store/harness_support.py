@@ -4,10 +4,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from skill_manager.app_paths import app_config_dir
-
-
-SETTINGS_PATH_ENV = "SKILL_MANAGER_SETTINGS_PATH"
+from skill_manager.storage_paths import SETTINGS_PATH_ENV, default_harness_support_path
 
 
 @dataclass(frozen=True)
@@ -16,15 +13,6 @@ class HarnessSupportPreferences:
 
     def is_enabled(self, harness: str) -> bool:
         return harness not in self.disabled_harnesses
-
-
-def default_harness_support_path(env: dict[str, str] | None = None) -> Path:
-    active_env = env or {}
-    override = active_env.get(SETTINGS_PATH_ENV)
-    if override:
-        return Path(override)
-    return app_config_dir(active_env) / "settings.json"
-
 
 class HarnessSupportStore:
     def __init__(self, path: Path) -> None:

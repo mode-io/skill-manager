@@ -15,29 +15,25 @@ from .models import RepoDisplayMetadata
 @dataclass(frozen=True)
 class DetailEnrichment:
     description: str
-    github_folder_url: str | None
+    folder_url: str | None
     folder_resolution_complete: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
             "description": self.description,
-            "githubFolderUrl": self.github_folder_url,
+            "folderUrl": self.folder_url,
             "folderResolutionComplete": self.folder_resolution_complete,
         }
 
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "DetailEnrichment":
         description = payload.get("description")
-        github_folder_url = payload.get("githubFolderUrl")
+        folder_url = payload.get("folderUrl")
         folder_resolution_complete = payload.get("folderResolutionComplete")
         return cls(
             description=description if isinstance(description, str) else "",
-            github_folder_url=github_folder_url if isinstance(github_folder_url, str) and github_folder_url else None,
-            folder_resolution_complete=(
-                folder_resolution_complete
-                if isinstance(folder_resolution_complete, bool)
-                else bool(github_folder_url)
-            ),
+            folder_url=folder_url if isinstance(folder_url, str) and folder_url else None,
+            folder_resolution_complete=folder_resolution_complete if isinstance(folder_resolution_complete, bool) else False,
         )
 
 
