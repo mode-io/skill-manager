@@ -26,9 +26,10 @@ class SharedStorePathResolutionTests(unittest.TestCase):
 
             with mock.patch("skill_manager.storage_paths.app_data_dir", return_value=canonical_data_dir):
                 resolved = resolve_shared_store_root({"HOME": str(home)})
+                canonical_root = canonical_shared_store_root({"HOME": str(home)})
 
             self.assertEqual(resolved, legacy_root)
-            self.assertEqual(canonical_shared_store_root({"HOME": str(home)}), canonical_data_dir / "shared")
+            self.assertEqual(canonical_root, canonical_data_dir / "shared")
             self.assertEqual(legacy_shared_store_root({"HOME": str(home)}), legacy_root)
 
     def test_prefers_initialized_canonical_store_over_legacy_store(self) -> None:

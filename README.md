@@ -195,7 +195,7 @@ Useful paths:
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
 
-You can override individual harness roots with environment variables when you need to relocate a supported global skill directory.
+Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual harness roots with environment variables.
 
 ### Codex
 
@@ -219,15 +219,9 @@ You can override individual harness roots with environment variables when you ne
 
 - global scope defaults to `~/.openclaw/skills`
 
-### Marketplace
-
-- `SKILL_MANAGER_MARKETPLACE_BASE_URL`
-
-`SKILL_MANAGER_MARKETPLACE_BASE_URL` is an advanced override for custom or local marketplace endpoints. Normal installs should keep using the default `skills.sh` marketplace.
-
 ## Troubleshooting
 
-- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection first and reinstall if the problem persists.
+- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try reinstalling `skill-manager` if the problem persists.
 - If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
 
 ## Development
