@@ -197,27 +197,13 @@ Useful paths:
 
 Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual harness roots with environment variables.
 
-### Codex
-
-- `SKILL_MANAGER_CODEX_ROOT`
-- global scope defaults to `~/.agents/skills`
-
-### Claude
-
-- `SKILL_MANAGER_CLAUDE_ROOT`
-
-### Cursor
-
-- `SKILL_MANAGER_CURSOR_ROOT`
-
-### OpenCode
-
-- `SKILL_MANAGER_OPENCODE_ROOT`
-- `SKILL_MANAGER_OPENCODE_BUILTINS`
-
-### OpenClaw
-
-- global scope defaults to `~/.openclaw/skills`
+| Harness | Env var | Default managed root |
+| --- | --- | --- |
+| Codex | `SKILL_MANAGER_CODEX_ROOT` | `~/.agents/skills` |
+| Claude | `SKILL_MANAGER_CLAUDE_ROOT` | `~/.claude/skills` |
+| Cursor | `SKILL_MANAGER_CURSOR_ROOT` | `~/.cursor/skills` |
+| OpenCode | `SKILL_MANAGER_OPENCODE_ROOT` | `~/.config/opencode/skills` |
+| OpenClaw | `n/a` | `~/.openclaw/skills` |
 
 ## Troubleshooting
 
