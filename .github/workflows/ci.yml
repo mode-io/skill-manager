@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "release/**"
     paths-ignore:
       - README.md
       - CONTRIBUTING.md
@@ -17,6 +18,7 @@ on:
       - SECURITY.md
       - LICENSE
       - assets/**
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -88,6 +90,7 @@ jobs:
 
   package-smoke-arm64:
     runs-on: macos-14
+    if: startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch'
     needs:
       - backend-compat
       - frontend-validate
@@ -138,6 +141,7 @@ jobs:
 
   package-smoke-x64:
     runs-on: macos-15-intel
+    if: startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch'
     needs:
       - backend-compat
       - frontend-validate
