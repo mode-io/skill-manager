@@ -8,7 +8,7 @@ import time
 
 from skill_manager import __version__
 from skill_manager.runtime.browser import maybe_open_browser
-from skill_manager.runtime.paths import STATE_DIR_ENV
+from skill_manager.paths import STATE_DIR_ENV
 from skill_manager.runtime.process import is_owned_runtime_process, terminate_process
 from skill_manager.runtime.state import (
     RuntimeState,

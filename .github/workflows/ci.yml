@@ -77,6 +77,9 @@ jobs:
       - name: Frontend typecheck
         run: npm run typecheck
 
+      - name: OpenAPI codegen drift check
+        run: npm run codegen:check
+
       - name: Frontend tests
         run: npm test
 

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import time
 
-from .paths import state_dir
+from skill_manager.paths import resolve_app_paths
 
 
 @dataclass(frozen=True)
@@ -20,11 +20,11 @@ class RuntimeState:
 
 
 def runtime_state_path(env: dict[str, str] | None = None) -> Path:
-    return state_dir(env) / "runtime.json"
+    return resolve_app_paths(env).runtime_state_path
 
 
 def runtime_log_path(env: dict[str, str] | None = None) -> Path:
-    return state_dir(env) / "server.log"
+    return resolve_app_paths(env).server_log_path
 
 
 def load_runtime_state(env: dict[str, str] | None = None) -> RuntimeState | None:

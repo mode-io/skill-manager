@@ -13,12 +13,18 @@ from skill_manager.domain import (
     parse_skill_package,
 )
 
+from ._atomic import file_lock
 from .manifest import ManifestEntry, StoreManifest, load_manifest, write_manifest
+
 
 class SharedStore:
     def __init__(self, root: Path, manifest_path: Path | None = None) -> None:
         self.root = root
         self.manifest_path = manifest_path or root.parent / "manifest.json"
+
+    @property
+    def _lock_path(self) -> Path:
+        return self.manifest_path.with_suffix(".lock")
 
     def scan(self) -> StoreScan:
         manifest = load_manifest(self.manifest_path)
@@ -52,23 +58,24 @@ class SharedStore:
     ) -> Path:
         """Copy a skill package into the shared store and update the manifest."""
         self.root.mkdir(parents=True, exist_ok=True)
-        dest = self.root / source_path.name
-        if dest.exists():
-            raise ValueError(f"package directory already exists in store: {source_path.name}")
-        shutil.copytree(source_path, dest)
-        fingerprint, _ = fingerprint_package(dest)
-        manifest = load_manifest(self.manifest_path)
-        entry = ManifestEntry(
-            package_dir=source_path.name,
-            declared_name=declared_name,
-            source_kind=source_kind,
-            source_locator=source_locator,
-            revision=fingerprint,
-            source_ref=source_ref,
-            source_path=source_path_hint,
-        )
-        write_manifest(self.manifest_path, StoreManifest(entries=manifest.entries + (entry,)))
-        return dest
+        with file_lock(self._lock_path):
+            dest = self.root / source_path.name
+            if dest.exists():
+                raise ValueError(f"package directory already exists in store: {source_path.name}")
+            shutil.copytree(source_path, dest)
+            fingerprint, _ = fingerprint_package(dest)
+            manifest = load_manifest(self.manifest_path)
+            entry = ManifestEntry(
+                package_dir=source_path.name,
+                declared_name=declared_name,
+                source_kind=source_kind,
+                source_locator=source_locator,
+                revision=fingerprint,
+                source_ref=source_ref,
+                source_path=source_path_hint,
+            )
+            write_manifest(self.manifest_path, StoreManifest(entries=manifest.entries + (entry,)))
+            return dest
 
     def update(
         self,
@@ -79,40 +86,42 @@ class SharedStore:
         source_path_hint: str | None = None,
     ) -> tuple[Path, bool]:
         """Replace a shared package with a new version. Returns (path, changed)."""
-        dest = self.root / package_dir
-        if not dest.is_dir():
-            raise ValueError(f"package not in store: {package_dir}")
-        new_fp, _ = fingerprint_package(source_path)
-        old_fp, _ = fingerprint_package(dest)
-        if new_fp == old_fp:
-            return dest, False
-        shutil.rmtree(dest)
-        shutil.copytree(source_path, dest)
-        manifest = load_manifest(self.manifest_path)
-        updated = tuple(
-            ManifestEntry(
-                e.package_dir,
-                e.declared_name,
-                e.source_kind,
-                e.source_locator,
-                new_fp,
-                e.source_ref if source_ref is None else source_ref,
-                e.source_path if source_path_hint is None else source_path_hint,
+        with file_lock(self._lock_path):
+            dest = self.root / package_dir
+            if not dest.is_dir():
+                raise ValueError(f"package not in store: {package_dir}")
+            new_fp, _ = fingerprint_package(source_path)
+            old_fp, _ = fingerprint_package(dest)
+            if new_fp == old_fp:
+                return dest, False
+            shutil.rmtree(dest)
+            shutil.copytree(source_path, dest)
+            manifest = load_manifest(self.manifest_path)
+            updated = tuple(
+                ManifestEntry(
+                    e.package_dir,
+                    e.declared_name,
+                    e.source_kind,
+                    e.source_locator,
+                    new_fp,
+                    e.source_ref if source_ref is None else source_ref,
+                    e.source_path if source_path_hint is None else source_path_hint,
+                )
+                if e.package_dir == package_dir
+                else e
+                for e in manifest.entries
             )
-            if e.package_dir == package_dir
-            else e
-            for e in manifest.entries
-        )
-        write_manifest(self.manifest_path, StoreManifest(entries=updated))
-        return dest, True
+            write_manifest(self.manifest_path, StoreManifest(entries=updated))
+            return dest, True
 
     def delete(self, package_dir: str) -> None:
-        self.ensure_deletable(package_dir)
-        dest = self.root / package_dir
-        manifest = load_manifest(self.manifest_path)
-        shutil.rmtree(dest)
-        updated = tuple(entry for entry in manifest.entries if entry.package_dir != package_dir)
-        write_manifest(self.manifest_path, StoreManifest(entries=updated))
+        with file_lock(self._lock_path):
+            self.ensure_deletable(package_dir)
+            dest = self.root / package_dir
+            manifest = load_manifest(self.manifest_path)
+            shutil.rmtree(dest)
+            updated = tuple(entry for entry in manifest.entries if entry.package_dir != package_dir)
+            write_manifest(self.manifest_path, StoreManifest(entries=updated))
 
     def ensure_deletable(self, package_dir: str) -> None:
         dest = self.root / package_dir

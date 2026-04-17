@@ -6,7 +6,7 @@ import json
 import time
 from pathlib import Path
 
-from skill_manager.storage_paths import canonical_marketplace_cache_root
+from skill_manager.paths import resolve_app_paths
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ class MarketplaceCache:
 
     @classmethod
     def from_environment(cls, env: dict[str, str] | None = None) -> "MarketplaceCache":
-        return cls(canonical_marketplace_cache_root(env))
+        return cls(resolve_app_paths(env).marketplace_cache_root)
 
     def read(self, namespace: str, key: str, *, ttl_seconds: int) -> CachedPayload | None:
         stored = self.load(namespace, key)
