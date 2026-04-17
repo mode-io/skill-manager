@@ -216,9 +216,9 @@ class MarketplaceApiTests(unittest.TestCase):
 
     def test_marketplace_install_requires_install_token(self) -> None:
         with AppTestHarness(marketplace=create_fixture_marketplace_service()) as harness:
-            payload = harness.post_json("/api/marketplace/install", {}, expected_status=400)
+            payload = harness.post_json("/api/marketplace/install", {}, expected_status=422)
 
-        self.assertEqual(payload["error"], "missing installToken")
+        self.assertIn("installToken", payload["error"])
 
 
 if __name__ == "__main__":

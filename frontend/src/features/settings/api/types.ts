@@ -1,3 +1,7 @@
+import type { components } from "../../../api/generated";
+
+export type SetHarnessSupportRequest = components["schemas"]["SetHarnessSupportRequest"];
+
 export interface SettingsHarness {
   harness: string;
   label: string;

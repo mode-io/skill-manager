@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from skill_manager.application import BackendContainer
 from skill_manager.api.deps import get_container
+from skill_manager.api.schemas import DisableSkillRequest, EnableSkillRequest
 
 router = APIRouter(prefix="/api/skills")
 
@@ -32,25 +33,19 @@ def get_skill_detail(skill_ref: str, container: BackendContainer = Depends(get_c
 @router.post("/{skill_ref:path}/enable")
 def enable_skill(
     skill_ref: str,
-    body: dict[str, str] | None = Body(default=None),
+    body: EnableSkillRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, bool]:
-    harness = body.get("harness", "") if isinstance(body, dict) else ""
-    if not harness:
-        raise HTTPException(status_code=400, detail="missing 'harness' in request body")
-    return container.skills_mutations.enable_skill(skill_ref, harness)
+    return container.skills_mutations.enable_skill(skill_ref, body.harness)
 
 
 @router.post("/{skill_ref:path}/disable")
 def disable_skill(
     skill_ref: str,
-    body: dict[str, str] | None = Body(default=None),
+    body: DisableSkillRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, bool]:
-    harness = body.get("harness", "") if isinstance(body, dict) else ""
-    if not harness:
-        raise HTTPException(status_code=400, detail="missing 'harness' in request body")
-    return container.skills_mutations.disable_skill(skill_ref, harness)
+    return container.skills_mutations.disable_skill(skill_ref, body.harness)
 
 
 @router.post("/{skill_ref:path}/manage")

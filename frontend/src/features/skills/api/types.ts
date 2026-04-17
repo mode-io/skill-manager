@@ -1,3 +1,8 @@
+import type { components } from "../../../api/generated";
+
+export type EnableSkillRequest = components["schemas"]["EnableSkillRequest"];
+export type DisableSkillRequest = components["schemas"]["DisableSkillRequest"];
+
 export type SkillStatus = "Managed" | "Unmanaged" | "Custom" | "Built-in";
 export type HarnessCellState = "enabled" | "disabled" | "found" | "builtin" | "empty";
 export type SkillUpdateStatus = "update_available" | "no_update_available" | "no_source_available";
