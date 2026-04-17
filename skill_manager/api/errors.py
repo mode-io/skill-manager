@@ -23,6 +23,12 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
-        first_error = exc.errors()[0] if exc.errors() else None
-        message = first_error.get("msg") if isinstance(first_error, dict) else "Invalid request."
+        errors = exc.errors()
+        if not errors:
+            return JSONResponse(status_code=422, content={"error": "Invalid request."})
+        first = errors[0]
+        msg = first.get("msg", "Invalid request.") if isinstance(first, dict) else "Invalid request."
+        loc = first.get("loc", ()) if isinstance(first, dict) else ()
+        field_path = ".".join(str(part) for part in loc if part != "body")
+        message = f"{field_path}: {msg}" if field_path else msg
         return JSONResponse(status_code=422, content={"error": message})

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from skill_manager.application import BackendContainer
 from skill_manager.api.deps import get_container
+from skill_manager.api.schemas import SetHarnessSupportRequest
 
 router = APIRouter(prefix="/api/settings")
 
@@ -16,10 +17,7 @@ def settings(container: BackendContainer = Depends(get_container)) -> dict[str, 
 @router.put("/harnesses/{harness}/support")
 def set_harness_support(
     harness: str,
-    body: dict[str, object] | None = Body(default=None),
+    body: SetHarnessSupportRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, object]:
-    enabled = body.get("enabled") if isinstance(body, dict) else None
-    if not isinstance(enabled, bool):
-        raise HTTPException(status_code=400, detail="missing boolean 'enabled' in request body")
-    return container.settings_mutations.set_harness_support(harness, enabled)
+    return container.settings_mutations.set_harness_support(harness, body.enabled)

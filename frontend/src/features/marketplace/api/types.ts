@@ -1,3 +1,7 @@
+import type { components } from "../../../api/generated";
+
+export type InstallMarketplaceSkillRequest = components["schemas"]["InstallMarketplaceSkillRequest"];
+
 export type MarketplaceInstallationStatus = "installable" | "installed";
 
 export interface MarketplaceInstallationState {

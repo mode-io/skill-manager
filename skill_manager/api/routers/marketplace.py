@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from skill_manager.application import BackendContainer
 from skill_manager.api.deps import get_container
+from skill_manager.api.schemas import InstallMarketplaceSkillRequest
 
 router = APIRouter(prefix="/api/marketplace")
 
@@ -48,10 +49,7 @@ def get_marketplace_detail(item_id: str, container: BackendContainer = Depends(g
 
 @router.post("/install")
 def install_marketplace_skill(
-    body: dict[str, str] | None = Body(default=None),
+    body: InstallMarketplaceSkillRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, bool]:
-    install_token = body.get("installToken", "") if isinstance(body, dict) else ""
-    if not install_token:
-        raise HTTPException(status_code=400, detail="missing installToken")
-    return container.marketplace_installs.install_skill(install_token)
+    return container.marketplace_installs.install_skill(body.install_token)

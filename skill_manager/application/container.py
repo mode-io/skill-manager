@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
-from skill_manager.storage_paths import default_harness_support_path
+from skill_manager.paths import AppPaths, resolve_app_paths
+from skill_manager.store import HarnessSupportStore
+
 from .marketplace import (
     MarketplaceCatalog,
     MarketplaceDocumentService,
@@ -14,11 +16,11 @@ from .read_model_service import ReadModelService
 from .settings import SettingsMutationService, SettingsQueryService
 from .skills import SkillsMutationService, SkillsQueryService
 from .source_fetch_service import SourceFetchService
-from skill_manager.store import HarnessSupportStore
 
 
 @dataclass(frozen=True)
 class BackendContainer:
+    paths: AppPaths
     read_models: ReadModelService
     support_store: HarnessSupportStore
     source_fetcher: SourceFetchService
@@ -42,7 +44,8 @@ def build_backend_container(
     if env is not None:
         active_env.update(env)
 
-    support_store = HarnessSupportStore(default_harness_support_path(active_env))
+    paths = resolve_app_paths(active_env)
+    support_store = HarnessSupportStore(paths.settings_path)
     read_models = ReadModelService.from_environment(active_env, support_store=support_store)
     active_source_fetcher = source_fetcher or SourceFetchService()
     catalog = marketplace_catalog or MarketplaceCatalog.from_environment(active_env)
@@ -54,6 +57,7 @@ def build_backend_container(
     marketplace_queries = MarketplaceQueryService(read_models, catalog, marketplace_documents)
     marketplace_installs = MarketplaceInstallService(catalog, skills_mutations)
     return BackendContainer(
+        paths=paths,
         read_models=read_models,
         support_store=support_store,
         source_fetcher=active_source_fetcher,

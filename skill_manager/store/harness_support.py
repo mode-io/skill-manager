@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
-from skill_manager.storage_paths import SETTINGS_PATH_ENV, default_harness_support_path
+from ._atomic import atomic_write_text, file_lock
 
 
 @dataclass(frozen=True)
@@ -29,22 +29,22 @@ class HarnessSupportStore:
         return HarnessSupportPreferences(disabled_harnesses=values)
 
     def set_enabled(self, harness: str, enabled: bool) -> HarnessSupportPreferences:
-        current = set(self.load().disabled_harnesses)
-        if enabled:
-            current.discard(harness)
-        else:
-            current.add(harness)
-        next_preferences = HarnessSupportPreferences(disabled_harnesses=tuple(sorted(current)))
-        self._write(next_preferences)
-        return next_preferences
+        with file_lock(self.path.with_suffix(".lock")):
+            current = set(self.load().disabled_harnesses)
+            if enabled:
+                current.discard(harness)
+            else:
+                current.add(harness)
+            next_preferences = HarnessSupportPreferences(disabled_harnesses=tuple(sorted(current)))
+            self._write(next_preferences)
+            return next_preferences
 
     def enabled_harnesses(self, supported_harnesses: tuple[str, ...]) -> tuple[str, ...]:
         preferences = self.load()
         return tuple(harness for harness in supported_harnesses if preferences.is_enabled(harness))
 
     def _write(self, preferences: HarnessSupportPreferences) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(
+        atomic_write_text(
+            self.path,
             json.dumps({"disabledHarnesses": list(preferences.disabled_harnesses)}, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
         )

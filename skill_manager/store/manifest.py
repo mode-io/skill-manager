@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
+from ._atomic import atomic_write_text
+
 
 @dataclass(frozen=True)
 class ManifestEntry:
@@ -58,8 +60,7 @@ def load_manifest(path: Path) -> StoreManifest:
 
 
 def write_manifest(path: Path, manifest: StoreManifest) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    atomic_write_text(
+        path,
         json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
     )

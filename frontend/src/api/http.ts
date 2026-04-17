@@ -4,17 +4,29 @@ async function expectJson<T>(responsePromise: Promise<Response>): Promise<T> {
   const response = await responsePromise;
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = (
-      payload
-      && typeof payload === "object"
-      && "error" in payload
-      && typeof payload.error === "string"
-    )
-      ? payload.error
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
+    throw new Error(extractErrorMessage(payload, response));
   }
   return payload as T;
+}
+
+function extractErrorMessage(payload: unknown, response: Response): string {
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    if (typeof record.error === "string") {
+      return record.error;
+    }
+    if (typeof record.detail === "string") {
+      return record.detail;
+    }
+    if (Array.isArray(record.detail) && record.detail.length > 0) {
+      const first = record.detail[0] as { msg?: unknown; loc?: unknown };
+      if (first && typeof first.msg === "string") {
+        const field = Array.isArray(first.loc) ? first.loc.join(".") : "";
+        return field ? `${field}: ${first.msg}` : first.msg;
+      }
+    }
+  }
+  return `${response.status} ${response.statusText}`;
 }
 
 export async function fetchJson<T>(path: string): Promise<T> {
