@@ -1,61 +1,89 @@
 # skill-manager
 
 <p align="center">
-  <img src="assets/Skill-Manager-Hero-shadow.svg" alt="skill-manager hero" width="960" />
+  <img src="assets/skill_manager_logo.svg" alt="Skill Manager" width="520" />
 </p>
 
+<p align="center">
+  <strong>A local-first control center for AI extensions.</strong><br />
+  Use, review, and discover Skills, MCP servers, and CLI tools across agent harnesses.
+</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-111827?style=flat-square" /></a>
-  <a href="https://github.com/mode-io/skill-manager/releases/tag/v0.1.0"><img alt="Release v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-EA580C?style=flat-square" /></a>
+  <a href="https://github.com/mode-io/skill-manager/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mode-io/skill-manager?style=flat-square&color=EA580C" /></a>
   <a href="https://www.npmjs.com/package/@mode-io/skill-manager"><img alt="npm version" src="https://img.shields.io/npm/v/%40mode-io%2Fskill-manager?style=flat-square&logo=npm&logoColor=white" /></a>
   <a href="#install"><img alt="Install with Homebrew" src="https://img.shields.io/badge/install-homebrew-FBBF24?style=flat-square&logo=homebrew&logoColor=111827" /></a>
   <a href="#install"><img alt="macOS" src="https://img.shields.io/badge/platform-macOS-111827?style=flat-square&logo=apple&logoColor=white" /></a>
-  <a href="#safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
+  <a href="#local-first-safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
 
-Manage AI skills across Codex, Claude, Cursor, OpenCode, and OpenClaw from one local app.
+![skill-market-overview](./assets/skill-manager-skill-unification.svg)
 
-If you use more than one agent harness, skills end up scattered across different folders, install flows, and local states. `skill-manager` gives you one place to see what is installed, bring unmanaged skills under control, enable or disable skills per harness, and install new ones safely without turning your local setup into guesswork.
+## Why it exists
 
-## Why skill-manager exists
+AI extensions are scattered across harness-specific folders, MCP config files, and marketplace sources. Skill Manager gives those pieces one local control surface:
 
-- Skills get duplicated across multiple harness folders.
-- Local skill copies drift out of sync and become hard to reason about.
-- It is easy to lose track of what is managed, unmanaged, built in, or custom.
-- Editing local skill directories by hand is risky when you are not sure which tool depends on which copy.
+| Product idea | What it means |
+|---|---|
+| **In use** | Skill Manager controls the item and can enable or disable it across harnesses. |
+| **Needs review** | Skill Manager found local state, config differences, or inventory issues that need a decision. |
+| **Discover** | Browse marketplaces and preview external tools. |
 
 ## What you can do
 
-- Discover supported harnesses on your machine automatically.
-- See managed and unmanaged skills in one inventory.
-- Bring local unmanaged skills under management without losing visibility.
-- Enable or disable managed skills per harness.
-- Install new skills from the marketplace and open them directly in `Skills`.
+- See what is in use, what needs review, and where extensions are active.
+- Adopt local Skills into one shared inventory, then enable or disable them per harness.
+- Install or adopt MCP server configs, resolve differences, and enable them where supported.
+- Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
 
 ## Product tour
 
-<p align="center">
-  <img src="assets/Skill-Manager.png" alt="skill-manager managed skills view" width="960" />
-</p>
+### Overview
 
-The `Skills` workspace gives you one place to review managed and unmanaged skills, inspect local state, and control harness access.
+Start with the whole extension portfolio: what is in use, what needs review, what can be discovered, and where extensions are active.
 
-<p align="center">
-  <img src="assets/Skill-Manager-Marketplace.png" alt="skill-manager marketplace view" width="960" />
-</p>
+![skill-market-overview](./assets/skill-manager-overview.png)
 
-The `Marketplace` view lets you browse, preview, and install new skills without leaving the app.
+### Skills
+
+Use Skills as shared local packages instead of maintaining separate copies per harness.
 
 Typical flow:
 
-1. Open `Skills` to see what is already installed across your supported harnesses.
-2. Bring an unmanaged skill under management so it becomes part of one shared local inventory.
-3. Enable that managed skill only for the harnesses you want.
+1. Review a Skill found in a harness or install one from the marketplace.
+2. Adopt it into the Skill Manager inventory.
+3. Enable it only where it should be available.
+4. Update, remove, or delete it from one place.
+
+![skill-market-skill-matrxi](./assets/skill-manager-skill-matrix.png)
+
+### MCP servers
+
+Use MCP servers as one normalized config that can be written into each harness shape.
+
+Typical flow:
+
+1. Review an MCP server found in a harness or install one from the marketplace.
+2. Adopt it into the Skill Manager inventory.
+3. Enable it where the server should be available.
+4. Resolve config differences, disable harness bindings, or uninstall it from one place.
+
+![skill-market-skill-matrxi](./assets/skill-manager-mcp-matrix.png)
+
+### Marketplace
+
+Marketplace is the discovery surface:
+
+- **Skills Marketplace**: browse and install Skills.
+- **MCP Marketplace**: browse and install MCP servers.
+- **CLI Marketplace**: preview external CLI tools from CLIs.dev. This is display-only; Skill Manager does not install or manage CLIs.
+
+![skill-market-skill-matrxi](./assets/skill-manager-marketplace.png)
 
 ## Install
 
-### Homebrew (Recommended)
+### Homebrew (recommended)
 
 ```bash
 brew tap mode-io/tap
@@ -63,16 +91,12 @@ brew install skill-manager
 skill-manager start
 ```
 
-Use one global install channel at a time. If you previously installed `@mode-io/skill-manager` with npm, uninstall it before switching to Homebrew.
-
 ### npm
 
 ```bash
 npm install -g @mode-io/skill-manager
 skill-manager start
 ```
-
-Global npm ownership is exclusive. If `skill-manager` is already installed with Homebrew, run `brew uninstall skill-manager` first or keep using the Homebrew install.
 
 ## Supported harnesses
 
@@ -106,28 +130,78 @@ Global npm ownership is exclusive. If `skill-manager` is already installed with 
   </tr>
 </table>
 
-## Safety
+| Harness | Skills | MCP servers |
+|---|---:|---:|
+| Codex CLI | Yes | Yes |
+| Claude Code | Yes | Yes |
+| Cursor | Yes | Yes |
+| OpenCode | Yes | Yes |
+| OpenClaw | Yes | Not Yet |
 
-`skill-manager` is a local-first desktop-style tool. It reads from, and can mutate, local harness skill directories on your machine.
+## Local-first safety
 
-Actions that change local state include:
+Skill Manager is a local configuration-management tool. It runs on your machine and reads or writes local harness extension state.
 
-- `Bring Under Management`
-- enable or disable for managed harness links
-- `Update From Source`
-- `Stop Managing`
-- `Delete Skill`
-- marketplace installs into the managed local inventory
+Actions that can change local state include:
 
-Use it like any other local configuration-management tool: point it at the correct skill roots, understand what is managed versus unmanaged, and review destructive actions before confirming them.
+- adopting a local skill folder
+- enabling or disabling a skill for a harness
+- updating a source-backed skill
+- removing or deleting a skill
+- installing an MCP server into a source harness
+- adopting an existing MCP config
+- enabling, disabling, resolving, or uninstalling an MCP server
+- changing harness support settings
+
+App-owned files live under `~/Library/Application Support/skill-manager` on macOS.
 
 ## How it works
 
-Before you bring a skill under management, each harness just points at its own local copy. After you bring that skill under management, `skill-manager` stores one managed copy in its shared local inventory and rewires each supported harness to that shared copy with symlinks. That gives you one canonical package to update, disable, or delete while still controlling harness access individually.
+### Skills
 
-<p align="center">
-  <img src="assets/skill_manager_before_after.svg" alt="Before and after skill management flow" width="960" />
-</p>
+Before adoption, each harness points at its own local skill folder. After adoption, Skill Manager keeps one canonical package in its shared local store and exposes it to selected harnesses with local links. Disabling a harness removes that harness binding without deleting the package.
+
+![skill-market-overview](./assets/skill-manager-skill-unification.svg)
+
+### MCP servers
+
+MCP servers are stored as normalized Skill Manager records, then translated into the config shape each harness expects:
+
+- Codex uses TOML under `mcp_servers`.
+- Claude Code and Cursor use `mcpServers` JSON entries.
+- OpenCode uses typed local/remote MCP entries.
+- OpenClaw MCP writes are not yet supported.
+
+When Skill Manager finds different configs for the same MCP server, it asks you to resolve the source of truth first.
+
+![skill-market-overview](./assets/skill-manager-mcp-translation.svg)
+
+### CLIs
+
+CLI marketplace entries are preview-only.
+
+## Configuration
+
+On macOS, app-owned files live under `~/Library/Application Support/skill-manager`.
+
+Useful paths:
+
+- shared skills store: `~/Library/Application Support/skill-manager/shared`
+- MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
+- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
+- app settings: `~/Library/Application Support/skill-manager/settings.json`
+
+Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual skill roots with environment variables.
+
+| Harness | Env var | Default Skill Manager skill root |
+|---|---|---|
+| Codex | `SKILL_MANAGER_CODEX_ROOT` | `~/.agents/skills` |
+| Claude | `SKILL_MANAGER_CLAUDE_ROOT` | `~/.claude/skills` |
+| Cursor | `SKILL_MANAGER_CURSOR_ROOT` | `~/.cursor/skills` |
+| OpenCode | `SKILL_MANAGER_OPENCODE_ROOT` | `~/.config/opencode/skills` |
+| OpenClaw | `n/a` | `~/.openclaw/skills` |
+
+MCP config locations are harness-owned. Skill Manager writes only to verified config paths and skips unsupported harness writes.
 
 ## From source
 
@@ -137,7 +211,7 @@ Before you bring a skill under management, each harness just points at its own l
 - Node.js 18+
 - npm
 
-`skill-manager` supports Python 3.11+. CI validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism. GitHub-hosted workflows track the latest stable major versions of the GitHub-maintained actions, while the project build toolchain remains pinned separately inside each workflow.
+`skill-manager` supports Python 3.11+. CI validates backend compatibility on Python 3.11 through 3.14, while packaging and release builds stay pinned to Python 3.11 for determinism.
 
 ### Contributor setup
 
@@ -157,20 +231,7 @@ Stop the managed local instance:
 scripts/stop-dev.sh
 ```
 
-The traditional split dev flow is still available when you want Vite hot reload:
-
-```bash
-npm run dev
-npm run dev:backend
-```
-
-If you stop the local dev app and want to bring it back:
-
-```bash
-scripts/start-dev.sh
-```
-
-If you are using the split dev flow instead, restart both sides:
+The split dev flow is available when you want Vite hot reload:
 
 ```bash
 npm run dev
@@ -183,36 +244,7 @@ Default local URLs:
 - Backend: `http://127.0.0.1:8000`
 - Health: `http://127.0.0.1:8000/api/health`
 
-## Configuration
-
-`skill-manager` stores its own app data in standard per-user locations.
-
-On macOS, app-owned files live under `~/Library/Application Support/skill-manager`.
-
-Useful paths:
-
-- shared managed store: `~/Library/Application Support/skill-manager/shared`
-- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
-- app settings: `~/Library/Application Support/skill-manager/settings.json`
-
-Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual harness roots with environment variables.
-
-| Harness | Env var | Default managed root |
-| --- | --- | --- |
-| Codex | `SKILL_MANAGER_CODEX_ROOT` | `~/.agents/skills` |
-| Claude | `SKILL_MANAGER_CLAUDE_ROOT` | `~/.claude/skills` |
-| Cursor | `SKILL_MANAGER_CURSOR_ROOT` | `~/.cursor/skills` |
-| OpenCode | `SKILL_MANAGER_OPENCODE_ROOT` | `~/.config/opencode/skills` |
-| OpenClaw | `n/a` | `~/.openclaw/skills` |
-
-## Troubleshooting
-
-- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try reinstalling `skill-manager` if the problem persists.
-- If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
-
-## Development
-
-Useful local commands:
+Validation:
 
 ```bash
 scripts/install-dev.sh
@@ -220,28 +252,33 @@ npm run typecheck
 bash scripts/test_backend.sh
 npm test
 npm run build
-./.venv/bin/python -m skill_manager serve --host 127.0.0.1 --port 8000 --no-open-browser
-scripts/ci_validate.sh
 ```
 
-Test coverage currently includes:
+## Troubleshooting
 
-- frontend unit tests
-- backend unit and integration tests
-- Playwright smoke coverage
+- If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try again.
+- If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
+- If an MCP harness is shown as unavailable, Skill Manager has detected that the local client is missing or does not support the required config surface.
+
+## More to come
+
+### Extension families
+
+- [ ] Hook support
+- [ ] Slash command support
+- [ ] Plugin support
+
+### Harness expansion
+
+- [ ] GitHub Copilot
+- [ ] Gemini CLI
+- [ ] Cline
+- [ ] Windsurf
+- [ ] Qwen Code
+- [ ] Kimi Code
+- [ ] Qoder
 
 ## Community
 
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 - See [SECURITY.md](SECURITY.md) to report vulnerabilities privately.
-
-## Limitations
-
-- This is a local-first app, not a hosted service.
-- Source-backed operations are currently centered on GitHub-backed skills.
-- Marketplace content is sourced from `skills.sh`.
-- Public distribution is currently macOS-only.
-
-## Project status
-
-This repository is in active development as the public `skill-manager` project, with npm and Homebrew distribution backed by native release artifacts.

@@ -1,0 +1,299 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* MCP detail sheet — shared across in-use + needs-review views              */
+/* -------------------------------------------------------------------------- */
+
+.detail-sheet.mcp-detail-modal {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.mcp-detail-shell__chrome {
+  min-width: 0;
+}
+
+.mcp-detail-shell__body {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.mcp-detail-shell__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.mcp-detail__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+}
+
+.mcp-detail__chrome {
+  display: grid;
+  gap: 12px;
+}
+
+.mcp-detail__qualified-name {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+}
+
+.mcp-detail__about {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.mcp-detail__drift-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 32%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 9%, var(--color-surface-raised));
+}
+
+.mcp-detail__drift-banner strong {
+  display: block;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.mcp-detail__drift-banner p {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.mcp-detail__connection-grid {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.mcp-detail__field {
+  display: contents;
+}
+
+.mcp-detail__field-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mcp-detail__field-value code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  word-break: break-all;
+}
+
+.mcp-detail__env-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mcp-detail__env-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.mcp-detail__env-key {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  padding-top: 4px;
+}
+
+.mcp-detail__env-value-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.mcp-detail__env-value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+.mcp-detail__env-tags {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.mcp-detail__uninstall {
+  color: var(--color-text-muted);
+}
+
+.chip.chip--warning {
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 15%, transparent);
+  color: var(--color-warning, #f59e0b);
+  border-color: color-mix(in srgb, var(--color-warning, #f59e0b) 30%, transparent);
+}
+
+.mcp-marketplace-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.mcp-marketplace-link-chip__icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.mcp-needs-review-detail__sightings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mcp-needs-review-detail__sighting {
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.mcp-needs-review-detail__sighting-head {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.mcp-needs-review-detail__sighting-logo {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.mcp-needs-review-detail__sighting-label {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  color: var(--color-text);
+}
+
+.mcp-needs-review-detail__sighting-path {
+  grid-column: 2;
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  word-break: break-all;
+}
+
+/* Used inside the needs-review detail sheet (raw payload preview block). */
+.mcp-needs-review-row__preview {
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  max-height: 200px;
+  overflow: auto;
+}
+
+.mcp-edit-dialog {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.mcp-config-dialog {
+  width: min(620px, calc(100vw - 48px));
+}
+
+.mcp-config-dialog__notice {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.mcp-config-dialog__fields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.mcp-config-dialog__required {
+  color: var(--color-danger, #f87171);
+}
+
+.mcp-config-dialog__checkbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.mcp-config-dialog__checkbox input {
+  margin-top: 3px;
+}
+
+.mcp-edit-dialog__args {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  min-height: 80px;
+  resize: vertical;
+}
+
+.mcp-edit-dialog__env-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.mcp-edit-dialog__env-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mcp-edit-dialog__env-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.mcp-edit-dialog__env-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+}

@@ -1,0 +1,38 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* View mode toggle                                                             */
+/* -------------------------------------------------------------------------- */
+
+.view-mode-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.view-mode-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.view-mode-toggle__btn:hover {
+  color: var(--color-text);
+}
+
+.view-mode-toggle__btn[data-active="true"] {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+}

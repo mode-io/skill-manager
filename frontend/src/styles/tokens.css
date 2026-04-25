@@ -1,0 +1,84 @@
+:root {
+  --font-sans: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Typography scale */
+  --font-size-xs: 0.72rem;
+  --font-size-sm: 0.84rem;
+  --font-size-md: 0.92rem;
+  --font-size-lg: 1.05rem;
+  --font-size-xl: 1.32rem;
+  --font-size-2xl: 2rem;
+
+  /* Surfaces */
+  --color-bg: #0b0c0f;
+  --color-surface: #1c1d21;
+  --color-surface-raised: #24252a;
+  --color-surface-sunken: #15161a;
+  --color-sidebar-bg: #1a1b1f;
+
+  /* Borders */
+  --color-border: #2a2b2f;
+  --color-border-strong: #3a3b40;
+
+  /* Text */
+  --color-text: #e8e6e1;
+  --color-text-muted: #8a8680;
+  --color-text-subtle: #65625d;
+  --color-text-inverted: #ffffff;
+
+  /* Accent (Notion-ish dark-mode blue) */
+  --color-accent: #529cca;
+  --color-accent-strong: #4184b0;
+  --color-accent-soft: rgba(82, 156, 202, 0.14);
+  --color-accent-softer: rgba(82, 156, 202, 0.08);
+
+  /* Status */
+  --color-success: #6bc2a4;
+  --color-success-soft: rgba(107, 194, 164, 0.12);
+  --color-danger: #f08d79;
+  --color-danger-soft: rgba(240, 141, 121, 0.14);
+  --color-warning: #f3c969;
+  --color-warning-soft: rgba(243, 201, 105, 0.16);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+  --space-8: 32px;
+  --space-9: 40px;
+  --space-10: 56px;
+
+  /* Breakpoints (for reference — @media queries use these px values inline) */
+  --breakpoint-sm: 680px;
+  --breakpoint-md: 900px;
+  --breakpoint-lg: 1100px;
+
+  /* Scrollbars */
+  --scrollbar-size: 6px;
+  --scrollbar-size-thin: 4px;
+  --scrollbar-track: rgba(255, 255, 255, 0.02);
+  --scrollbar-thumb: rgba(154, 164, 178, 0.28);
+  --scrollbar-thumb-hover: rgba(178, 188, 200, 0.44);
+  --scrollbar-thumb-active: rgba(208, 216, 226, 0.58);
+  --scrollbar-corner: rgba(9, 10, 13, 0.01);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-panel: 0 12px 28px rgba(0, 0, 0, 0.28);
+  --shadow-lift: 0 10px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.32);
+
+  /* Layout */
+  --sidebar-width: 256px;
+}

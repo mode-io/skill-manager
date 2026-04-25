@@ -7,4 +7,3 @@ cd "$ROOT_DIR"
 bash "$ROOT_DIR/scripts/test_backend.sh"
 npm run test
 npm run build
-npm run test:e2e

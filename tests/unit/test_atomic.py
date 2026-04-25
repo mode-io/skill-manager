@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from skill_manager.store._atomic import atomic_write_text, file_lock
+from skill_manager.atomic_files import atomic_write_text, file_lock
 
 
 class AtomicWriteTextTests(unittest.TestCase):

@@ -1,0 +1,180 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* Skill board (Kanban view)                                                    */
+/* -------------------------------------------------------------------------- */
+
+.skill-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+@media (max-width: 900px) {
+  .skill-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Outer slot: carries the droppable ref, stretches to match the tallest
+   column's height so a drag from a deep row still has a valid target
+   everywhere across the lane. Inner `.board-column` stays natural height. */
+.board-column-slot {
+  display: flex;
+  flex-direction: column;
+}
+
+.board-column-slot > .board-column {
+  flex: 0 0 auto;
+}
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  min-height: 220px;
+}
+
+.board-column--selective {
+  background: transparent;
+  border: 1px dashed var(--color-border-strong);
+}
+
+.board-column__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+}
+
+.board-column__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.board-column__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.board-column__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.board-column__description {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.board-column__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.board-column__empty {
+  margin: 0;
+  padding: var(--space-5) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.skill-card--board {
+  min-height: 0;
+  padding: var(--space-4);
+  gap: var(--space-2);
+  background: var(--color-surface);
+  touch-action: none;
+  user-select: none;
+  transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease, opacity 120ms ease;
+}
+
+.skill-card--board[data-dragging="true"] {
+  cursor: grabbing;
+  box-shadow: var(--shadow-lift);
+  background: var(--color-surface-raised);
+  z-index: 2;
+}
+
+.skill-card--board[data-pending="true"] {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.skill-card__description--compact {
+  -webkit-line-clamp: 2;
+}
+
+/* Column drop feedback — attributes live on the slot so the full lane is
+   the droppable, but the visual treatment applies to the inner column card. */
+.board-column {
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.board-column-slot[data-drop-active="true"] > .board-column {
+  background: var(--color-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.board-column-slot[data-drag-global="true"][data-drop-target="false"] > .board-column {
+  opacity: 0.55;
+}
+
+/* Multi-drag badge on the dragged card */
+.skill-card__multi-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text-inverted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.skill-card--board[data-multi-drag="true"] {
+  position: relative;
+}
+
+/* Stack effect: small offset duplicate peeking behind the dragged card */
+.skill-card--board[data-multi-drag="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 6px -6px -6px 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sm);
+  z-index: -1;
+  pointer-events: none;
+}
+
+}

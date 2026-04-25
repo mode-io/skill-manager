@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useState } from "react";
-import { Star } from "lucide-react";
+import { ArrowUpRight, Plus, Star } from "lucide-react";
 
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import type { MarketplaceItemDto } from "../api/types";
@@ -24,7 +24,6 @@ function avatarFallbackLabel(item: MarketplaceItemDto): string {
 
 export function MarketplaceCard({
   item,
-  selected,
   installing,
   onOpenDetail,
   onInstall,
@@ -51,80 +50,71 @@ export function MarketplaceCard({
   }
 
   return (
-    <article className={`marketplace-card${selected ? " is-selected" : ""}`}>
-      <div
-        className="marketplace-card__preview"
-        role="button"
-        tabIndex={0}
-        aria-pressed={selected}
-        aria-label={`Open marketplace detail for ${item.name}`}
-        onClick={onOpenDetail}
-        onKeyDown={handleKeyDown}
-      >
-        <div className="marketplace-card__header">
-          <div className="marketplace-card__identity">
-            <div className="marketplace-card__avatar">
-              {avatarSrc ? (
-                <img
-                  src={avatarSrc}
-                  alt={`Avatar for ${item.repoLabel}`}
-                  onError={() => setAvatarFailed(true)}
-                />
-              ) : (
-                <span className="marketplace-card__avatar-fallback">{avatarFallbackLabel(item)}</span>
-              )}
-            </div>
-            <div className="marketplace-card__title-block">
-              <div className="marketplace-card__title-row">
-                <h4>{item.name}</h4>
-              </div>
-              <a
-                href={item.repoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="marketplace-card__repo-link"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {item.repoLabel}
-              </a>
-            </div>
-          </div>
-          {stars > 0 ? (
-            <span className="marketplace-card__stars">
-              <Star size={12} />
-              {formatMarketplaceStars(stars)}
-            </span>
-          ) : null}
+    <article
+      className="market-card"
+      role="button"
+      tabIndex={0}
+      onClick={onOpenDetail}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open marketplace detail for ${item.name}`}
+    >
+      <div className="market-card__head">
+        <div className="market-card__avatar">
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={`Avatar for ${item.repoLabel}`}
+              onError={() => setAvatarFailed(true)}
+            />
+          ) : (
+            avatarFallbackLabel(item)
+          )}
         </div>
-
-        <p className="marketplace-card__description">{item.description || "No summary available on skills.sh."}</p>
-
-        <div className="marketplace-card__meta">
-          <span className="marketplace-card__meta-item">{installs} installs</span>
-          <a
-            href={item.skillsDetailUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="marketplace-card__meta-link"
-            onClick={(event) => event.stopPropagation()}
-          >
-            View on skills.sh
-          </a>
+        <div>
+          <h4 className="market-card__title">{item.name}</h4>
+          <p className="market-card__repo">{item.repoLabel}</p>
         </div>
+        {stars > 0 ? (
+          <span className="market-card__stars">
+            <Star size={11} fill="currentColor" />
+            {formatMarketplaceStars(stars)}
+          </span>
+        ) : null}
       </div>
 
-      <div className="marketplace-card__footer">
+      <p className="market-card__body">{item.description || "No summary available on skills.sh."}</p>
+
+      <div className="market-card__footer">
+        <span className="market-card__installs">{installs} installs</span>
         {item.installation.status === "installed" && item.installation.installedSkillRef ? (
           <button
             type="button"
-            className="btn btn-secondary marketplace-card__action marketplace-card__action--installed"
-            onClick={handleOpenInstalled}
+            className="action-pill"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleOpenInstalled();
+            }}
+            aria-label={`Open ${item.name} in Skills`}
           >
+            <ArrowUpRight size={12} aria-hidden="true" />
             Open in Skills
           </button>
         ) : (
-          <button type="button" className="btn btn-primary marketplace-card__action" onClick={onInstall}>
-            {installing ? <LoadingSpinner size="sm" label={`Installing ${item.name}`} /> : null}
+          <button
+            type="button"
+            className="action-pill"
+            onClick={(event) => {
+              event.stopPropagation();
+              onInstall();
+            }}
+            aria-label={`Install ${item.name}`}
+            data-pending={installing || undefined}
+          >
+            {installing ? (
+              <LoadingSpinner size="sm" label={`Installing ${item.name}`} />
+            ) : (
+              <Plus size={12} aria-hidden="true" />
+            )}
             Install
           </button>
         )}

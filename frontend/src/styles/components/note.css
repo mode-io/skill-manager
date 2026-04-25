@@ -1,0 +1,18 @@
+@layer components {
+
+.detail-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 18%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-warning-soft) 72%, transparent);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.detail-note strong {
+  color: var(--color-text);
+}
+
+}

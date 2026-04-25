@@ -2,15 +2,14 @@ import type {
   BulkManageResult,
   DisableSkillRequest,
   EnableSkillRequest,
+  OkResponse,
+  SetSkillHarnessesRequest,
+  SetSkillHarnessesResultDto,
   SkillDetailDto,
   SkillsPageDto,
   SkillSourceStatusDto,
 } from "./types";
 import { fetchJson, postJson } from "../../../api/http";
-
-interface OkResponse {
-  ok: boolean;
-}
 
 export async function fetchSkillsPage(): Promise<SkillsPageDto> {
   return fetchJson<SkillsPageDto>("/skills");
@@ -32,6 +31,17 @@ export async function enableSkill(skillRef: string, harness: string): Promise<Ok
 export async function disableSkill(skillRef: string, harness: string): Promise<OkResponse> {
   const body: DisableSkillRequest = { harness };
   return postJson<OkResponse>(`/skills/${encodeURIComponent(skillRef)}/disable`, body);
+}
+
+export async function setSkillHarnesses(
+  skillRef: string,
+  target: "enabled" | "disabled",
+): Promise<SetSkillHarnessesResultDto> {
+  const body: SetSkillHarnessesRequest = { target };
+  return postJson<SetSkillHarnessesResultDto>(
+    `/skills/${encodeURIComponent(skillRef)}/set-harnesses`,
+    body,
+  );
 }
 
 export async function manageSkill(skillRef: string): Promise<OkResponse> {

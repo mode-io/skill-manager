@@ -1,12 +1,14 @@
+import { useId } from "react";
+
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCellState } from "../../model/types";
 import { useSkillDetailController } from "../../model/use-skill-detail-controller";
-import { SkillDeleteDialog } from "../dialogs/SkillDeleteDialog";
-import { SkillStopManagingDialog } from "../dialogs/SkillStopManagingDialog";
+import { SkillActionConfirmDialog } from "../dialogs/SkillActionConfirmDialog";
 import { SkillDetailContent } from "./SkillDetailContent";
 import { SkillDetailSkeleton } from "./SkillDetailSkeleton";
+import { SkillDetailShell } from "./SkillDetailShell";
 
 interface SkillDetailViewProps {
   skillRef: string;
@@ -16,7 +18,7 @@ interface SkillDetailViewProps {
   onManageSkill: (skillRef: string) => Promise<void>;
   onToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
   onUpdateSkill: (skillRef: string) => Promise<void>;
-  onUnmanageSkill: (skillRef: string) => Promise<void>;
+  onRemoveSkill: (skillRef: string) => Promise<void>;
   onDeleteSkill: (skillRef: string) => Promise<void>;
 }
 
@@ -28,31 +30,32 @@ export function SkillDetailView({
   onManageSkill,
   onToggleSkill,
   onUpdateSkill,
-  onUnmanageSkill,
+  onRemoveSkill,
   onDeleteSkill,
 }: SkillDetailViewProps) {
+  const fallbackHeadingId = useId();
   const {
       detail,
       isInitialLoading,
       queryErrorMessage,
       actionErrorMessage,
-      isStopManagingDialogOpen,
+      isRemoveDialogOpen,
       isDeleteDialogOpen,
       dismissActionError,
     onManage,
     onToggleHarness,
     onUpdate,
-    requestStopManaging,
+    requestRemove,
     requestDelete,
-    setStopManagingDialogOpen,
+    setRemoveDialogOpen,
     setDeleteDialogOpen,
     handleConfirmDelete,
-    handleConfirmStopManaging,
+    handleConfirmRemove,
   } = useSkillDetailController(skillRef, {
     onManageSkill,
     onToggleSkill,
     onUpdateSkill,
-    onUnmanageSkill,
+    onRemoveSkill,
     onDeleteSkill,
   });
 
@@ -62,17 +65,24 @@ export function SkillDetailView({
 
   if (!detail && queryErrorMessage) {
     return (
-      <>
-        <div className="skill-detail__chrome">
-          <DetailHeader title={<h2>Unable to load skill</h2>} closeLabel="Close skill details" onClose={onClose} />
-          <ErrorBanner message={queryErrorMessage} />
-        </div>
-        <div className="skill-detail__body">
+      <SkillDetailShell
+        chrome={(
+          <div className="skill-detail__chrome">
+            <DetailHeader
+              title={<h2 id={fallbackHeadingId}>Unable to load skill</h2>}
+              closeLabel="Close skill details"
+              onClose={onClose}
+            />
+            <ErrorBanner message={queryErrorMessage} />
+          </div>
+        )}
+        body={(
           <div className="skill-detail__fallback">
             <p className="muted-text">Try selecting the skill again, or return to the list and reopen it.</p>
           </div>
-        </div>
-      </>
+        )}
+        bodyAriaLabelledBy={fallbackHeadingId}
+      />
     );
   }
 
@@ -93,25 +103,27 @@ export function SkillDetailView({
         onManage={onManage}
         onToggleHarness={(cell) => onToggleHarness(cell.harness, cell.state)}
         onUpdate={onUpdate}
-        onRequestStopManaging={requestStopManaging}
+        onRequestRemove={requestRemove}
         onRequestDelete={requestDelete}
       />
       {detail.actions.stopManagingStatus !== null ? (
-        <SkillStopManagingDialog
-          open={isStopManagingDialogOpen}
+        <SkillActionConfirmDialog
+          open={isRemoveDialogOpen}
+          action="unmanage"
           skillName={detail.name}
           harnessLabels={detail.actions.stopManagingHarnessLabels}
           isPending={pendingStructuralAction === "unmanage"}
-          onOpenChange={setStopManagingDialogOpen}
-          onConfirm={handleConfirmStopManaging}
+          onOpenChange={setRemoveDialogOpen}
+          onConfirm={handleConfirmRemove}
         />
       ) : null}
       {detail.actions.canDelete ? (
-        <SkillDeleteDialog
+        <SkillActionConfirmDialog
           open={isDeleteDialogOpen}
+          action="delete"
           skillName={detail.name}
           harnessLabels={detail.actions.deleteHarnessLabels}
-          isDeleting={pendingStructuralAction === "delete"}
+          isPending={pendingStructuralAction === "delete"}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
         />

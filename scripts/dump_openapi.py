@@ -11,7 +11,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from skill_manager.api.app import create_app  # noqa: E402
 from skill_manager.application import build_backend_container  # noqa: E402
-from skill_manager.application.marketplace import MarketplaceCatalog  # noqa: E402
+from skill_manager.application.skills.marketplace import MarketplaceCatalog  # noqa: E402
 
 
 def main() -> int:

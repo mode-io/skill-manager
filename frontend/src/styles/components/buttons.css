@@ -1,0 +1,118 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* Buttons + icon buttons                                                       */
+/* -------------------------------------------------------------------------- */
+/*
+ * Reserved for dialog footers, where binary commitment (Cancel | Confirm)
+ * benefits from heavy visual weight + clear win/lose hierarchy. Everywhere
+ * else (cards, rows, page chrome, empty-state CTAs) uses the lighter
+ * .action-pill family — see styles/components/action-pill.css.
+ */
+
+.btn,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.btn:hover,
+.icon-button:hover {
+  background: var(--color-surface-raised);
+}
+
+.btn:disabled,
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn:focus-visible,
+.icon-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-softer);
+}
+
+.btn.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-text-inverted);
+  font-weight: 500;
+}
+
+.btn.btn-primary:hover {
+  background: var(--color-accent-strong);
+}
+
+.btn.btn-secondary {
+  background: var(--color-surface);
+}
+
+.btn.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.btn.btn-ghost:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+.btn.btn-static {
+  cursor: default;
+  color: var(--color-text-muted);
+}
+
+.btn.btn-static:hover {
+  background: var(--color-surface);
+}
+
+.icon-button {
+  width: 34px;
+  padding: 0;
+}
+
+.card-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.card-icon-button:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.card-icon-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-softer);
+}
+
+.card-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+
+}

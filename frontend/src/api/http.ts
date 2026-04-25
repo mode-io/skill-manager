@@ -52,3 +52,7 @@ export async function putJson<T>(path: string, body?: object): Promise<T> {
     }),
   );
 }
+
+export async function deleteJson<T>(path: string): Promise<T> {
+  return expectJson<T>(fetch(apiPath(path), { method: "DELETE" }));
+}

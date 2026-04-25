@@ -7,7 +7,7 @@ interface SkillDetailMutationHandlers {
   onManageSkill: (skillRef: string) => Promise<void>;
   onToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
   onUpdateSkill: (skillRef: string) => Promise<void>;
-  onUnmanageSkill: (skillRef: string) => Promise<void>;
+  onRemoveSkill: (skillRef: string) => Promise<void>;
   onDeleteSkill: (skillRef: string) => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ export function useSkillDetailController(
   const detailQuery = useSkillDetailQuery(skillRef);
   const sourceStatusQuery = useSkillSourceStatusQuery(skillRef);
   const [actionErrorMessage, setActionErrorMessage] = useState("");
-  const [isStopManagingDialogOpen, setStopManagingDialogOpen] = useState(false);
+  const [isRemoveDialogOpen, setRemoveDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const isMountedRef = useRef(true);
 
@@ -44,7 +44,7 @@ export function useSkillDetailController(
 
   useEffect(() => {
     setActionErrorMessage("");
-    setStopManagingDialogOpen(false);
+    setRemoveDialogOpen(false);
     setDeleteDialogOpen(false);
   }, [skillRef]);
 
@@ -73,13 +73,13 @@ export function useSkillDetailController(
     }
   }
 
-  async function handleConfirmStopManaging(): Promise<void> {
+  async function handleConfirmRemove(): Promise<void> {
     if (!detail) {
       return;
     }
-    const didSucceed = await runAction(() => handlers.onUnmanageSkill(detail.skillRef));
+    const didSucceed = await runAction(() => handlers.onRemoveSkill(detail.skillRef));
     if (didSucceed && isMountedRef.current) {
-      setStopManagingDialogOpen(false);
+      setRemoveDialogOpen(false);
     }
   }
 
@@ -88,24 +88,24 @@ export function useSkillDetailController(
     isInitialLoading,
     queryErrorMessage,
     actionErrorMessage,
-    isStopManagingDialogOpen,
+    isRemoveDialogOpen,
     isDeleteDialogOpen,
     dismissActionError: () => setActionErrorMessage(""),
     onManage: () => detail && void runAction(() => handlers.onManageSkill(detail.skillRef)),
     onToggleHarness: (harness: string, currentState: HarnessCellState) =>
       detail && void runAction(() => handlers.onToggleSkill(detail.skillRef, harness, currentState)),
     onUpdate: () => detail && void runAction(() => handlers.onUpdateSkill(detail.skillRef)),
-    requestStopManaging: () => {
+    requestRemove: () => {
       setActionErrorMessage("");
-      setStopManagingDialogOpen(true);
+      setRemoveDialogOpen(true);
     },
     requestDelete: () => {
       setActionErrorMessage("");
       setDeleteDialogOpen(true);
     },
-    setStopManagingDialogOpen,
+    setRemoveDialogOpen,
     setDeleteDialogOpen,
     handleConfirmDelete,
-    handleConfirmStopManaging,
+    handleConfirmRemove,
   };
 }

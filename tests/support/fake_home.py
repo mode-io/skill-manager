@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 
-from skill_manager.domain import fingerprint_package
-from skill_manager.store import ManifestEntry, StoreManifest, write_manifest
+from skill_manager.application.skills.manifest import (
+    SkillStoreEntry,
+    SkillStoreManifest,
+    write_skill_store_manifest,
+)
+from skill_manager.application.skills.package import fingerprint_package
 
 
 @dataclass(frozen=True)
@@ -16,7 +19,7 @@ class FakeHomeSpec:
     xdg_data_home: Path
 
     @property
-    def shared_store_root(self) -> Path:
+    def skills_store_root(self) -> Path:
         return self.xdg_data_home / "skill-manager" / "shared"
 
     @property
@@ -38,10 +41,6 @@ class FakeHomeSpec:
     @property
     def opencode_root(self) -> Path:
         return self.xdg_config_home / "opencode" / "skills"
-
-    @property
-    def opencode_builtins(self) -> Path:
-        return self.xdg_config_home / "opencode" / "builtins.json"
 
     @property
     def openclaw_home(self) -> Path:
@@ -72,7 +71,7 @@ def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> Fa
         xdg_data_home=root / "data",
     )
     for path in (
-        spec.shared_store_root,
+        spec.skills_store_root,
         spec.codex_root,
         spec.codex_legacy_root,
         spec.claude_root,
@@ -128,24 +127,22 @@ def seed_skill_package(
     return package_root
 
 
-def seed_builtin_catalog(path: Path, items: list[dict[str, str]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"builtins": items}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def seed_store_manifest(spec: FakeHomeSpec, entries: list[ManifestEntry]) -> None:
-    write_manifest(spec.shared_store_root.parent / "manifest.json", StoreManifest(entries=tuple(entries)))
+def seed_store_manifest(spec: FakeHomeSpec, entries: list[SkillStoreEntry]) -> None:
+    write_skill_store_manifest(
+        spec.skills_store_root.parent / "manifest.json",
+        SkillStoreManifest(entries=tuple(entries)),
+    )
 
 
 def seed_malformed_shared_directory(spec: FakeHomeSpec, directory_name: str) -> None:
-    broken = spec.shared_store_root / directory_name
+    broken = spec.skills_store_root / directory_name
     broken.mkdir(parents=True, exist_ok=True)
     (broken / "notes.txt").write_text("missing SKILL.md", encoding="utf-8")
 
 
 def seed_mixed_fixture(spec: FakeHomeSpec) -> None:
     shared_audit = seed_skill_package(
-        spec.shared_store_root,
+        spec.skills_store_root,
         "shared-audit",
         "Shared Audit",
         body="Shared package fixture.",
@@ -154,7 +151,7 @@ def seed_mixed_fixture(spec: FakeHomeSpec) -> None:
     seed_store_manifest(
         spec,
         [
-            ManifestEntry(
+            SkillStoreEntry(
                 package_dir="shared-audit",
                 declared_name="Shared Audit",
                 source_kind="github",
@@ -168,10 +165,6 @@ def seed_mixed_fixture(spec: FakeHomeSpec) -> None:
     seed_skill_package(spec.codex_legacy_root, "trace-lens", "Trace Lens", body="trace", support_files=shared_support)
     seed_skill_package(spec.claude_root, "trace-lens-copy", "Trace Lens", body="trace", support_files=shared_support)
     seed_skill_package(spec.opencode_root, "policy-kit", "Policy Kit", body="opencode policy")
-    seed_builtin_catalog(
-        spec.opencode_builtins,
-        [{"id": "builtin-opencode-review", "name": "Review Helper", "detail": "Bundled with OpenCode"}],
-    )
 
     seed_malformed_shared_directory(spec, "broken-shared")
 
@@ -198,7 +191,7 @@ def seed_divergent_source_fixture(spec: FakeHomeSpec) -> None:
 
 def seed_shared_only_fixture(spec: FakeHomeSpec) -> None:
     shared_audit = seed_skill_package(
-        spec.shared_store_root,
+        spec.skills_store_root,
         "shared-audit",
         "Shared Audit",
         body="Shared package fixture.",
@@ -206,7 +199,7 @@ def seed_shared_only_fixture(spec: FakeHomeSpec) -> None:
     seed_store_manifest(
         spec,
         [
-            ManifestEntry(
+            SkillStoreEntry(
                 package_dir="shared-audit",
                 declared_name="Shared Audit",
                 source_kind="github",
@@ -219,7 +212,7 @@ def seed_shared_only_fixture(spec: FakeHomeSpec) -> None:
 
 def seed_managed_linked_fixture(spec: FakeHomeSpec) -> None:
     seed_shared_only_fixture(spec)
-    target = spec.shared_store_root / "shared-audit"
+    target = spec.skills_store_root / "shared-audit"
     codex_link = spec.codex_root / "shared-audit"
     codex_link.symlink_to(target)
 

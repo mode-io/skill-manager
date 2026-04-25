@@ -94,9 +94,23 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError(f"unexpected version output: expected {expected_version!r}, got {version_output!r}")
 
         runtime_dir = tmp_path / "runtime"
+        home_dir = tmp_path / "home"
+        xdg_config_dir = tmp_path / "xdg-config"
+        xdg_data_dir = tmp_path / "xdg-data"
+        xdg_state_dir = tmp_path / "xdg-state"
+        for path in (home_dir, xdg_config_dir, xdg_data_dir, xdg_state_dir):
+            path.mkdir(parents=True, exist_ok=True)
         with MarketplaceFixtureServer() as fixture:
             runtime_env = dict(os.environ)
             runtime_env.update(fixture.env())
+            runtime_env.update(
+                {
+                    "HOME": str(home_dir),
+                    "XDG_CONFIG_HOME": str(xdg_config_dir),
+                    "XDG_DATA_HOME": str(xdg_data_dir),
+                    "XDG_STATE_HOME": str(xdg_state_dir),
+                }
+            )
             try:
                 start_output = run(
                     [

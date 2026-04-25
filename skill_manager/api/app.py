@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from skill_manager.application import BackendContainer
 
 from .errors import install_error_handlers
-from .routers import health, marketplace, settings, skills
+from .routers import health, marketplace, mcp, settings, skills
 
 
 def create_app(
@@ -24,6 +24,7 @@ def create_app(
     app.include_router(settings.router)
     app.include_router(skills.router)
     app.include_router(marketplace.router)
+    app.include_router(mcp.router)
 
     @app.get("/{full_path:path}", include_in_schema=False, response_model=None)
     def serve_frontend(full_path: str):

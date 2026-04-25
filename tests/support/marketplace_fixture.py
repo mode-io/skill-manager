@@ -3,11 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import mkdtemp
 
-from skill_manager.application.marketplace import MarketplaceCatalog
-from skill_manager.application.marketplace.cache import MarketplaceCache
-from skill_manager.application.marketplace.models import SkillsShSkill
-from skill_manager.application.marketplace.repo_snapshots import GitHubRepoSnapshotService
-from skill_manager.application.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
+from skill_manager.application.marketplace_cache import MarketplaceCache
+from skill_manager.application.skills.marketplace import MarketplaceCatalog
+from skill_manager.application.skills.marketplace.models import SkillsShSkill
+from skill_manager.application.skills.marketplace.repo_snapshots import GitHubRepoSnapshotService
+from skill_manager.application.skills.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_payloads import FIXTURE_FOLDER_URLS, FIXTURE_SKILLS
 

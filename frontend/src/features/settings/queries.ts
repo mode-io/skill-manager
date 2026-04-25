@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
+import { queryPolicy } from "../../lib/query";
+import { invalidateMcpQueries } from "../mcp/public";
+import { invalidateSkillsQueries } from "../skills/public";
 import { fetchSettings, updateHarnessSupport } from "./api/client";
-import { invalidateSkillsQueries } from "../skills/api/queries";
 import type { SettingsData } from "./api/types";
 
 const SETTINGS_STALE_TIME_MS = 60_000;
@@ -16,9 +18,7 @@ export function useSettingsQuery() {
   return useQuery({
     queryKey: settingsKeys.detail(),
     queryFn: fetchSettings,
-    staleTime: SETTINGS_STALE_TIME_MS,
-    gcTime: SETTINGS_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(SETTINGS_STALE_TIME_MS, SETTINGS_GC_TIME_MS),
   });
 }
 
@@ -58,6 +58,7 @@ export function useHarnessSupportMutation() {
     onSuccess: async () => {
       await Promise.all([
         invalidateSkillsQueries(queryClient),
+        invalidateMcpQueries(queryClient),
         invalidateSettingsQueries(queryClient),
       ]);
     },

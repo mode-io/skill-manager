@@ -21,6 +21,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/marketplace/clis/items/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Cli Marketplace Detail */
+        get: operations["get_cli_marketplace_detail_api_marketplace_clis_items__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/clis/popular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Popular Cli Marketplace */
+        get: operations["popular_cli_marketplace_api_marketplace_clis_popular_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/clis/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Cli Marketplace */
+        get: operations["search_cli_marketplace_api_marketplace_clis_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/marketplace/install": {
         parameters: {
             query?: never;
@@ -72,6 +123,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/marketplace/mcp/install-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mcp Install Targets */
+        get: operations["get_mcp_install_targets_api_marketplace_mcp_install_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/mcp/items/{qualified_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mcp Marketplace Detail */
+        get: operations["get_mcp_marketplace_detail_api_marketplace_mcp_items__qualified_name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/mcp/popular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Popular Mcp Marketplace */
+        get: operations["popular_mcp_marketplace_api_marketplace_mcp_popular_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/mcp/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Mcp Marketplace */
+        get: operations["search_mcp_marketplace_api_marketplace_mcp_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/marketplace/popular": {
         parameters: {
             query?: never;
@@ -98,6 +217,144 @@ export interface paths {
         };
         /** Search Marketplace */
         get: operations["search_marketplace_api_marketplace_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Mcp Servers */
+        get: operations["list_mcp_servers_api_mcp_servers_get"];
+        put?: never;
+        /** Install Mcp Server */
+        post: operations["install_mcp_server_api_mcp_servers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mcp Server */
+        get: operations["get_mcp_server_api_mcp_servers__name__get"];
+        put?: never;
+        post?: never;
+        /** Uninstall Mcp Server */
+        delete: operations["uninstall_mcp_server_api_mcp_servers__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{name}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Mcp Server */
+        post: operations["disable_mcp_server_api_mcp_servers__name__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{name}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Mcp Server */
+        post: operations["enable_mcp_server_api_mcp_servers__name__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{name}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Mcp Server */
+        post: operations["reconcile_mcp_server_api_mcp_servers__name__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{name}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Mcp Server Harnesses */
+        post: operations["set_mcp_server_harnesses_api_mcp_servers__name__set_harnesses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/unmanaged/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adopt Mcp Server */
+        post: operations["adopt_mcp_server_api_mcp_unmanaged_adopt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/unmanaged/by-server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Unmanaged By Server */
+        get: operations["list_unmanaged_by_server_api_mcp_unmanaged_by_server_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -259,6 +516,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/skills/{skill_ref}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Skill Harnesses */
+        post: operations["set_skill_harnesses_api_skills__skill_ref__set_harnesses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/skills/{skill_ref}/source-status": {
         parameters: {
             query?: never;
@@ -314,8 +588,147 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddMcpServerRequest */
+        AddMcpServerRequest: {
+            /** Qualifiedname */
+            qualifiedName: string;
+            /** Sourceharness */
+            sourceHarness: string;
+        };
+        /** AdoptMcpRequest */
+        AdoptMcpRequest: {
+            /** Harnesses */
+            harnesses?: string[] | null;
+            /** Name */
+            name: string;
+            /** Sourceharness */
+            sourceHarness?: string | null;
+        };
+        /** BulkManageFailureResponse */
+        BulkManageFailureResponse: {
+            /** Error */
+            error: string;
+            /** Name */
+            name: string;
+            /** Skillref */
+            skillRef: string;
+        };
+        /** BulkManageResultResponse */
+        BulkManageResultResponse: {
+            /** Failures */
+            failures: components["schemas"]["BulkManageFailureResponse"][];
+            /** Managedcount */
+            managedCount: number;
+            /** Ok */
+            ok: boolean;
+            /** Skippedcount */
+            skippedCount: number;
+        };
+        /** CliMarketplaceDetailResponse */
+        CliMarketplaceDetailResponse: {
+            /** Category */
+            category?: string | null;
+            /** Description */
+            description: string;
+            /** Githuburl */
+            githubUrl?: string | null;
+            /** Hasmcp */
+            hasMcp: boolean;
+            /** Hasskill */
+            hasSkill: boolean;
+            /** Iconurl */
+            iconUrl?: string | null;
+            /** Id */
+            id: string;
+            /** Installcommand */
+            installCommand?: string | null;
+            /** Isofficial */
+            isOfficial: boolean;
+            /** Istui */
+            isTui: boolean;
+            /** Language */
+            language?: string | null;
+            /** Longdescription */
+            longDescription?: string | null;
+            /** Marketplaceurl */
+            marketplaceUrl: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Sourcetype */
+            sourceType?: string | null;
+            /** Stars */
+            stars?: number | null;
+            /** Vendorname */
+            vendorName?: string | null;
+            /** Websiteurl */
+            websiteUrl?: string | null;
+        };
+        /** CliMarketplaceItemResponse */
+        CliMarketplaceItemResponse: {
+            /** Category */
+            category?: string | null;
+            /** Description */
+            description: string;
+            /** Githuburl */
+            githubUrl?: string | null;
+            /** Hasmcp */
+            hasMcp: boolean;
+            /** Hasskill */
+            hasSkill: boolean;
+            /** Iconurl */
+            iconUrl?: string | null;
+            /** Id */
+            id: string;
+            /** Isofficial */
+            isOfficial: boolean;
+            /** Istui */
+            isTui: boolean;
+            /** Language */
+            language?: string | null;
+            /** Marketplaceurl */
+            marketplaceUrl: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Sourcetype */
+            sourceType?: string | null;
+            /** Stars */
+            stars?: number | null;
+            /** Vendorname */
+            vendorName?: string | null;
+            /** Websiteurl */
+            websiteUrl?: string | null;
+        };
+        /** CliMarketplacePageResponse */
+        CliMarketplacePageResponse: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Items */
+            items: components["schemas"]["CliMarketplaceItemResponse"][];
+            /** Nextoffset */
+            nextOffset?: number | null;
+        };
+        /** DisableMcpServerRequest */
+        DisableMcpServerRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
         /** DisableSkillRequest */
         DisableSkillRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
+        /** EnableMcpServerRequest */
+        EnableMcpServerRequest: {
             /**
              * Harness
              * @description Harness identifier
@@ -335,15 +748,675 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HarnessCellResponse */
+        HarnessCellResponse: {
+            /** Harness */
+            harness: string;
+            /** Interactive */
+            interactive: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "enabled" | "disabled" | "found" | "empty";
+        };
+        /** HarnessColumnResponse */
+        HarnessColumnResponse: {
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+        };
         /** InstallMarketplaceSkillRequest */
         InstallMarketplaceSkillRequest: {
             /** Installtoken */
             installToken: string;
         };
+        /** McpAdoptionIssueResponse */
+        McpAdoptionIssueResponse: {
+            /** Configpath */
+            configPath?: string | null;
+            /** Harness */
+            harness: string;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Name */
+            name: string;
+            /** Payloadpreview */
+            payloadPreview?: {
+                [key: string]: unknown;
+            } | null;
+            /** Reason */
+            reason: string;
+        };
+        /** McpApplyConfigResponse */
+        McpApplyConfigResponse: {
+            /** Failed */
+            failed: components["schemas"]["McpMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            server: components["schemas"]["McpServerSpecResponse"];
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** McpBindingResponse */
+        McpBindingResponse: {
+            /** Driftdetail */
+            driftDetail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "managed" | "drifted" | "unmanaged" | "missing";
+        };
+        /** McpConfigChoiceResponse */
+        McpConfigChoiceResponse: {
+            /** Configpath */
+            configPath?: string | null;
+            /** Env */
+            env?: components["schemas"]["McpEnvEntryResponse"][];
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Payloadpreview */
+            payloadPreview: {
+                [key: string]: unknown;
+            };
+            /** Sourceharness */
+            sourceHarness?: string | null;
+            /**
+             * Sourcekind
+             * @enum {string}
+             */
+            sourceKind: "managed" | "harness";
+            spec: components["schemas"]["McpServerSpecResponse"];
+        };
+        /** McpEnvEntryResponse */
+        McpEnvEntryResponse: {
+            /** Isenvref */
+            isEnvRef: boolean;
+            /** Key */
+            key: string;
+            /** Value */
+            value?: string | null;
+        };
+        /** McpIdentityGroupResponse */
+        McpIdentityGroupResponse: {
+            canonicalSpec?: components["schemas"]["McpServerSpecResponse"] | null;
+            /** Identical */
+            identical: boolean;
+            marketplaceLink?: components["schemas"]["McpMarketplaceLinkResponse"] | null;
+            /** Name */
+            name: string;
+            /** Sightings */
+            sightings: components["schemas"]["McpIdentitySightingResponse"][];
+        };
+        /** McpIdentitySightingResponse */
+        McpIdentitySightingResponse: {
+            /** Configpath */
+            configPath?: string | null;
+            /** Env */
+            env?: components["schemas"]["McpEnvEntryResponse"][];
+            /** Harness */
+            harness: string;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Payloadpreview */
+            payloadPreview: {
+                [key: string]: unknown;
+            };
+            spec: components["schemas"]["McpServerSpecResponse"];
+        };
+        /** McpInstallTargetResponse */
+        McpInstallTargetResponse: {
+            /** Harness */
+            harness: string;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Smitheryclient */
+            smitheryClient?: string | null;
+            /** Supported */
+            supported: boolean;
+        };
+        /** McpInstallTargetsResponse */
+        McpInstallTargetsResponse: {
+            /** Targets */
+            targets: components["schemas"]["McpInstallTargetResponse"][];
+        };
+        /** McpInventoryColumnResponse */
+        McpInventoryColumnResponse: {
+            /** Configpresent */
+            configPresent: boolean;
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Mcpunavailablereason */
+            mcpUnavailableReason?: string | null;
+            /**
+             * Mcpwritable
+             * @default true
+             */
+            mcpWritable: boolean;
+        };
+        /** McpInventoryEntryResponse */
+        McpInventoryEntryResponse: {
+            /** Canenable */
+            canEnable: boolean;
+            /** Displayname */
+            displayName: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            /** Name */
+            name: string;
+            /** Sightings */
+            sightings: components["schemas"]["McpBindingResponse"][];
+            spec?: components["schemas"]["McpServerSpecResponse"] | null;
+        };
+        /** McpInventoryIssueResponse */
+        McpInventoryIssueResponse: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
+        /** McpInventoryResponse */
+        McpInventoryResponse: {
+            /** Columns */
+            columns: components["schemas"]["McpInventoryColumnResponse"][];
+            /** Entries */
+            entries: components["schemas"]["McpInventoryEntryResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["McpInventoryIssueResponse"][];
+        };
+        /** McpMarketplaceCapabilityCountsResponse */
+        McpMarketplaceCapabilityCountsResponse: {
+            /** Prompts */
+            prompts: number;
+            /** Resources */
+            resources: number;
+            /** Tools */
+            tools: number;
+        };
+        /** McpMarketplaceConnectionResponse */
+        McpMarketplaceConnectionResponse: {
+            /** Bundleurl */
+            bundleUrl?: string | null;
+            /** Configschema */
+            configSchema?: {
+                [key: string]: unknown;
+            } | null;
+            /** Deploymenturl */
+            deploymentUrl?: string | null;
+            /** Kind */
+            kind: string;
+            /** Runtime */
+            runtime?: string | null;
+            /** Stdioargs */
+            stdioArgs?: string[] | null;
+            /** Stdiocommand */
+            stdioCommand?: string | null;
+            /** Stdiofunction */
+            stdioFunction?: string | null;
+        };
+        /** McpMarketplaceDetailResponse */
+        McpMarketplaceDetailResponse: {
+            capabilityCounts: components["schemas"]["McpMarketplaceCapabilityCountsResponse"];
+            /** Connections */
+            connections: components["schemas"]["McpMarketplaceConnectionResponse"][];
+            /** Deploymenturl */
+            deploymentUrl?: string | null;
+            /** Description */
+            description: string;
+            /** Displayname */
+            displayName: string;
+            /** Externalurl */
+            externalUrl: string;
+            /** Iconurl */
+            iconUrl?: string | null;
+            /** Isremote */
+            isRemote: boolean;
+            /** Managedname */
+            managedName: string;
+            /** Prompts */
+            prompts: components["schemas"]["McpMarketplacePromptResponse"][];
+            /** Qualifiedname */
+            qualifiedName: string;
+            /** Resources */
+            resources: components["schemas"]["McpMarketplaceResourceResponse"][];
+            /** Tools */
+            tools: components["schemas"]["McpMarketplaceToolResponse"][];
+        };
+        /** McpMarketplaceItemResponse */
+        McpMarketplaceItemResponse: {
+            /** Createdat */
+            createdAt?: string | null;
+            /** Description */
+            description: string;
+            /** Displayname */
+            displayName: string;
+            /** Externalurl */
+            externalUrl: string;
+            /** Homepage */
+            homepage?: string | null;
+            /** Iconurl */
+            iconUrl?: string | null;
+            /** Isdeployed */
+            isDeployed: boolean;
+            /** Isremote */
+            isRemote: boolean;
+            /** Isverified */
+            isVerified: boolean;
+            /** Namespace */
+            namespace: string;
+            /** Qualifiedname */
+            qualifiedName: string;
+            /** Usecount */
+            useCount: number;
+        };
+        /** McpMarketplaceLinkResponse */
+        McpMarketplaceLinkResponse: {
+            /** Description */
+            description: string;
+            /** Displayname */
+            displayName: string;
+            /** Externalurl */
+            externalUrl: string;
+            /** Iconurl */
+            iconUrl?: string | null;
+            /** Isremote */
+            isRemote: boolean;
+            /** Isverified */
+            isVerified: boolean;
+            /** Qualifiedname */
+            qualifiedName: string;
+        };
+        /** McpMarketplacePageResponse */
+        McpMarketplacePageResponse: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Items */
+            items: components["schemas"]["McpMarketplaceItemResponse"][];
+            /** Nextoffset */
+            nextOffset?: number | null;
+        };
+        /** McpMarketplaceParameterResponse */
+        McpMarketplaceParameterResponse: {
+            /** Default */
+            default?: unknown | null;
+            /** Description */
+            description: string;
+            /** Enum */
+            enum?: unknown[] | null;
+            /** Maxitems */
+            maxItems?: number | null;
+            /** Maxlength */
+            maxLength?: number | null;
+            /** Maximum */
+            maximum?: number | null;
+            /** Minitems */
+            minItems?: number | null;
+            /** Minlength */
+            minLength?: number | null;
+            /** Minimum */
+            minimum?: number | null;
+            /** Name */
+            name: string;
+            /** Required */
+            required: boolean;
+            /** Type */
+            type: string;
+        };
+        /** McpMarketplacePromptArgumentResponse */
+        McpMarketplacePromptArgumentResponse: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /** Required */
+            required: boolean;
+        };
+        /** McpMarketplacePromptResponse */
+        McpMarketplacePromptResponse: {
+            /** Arguments */
+            arguments: components["schemas"]["McpMarketplacePromptArgumentResponse"][];
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+        };
+        /** McpMarketplaceResourceResponse */
+        McpMarketplaceResourceResponse: {
+            /** Description */
+            description: string;
+            /** Mimetype */
+            mimeType?: string | null;
+            /** Name */
+            name: string;
+            /** Uri */
+            uri: string;
+        };
+        /** McpMarketplaceToolResponse */
+        McpMarketplaceToolResponse: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters: components["schemas"]["McpMarketplaceParameterResponse"][];
+        };
+        /** McpMutationFailureResponse */
+        McpMutationFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
+        };
+        /** McpServerDetailResponse */
+        McpServerDetailResponse: {
+            /** Canenable */
+            canEnable: boolean;
+            /** Configchoices */
+            configChoices?: components["schemas"]["McpConfigChoiceResponse"][];
+            /** Displayname */
+            displayName: string;
+            /** Env */
+            env?: components["schemas"]["McpEnvEntryResponse"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            marketplaceLink?: components["schemas"]["McpMarketplaceLinkResponse"] | null;
+            /** Name */
+            name: string;
+            /** Sightings */
+            sightings: components["schemas"]["McpBindingResponse"][];
+            spec?: components["schemas"]["McpServerSpecResponse"] | null;
+        };
+        /** McpServerMutationResponse */
+        McpServerMutationResponse: {
+            /** Ok */
+            ok: boolean;
+            server: components["schemas"]["McpServerSpecResponse"];
+        };
+        /** McpServerSpecResponse */
+        McpServerSpecResponse: {
+            /** Args */
+            args?: string[] | null;
+            /** Command */
+            command?: string | null;
+            /** Displayname */
+            displayName: string;
+            /** Env */
+            env?: {
+                [key: string]: string;
+            } | null;
+            /** Headers */
+            headers?: {
+                [key: string]: string;
+            } | null;
+            /** Installedat */
+            installedAt: string;
+            /** Name */
+            name: string;
+            /** Revision */
+            revision: string;
+            source: components["schemas"]["McpSourceResponse"];
+            /**
+             * Transport
+             * @enum {string}
+             */
+            transport: "stdio" | "http" | "sse";
+            /** Url */
+            url?: string | null;
+        };
+        /** McpSetHarnessesResultResponse */
+        McpSetHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["McpMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** McpSourceResponse */
+        McpSourceResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "marketplace" | "adopted" | "manual";
+            /** Locator */
+            locator: string;
+        };
+        /** McpUnmanagedByServerResponse */
+        McpUnmanagedByServerResponse: {
+            /** Harnesses */
+            harnesses: components["schemas"]["McpUnmanagedHarnessResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["McpAdoptionIssueResponse"][];
+            /** Servers */
+            servers: components["schemas"]["McpIdentityGroupResponse"][];
+        };
+        /** McpUnmanagedHarnessResponse */
+        McpUnmanagedHarnessResponse: {
+            /** Configpath */
+            configPath?: string | null;
+            /** Configpresent */
+            configPresent: boolean;
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Mcpunavailablereason */
+            mcpUnavailableReason?: string | null;
+            /**
+             * Mcpwritable
+             * @default true
+             */
+            mcpWritable: boolean;
+        };
+        /** OkResponse */
+        OkResponse: {
+            /** Ok */
+            ok: boolean;
+        };
+        /** ReconcileMcpServerRequest */
+        ReconcileMcpServerRequest: {
+            /** Harnesses */
+            harnesses?: string[] | null;
+            /** Sourceharness */
+            sourceHarness?: string | null;
+            /**
+             * Sourcekind
+             * @enum {string}
+             */
+            sourceKind: "managed" | "harness";
+        };
         /** SetHarnessSupportRequest */
         SetHarnessSupportRequest: {
             /** Enabled */
             enabled: boolean;
+        };
+        /** SetMcpServerHarnessesRequest */
+        SetMcpServerHarnessesRequest: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "enabled" | "disabled";
+        };
+        /** SetSkillHarnessesFailureResponse */
+        SetSkillHarnessesFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
+        };
+        /** SetSkillHarnessesRequest */
+        SetSkillHarnessesRequest: {
+            /**
+             * Target
+             * @description Target state to apply to every interactive harness cell on this skill
+             * @enum {string}
+             */
+            target: "enabled" | "disabled";
+        };
+        /** SetSkillHarnessesResultResponse */
+        SetSkillHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["SetSkillHarnessesFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** SkillDetailActionsResponse */
+        SkillDetailActionsResponse: {
+            /** Candelete */
+            canDelete: boolean;
+            /** Canmanage */
+            canManage: boolean;
+            /** Deleteharnesslabels */
+            deleteHarnessLabels: string[];
+            /** Stopmanagingharnesslabels */
+            stopManagingHarnessLabels: string[];
+            /** Stopmanagingstatus */
+            stopManagingStatus: ("available" | "disabled_no_enabled") | null;
+        };
+        /** SkillDetailResponse */
+        SkillDetailResponse: {
+            actions: components["schemas"]["SkillDetailActionsResponse"];
+            /** Attentionmessage */
+            attentionMessage: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Displaystatus
+             * @enum {string}
+             */
+            displayStatus: "Managed" | "Unmanaged";
+            /** Documentmarkdown */
+            documentMarkdown: string | null;
+            /** Harnesscells */
+            harnessCells: components["schemas"]["HarnessCellResponse"][];
+            /** Locations */
+            locations: components["schemas"]["SkillLocationResponse"][];
+            /** Name */
+            name: string;
+            /** Skillref */
+            skillRef: string;
+            sourceLinks: components["schemas"]["SkillSourceLinksResponse"] | null;
+        };
+        /** SkillLocationResponse */
+        SkillLocationResponse: {
+            /** Detail */
+            detail: string | null;
+            /** Harness */
+            harness: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "shared" | "harness";
+            /** Label */
+            label: string;
+            /** Path */
+            path: string | null;
+            /** Revision */
+            revision: string | null;
+            /** Scope */
+            scope: string | null;
+            /** Sourcekind */
+            sourceKind: string;
+            /** Sourcelocator */
+            sourceLocator: string;
+        };
+        /** SkillRowActionsResponse */
+        SkillRowActionsResponse: {
+            /** Candelete */
+            canDelete: boolean;
+            /** Canmanage */
+            canManage: boolean;
+            /** Canstopmanaging */
+            canStopManaging: boolean;
+        };
+        /** SkillSourceLinksResponse */
+        SkillSourceLinksResponse: {
+            /** Folderurl */
+            folderUrl: string | null;
+            /** Repolabel */
+            repoLabel: string;
+            /** Repourl */
+            repoUrl: string;
+        };
+        /** SkillSourceStatusResponse */
+        SkillSourceStatusResponse: {
+            /** Updatestatus */
+            updateStatus: ("update_available" | "no_update_available" | "no_source_available" | "local_changes_detected") | null;
+        };
+        /** SkillTableRowResponse */
+        SkillTableRowResponse: {
+            actions: components["schemas"]["SkillRowActionsResponse"];
+            /** Cells */
+            cells: components["schemas"]["HarnessCellResponse"][];
+            /** Description */
+            description: string;
+            /**
+             * Displaystatus
+             * @enum {string}
+             */
+            displayStatus: "Managed" | "Unmanaged";
+            /** Name */
+            name: string;
+            /** Skillref */
+            skillRef: string;
+        };
+        /** SkillsPageResponse */
+        SkillsPageResponse: {
+            /** Harnesscolumns */
+            harnessColumns: components["schemas"]["HarnessColumnResponse"][];
+            /** Rows */
+            rows: components["schemas"]["SkillTableRowResponse"][];
+            summary: components["schemas"]["SkillsSummaryResponse"];
+        };
+        /** SkillsSummaryResponse */
+        SkillsSummaryResponse: {
+            /** Managed */
+            managed: number;
+            /** Unmanaged */
+            unmanaged: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -385,6 +1458,102 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    get_cli_marketplace_detail_api_marketplace_clis_items__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliMarketplaceDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    popular_cli_marketplace_api_marketplace_clis_popular_get: {
+        parameters: {
+            query?: {
+                limit?: number | null;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliMarketplacePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_cli_marketplace_api_marketplace_clis_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number | null;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliMarketplacePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -490,6 +1659,124 @@ export interface operations {
             };
         };
     };
+    get_mcp_install_targets_api_marketplace_mcp_install_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpInstallTargetsResponse"];
+                };
+            };
+        };
+    };
+    get_mcp_marketplace_detail_api_marketplace_mcp_items__qualified_name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qualified_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpMarketplaceDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    popular_mcp_marketplace_api_marketplace_mcp_popular_get: {
+        parameters: {
+            query?: {
+                limit?: number | null;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpMarketplacePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_mcp_marketplace_api_marketplace_mcp_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number | null;
+                offset?: number;
+                remote?: boolean | null;
+                verified?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpMarketplacePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     popular_marketplace_api_marketplace_popular_get: {
         parameters: {
             query?: {
@@ -555,6 +1842,314 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_mcp_servers_api_mcp_servers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpInventoryResponse"];
+                };
+            };
+        };
+    };
+    install_mcp_server_api_mcp_servers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mcp_server_api_mcp_servers__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    uninstall_mcp_server_api_mcp_servers__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_mcp_server_api_mcp_servers__name__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisableMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_mcp_server_api_mcp_servers__name__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnableMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_mcp_server_api_mcp_servers__name__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpApplyConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_mcp_server_harnesses_api_mcp_servers__name__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMcpServerHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adopt_mcp_server_api_mcp_unmanaged_adopt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptMcpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpApplyConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_unmanaged_by_server_api_mcp_unmanaged_by_server_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpUnmanagedByServerResponse"];
                 };
             };
         };
@@ -633,9 +2228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SkillsPageResponse"];
                 };
             };
         };
@@ -655,9 +2248,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["BulkManageResultResponse"];
                 };
             };
         };
@@ -679,9 +2270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SkillDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -712,9 +2301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -749,9 +2336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -786,9 +2371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -819,9 +2402,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_skill_harnesses_api_skills__skill_ref__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSkillHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetSkillHarnessesResultResponse"];
                 };
             };
             /** @description Validation Error */
@@ -852,9 +2468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SkillSourceStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -885,9 +2499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -918,9 +2530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */

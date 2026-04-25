@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="geometricPrecision">
+  <!-- Dark rounded container -->
+  <rect width="64" height="64" rx="13" fill="#0F172A"/>
+
+  <!-- Row 0: extension, extension, muted -->
+  <rect x="10" y="10" width="12" height="12" rx="2.5" fill="#60A5FA"/>
+  <rect x="26" y="10" width="12" height="12" rx="2.5" fill="#60A5FA"/>
+  <rect x="42" y="10" width="12" height="12" rx="2.5" fill="#334155"/>
+
+  <!-- Row 1: extension, ACCENT (source of truth), destination -->
+  <rect x="10" y="26" width="12" height="12" rx="2.5" fill="#60A5FA"/>
+  <rect x="26" y="26" width="12" height="12" rx="2.5" fill="#FBBF24"/>
+  <rect x="42" y="26" width="12" height="12" rx="2.5" fill="#A78BFA"/>
+
+  <!-- Row 2: muted, destination, destination -->
+  <rect x="10" y="42" width="12" height="12" rx="2.5" fill="#334155"/>
+  <rect x="26" y="42" width="12" height="12" rx="2.5" fill="#A78BFA"/>
+  <rect x="42" y="42" width="12" height="12" rx="2.5" fill="#A78BFA"/>
+</svg>

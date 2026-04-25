@@ -13,6 +13,11 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/skill-manager-npm-XXXXXX")"
 FIXTURE_MANIFEST="$TMP_DIR/marketplace-fixture.json"
 FIXTURE_LOG="$TMP_DIR/marketplace-fixture.log"
 FIXTURE_PID=""
+export HOME="$TMP_DIR/home"
+export XDG_CONFIG_HOME="$TMP_DIR/xdg-config"
+export XDG_DATA_HOME="$TMP_DIR/xdg-data"
+export XDG_STATE_HOME="$TMP_DIR/xdg-state"
+mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME"
 
 resolve_python_bin() {
   if [[ -n "${PYTHON_BIN:-}" ]]; then

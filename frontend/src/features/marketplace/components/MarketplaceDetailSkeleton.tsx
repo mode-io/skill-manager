@@ -13,13 +13,12 @@ export function MarketplaceDetailSkeleton({ onClose }: MarketplaceDetailSkeleton
           title={<span className="detail-skeleton detail-skeleton--title" aria-hidden="true" />}
           meta={<span className="detail-skeleton detail-skeleton--subtitle" aria-hidden="true" />}
           utility={<DetailLoadingChip label="Loading Preview" withSpinner />}
-          eyebrow="Marketplace skill"
           closeLabel="Close marketplace preview"
           onClose={onClose}
         />
       </div>
 
-      <div className="skill-detail__body marketplace-detail__body marketplace-detail__body--loading" aria-hidden="true">
+      <div className="skill-detail__body detail-sheet__body detail-sheet__body--loading" aria-hidden="true">
         <section className="skill-detail__intro skill-detail__intro--skeleton">
           <div className="detail-skeleton-paragraph">
             <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
@@ -47,7 +46,6 @@ export function MarketplaceDetailPendingDocument() {
     >
       <div className="skill-detail-disclosure__trigger">
         <span className="skill-detail-disclosure__heading">
-          <span className="skill-detail-disclosure__eyebrow">Remote document</span>
           <span className="skill-detail-disclosure__title">SKILL.md</span>
         </span>
       </div>

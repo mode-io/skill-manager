@@ -1,9 +1,11 @@
+@layer components {
+
 .dialog-overlay {
   position: fixed;
   inset: 0;
   z-index: 70;
-  background: rgba(5, 7, 10, 0.78);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
 }
 
 .dialog-content {
@@ -13,12 +15,9 @@
   z-index: 80;
   width: min(480px, calc(100vw - 32px));
   padding: 20px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(22, 27, 36, 0.98), rgba(14, 18, 24, 0.98)),
-    var(--color-panel);
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.42);
+  border-radius: 14px;
+  background: var(--color-surface-raised);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.48);
   transform: translate(-50%, -50%);
 }
 
@@ -26,33 +25,9 @@
   outline: none;
 }
 
-.dialog-content--danger {
-  border-color: rgba(240, 141, 121, 0.24);
-}
-
-.dialog-content--neutral {
-  border-color: rgba(240, 163, 107, 0.2);
-}
-
 .dialog-header {
   display: grid;
   gap: 8px;
-}
-
-.dialog-eyebrow {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.dialog-eyebrow--danger {
-  color: var(--color-danger);
-}
-
-.dialog-eyebrow--neutral {
-  color: var(--color-accent);
 }
 
 .dialog-title {
@@ -62,25 +37,17 @@
 }
 
 .dialog-description,
-.dialog-note {
+.dialog-meta {
   margin: 14px 0 0;
   color: var(--color-text-muted);
   line-height: 1.6;
 }
 
-.dialog-note {
-  padding: 10px 12px;
-  border-radius: 12px;
-}
-
-.dialog-note--danger {
-  border: 1px solid rgba(240, 141, 121, 0.16);
-  background: rgba(240, 141, 121, 0.06);
-}
-
-.dialog-note--neutral {
-  border: 1px solid rgba(240, 163, 107, 0.14);
-  background: rgba(240, 163, 107, 0.06);
+.dialog-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .dialog-actions {
@@ -90,7 +57,98 @@
   margin-top: 20px;
 }
 
-@media (max-width: 640px) {
+.confirm-dialog {
+  width: min(500px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--color-border-strong) 72%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-surface) 96%, black);
+  box-shadow: var(--shadow-lift);
+}
+
+.confirm-dialog__header {
+  gap: 0;
+}
+
+.confirm-dialog__title {
+  font-size: 1.28rem;
+  letter-spacing: -0.025em;
+}
+
+.confirm-dialog__description {
+  margin-top: 12px;
+  font-size: var(--font-size-md);
+  line-height: 1.55;
+}
+
+.confirm-dialog__note {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+
+.confirm-dialog__note > * {
+  margin: 0;
+}
+
+.confirm-dialog__actions {
+  margin-top: 24px;
+}
+
+.confirm-dialog__button {
+  min-width: 110px;
+  height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
+.confirm-dialog__button--cancel {
+  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-raised) 82%, transparent);
+  color: var(--color-text-muted);
+}
+
+.confirm-dialog__button--cancel:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.confirm-dialog__button--primary {
+  border-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.confirm-dialog__button--primary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  color: var(--color-accent-strong);
+}
+
+.confirm-dialog__button--danger {
+  border-color: color-mix(in srgb, var(--color-danger) 34%, transparent);
+  background: color-mix(in srgb, var(--color-danger-soft) 78%, transparent);
+  color: var(--color-danger);
+}
+
+.confirm-dialog__button--danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-danger) 58%, transparent);
+  background: color-mix(in srgb, var(--color-danger-soft) 96%, transparent);
+  color: var(--color-danger);
+}
+
+.text-input[aria-invalid="true"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-danger) 58%, transparent);
+}
+
+@media (max-width: 680px) {
   .dialog-content {
     width: min(100vw - 20px, 480px);
     padding: 18px;
@@ -103,4 +161,123 @@
   .dialog-actions .btn {
     width: 100%;
   }
+
+  .confirm-dialog__button {
+    width: 100%;
+  }
+}
+
+/* Shared MCP dialog scaffolding (edit, etc.) ------------------------------ */
+
+.mcp-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 90;
+  display: grid;
+  gap: var(--space-4);
+  width: min(480px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lift);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+}
+
+.mcp-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mcp-dialog__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.mcp-dialog__subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.mcp-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.mcp-dialog__close:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.mcp-dialog__form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mcp-dialog__field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.mcp-dialog__field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.mcp-dialog__field-label code {
+  font-size: var(--font-size-sm);
+}
+
+.mcp-dialog__field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.mcp-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.mcp-dialog__submit {
+  min-width: 96px;
+  justify-content: center;
+}
+
+.mcp-dialog__spinner {
+  animation: mcp-dialog-spinner 0.8s linear infinite;
+}
+
+@keyframes mcp-dialog-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcp-dialog__spinner {
+    animation: none;
+  }
+}
+
 }

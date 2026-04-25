@@ -1,64 +1,47 @@
 import { ExternalLink, FolderGit2 } from "lucide-react";
 
+export type DetailSourceLinkKind = "repo" | "folder" | "marketplace" | "external" | "website";
+
+export interface DetailSourceLink {
+  href: string;
+  label: string;
+  kind?: DetailSourceLinkKind;
+}
+
 interface DetailSourceLinksProps {
-  sourceLinks: {
-    repoLabel: string;
-    repoUrl: string;
-    folderUrl: string | null;
-  } | null;
-  externalUrl?: string | null;
-  externalLabel?: string;
+  links: DetailSourceLink[];
+  ariaLabel: string;
   label?: string;
 }
 
 export function DetailSourceLinks({
-  sourceLinks,
-  externalUrl = null,
-  externalLabel = "Open external detail",
+  links,
+  ariaLabel,
   label = "Source",
 }: DetailSourceLinksProps) {
-  if (!sourceLinks) {
+  if (links.length === 0) {
     return null;
   }
 
   return (
-    <div className="skill-detail__source-row" aria-label={`Source links for ${sourceLinks.repoLabel}`}>
-      <div className="skill-detail__source-label">
+    <div className="detail-source-row" aria-label={ariaLabel}>
+      <div className="detail-source-label">
         <FolderGit2 size={14} aria-hidden="true" />
         <span>{label}</span>
       </div>
-      <div className="skill-detail__source-links">
-        <a
-          href={sourceLinks.repoUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="skill-detail__source-link skill-detail__source-link--repo"
-        >
-          {sourceLinks.repoLabel}
-          <ExternalLink size={12} aria-hidden="true" />
-        </a>
-        {sourceLinks.folderUrl ? (
+      <div className="detail-source-links">
+        {links.map((link) => (
           <a
-            href={sourceLinks.folderUrl}
+            key={`${link.kind ?? "external"}:${link.href}`}
+            href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="skill-detail__source-link skill-detail__source-link--folder"
+            className={`detail-source-link detail-source-link--${link.kind ?? "external"}`}
           >
-            Open Skill Folder
+            {link.label}
             <ExternalLink size={12} aria-hidden="true" />
           </a>
-        ) : null}
-        {externalUrl ? (
-          <a
-            href={externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="skill-detail__source-link skill-detail__source-link--external"
-          >
-            {externalLabel}
-            <ExternalLink size={12} aria-hidden="true" />
-          </a>
-        ) : null}
+        ))}
       </div>
     </div>
   );

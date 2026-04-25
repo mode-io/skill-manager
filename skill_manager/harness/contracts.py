@@ -1,33 +1,113 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Literal, Mapping, TypeAlias
 
-from skill_manager.domain import HarnessScan
+from .resolution import ResolutionContext
 
 
-class HarnessDefinitionLike:
-    harness: str
-    label: str
-    logo_key: str | None
+FamilyKey = Literal["skills", "mcp"]
+PathResolver = Callable[[ResolutionContext], Path]
+SubtreePath: TypeAlias = tuple[str, ...]
+SubtreePathResolver = Callable[[ResolutionContext], SubtreePath]
 
 
 @dataclass(frozen=True)
-class HarnessDiscoveryRoot:
+class FileTreeDiscoveryRoot:
     kind: str
     scope: str
     label: str
-    path: Path
-    writable: bool = False
+    path_resolver: PathResolver
 
 
 @dataclass(frozen=True)
-class HarnessLocation:
-    kind: str
+class FileTreeBindingProfile:
+    shape: Literal["file-tree"] = "file-tree"
+    managed_env: str | None = None
+    managed_default: PathResolver | None = None
+    discovery_roots: tuple[FileTreeDiscoveryRoot, ...] = ()
+
+    def resolve_managed_root(self, context: ResolutionContext) -> Path:
+        if self.managed_default is None:
+            raise ValueError("file-tree binding profile is missing a managed_default resolver")
+        if self.managed_env:
+            override = context.env.get(self.managed_env)
+            if override:
+                return Path(override)
+        return self.managed_default(context)
+
+
+@dataclass(frozen=True)
+class ConfigSubtreeBindingProfile:
+    shape: Literal["config-subtree"] = "config-subtree"
+    config_path_resolver: PathResolver | None = None
+    discovery_config_path_resolvers: tuple[PathResolver, ...] = ()
+    source_install_config_path_resolvers: tuple[PathResolver, ...] = ()
+    file_format: Literal["json", "jsonc", "toml"] = "json"
+    subtree_path: SubtreePath = ()
+    discovery_subtree_path_resolvers: tuple[SubtreePathResolver, ...] = ()
+    codec: str = "default"
+    capability_probe: str | None = None
+    capability_unavailable_reason: str | None = None
+
+    def resolve_config_path(self, context: ResolutionContext) -> Path:
+        if self.config_path_resolver is None:
+            raise ValueError("config-subtree binding profile is missing a config_path_resolver")
+        return self.config_path_resolver(context)
+
+    def resolve_discovery_config_paths(self, context: ResolutionContext) -> tuple[Path, ...]:
+        if self.config_path_resolver is None:
+            raise ValueError("config-subtree binding profile is missing a config_path_resolver")
+        paths = [self.config_path_resolver(context)]
+        paths.extend(resolver(context) for resolver in self.discovery_config_path_resolvers)
+        paths.extend(resolver(context) for resolver in self.source_install_config_path_resolvers)
+        return tuple(_dedupe_paths(paths))
+
+    def resolve_discovery_subtree_paths(self, context: ResolutionContext) -> tuple[SubtreePath, ...]:
+        paths = [self.subtree_path]
+        paths.extend(resolver(context) for resolver in self.discovery_subtree_path_resolvers)
+        return tuple(_dedupe_subtree_paths(paths))
+
+
+def _dedupe_subtree_paths(paths: list[SubtreePath]) -> list[SubtreePath]:
+    seen: set[SubtreePath] = set()
+    result: list[SubtreePath] = []
+    for path in paths:
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        result.append(path)
+    return result
+
+
+def _dedupe_paths(paths: list[Path]) -> list[Path]:
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        result.append(path)
+    return result
+
+
+BindingProfile: TypeAlias = FileTreeBindingProfile | ConfigSubtreeBindingProfile
+
+
+@dataclass(frozen=True)
+class HarnessDefinition:
+    harness: str
     label: str
-    path: Path
-    present: bool
+    logo_key: str | None
+    install_probe: str
+    bindings: Mapping[FamilyKey, BindingProfile] = field(default_factory=dict)
+
+    def supports_family(self, family: FamilyKey) -> bool:
+        return family in self.bindings
+
+    def binding_for(self, family: FamilyKey) -> BindingProfile | None:
+        return self.bindings.get(family)
 
 
 @dataclass(frozen=True)
@@ -36,50 +116,18 @@ class HarnessStatus:
     label: str
     logo_key: str | None
     installed: bool
-    locations: tuple[HarnessLocation, ...] = ()
+    managed_location: Path | None = None
 
 
-class HarnessManager(Protocol):
-    managed_root: Path
-
-    def enable_shared_package(self, package_path: Path) -> None:
-        ...
-
-    def disable_shared_package(self, package_dir: str) -> None:
-        ...
-
-    def adopt_local_copy(self, existing_dir: Path, package_path: Path) -> None:
-        ...
-
-    def has_binding(self, package_dir: str) -> bool:
-        ...
-
-    def prepare_materialize(self, package_dir: str, expected_target: Path) -> None:
-        ...
-
-    def materialize_binding(self, package_dir: str, source_path: Path) -> None:
-        ...
-
-    def prepare_remove(self, package_dir: str) -> None:
-        ...
-
-    def remove_binding(self, package_dir: str) -> None:
-        ...
-
-
-class HarnessDriver(Protocol):
-    harness: str
-    label: str
-    logo_key: str | None
-
-    def manager(self) -> HarnessManager | None:
-        ...
-
-    def status(self) -> HarnessStatus:
-        ...
-
-    def scan(self) -> HarnessScan:
-        ...
-
-    def invalidate(self) -> None:
-        ...
+__all__ = [
+    "BindingProfile",
+    "ConfigSubtreeBindingProfile",
+    "FamilyKey",
+    "FileTreeBindingProfile",
+    "FileTreeDiscoveryRoot",
+    "HarnessDefinition",
+    "HarnessStatus",
+    "PathResolver",
+    "SubtreePath",
+    "SubtreePathResolver",
+]

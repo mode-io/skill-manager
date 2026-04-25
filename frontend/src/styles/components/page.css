@@ -1,0 +1,119 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* App shell — sidebar + main pane                                              */
+/* -------------------------------------------------------------------------- */
+
+.app-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.app-main {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-8) var(--space-10);
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+  .app-main {
+    padding: var(--space-6) var(--space-6);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page header                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.page-shell {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.page-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.page-header__breadcrumb span[data-current="true"] {
+  color: var(--color-text);
+}
+
+.page-header__breadcrumb span[aria-hidden="true"] {
+  opacity: 0.55;
+}
+
+.page-header__title {
+  margin: var(--space-3) 0 0;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.page-header__subtitle {
+  margin: var(--space-3) 0 0;
+  max-width: 56ch;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page chrome (sticky header + filter bar with fade-out below)               */
+/* -------------------------------------------------------------------------- */
+
+.page-chrome {
+  position: sticky;
+  top: calc(-1 * var(--space-8));
+  z-index: 20;
+  display: grid;
+  gap: var(--space-7);
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-7);
+  margin-top: calc(-1 * var(--space-8));
+  background: var(--color-bg);
+}
+
+.page-chrome::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 16px;
+  background: linear-gradient(to bottom, var(--color-bg), rgba(11, 12, 15, 0));
+  pointer-events: none;
+}
+
+}

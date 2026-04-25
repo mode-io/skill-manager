@@ -6,8 +6,8 @@ from tempfile import TemporaryDirectory
 import time
 import unittest
 
-from skill_manager.application.marketplace.cache import MarketplaceCache
-from skill_manager.application.marketplace.repo_snapshots import GitHubRepoSnapshotService
+from skill_manager.application.marketplace_cache import MarketplaceCache
+from skill_manager.application.skills.marketplace.repo_snapshots import GitHubRepoSnapshotService
 from skill_manager.sources import (
     GitHubRepoMetadata,
     GitHubRepoMetadataClient,

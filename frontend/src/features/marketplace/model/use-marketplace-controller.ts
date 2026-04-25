@@ -34,11 +34,20 @@ export interface MarketplaceController {
   dismissError: () => void;
 }
 
-export function useMarketplaceController(): MarketplaceController {
+export interface MarketplaceControllerOptions {
+  query?: string;
+  onQueryChange?: (value: string) => void;
+}
+
+export function useMarketplaceController(
+  options: MarketplaceControllerOptions = {},
+): MarketplaceController {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
-  const [query, setQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
+  const query = options.query !== undefined ? options.query : internalQuery;
+  const setQuery = options.onQueryChange ?? setInternalQuery;
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [pendingSearchActionKey, setPendingSearchActionKey] = useState<string | null>(null);
   const pendingRegistry = usePendingRegistry<string>();
@@ -71,6 +80,26 @@ export function useMarketplaceController(): MarketplaceController {
       setPendingSearchActionKey(null);
     }
   }, [activeSearchActionKey, feedQuery.fetchStatus, pendingRegistry, pendingSearchActionKey]);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed === submittedQuery) {
+      return;
+    }
+    if (!trimmed) {
+      setSubmittedQuery("");
+      setErrorMessage("");
+      return;
+    }
+    if (trimmed.length < 2) {
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      setSubmittedQuery(trimmed);
+      setErrorMessage("");
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [query, submittedQuery]);
 
   function updateSelectedItem(itemId: string | null, replace = false): void {
     const nextParams = new URLSearchParams(searchParams);
@@ -125,7 +154,7 @@ export function useMarketplaceController(): MarketplaceController {
   }
 
   function openInstalledSkill(skillRef: string): void {
-    navigate(`/skills/managed?skill=${encodeURIComponent(skillRef)}`);
+    navigate(`/skills/use?skill=${encodeURIComponent(skillRef)}`);
   }
 
   return {

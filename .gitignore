@@ -6,10 +6,9 @@ node_modules/
 frontend/dist/
 build/
 dist/
+*.egg-info/
 packaging/npm/vendor/
 .artifacts/runtime/
-playwright-report/
-test-results/
 .artifacts/
 task_plan.md
 findings.md

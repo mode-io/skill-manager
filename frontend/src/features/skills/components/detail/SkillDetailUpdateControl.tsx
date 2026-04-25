@@ -8,7 +8,7 @@ interface SkillDetailUpdateControlProps {
   onUpdate: () => void;
 }
 
-const UPDATE_STATUS_LABELS: Record<Exclude<SkillUpdateStatus, "update_available">, string> = {
+const UPDATE_STATUS_LABELS: Record<Exclude<SkillUpdateStatus, "update_available" | "local_changes_detected">, string> = {
   no_update_available: "No Update Available",
   no_source_available: "No Source Available",
 };
@@ -23,7 +23,7 @@ export function SkillDetailUpdateControl({
     return (
       <button
         type="button"
-        className="btn btn-secondary skill-detail__update-control"
+        className="action-pill action-pill--md skill-detail__update-control"
         disabled={disabled}
         onClick={onUpdate}
       >
@@ -33,8 +33,12 @@ export function SkillDetailUpdateControl({
     );
   }
 
+  if (updateStatus === "local_changes_detected") {
+    return null;
+  }
+
   return (
-    <span className="btn btn-secondary btn-static skill-detail__update-control">
+    <span className="card-status-pill card-status-pill--md skill-detail__update-control">
       {UPDATE_STATUS_LABELS[updateStatus]}
     </span>
   );

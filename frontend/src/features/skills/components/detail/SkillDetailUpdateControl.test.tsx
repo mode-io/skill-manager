@@ -16,7 +16,10 @@ describe("SkillDetailUpdateControl", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Update From Source" }));
+    const button = screen.getByRole("button", { name: "Update From Source" });
+    expect(button).toHaveClass("action-pill--md");
+
+    fireEvent.click(button);
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 
@@ -30,7 +33,9 @@ describe("SkillDetailUpdateControl", () => {
       />,
     );
 
-    expect(screen.getByText("No Update Available")).toBeInTheDocument();
+    const noUpdate = screen.getByText("No Update Available");
+    expect(noUpdate).toBeInTheDocument();
+    expect(noUpdate).toHaveClass("card-status-pill--md");
     expect(screen.queryByRole("button", { name: "No Update Available" })).not.toBeInTheDocument();
 
     rerender(
@@ -42,7 +47,22 @@ describe("SkillDetailUpdateControl", () => {
       />,
     );
 
-    expect(screen.getByText("No Source Available")).toBeInTheDocument();
+    const noSource = screen.getByText("No Source Available");
+    expect(noSource).toBeInTheDocument();
+    expect(noSource).toHaveClass("card-status-pill--md");
     expect(screen.queryByRole("button", { name: "No Source Available" })).not.toBeInTheDocument();
+  });
+
+  it("renders nothing for local-changes-disabled state", () => {
+    const { container } = render(
+      <SkillDetailUpdateControl
+        updateStatus={"local_changes_detected" as never}
+        pending={false}
+        disabled={false}
+        onUpdate={() => undefined}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

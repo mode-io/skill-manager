@@ -8,7 +8,6 @@ interface DetailHeaderProps {
   titleAction?: ReactNode;
   meta?: ReactNode;
   utility?: ReactNode;
-  eyebrow?: string | null;
   closeLabel?: string;
 }
 
@@ -18,13 +17,11 @@ export function DetailHeader({
   titleAction,
   meta,
   utility,
-  eyebrow = "Details",
   closeLabel = "Close detail view",
 }: DetailHeaderProps) {
   return (
     <div className="skill-detail__header">
       <div className="skill-detail__header-top">
-        {eyebrow ? <p className="skill-detail__eyebrow">{eyebrow}</p> : null}
         <div className="skill-detail__utility-rail">
           {utility ? <div className="skill-detail__utility-content">{utility}</div> : null}
           <DetailCloseButton onClick={onClose} ariaLabel={closeLabel} />

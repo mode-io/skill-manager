@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 
+import { usePendingRegistry } from "../../../lib/async/pending-registry";
 import {
   cellActionKey,
   type BulkSkillsAction,
@@ -8,55 +8,59 @@ import {
   type StructuralSkillAction,
 } from "./pending";
 import type { HarnessCell, HarnessCellState, SkillListRow } from "./types";
-import type { SkillsWorkspaceContextValue } from "./workspace-context";
+import type {
+  MultiSelectAction,
+  SetAllHarnessesFailure,
+  SetAllHarnessesResult,
+  SetAllHarnessesTarget,
+  SkillsWorkspaceContextValue,
+} from "./workspace-context";
 import {
   useDeleteSkillMutation,
   useManageAllSkillsMutation,
   useManageSkillMutation,
+  useSetSkillHarnessesMutation,
   useSkillsListQuery,
   useToggleSkillMutation,
   useUnmanageSkillMutation,
   useUpdateSkillMutation,
 } from "../api/queries";
-import type { SkillsPaneDirection, SkillsPaneView } from "../components/pane/SkillsPaneTransition";
+import { useSkillWorkspaceSelection, type SkillsWorkspaceTab } from "./use-skill-workspace-selection";
 
 export interface SkillsWorkspaceController {
   context: SkillsWorkspaceContextValue;
-  activeTab: SkillsPaneView;
+  activeTab: SkillsWorkspaceTab;
   selectedSkillRef: string | null;
-  isMobileDetail: boolean;
   isDesktopDetailOpen: boolean;
-  shouldAnimatePaneTransition: boolean;
-  transitionDirection: SkillsPaneDirection;
   actionErrorMessage: string;
   queryErrorMessage: string;
   closeSelectedSkill: () => void;
   handleManageSkill: (skillRef: string) => Promise<void>;
   handleToggleSkill: (skillRef: string, harness: string, currentState: HarnessCellState) => Promise<void>;
   handleUpdateSkill: (skillRef: string) => Promise<void>;
-  handleUnmanageSkill: (skillRef: string) => Promise<void>;
+  handleRemoveSkill: (skillRef: string) => Promise<void>;
   handleDeleteSkill: (skillRef: string) => Promise<void>;
   dismissActionError: () => void;
 }
 
 export function useSkillsWorkspaceController(): SkillsWorkspaceController {
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const listQuery = useSkillsListQuery();
   const toggleMutation = useToggleSkillMutation();
+  const setHarnessesMutation = useSetSkillHarnessesMutation();
   const manageMutation = useManageSkillMutation();
   const manageAllMutation = useManageAllSkillsMutation();
   const updateMutation = useUpdateSkillMutation();
-  const unmanageMutation = useUnmanageSkillMutation();
+  const removeMutation = useUnmanageSkillMutation();
   const deleteMutation = useDeleteSkillMutation();
-  const isMobileDetail = useCompactDetailLayout();
 
   const [actionErrorMessage, setActionErrorMessage] = useState("");
-  const [pendingToggleKeys, setPendingToggleKeys] = useState<Set<CellActionKey>>(() => new Set());
+  const toggleRegistry = usePendingRegistry<CellActionKey>();
   const [pendingStructuralActions, setPendingStructuralActions] = useState<Map<string, StructuralSkillAction>>(
     () => new Map(),
   );
   const [pendingBulkAction, setPendingBulkAction] = useState<BulkSkillsAction | null>(null);
+  const [multiSelectedRefs, setMultiSelectedRefs] = useState<Set<string>>(() => new Set());
+  const [multiSelectPending, setMultiSelectPending] = useState<MultiSelectAction | null>(null);
 
   const data = listQuery.data ?? null;
   const hasData = data !== null;
@@ -69,57 +73,14 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
       : queryErrorMessage
         ? "error"
         : "loading";
-  const activeTab = location.pathname.endsWith("/unmanaged") ? "unmanaged" : "managed";
-  const selectedSkillRef = searchParams.get("skill");
-  const { direction: transitionDirection, shouldAnimate: shouldAnimatePaneTransition } = usePaneTransition(activeTab);
-
-  const updateSelectedSkillRef = useCallback((skillRef: string | null, replace = false) => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (skillRef) {
-      nextParams.set("skill", skillRef);
-    } else {
-      nextParams.delete("skill");
-    }
-    setSearchParams(nextParams, { replace });
-  }, [searchParams, setSearchParams]);
-
-  useEffect(() => {
-    if (!selectedSkillRef || !data) {
-      return;
-    }
-    const stillVisibleInTab = data.rows.some((row) =>
-      row.skillRef === selectedSkillRef && rowVisibleOnTab(row, activeTab),
-    );
-    if (!stillVisibleInTab) {
-      updateSelectedSkillRef(null, true);
-    }
-  }, [activeTab, data, selectedSkillRef, updateSelectedSkillRef]);
-
-  const handleOpenSkill = useCallback((skillRef: string) => {
-    updateSelectedSkillRef(selectedSkillRef === skillRef ? null : skillRef);
-  }, [selectedSkillRef, updateSelectedSkillRef]);
-
-  function addPendingToggle(key: CellActionKey): void {
-    setPendingToggleKeys((current) => {
-      if (current.has(key)) {
-        return current;
-      }
-      const next = new Set(current);
-      next.add(key);
-      return next;
-    });
-  }
-
-  function removePendingToggle(key: CellActionKey): void {
-    setPendingToggleKeys((current) => {
-      if (!current.has(key)) {
-        return current;
-      }
-      const next = new Set(current);
-      next.delete(key);
-      return next;
-    });
-  }
+  const {
+    activeTab,
+    selectedSkillRef,
+    isDesktopDetailOpen,
+    closeSelectedSkill,
+    handleOpenSkill,
+    updateSelectedSkillRef,
+  } = useSkillWorkspaceSelection(data);
 
   function setPendingStructuralAction(skillRef: string, action: StructuralSkillAction): void {
     setPendingStructuralActions((current) => {
@@ -151,19 +112,18 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
   ): Promise<void> {
     const nextState: HarnessCellState = currentState === "enabled" ? "disabled" : "enabled";
     const key = cellActionKey(skillRef, harness);
-    addPendingToggle(key);
     if (reportError) {
       setActionErrorMessage("");
     }
     try {
-      await toggleMutation.mutateAsync({ skillRef, harness, nextState });
+      await toggleRegistry.run(key, () =>
+        toggleMutation.mutateAsync({ skillRef, harness, nextState }),
+      );
     } catch (error) {
       if (reportError) {
         setActionErrorMessage(error instanceof Error ? error.message : "Unable to toggle the skill.");
       }
       throw error;
-    } finally {
-      removePendingToggle(key);
     }
   }
 
@@ -254,12 +214,32 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
     );
   }
 
-  async function handleUnmanageSkill(skillRef: string): Promise<void> {
+  async function handleDeleteSkillFromList(skillRef: string): Promise<void> {
+    await runStructuralAction(
+      skillRef,
+      "delete",
+      () => deleteMutation.mutateAsync({ skillRef }),
+      true,
+      () => updateSelectedSkillRef(null, true),
+    );
+  }
+
+  async function handleRemoveSkill(skillRef: string): Promise<void> {
     await runStructuralAction(
       skillRef,
       "unmanage",
-      () => unmanageMutation.mutateAsync({ skillRef }),
+      () => removeMutation.mutateAsync({ skillRef }),
       false,
+      () => updateSelectedSkillRef(null, true),
+    );
+  }
+
+  async function handleRemoveSkillFromList(skillRef: string): Promise<void> {
+    await runStructuralAction(
+      skillRef,
+      "unmanage",
+      () => removeMutation.mutateAsync({ skillRef }),
+      true,
       () => updateSelectedSkillRef(null, true),
     );
   }
@@ -268,115 +248,239 @@ export function useSkillsWorkspaceController(): SkillsWorkspaceController {
     void handleToggleSkillFromList(row.skillRef, cell.harness, cell.state);
   }
 
+  const toggleMultiSelect = useCallback((skillRef: string) => {
+    setMultiSelectedRefs((current) => {
+      const next = new Set(current);
+      if (next.has(skillRef)) {
+        next.delete(skillRef);
+      } else {
+        next.add(skillRef);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearMultiSelect = useCallback(() => {
+    setMultiSelectedRefs((current) => (current.size === 0 ? current : new Set()));
+  }, []);
+
+  // Drop selection when a previously selected row leaves the dataset.
+  useEffect(() => {
+    if (!data || multiSelectedRefs.size === 0) {
+      return;
+    }
+    const available = new Set(data.rows.map((row) => row.skillRef));
+    let changed = false;
+    const next = new Set<string>();
+    for (const ref of multiSelectedRefs) {
+      if (available.has(ref)) {
+        next.add(ref);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) {
+      setMultiSelectedRefs(next);
+    }
+  }, [data, multiSelectedRefs]);
+
+  async function runMultiSelect(
+    action: MultiSelectAction,
+    task: (rows: SkillListRow[]) => Promise<unknown>,
+  ): Promise<void> {
+    if (multiSelectedRefs.size === 0 || !data) {
+      return;
+    }
+    const rows = data.rows.filter((row) => multiSelectedRefs.has(row.skillRef));
+    if (rows.length === 0) {
+      return;
+    }
+    setMultiSelectPending(action);
+    setActionErrorMessage("");
+    try {
+      await task(rows);
+      setMultiSelectedRefs(new Set());
+    } catch (error) {
+      setActionErrorMessage(error instanceof Error ? error.message : "Unable to complete the bulk action.");
+      throw error;
+    } finally {
+      setMultiSelectPending(null);
+    }
+  }
+
+  async function handleMultiSelectEnableAll(): Promise<void> {
+    await runMultiSelect("enable-all", async (rows) => {
+      const tasks: Promise<unknown>[] = [];
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          if (cell.state === "disabled") {
+            tasks.push(toggleMutation.mutateAsync({ skillRef: row.skillRef, harness: cell.harness, nextState: "enabled" }));
+          }
+        }
+      }
+      await Promise.all(tasks);
+    });
+  }
+
+  async function handleMultiSelectDisableAll(): Promise<void> {
+    await runMultiSelect("disable-all", async (rows) => {
+      const tasks: Promise<unknown>[] = [];
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          if (cell.state === "enabled") {
+            tasks.push(toggleMutation.mutateAsync({ skillRef: row.skillRef, harness: cell.harness, nextState: "disabled" }));
+          }
+        }
+      }
+      await Promise.all(tasks);
+    });
+  }
+
+  async function handleMultiSelectDelete(): Promise<void> {
+    await runMultiSelect("delete", async (rows) => {
+      await Promise.all(rows.map((row) => deleteMutation.mutateAsync({ skillRef: row.skillRef })));
+    });
+  }
+
+  async function setSkillAllHarnesses(
+    row: SkillListRow,
+    target: SetAllHarnessesTarget,
+  ): Promise<SetAllHarnessesResult> {
+    const targets = row.cells.filter((cell) => cell.interactive && cell.state !== target);
+    if (targets.length === 0) {
+      return { succeeded: [], failed: [] };
+    }
+    // Mark every cell this drop would flip as pending so per-cell affordances
+    // (dim overlays on the matrix + board) match reality while the single bulk
+    // request is in flight.
+    const pendingKeys = targets.map((cell) => cellActionKey(row.skillRef, cell.harness));
+    pendingKeys.forEach((key) => toggleRegistry.begin(key));
+    try {
+      const outcome = await setHarnessesMutation.mutateAsync({ skillRef: row.skillRef, target });
+      const failed: SetAllHarnessesFailure[] = outcome.failed.map((failure) => ({
+        harness: failure.harness,
+        error: new Error(failure.error),
+      }));
+      return { succeeded: outcome.succeeded, failed };
+    } catch (error) {
+      const reason = error instanceof Error ? error : new Error(String(error ?? "Unknown error"));
+      return {
+        succeeded: [],
+        failed: targets.map((cell) => ({ harness: cell.harness, error: reason })),
+      };
+    } finally {
+      pendingKeys.forEach((key) => toggleRegistry.finish(key));
+    }
+  }
+
+  async function handleSetSkillAllHarnesses(
+    skillRef: string,
+    target: SetAllHarnessesTarget,
+  ): Promise<SetAllHarnessesResult> {
+    setActionErrorMessage("");
+    const row = data?.rows.find((candidate) => candidate.skillRef === skillRef);
+    if (!row) {
+      return { succeeded: [], failed: [] };
+    }
+    const result = await setSkillAllHarnesses(row, target);
+    if (result.failed.length > 0) {
+      setActionErrorMessage(formatSingleSkillFailureMessage(row.name, target, result.failed));
+    }
+    return result;
+  }
+
+  async function handleSetManySkillsAllHarnesses(
+    skillRefs: string[],
+    target: SetAllHarnessesTarget,
+  ): Promise<Map<string, SetAllHarnessesResult>> {
+    setActionErrorMessage("");
+    const refSet = new Set(skillRefs);
+    const rows = data?.rows.filter((row) => refSet.has(row.skillRef)) ?? [];
+    if (rows.length === 0) {
+      return new Map();
+    }
+    const entries = await Promise.all(
+      rows.map(async (row): Promise<[string, SetAllHarnessesResult]> => {
+        const result = await setSkillAllHarnesses(row, target);
+        return [row.skillRef, result];
+      }),
+    );
+    const byRef = new Map(entries);
+    const failingRows = rows
+      .map((row) => ({ row, result: byRef.get(row.skillRef) }))
+      .filter((entry): entry is { row: SkillListRow; result: SetAllHarnessesResult } =>
+        Boolean(entry.result && entry.result.failed.length > 0),
+      );
+    if (failingRows.length > 0) {
+      setActionErrorMessage(formatMultiSkillFailureMessage(failingRows, target));
+    }
+    return byRef;
+  }
+
   const context: SkillsWorkspaceContextValue = {
     data,
     hasData,
     isInitialLoading,
     status,
     errorMessage: actionErrorMessage || (hasData ? queryErrorMessage : ""),
-    pendingToggleKeys,
+    pendingToggleKeys: toggleRegistry.pendingKeys,
     pendingStructuralActions,
     pendingBulkAction,
     selectedSkillRef,
+    multiSelectedRefs,
+    multiSelectPending,
     onManageAll: () => void handleManageAll(),
     onManageSkill: handleManageSkillFromList,
     onOpenSkill: handleOpenSkill,
     onToggleCell: handleToggleCell,
+    onToggleMultiSelect: toggleMultiSelect,
+    onClearMultiSelect: clearMultiSelect,
+    onMultiSelectEnableAll: handleMultiSelectEnableAll,
+    onMultiSelectDisableAll: handleMultiSelectDisableAll,
+    onMultiSelectDelete: handleMultiSelectDelete,
+    onSetSkillAllHarnesses: handleSetSkillAllHarnesses,
+    onSetManySkillsAllHarnesses: handleSetManySkillsAllHarnesses,
+    onUpdateSkill: handleUpdateSkill,
+    onRemoveSkill: handleRemoveSkillFromList,
+    onDeleteSkill: handleDeleteSkillFromList,
   };
 
   return {
     context,
     activeTab,
     selectedSkillRef,
-    isMobileDetail,
-    isDesktopDetailOpen: Boolean(selectedSkillRef) && !isMobileDetail,
-    shouldAnimatePaneTransition,
-    transitionDirection,
+    isDesktopDetailOpen,
     actionErrorMessage,
     queryErrorMessage,
-    closeSelectedSkill: () => updateSelectedSkillRef(null),
+    closeSelectedSkill,
     handleManageSkill,
     handleToggleSkill,
     handleUpdateSkill,
-    handleUnmanageSkill,
+    handleRemoveSkill,
     handleDeleteSkill,
     dismissActionError: () => setActionErrorMessage(""),
   };
 }
 
-type SkillsWorkspaceTab = SkillsPaneView;
+function formatSingleSkillFailureMessage(
+  name: string,
+  target: SetAllHarnessesTarget,
+  failures: SetAllHarnessesFailure[],
+): string {
+  const verb = target === "enabled" ? "enable" : "disable";
+  const harnesses = failures.map((failure) => failure.harness).join(", ");
+  return `Unable to ${verb} ${name} on ${harnesses}.`;
+}
 
-function rowVisibleOnTab(row: SkillListRow, tab: SkillsWorkspaceTab): boolean {
-  if (tab === "unmanaged") {
-    return row.displayStatus === "Unmanaged";
+function formatMultiSkillFailureMessage(
+  failingRows: Array<{ row: SkillListRow; result: SetAllHarnessesResult }>,
+  target: SetAllHarnessesTarget,
+): string {
+  const verb = target === "enabled" ? "enable" : "disable";
+  if (failingRows.length === 1) {
+    const { row, result } = failingRows[0];
+    return formatSingleSkillFailureMessage(row.name, target, result.failed);
   }
-  return row.displayStatus === "Managed" || row.displayStatus === "Custom" || row.displayStatus === "Built-in";
-}
-
-function usePaneTransition(activeTab: SkillsPaneView): { direction: SkillsPaneDirection; shouldAnimate: boolean } {
-  const previousTabRef = useRef<SkillsPaneView | null>(null);
-  const [transitionState, setTransitionState] = useState<{
-    direction: SkillsPaneDirection;
-    shouldAnimate: boolean;
-  }>({
-    direction: "forward",
-    shouldAnimate: false,
-  });
-
-  useEffect(() => {
-    const previousTab = previousTabRef.current;
-    if (previousTab === null) {
-      previousTabRef.current = activeTab;
-      return;
-    }
-
-    if (previousTab !== activeTab) {
-      setTransitionState({
-        direction: getPaneDirection(previousTab, activeTab),
-        shouldAnimate: true,
-      });
-      previousTabRef.current = activeTab;
-    }
-  }, [activeTab]);
-
-  return transitionState;
-}
-
-function getPaneDirection(previousTab: SkillsPaneView, activeTab: SkillsPaneView): SkillsPaneDirection {
-  return previousTab === "managed" && activeTab === "unmanaged" ? "forward" : "backward";
-}
-
-function useCompactDetailLayout(breakpointPx = 1180): boolean {
-  const [matches, setMatches] = useState(() => getCompactDetailLayoutMatch(breakpointPx));
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      setMatches(getCompactDetailLayoutMatch(breakpointPx));
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia(`(max-width: ${breakpointPx}px)`);
-    const update = () => setMatches(mediaQuery.matches);
-    update();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", update);
-      return () => mediaQuery.removeEventListener("change", update);
-    }
-
-    mediaQuery.addListener(update);
-    return () => mediaQuery.removeListener(update);
-  }, [breakpointPx]);
-
-  return matches;
-}
-
-function getCompactDetailLayoutMatch(breakpointPx: number): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  if (typeof window.matchMedia === "function") {
-    return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
-  }
-  return window.innerWidth <= breakpointPx;
+  const names = failingRows.map((entry) => entry.row.name).join(", ");
+  return `Unable to ${verb} every harness for ${failingRows.length} skills: ${names}.`;
 }

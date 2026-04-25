@@ -1,3 +1,5 @@
+@layer components {
+
 @keyframes detail-skeleton-shimmer {
   100% {
     transform: translateX(100%);
@@ -21,6 +23,61 @@
 
 .detail-loading-chip .spinner {
   flex-shrink: 0;
+}
+
+.detail-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  min-width: 0;
+}
+
+.detail-source-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.detail-source-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detail-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(18, 22, 30, 0.62);
+  color: var(--color-text-muted);
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.detail-source-link:hover {
+  border-color: rgba(240, 163, 107, 0.28);
+  background: rgba(240, 163, 107, 0.09);
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.detail-source-link--repo {
+  color: var(--color-accent);
+}
+
+.detail-source-link--repo:hover {
+  color: var(--color-accent);
 }
 
 .detail-skeleton-paragraph {
@@ -97,7 +154,7 @@
 .detail-skeleton--button {
   width: 220px;
   height: 42px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
 }
 
 .detail-skeleton--button-secondary {
@@ -108,4 +165,6 @@
   .detail-skeleton::after {
     animation: none;
   }
+}
+
 }
