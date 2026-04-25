@@ -1,5 +1,6 @@
 from __future__ import annotations
-from skill_manager.harness import HarnessLocation, HarnessStatus
+
+from skill_manager.harness import HarnessStatus
 
 
 def settings_payload(
@@ -28,10 +29,5 @@ def harness_payload(
         "logoKey": status.logo_key,
         "supportEnabled": support_enabled,
         "installed": status.installed,
-        "managedLocation": managed_location_payload(status.locations),
+        "managedLocation": str(status.managed_location) if status.managed_location is not None else None,
     }
-
-
-def managed_location_payload(locations: tuple[HarnessLocation, ...]) -> str | None:
-    store = next((location for location in locations if location.kind == "managed-root"), None)
-    return str(store.path) if store is not None else None

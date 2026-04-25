@@ -5,7 +5,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 
-from skill_manager.application.marketplace.skillssh import (
+from skill_manager.application.skills.marketplace.skillssh import (
     extract_detail_description,
     normalize_skill,
     parse_homepage_leaderboard,

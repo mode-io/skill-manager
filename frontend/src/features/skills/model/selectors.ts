@@ -1,10 +1,11 @@
-import type { HarnessColumn, SkillListRow, SkillsWorkspaceData } from "./types";
+import { skillStatusConcept } from "../../../lib/product-language";
+import type { HarnessCellState, HarnessColumn, SkillListRow, SkillsWorkspaceData } from "./types";
 
-export interface ManagedSkillsFilterState {
+export interface SkillsInUseFilterState {
   search: string;
 }
 
-export interface UnmanagedSkillsFilterState {
+export interface SkillsNeedsReviewFilterState {
   search: string;
 }
 
@@ -13,44 +14,40 @@ export interface AlignedHarnessCell {
   cell: SkillListRow["cells"][number] | null;
 }
 
-export function hasActiveManagedSkillsFilters(filters: ManagedSkillsFilterState): boolean {
+export function hasActiveSkillsInUseFilters(filters: SkillsInUseFilterState): boolean {
   return filters.search.trim() !== "";
 }
 
-export function hasActiveUnmanagedFilters(filters: UnmanagedSkillsFilterState): boolean {
+export function hasActiveNeedsReviewFilters(filters: SkillsNeedsReviewFilterState): boolean {
   return filters.search.trim() !== "";
 }
 
-export function resetManagedSkillsFilters(): ManagedSkillsFilterState {
+export function resetSkillsInUseFilters(): SkillsInUseFilterState {
   return {
     search: "",
   };
 }
 
-export function resetUnmanagedSkillsFilters(): UnmanagedSkillsFilterState {
+export function resetSkillsNeedsReviewFilters(): SkillsNeedsReviewFilterState {
   return {
     search: "",
   };
 }
 
-export function filterManagedRows(data: SkillsWorkspaceData | null, filters: ManagedSkillsFilterState): SkillListRow[] {
-  return selectManagedRows(data).filter((row) => matchesSearch(row, filters.search, ["enabled", "disabled"]));
+export function filterSkillsInUseRows(data: SkillsWorkspaceData | null, filters: SkillsInUseFilterState): SkillListRow[] {
+  return selectSkillsInUseRows(data).filter((row) => matchesSearch(row, filters.search, ["enabled", "disabled"]));
 }
 
-export function filterBuiltInRows(data: SkillsWorkspaceData | null): SkillListRow[] {
-  return selectBuiltInRows(data);
+export function filterNeedsReviewRows(data: SkillsWorkspaceData | null, filters: SkillsNeedsReviewFilterState): SkillListRow[] {
+  return selectNeedsReviewRows(data).filter((row) => matchesSearch(row, filters.search, ["found"]));
 }
 
-export function filterUnmanagedRows(data: SkillsWorkspaceData | null, filters: UnmanagedSkillsFilterState): SkillListRow[] {
-  return selectUnmanagedRows(data).filter((row) => matchesSearch(row, filters.search, ["found"]));
+export function countNeedsReviewRows(data: SkillsWorkspaceData | null): number {
+  return selectNeedsReviewRows(data).length;
 }
 
-export function countUnmanagedRows(data: SkillsWorkspaceData | null): number {
-  return selectUnmanagedRows(data).length;
-}
-
-export function countManageableUnmanagedRows(data: SkillsWorkspaceData | null): number {
-  return selectUnmanagedRows(data).filter((row) => row.canManage).length;
+export function countAdoptableLocalSkillRows(data: SkillsWorkspaceData | null): number {
+  return selectNeedsReviewRows(data).filter((row) => row.actions.canManage).length;
 }
 
 export function alignHarnessCells(row: SkillListRow, columns: HarnessColumn[]): AlignedHarnessCell[] {
@@ -60,28 +57,25 @@ export function alignHarnessCells(row: SkillListRow, columns: HarnessColumn[]): 
   }));
 }
 
-function selectManagedRows(data: SkillsWorkspaceData | null): SkillListRow[] {
+function selectSkillsInUseRows(data: SkillsWorkspaceData | null): SkillListRow[] {
   if (!data) {
     return [];
   }
-  return data.rows.filter((row) => row.displayStatus === "Managed" || row.displayStatus === "Custom");
+  return data.rows.filter((row) => skillStatusConcept(row.displayStatus) === "inUse");
 }
 
-function selectBuiltInRows(data: SkillsWorkspaceData | null): SkillListRow[] {
+function selectNeedsReviewRows(data: SkillsWorkspaceData | null): SkillListRow[] {
   if (!data) {
     return [];
   }
-  return data.rows.filter((row) => row.displayStatus === "Built-in");
+  return data.rows.filter((row) => skillStatusConcept(row.displayStatus) === "needsReview");
 }
 
-function selectUnmanagedRows(data: SkillsWorkspaceData | null): SkillListRow[] {
-  if (!data) {
-    return [];
-  }
-  return data.rows.filter((row) => row.displayStatus === "Unmanaged");
-}
-
-function matchesSearch(row: SkillListRow, search: string, searchableCellStates: string[]): boolean {
+function matchesSearch(
+  row: SkillListRow,
+  search: string,
+  searchableCellStates: readonly HarnessCellState[],
+): boolean {
   const normalizedSearch = search.trim().toLowerCase();
   if (!normalizedSearch) {
     return true;
@@ -94,8 +88,6 @@ function matchesSearch(row: SkillListRow, search: string, searchableCellStates: 
   const searchHaystack = [
     row.name,
     row.description,
-    row.displayStatus,
-    row.attentionMessage ?? "",
     ...harnessLabels,
   ].join(" ").toLowerCase();
 

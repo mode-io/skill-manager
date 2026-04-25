@@ -1,7 +1,8 @@
 import { useRef } from "react";
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ScopedReconciliationTracker } from "../../../lib/async/scoped-reconciliation";
+import { queryPolicy } from "../../../lib/query";
 import {
   deleteSkill,
   disableSkill,
@@ -11,33 +12,32 @@ import {
   fetchSkillsPage,
   manageAllSkills,
   manageSkill,
+  setSkillHarnesses,
   unmanageSkill,
   updateSkill,
 } from "./client";
+import {
+  getDetailCellState,
+  getListCellState,
+  patchSkillDetailToggle,
+  patchSkillsListToggle,
+  removeSkillFromList,
+} from "./cache-patches";
+import { invalidateSkillsQueries } from "./invalidation";
+import { SKILLS_GC_TIME_MS, SKILLS_STALE_TIME_MS, skillsKeys } from "./keys";
 import { mapSkillDetail, mapSkillsPage } from "./mappers";
 import type { HarnessCellState } from "../model/types";
-import type { HarnessCell, SkillDetailDto, SkillsPageDto } from "./types";
+import type { SetSkillHarnessesResultDto, SkillDetailDto, SkillsPageDto } from "./types";
 
-const SKILLS_STALE_TIME_MS = 60_000;
-const SKILLS_GC_TIME_MS = 15 * 60_000;
-
-export const skillsKeys = {
-  all: ["skills"] as const,
-  list: () => ["skills", "list"] as const,
-  detailPrefix: () => ["skills", "detail"] as const,
-  detail: (skillRef: string) => ["skills", "detail", skillRef] as const,
-  sourceStatusPrefix: () => ["skills", "source-status"] as const,
-  sourceStatus: (skillRef: string) => ["skills", "source-status", skillRef] as const,
-};
+export { invalidateSkillsQueries } from "./invalidation";
+export { skillsKeys } from "./keys";
 
 export function useSkillsListQuery() {
   return useQuery({
     queryKey: skillsKeys.list(),
     queryFn: fetchSkillsPage,
     select: mapSkillsPage,
-    staleTime: SKILLS_STALE_TIME_MS,
-    gcTime: SKILLS_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(SKILLS_STALE_TIME_MS, SKILLS_GC_TIME_MS),
   });
 }
 
@@ -47,9 +47,7 @@ export function useSkillDetailQuery(skillRef: string | null) {
     queryFn: () => fetchSkillDetail(skillRef!),
     select: mapSkillDetail,
     enabled: Boolean(skillRef),
-    staleTime: SKILLS_STALE_TIME_MS,
-    gcTime: SKILLS_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(SKILLS_STALE_TIME_MS, SKILLS_GC_TIME_MS),
   });
 }
 
@@ -58,18 +56,8 @@ export function useSkillSourceStatusQuery(skillRef: string | null) {
     queryKey: skillsKeys.sourceStatus(skillRef ?? "__none__"),
     queryFn: () => fetchSkillSourceStatus(skillRef!),
     enabled: Boolean(skillRef),
-    staleTime: SKILLS_STALE_TIME_MS,
-    gcTime: SKILLS_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(SKILLS_STALE_TIME_MS, SKILLS_GC_TIME_MS),
   });
-}
-
-export async function invalidateSkillsQueries(queryClient: QueryClient): Promise<void> {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
-    queryClient.invalidateQueries({ queryKey: skillsKeys.detailPrefix() }),
-    queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatusPrefix() }),
-  ]);
 }
 
 export function useToggleSkillMutation() {
@@ -128,7 +116,7 @@ export function useToggleSkillMutation() {
         previousDetailCellState,
       };
     },
-    onError: (_error, variables, context) => {
+    onError: (_error, _variables, context) => {
       if (!context) {
         return;
       }
@@ -176,6 +164,72 @@ export function useToggleSkillMutation() {
       if (invalidations.length > 0) {
         await Promise.all(invalidations);
       }
+    },
+  });
+}
+
+export function useSetSkillHarnessesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      skillRef,
+      target,
+    }: {
+      skillRef: string;
+      target: "enabled" | "disabled";
+    }): Promise<SetSkillHarnessesResultDto> => {
+      return setSkillHarnesses(skillRef, target);
+    },
+    onMutate: async ({ skillRef, target }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: skillsKeys.list() }),
+        queryClient.cancelQueries({ queryKey: skillsKeys.detail(skillRef) }),
+      ]);
+
+      const previousList = queryClient.getQueryData<SkillsPageDto>(skillsKeys.list());
+      const previousDetail = queryClient.getQueryData<SkillDetailDto>(skillsKeys.detail(skillRef));
+
+      const row = previousList?.rows.find((candidate) => candidate.skillRef === skillRef);
+      const flippingHarnesses = row
+        ? row.cells
+            .filter((cell) => cell.interactive && cell.state !== target)
+            .map((cell) => cell.harness)
+        : [];
+
+      if (previousList && flippingHarnesses.length > 0) {
+        let patched = previousList;
+        for (const harness of flippingHarnesses) {
+          patched = patchSkillsListToggle(patched, skillRef, harness, target);
+        }
+        queryClient.setQueryData<SkillsPageDto>(skillsKeys.list(), patched);
+      }
+
+      if (previousDetail && flippingHarnesses.length > 0) {
+        let patched = previousDetail;
+        for (const harness of flippingHarnesses) {
+          patched = patchSkillDetailToggle(patched, harness, target);
+        }
+        queryClient.setQueryData<SkillDetailDto>(skillsKeys.detail(skillRef), patched);
+      }
+
+      return { skillRef, previousList, previousDetail };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+      if (context.previousList !== undefined) {
+        queryClient.setQueryData<SkillsPageDto>(skillsKeys.list(), context.previousList);
+      }
+      if (context.previousDetail !== undefined) {
+        queryClient.setQueryData<SkillDetailDto>(skillsKeys.detail(context.skillRef), context.previousDetail);
+      }
+    },
+    onSettled: async (_data, _error, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: skillsKeys.list() }),
+        queryClient.invalidateQueries({ queryKey: skillsKeys.detail(variables.skillRef) }),
+        queryClient.invalidateQueries({ queryKey: skillsKeys.sourceStatus(variables.skillRef) }),
+      ]);
     },
   });
 }
@@ -266,82 +320,4 @@ export function useDeleteSkillMutation() {
       await invalidateSkillsQueries(queryClient);
     },
   });
-}
-
-function patchSkillsListToggle(
-  data: SkillsPageDto,
-  skillRef: string,
-  harness: string,
-  nextState: HarnessCellState,
-): SkillsPageDto {
-  return {
-    ...data,
-    rows: data.rows.map((row) =>
-      row.skillRef !== skillRef
-        ? row
-        : {
-            ...row,
-            cells: row.cells.map((cell) =>
-              cell.harness !== harness ? cell : { ...cell, state: nextState },
-            ),
-          },
-    ),
-  };
-}
-
-function patchSkillDetailToggle(
-  data: SkillDetailDto,
-  harness: string,
-  nextState: HarnessCellState,
-): SkillDetailDto {
-  return {
-    ...data,
-    harnessCells: data.harnessCells.map((cell) =>
-      cell.harness !== harness ? cell : { ...cell, state: nextState },
-    ),
-  };
-}
-
-function getListCellState(
-  data: SkillsPageDto | undefined,
-  skillRef: string,
-  harness: string,
-): HarnessCellState | null {
-  return findHarnessCell(
-    data?.rows.find((row) => row.skillRef === skillRef)?.cells,
-    harness,
-  )?.state ?? null;
-}
-
-function getDetailCellState(
-  data: SkillDetailDto | undefined,
-  harness: string,
-): HarnessCellState | null {
-  return findHarnessCell(data?.harnessCells, harness)?.state ?? null;
-}
-
-function findHarnessCell(
-  cells: HarnessCell[] | undefined,
-  harness: string,
-): HarnessCell | undefined {
-  return cells?.find((cell) => cell.harness === harness);
-}
-
-function removeSkillFromList(data: SkillsPageDto, skillRef: string): SkillsPageDto {
-  const removedRow = data.rows.find((row) => row.skillRef === skillRef);
-  if (!removedRow) {
-    return data;
-  }
-
-  return {
-    ...data,
-    summary: {
-      ...data.summary,
-      managed: removedRow.displayStatus === "Managed" ? Math.max(0, data.summary.managed - 1) : data.summary.managed,
-      unmanaged: removedRow.displayStatus === "Unmanaged" ? Math.max(0, data.summary.unmanaged - 1) : data.summary.unmanaged,
-      custom: removedRow.displayStatus === "Custom" ? Math.max(0, data.summary.custom - 1) : data.summary.custom,
-      builtIn: removedRow.displayStatus === "Built-in" ? Math.max(0, data.summary.builtIn - 1) : data.summary.builtIn,
-    },
-    rows: data.rows.filter((row) => row.skillRef !== skillRef),
-  };
 }

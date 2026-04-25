@@ -1,0 +1,47 @@
+@layer components {
+
+/* Spinner                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.spinner {
+  display: inline-block;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+}
+
+.spinner-md {
+  width: 20px;
+  height: 20px;
+}
+
+.spinner-lg {
+  width: 28px;
+  height: 28px;
+}
+
+.card-action-spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-action-spinner {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+
+}

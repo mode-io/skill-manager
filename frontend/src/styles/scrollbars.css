@@ -1,25 +1,39 @@
-html {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
+/* Notion-style overlay scrollbars.
+   - Gutter is reserved for layout stability, but rendered transparent.
+   - Thumb is invisible at rest and fades in when the user hovers or
+     actively scrolls within the container.
+   - Thin pill shape, no border, no track background.
+*/
 
-.ui-scrollbar {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
+html,
+.ui-scrollbar,
 .ui-scrollbar--thin,
 .skill-detail__markdown pre {
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 180ms ease;
 }
 
+html:hover,
+.ui-scrollbar:hover,
+.ui-scrollbar--thin:hover,
+.skill-detail__markdown pre:hover,
+html:focus-within,
+.ui-scrollbar:focus-within,
+.ui-scrollbar--thin:focus-within,
+.skill-detail__markdown pre:focus-within {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* Webkit */
 html::-webkit-scrollbar,
-.ui-scrollbar::-webkit-scrollbar {
+.ui-scrollbar::-webkit-scrollbar,
+.ui-scrollbar--thin::-webkit-scrollbar,
+.skill-detail__markdown pre::-webkit-scrollbar {
   width: var(--scrollbar-size);
   height: var(--scrollbar-size);
+  background: transparent;
 }
 
 .ui-scrollbar--thin::-webkit-scrollbar,
@@ -32,20 +46,34 @@ html::-webkit-scrollbar-track,
 .ui-scrollbar::-webkit-scrollbar-track,
 .ui-scrollbar--thin::-webkit-scrollbar-track,
 .skill-detail__markdown pre::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 999px;
+  background: transparent;
 }
 
 html::-webkit-scrollbar-thumb,
 .ui-scrollbar::-webkit-scrollbar-thumb,
 .ui-scrollbar--thin::-webkit-scrollbar-thumb,
 .skill-detail__markdown pre::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb);
-  border: 2px solid transparent;
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
+  min-height: 32px;
+  transition: background-color 180ms ease;
 }
 
+/* Reveal thumb when the user hovers or is interacting with the scroll region. */
+html:hover::-webkit-scrollbar-thumb,
+.ui-scrollbar:hover::-webkit-scrollbar-thumb,
+.ui-scrollbar--thin:hover::-webkit-scrollbar-thumb,
+.skill-detail__markdown pre:hover::-webkit-scrollbar-thumb,
+html:focus-within::-webkit-scrollbar-thumb,
+.ui-scrollbar:focus-within::-webkit-scrollbar-thumb,
+.ui-scrollbar--thin:focus-within::-webkit-scrollbar-thumb,
+.skill-detail__markdown pre:focus-within::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+}
+
+/* Directly hovering the thumb — pronounced. */
 html::-webkit-scrollbar-thumb:hover,
 .ui-scrollbar::-webkit-scrollbar-thumb:hover,
 .ui-scrollbar--thin::-webkit-scrollbar-thumb:hover,
@@ -64,5 +92,5 @@ html::-webkit-scrollbar-corner,
 .ui-scrollbar::-webkit-scrollbar-corner,
 .ui-scrollbar--thin::-webkit-scrollbar-corner,
 .skill-detail__markdown pre::-webkit-scrollbar-corner {
-  background: var(--scrollbar-corner);
+  background: transparent;
 }

@@ -7,6 +7,7 @@ from .policy import (
     can_manage,
     cell_state,
     display_status,
+    stop_managing_status,
 )
 
 
@@ -14,8 +15,6 @@ def skills_page_payload(inventory: SkillInventory) -> dict[str, object]:
     counts = {
         "managed": sum(1 for entry in inventory.entries if display_status(entry) == "Managed"),
         "unmanaged": sum(1 for entry in inventory.entries if display_status(entry) == "Unmanaged"),
-        "custom": sum(1 for entry in inventory.entries if display_status(entry) == "Custom"),
-        "builtIn": sum(1 for entry in inventory.entries if display_status(entry) == "Built-in"),
     }
     return {
         "summary": counts,
@@ -55,8 +54,13 @@ def source_status_payload(update_status: str | None) -> dict[str, object]:
     return {"updateStatus": update_status}
 
 
-def column_payload(column: InventoryColumn) -> dict[str, str | None]:
-    return {"harness": column.harness, "label": column.label, "logoKey": column.logo_key}
+def column_payload(column: InventoryColumn) -> dict[str, object]:
+    return {
+        "harness": column.harness,
+        "label": column.label,
+        "logoKey": column.logo_key,
+        "installed": column.installed,
+    }
 
 
 def row_payload(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> dict[str, object]:
@@ -65,9 +69,10 @@ def row_payload(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> 
         "name": entry.name,
         "description": entry.description,
         "displayStatus": display_status(entry),
-        "attentionMessage": attention_message(entry),
         "actions": {
             "canManage": can_manage(entry),
+            "canStopManaging": stop_managing_status(entry) == "available",
+            "canDelete": can_delete(entry),
         },
         "cells": [cell_payload(entry, column) for column in columns],
     }
@@ -75,12 +80,20 @@ def row_payload(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> 
 
 def cell_payload(entry: InventoryEntry, column: InventoryColumn) -> dict[str, object]:
     state = cell_state(entry, column.harness)
+    # `interactive` is the single source of truth for "this cell can be
+    # flipped right now". It requires both a toggleable state AND an
+    # installed harness CLI — flipping a cell whose CLI doesn't exist
+    # would write a symlink no runtime reads (and cascades misleadingly
+    # through overlapping discovery roots in the catalog). Every
+    # consumer downstream (card counts, board bucketing, harness chip
+    # stack) reads `interactive` and is correct for free.
+    is_interactive = state in {"enabled", "disabled"} and column.installed
     return {
         "harness": column.harness,
         "label": column.label,
         "logoKey": column.logo_key,
         "state": state,
-        "interactive": state in {"enabled", "disabled"},
+        "interactive": is_interactive,
     }
 
 

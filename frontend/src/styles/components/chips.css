@@ -1,0 +1,42 @@
+@layer components {
+
+/* Status badges                                                                */
+/* -------------------------------------------------------------------------- */
+
+.ui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: 4px;
+  background: var(--color-surface-raised);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.ui-status-badge--success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.ui-status-badge--warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.ui-status-badge--neutral {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.ui-status-badge--muted {
+  color: var(--color-text-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+
+}

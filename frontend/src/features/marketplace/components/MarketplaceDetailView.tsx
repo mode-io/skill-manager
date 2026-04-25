@@ -1,9 +1,10 @@
 import { lazy, Suspense, useId, useMemo } from "react";
+import { ArrowUpRight, Plus } from "lucide-react";
 
 import { DetailDisclosure } from "../../../components/detail/DetailDisclosure";
 import { DetailHeader } from "../../../components/detail/DetailHeader";
 import { DetailLoadingChip } from "../../../components/detail/DetailLoadingChip";
-import { DetailSourceLinks } from "../../../components/detail/DetailSourceLinks";
+import { DetailSourceLinks, type DetailSourceLink } from "../../../components/detail/DetailSourceLinks";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { useMarketplaceDetailQuery, useMarketplaceDocumentQuery } from "../api/queries";
@@ -52,25 +53,32 @@ export function MarketplaceDetailView({
       return (
         <button
           type="button"
-          className="btn btn-secondary marketplace-detail__action"
+          className="action-pill"
           onClick={() => onOpenInstalledSkill(detail.installation.installedSkillRef!)}
+          aria-label={`Open ${detail.name} in Skills`}
         >
+          <ArrowUpRight size={12} aria-hidden="true" />
           Open in Skills
         </button>
       );
     }
 
     return (
-        <button
-          type="button"
-          className="btn btn-primary marketplace-detail__action"
-          disabled={installPending}
-          onClick={() => void onInstall(detail)}
-        >
-          {installPending ? <LoadingSpinner size="sm" label={`Installing ${detail.name}`} /> : null}
-          Install
-        </button>
-      );
+      <button
+        type="button"
+        className="action-pill"
+        onClick={() => void onInstall(detail)}
+        aria-label={`Install ${detail.name}`}
+        data-pending={installPending || undefined}
+      >
+        {installPending ? (
+          <LoadingSpinner size="sm" label={`Installing ${detail.name}`} />
+        ) : (
+          <Plus size={12} aria-hidden="true" />
+        )}
+        Install
+      </button>
+    );
   }, [detail, installPending, onInstall, onOpenInstalledSkill]);
 
   if (!detail && detailQuery.isPending) {
@@ -81,7 +89,6 @@ export function MarketplaceDetailView({
     return (
       <>
         <div className="skill-detail__chrome">
-          <DetailHeader title={<h2 id={headingId}>Unable to load marketplace skill</h2>} eyebrow="Marketplace skill" onClose={onClose} />
           <ErrorBanner message={queryErrorMessage || "Unable to load marketplace detail."} />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
@@ -101,9 +108,8 @@ export function MarketplaceDetailView({
           titleAction={actionButton}
           meta={
             <DetailSourceLinks
-              sourceLinks={detail.sourceLinks}
-              externalUrl={detail.sourceLinks.skillsDetailUrl}
-              externalLabel="View on skills.sh"
+              ariaLabel={`Source links for ${detail.sourceLinks.repoLabel}`}
+              links={marketplaceSourceLinks(detail.sourceLinks)}
             />
           }
           utility={
@@ -111,7 +117,6 @@ export function MarketplaceDetailView({
               <DetailLoadingChip label="Loading Preview" withSpinner />
             ) : undefined
           }
-          eyebrow="Marketplace skill"
           closeLabel="Close marketplace preview"
           onClose={onClose}
         />
@@ -124,7 +129,7 @@ export function MarketplaceDetailView({
         ) : null}
       </div>
 
-      <div className="skill-detail__body marketplace-detail__body" aria-labelledby={headingId}>
+      <div className="skill-detail__body detail-sheet__body" aria-labelledby={headingId}>
         <section className="skill-detail__intro">
           <p className="skill-detail__copy">{detail.description || "No description available."}</p>
           <div className="marketplace-detail__stats">
@@ -138,7 +143,6 @@ export function MarketplaceDetailView({
         {!isDocumentLoading && documentMarkdown ? (
           <DetailDisclosure
             title="SKILL.md"
-            eyebrow="Remote document"
             defaultOpen
             className="skill-detail__disclosure skill-detail__disclosure--document"
           >
@@ -152,6 +156,31 @@ export function MarketplaceDetailView({
       </div>
     </>
   );
+}
+
+function marketplaceSourceLinks(
+  sourceLinks: MarketplaceDetailDto["sourceLinks"],
+): DetailSourceLink[] {
+  const links: DetailSourceLink[] = [
+    {
+      href: sourceLinks.repoUrl,
+      label: sourceLinks.repoLabel,
+      kind: "repo",
+    },
+  ];
+  if (sourceLinks.folderUrl) {
+    links.push({
+      href: sourceLinks.folderUrl,
+      label: "Open Skill Folder",
+      kind: "folder",
+    });
+  }
+  links.push({
+    href: sourceLinks.skillsDetailUrl,
+    label: "View on skills.sh",
+    kind: "marketplace",
+  });
+  return links;
 }
 
 function fallbackDetail(item: MarketplaceItemDto | null): MarketplaceDetailDto | null {

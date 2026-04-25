@@ -1,7 +1,11 @@
+import { Loader2 } from "lucide-react";
+
+import {
+  DetailBindingIdentity,
+  type DetailBindingTone,
+} from "../../../../components/detail/DetailBindingIdentity";
 import type { StructuralSkillAction } from "../../model/pending";
-import type { HarnessCell } from "../../model/types";
-import { HarnessMark } from "../harness/HarnessMark";
-import { HarnessStateChip } from "../harness/HarnessStateChip";
+import type { HarnessCell, HarnessCellState } from "../../model/types";
 
 interface SkillDetailHarnessMatrixProps {
   skillName: string;
@@ -9,6 +13,24 @@ interface SkillDetailHarnessMatrixProps {
   pendingToggleHarnesses: ReadonlySet<string>;
   pendingStructuralAction: StructuralSkillAction | null;
   onToggleCell: (cell: HarnessCell) => void;
+}
+
+const STATE_LABEL: Record<HarnessCellState, string> = {
+  enabled: "Enabled",
+  disabled: "Disabled",
+  found: "Found in harness",
+  empty: "Not present",
+};
+
+const STATE_TONE: Record<HarnessCellState, DetailBindingTone> = {
+  enabled: "enabled",
+  disabled: "disabled",
+  found: "warning",
+  empty: "disabled",
+};
+
+function visibleStateLabel(state: HarnessCellState): string | null {
+  return state === "found" ? STATE_LABEL[state] : null;
 }
 
 export function SkillDetailHarnessMatrix({
@@ -21,61 +43,102 @@ export function SkillDetailHarnessMatrix({
   if (cells.length === 0) {
     return null;
   }
+  const structuralLocked = pendingStructuralAction !== null;
 
   return (
-    <section className="skill-detail__harness-section" aria-label={`Harness access for ${skillName}`}>
-      <p className="skill-detail__harness-eyebrow">Harness access</p>
-      <div className="skill-detail__harness-grid">
-        {cells.map((cell) => (
-          <article key={cell.harness} className="skill-detail__harness-card">
-            <p className="skill-detail__harness-label">{cell.label}</p>
-            <HarnessMark
+    <div className="detail-sheet__bindings" aria-label={`Harness access for ${skillName}`}>
+      {cells.map((cell) => {
+        const pending = pendingToggleHarnesses.has(cell.harness);
+        return (
+          <div
+            key={cell.harness}
+            className="detail-sheet__binding-row"
+            data-state={cell.state}
+            data-pending={pending || undefined}
+          >
+            <DetailBindingIdentity
               harness={cell.harness}
               label={cell.label}
               logoKey={cell.logoKey}
-              className="skill-detail__harness-mark"
+              statusLabel={STATE_LABEL[cell.state]}
+              tone={STATE_TONE[cell.state]}
+              visibleStatus={visibleStateLabel(cell.state)}
             />
-            <div className="skill-detail__harness-control">
-              <HarnessCellControl
+            <div className="detail-sheet__binding-actions">
+              <HarnessCellAction
                 skillName={skillName}
                 cell={cell}
-                pendingToggleHarnesses={pendingToggleHarnesses}
-                structuralLocked={pendingStructuralAction !== null}
+                pending={pending}
+                disabled={structuralLocked}
                 onToggleCell={onToggleCell}
               />
             </div>
-          </article>
-        ))}
-      </div>
-    </section>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
-interface HarnessCellControlProps {
+interface HarnessCellActionProps {
   skillName: string;
   cell: HarnessCell;
-  pendingToggleHarnesses: ReadonlySet<string>;
-  structuralLocked: boolean;
+  pending: boolean;
+  disabled: boolean;
   onToggleCell: (cell: HarnessCell) => void;
 }
 
-function HarnessCellControl({
+function HarnessCellAction({
   skillName,
   cell,
-  pendingToggleHarnesses,
-  structuralLocked,
+  pending,
+  disabled,
   onToggleCell,
-}: HarnessCellControlProps) {
-  const pending = pendingToggleHarnesses.has(cell.harness);
+}: HarnessCellActionProps) {
+  if (!cell.interactive) {
+    if (cell.state === "found") {
+      return (
+        <span className="detail-sheet__binding-hint">
+          Adopt this skill to manage it
+        </span>
+      );
+    }
+    return null;
+  }
 
-  return (
-    <HarnessStateChip
-      state={cell.state}
-      interactive={cell.interactive}
-      disabled={structuralLocked}
-      pending={pending}
-      ariaLabel={`${cell.state === "enabled" ? "Disable" : "Enable"} ${skillName} for ${cell.label}`}
-      onCheckedChange={() => onToggleCell(cell)}
-    />
-  );
+  if (cell.state === "enabled") {
+    return (
+      <button
+        type="button"
+        className="action-pill action-pill--danger"
+        disabled={disabled || pending}
+        onClick={() => onToggleCell(cell)}
+        aria-label={`Disable ${skillName} for ${cell.label}`}
+      >
+        {pending ? (
+          <Loader2 size={12} className="card-action-spinner" aria-hidden="true" />
+        ) : null}
+        Disable
+      </button>
+    );
+  }
+
+  if (cell.state === "disabled") {
+    return (
+      <button
+        type="button"
+        className="action-pill action-pill--accent"
+        disabled={disabled || pending}
+        onClick={() => onToggleCell(cell)}
+        aria-label={`Enable ${skillName} for ${cell.label}`}
+      >
+        {pending ? (
+          <Loader2 size={12} className="card-action-spinner" aria-hidden="true" />
+        ) : null}
+        Enable
+      </button>
+    );
+  }
+
+  return null;
 }

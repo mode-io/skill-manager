@@ -1,0 +1,194 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* Detail sheet — shared modal container for skill + MCP + marketplace views. */
+/* -------------------------------------------------------------------------- */
+/*
+ * This primitive owns the modal frame only: sizing, padding, elevation, and
+ * base section/body/meta rhythm. Feature-local shells (for example the skill
+ * and MCP detail shells) are responsible for splitting chrome/body/footer
+ * regions when a view needs fixed actions or specialized scrolling behavior.
+ */
+
+.detail-sheet {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 80;
+  display: grid;
+  gap: var(--space-4);
+  width: min(960px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lift);
+  /* hidden horizontally so wide content (long URLs, code blocks, JSON
+   * payloads) gets its own scroll instead of pushing the whole modal. */
+  overflow: hidden auto;
+  transform: translate(-50%, -50%);
+}
+
+.detail-sheet:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 680px) {
+  .detail-sheet {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Body — scrollable area between chrome and footer. Consumers put
+ * <DetailSection> children inside. min-width: 0 so flex children opt
+ * into shrinking below their content width (otherwise wide code blocks
+ * push the modal wider than its declared width). */
+.detail-sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Section primitive — used via the <DetailSection> component. */
+.detail-sheet__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.detail-sheet__section-heading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Meta cluster — single horizontal strip under the title that carries
+ * identity + status + source links. */
+.detail-sheet__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.detail-sheet__divider {
+  color: var(--color-text-muted);
+}
+
+/* Footer — single canonical action surface. Sticky bottom, right-aligned
+ * actions, wraps gracefully when there are several. */
+.detail-sheet__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+/* Per-harness binding row — shared between MCP server bindings and skill
+ * harness access. Status is visual; the action is textual. */
+.detail-sheet__bindings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.detail-sheet__binding-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.detail-sheet__binding-row[data-pending="true"] {
+  opacity: 0.7;
+}
+
+.detail-sheet__binding-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.detail-sheet__binding-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.detail-sheet__binding-label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-sheet__binding-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+}
+
+.detail-sheet__binding-dot[data-tone="enabled"] {
+  border-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+  background: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-softer);
+}
+
+.detail-sheet__binding-dot[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--color-warning) 72%, transparent);
+  background: var(--color-warning);
+  box-shadow: 0 0 0 3px var(--color-warning-soft);
+}
+
+.detail-sheet__binding-state {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.detail-sheet__binding-state[data-tone="warning"] {
+  color: var(--color-warning);
+}
+
+.detail-sheet__binding-detail {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.detail-sheet__binding-actions {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.detail-sheet__binding-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+}

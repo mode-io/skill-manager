@@ -4,22 +4,22 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Literal
 
-from skill_manager.domain import fingerprint_package
 from skill_manager.errors import MutationError
 from skill_manager.sources import github_folder_url, github_repo_from_locator, github_repo_url
 
-from ..document_utils import read_skill_document_markdown
-from ..read_model_service import ReadModelService
-from ..source_fetch_service import SourceFetchService
+from .document_utils import read_skill_document_markdown
 from .inventory import InventoryEntry, SkillInventory
-from .policy import can_stop_managing, can_update
+from .package import fingerprint_package
+from .policy import can_stop_managing, can_update, has_local_changes
 from .presenters import skill_detail_payload, skills_page_payload, source_status_payload
+from .read_models import SkillsReadModelService
+from .source_fetch import SourceFetchService
 
 
 class SkillsQueryService:
     def __init__(
         self,
-        read_models: ReadModelService,
+        read_models: SkillsReadModelService,
         source_fetcher: SourceFetchService,
     ) -> None:
         self.read_models = read_models
@@ -60,7 +60,7 @@ class SkillsQueryService:
         snapshot = self.read_models.snapshot()
         return SkillInventory.from_snapshot(
             store_scan=snapshot.store_scan,
-            harness_scans=snapshot.harness_scans,
+            harness_scans=self.read_models.visible_scans(snapshot),
         )
 
     def require_entry(self, skill_ref: str) -> InventoryEntry:
@@ -126,9 +126,11 @@ class SkillsQueryService:
     def resolve_update_status(
         self,
         entry: InventoryEntry,
-    ) -> Literal["update_available", "no_update_available", "no_source_available"] | None:
+    ) -> Literal["update_available", "no_update_available", "no_source_available", "local_changes_detected"] | None:
         if entry.kind != "managed":
             return None
+        if has_local_changes(entry):
+            return "local_changes_detected"
         if not can_update(entry):
             return "no_source_available"
         if self.check_for_update(entry):

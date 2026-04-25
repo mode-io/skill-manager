@@ -1,0 +1,24 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* Marketplace keep-mounted panes                                              */
+/* -------------------------------------------------------------------------- */
+
+.marketplace-panes {
+  position: relative;
+}
+
+.marketplace-pane[data-tab-state="hidden"] {
+  display: none;
+}
+
+.marketplace-preview-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  text-align: right;
+  white-space: nowrap;
+}
+
+}

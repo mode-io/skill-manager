@@ -1,7 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { invalidateSettingsQueries } from "../../settings/queries";
-import { invalidateSkillsQueries } from "../../skills/api/queries";
+import { flattenUniquePageItems, queryPolicy } from "../../../lib/query";
+import { invalidateSettingsQueries } from "../../settings/public";
+import { invalidateSkillsQueries } from "../../skills/public";
 import {
   fetchMarketplaceDetail,
   fetchMarketplaceDocument,
@@ -32,9 +33,7 @@ export function useMarketplaceFeedQuery(query: string) {
         ? searchMarketplace(trimmed, { limit: 20, offset: pageParam })
         : fetchMarketplacePopular({ limit: 20, offset: pageParam }),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextOffset ?? undefined : undefined),
-    staleTime: MARKETPLACE_STALE_TIME_MS,
-    gcTime: MARKETPLACE_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(MARKETPLACE_STALE_TIME_MS, MARKETPLACE_GC_TIME_MS),
   });
 }
 
@@ -43,9 +42,7 @@ export function useMarketplaceDetailQuery(itemId: string | null) {
     queryKey: marketplaceKeys.detail(itemId ?? "__none__"),
     queryFn: () => fetchMarketplaceDetail(itemId!),
     enabled: Boolean(itemId),
-    staleTime: MARKETPLACE_STALE_TIME_MS,
-    gcTime: MARKETPLACE_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(MARKETPLACE_STALE_TIME_MS, MARKETPLACE_GC_TIME_MS),
   });
 }
 
@@ -54,9 +51,7 @@ export function useMarketplaceDocumentQuery(itemId: string | null) {
     queryKey: marketplaceKeys.document(itemId ?? "__none__"),
     queryFn: () => fetchMarketplaceDocument(itemId!),
     enabled: Boolean(itemId),
-    staleTime: MARKETPLACE_STALE_TIME_MS,
-    gcTime: MARKETPLACE_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    ...queryPolicy(MARKETPLACE_STALE_TIME_MS, MARKETPLACE_GC_TIME_MS),
   });
 }
 
@@ -65,22 +60,7 @@ export async function invalidateMarketplaceQueries(queryClient: import("@tanstac
 }
 
 export function flattenMarketplaceItems(data: { pages: MarketplacePageResultDto[] } | undefined): MarketplaceItemDto[] {
-  if (!data) {
-    return [];
-  }
-
-  const seen = new Set<string>();
-  const items: MarketplaceItemDto[] = [];
-  for (const page of data.pages) {
-    for (const item of page.items) {
-      if (seen.has(item.id)) {
-        continue;
-      }
-      seen.add(item.id);
-      items.push(item);
-    }
-  }
-  return items;
+  return flattenUniquePageItems(data, (item) => item.id);
 }
 
 export function useInstallMarketplaceSkillMutation() {

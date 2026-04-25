@@ -2,18 +2,21 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { lazy, Suspense, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { AppShell } from "./components/AppShell";
 import RouteLoadingPanel from "./components/RouteLoadingPanel";
-import { invalidateMarketplaceQueries } from "./features/marketplace/api/queries";
-import { invalidateSettingsQueries } from "./features/settings/queries";
+import { Shell } from "./components/Shell";
+import { ToastProvider } from "./components/Toast";
+import { UiTooltipProvider } from "./components/ui/UiTooltipProvider";
+import { invalidateCapabilityQueries } from "./app/capability-registry";
 import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
-import { invalidateSkillsQueries } from "./features/skills/api/queries";
-import ManagedSkillsPage from "./features/skills/screens/ManagedSkillsPage";
+import SkillsNeedsReviewPage from "./features/skills/screens/SkillsNeedsReviewPage";
+import SkillsInUsePage from "./features/skills/screens/SkillsInUsePage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
-import UnmanagedSkillsPage from "./features/skills/screens/UnmanagedSkillsPage";
 
-const MarketplacePage = lazy(() => import("./features/marketplace/screens/MarketplacePage"));
+const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
+const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
 const SettingsPage = lazy(() => import("./features/settings/screens/SettingsPage"));
+const McpNeedsReviewPage = lazy(() => import("./features/mcp/screens/McpNeedsReviewPage"));
+const McpInUsePage = lazy(() => import("./features/mcp/screens/McpInUsePage"));
 
 export function App() {
   const [queryClient] = useState(
@@ -29,7 +32,11 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContent />
+      <ToastProvider>
+        <UiTooltipProvider>
+          <AppContent />
+        </UiTooltipProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
@@ -41,11 +48,7 @@ function AppContent() {
   async function handleRefreshData() {
     setRefreshPending(true);
     try {
-      await Promise.all([
-        invalidateSkillsQueries(queryClient),
-        invalidateSettingsQueries(queryClient),
-        invalidateMarketplaceQueries(queryClient),
-      ]);
+      await invalidateCapabilityQueries(queryClient);
     } finally {
       setRefreshPending(false);
     }
@@ -53,22 +56,65 @@ function AppContent() {
 
   return (
     <SkillsWorkspaceSessionProvider>
-      <AppShell onRefreshData={handleRefreshData} refreshPending={refreshPending}>
+      <Shell onRefresh={handleRefreshData} refreshPending={refreshPending}>
         <Routes>
-          <Route index element={<Navigate to="/skills/managed" replace />} />
+          <Route index element={<Navigate to="/overview" replace />} />
+
+          <Route
+            path="overview"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading overview" />}>
+                <OverviewPage />
+              </Suspense>
+            }
+          />
+
           <Route path="skills" element={<SkillsWorkspacePage />}>
-            <Route index element={<Navigate to="managed" replace />} />
-            <Route path="managed" element={<ManagedSkillsPage />} />
-            <Route path="unmanaged" element={<UnmanagedSkillsPage />} />
+            <Route index element={<Navigate to="use" replace />} />
+            <Route path="use" element={<SkillsInUsePage />} />
+            <Route path="review" element={<SkillsNeedsReviewPage />} />
+            <Route path="managed" element={<Navigate to="/skills/use" replace />} />
+            <Route path="unmanaged" element={<Navigate to="/skills/review" replace />} />
           </Route>
+
+          <Route path="mcp" element={<Navigate to="/mcp/use" replace />} />
+          <Route
+            path="mcp/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading MCP" />}>
+                <McpInUsePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="mcp/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading MCP" />}>
+                <McpNeedsReviewPage />
+              </Suspense>
+            }
+          />
+          <Route path="mcp/managed" element={<Navigate to="/mcp/use" replace />} />
+          <Route path="mcp/unmanaged" element={<Navigate to="/mcp/review" replace />} />
+
           <Route
             path="marketplace"
             element={
               <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
-                <MarketplacePage />
+                <MarketplaceLayout />
               </Suspense>
             }
-          />
+          >
+            <Route index element={<Navigate to="skills" replace />} />
+            {/* Child routes exist only so /marketplace/skills, /marketplace/mcp,
+                and /marketplace/clis
+                are valid URLs and NavLink active matching works.
+                MarketplaceLayout renders the panes itself — no Outlet. */}
+            <Route path="skills" element={null} />
+            <Route path="mcp" element={null} />
+            <Route path="clis" element={null} />
+          </Route>
+
           <Route
             path="settings"
             element={
@@ -77,8 +123,10 @@ function AppContent() {
               </Suspense>
             }
           />
+
+          <Route path="*" element={<Navigate to="/overview" replace />} />
         </Routes>
-      </AppShell>
+      </Shell>
     </SkillsWorkspaceSessionProvider>
   );
 }

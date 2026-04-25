@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SkillsWorkspaceSessionProvider, useSkillsTabScroll } from "./session";
 
-function ScrollProbe({ tab }: { tab: "managed" | "unmanaged" }) {
+function ScrollProbe({ tab }: { tab: "inUse" | "needsReview" }) {
   const elementRef = useRef<HTMLDivElement>(null);
   useSkillsTabScroll(tab, true, elementRef);
 
@@ -16,7 +16,7 @@ function ScrollProbe({ tab }: { tab: "managed" | "unmanaged" }) {
   );
 }
 
-function SessionHarness({ tab }: { tab: "managed" | "unmanaged" }) {
+function SessionHarness({ tab }: { tab: "inUse" | "needsReview" }) {
   return (
     <SkillsWorkspaceSessionProvider>
       <ScrollProbe key={tab} tab={tab} />
@@ -44,19 +44,19 @@ describe("useSkillsTabScroll", () => {
   });
 
   it("stores and restores per-tab pane scroll positions without using window scroll", () => {
-    const { rerender } = render(<SessionHarness tab="managed" />);
+    const { rerender } = render(<SessionHarness tab="inUse" />);
 
-    const managedScroll = screen.getByTestId("managed-scroll") as HTMLDivElement;
-    managedScroll.scrollTop = 180;
+    const inUseScroll = screen.getByTestId("inUse-scroll") as HTMLDivElement;
+    inUseScroll.scrollTop = 180;
 
-    rerender(<SessionHarness tab="unmanaged" />);
+    rerender(<SessionHarness tab="needsReview" />);
 
-    const unmanagedScroll = screen.getByTestId("unmanaged-scroll") as HTMLDivElement;
-    unmanagedScroll.scrollTop = 48;
+    const needsReviewScroll = screen.getByTestId("needsReview-scroll") as HTMLDivElement;
+    needsReviewScroll.scrollTop = 48;
 
-    rerender(<SessionHarness tab="managed" />);
+    rerender(<SessionHarness tab="inUse" />);
 
-    expect((screen.getByTestId("managed-scroll") as HTMLDivElement).scrollTop).toBe(180);
+    expect((screen.getByTestId("inUse-scroll") as HTMLDivElement).scrollTop).toBe(180);
     expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });

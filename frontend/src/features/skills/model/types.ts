@@ -3,13 +3,13 @@ import type {
   HarnessCell as HarnessCellDto,
   HarnessCellState as HarnessCellStateDto,
   HarnessColumn as HarnessColumnDto,
-  SkillDetailDto,
+  SkillRowActionsDto,
   SkillLocation as SkillLocationDto,
   SkillSourceLinks as SkillSourceLinksDto,
   SkillStatus as SkillStatusDto,
   SkillsSummary as SkillsSummaryDto,
   SkillDetailActionsDto,
-  SkillStopManagingStatus as SkillStopManagingStatusDto,
+  SkillRemoveStatus as SkillRemoveStatusDto,
   SkillSourceStatusDto,
   SkillUpdateStatus as SkillUpdateStatusDto,
 } from "../api/types";
@@ -17,10 +17,11 @@ import type {
 export type SkillStatus = SkillStatusDto;
 export type HarnessCellState = HarnessCellStateDto;
 export type SkillUpdateStatus = SkillUpdateStatusDto;
-export type SkillStopManagingStatus = SkillStopManagingStatusDto;
+export type SkillRemoveStatus = SkillRemoveStatusDto;
 export type SkillsSummary = SkillsSummaryDto;
 export type HarnessColumn = HarnessColumnDto;
 export type HarnessCell = HarnessCellDto;
+export type SkillRowActions = SkillRowActionsDto;
 export type SkillLocation = SkillLocationDto;
 export type SkillSourceLinks = SkillSourceLinksDto;
 export type BulkManageResult = BulkManageResultDto;
@@ -30,8 +31,7 @@ export interface SkillListRow {
   name: string;
   description: string;
   displayStatus: SkillStatus;
-  attentionMessage: string | null;
-  canManage: boolean;
+  actions: SkillRowActions;
   cells: HarnessCell[];
 }
 

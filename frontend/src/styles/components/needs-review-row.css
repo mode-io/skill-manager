@@ -1,0 +1,99 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* Needs-review row — shared layout for local skill and MCP review surfaces */
+/* -------------------------------------------------------------------------- */
+
+.needs-review-rows {
+  display: grid;
+  gap: 1px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-border);
+}
+
+.needs-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.needs-review-row:hover {
+  background: var(--color-surface-raised);
+}
+
+.needs-review-row:focus-visible {
+  outline: none;
+  background: var(--color-surface-raised);
+  box-shadow: inset 0 0 0 2px var(--color-accent-softer);
+}
+
+.needs-review-row__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.needs-review-row__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.needs-review-row__name {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Logo stack sits flush against the name. Reuses .harness-stack__item
+ * sizing from styles/components/cards.css. */
+.needs-review-row__logos {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  isolation: isolate;
+}
+
+.needs-review-row__meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.needs-review-row__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Trailing column: status chip(s) + action button on the same line.
+ * Pinned to the row's first text line so multi-line descriptions don't
+ * push it down. Chips sit to the left of the action button. */
+.needs-review-row__trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: start;
+  margin-top: 2px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+}

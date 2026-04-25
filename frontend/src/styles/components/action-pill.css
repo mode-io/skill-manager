@@ -1,0 +1,152 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* Action pill — the universal interactive button language.                   */
+/* -------------------------------------------------------------------------- */
+/*
+ * Used across cards, rows, page-header CTAs, empty-state CTAs, detail-sheet
+ * actions, and lightweight chooser dialogs. Solid .btn-* family in
+ * styles/components/buttons.css is reserved for heavier confirmation
+ * footers where binary commitment (Cancel | Confirm) should carry more
+ * visual weight.
+ *
+ * Default size matches the chip-row height so card footers sit on the same
+ * rhythm. Modifiers --md and --lg scale up for page chrome.
+ * Modifier --accent tints the resting state for the page's primary action.
+ */
+
+.action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  white-space: nowrap;
+}
+
+.action-pill:hover:not(:disabled),
+.action-pill:focus-visible:not(:disabled) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-softer);
+}
+
+.action-pill:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.action-pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.action-pill[data-pending="true"] {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  cursor: progress;
+}
+
+/* Size modifiers ---------------------------------------------------------- */
+
+.action-pill--md {
+  padding: 6px var(--space-4);
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.action-pill--lg {
+  padding: 8px var(--space-5);
+  gap: var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+/* Emphasis modifier ------------------------------------------------------- */
+
+/* The page's primary action — accent-tinted at rest so it stands apart from
+ * the surrounding plain pills, but stays in the same visual family. */
+.action-pill--accent {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
+}
+
+.action-pill--accent:hover:not(:disabled),
+.action-pill--accent:focus-visible:not(:disabled) {
+  color: var(--color-accent-strong);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+/* Destructive trigger — used outside dialogs (e.g. "Delete Skill" in the
+ * detail sheet). The actual confirm step uses the shared confirm-dialog
+ * footer styling so the binary commitment carries more visual weight. */
+.action-pill--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 38%, transparent);
+}
+
+.action-pill--danger:hover:not(:disabled),
+.action-pill--danger:focus-visible:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.action-pill--danger:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 20%, transparent);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Status pill — non-interactive cousin of .action-pill.                      */
+/* -------------------------------------------------------------------------- */
+/*
+ * Surfaces status (Identical, Differs, Match in marketplace) using the same
+ * ghost-pill shape so action buttons + status indicators read as one design
+ * language rather than two.
+ */
+
+.card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.card-status-pill--md {
+  padding: 6px var(--space-4);
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.card-status-pill--success {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 32%, transparent);
+}
+
+.card-status-pill--warning {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 32%, transparent);
+}
+
+.card-status-pill--accent {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+
+}

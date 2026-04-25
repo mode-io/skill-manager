@@ -1,0 +1,238 @@
+@layer components {
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.sidebar {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-sidebar-bg);
+  overflow-y: auto;
+}
+
+.sidebar__brand {
+  padding: 0 var(--space-2);
+}
+
+.sidebar__brand-name {
+  display: inline-flex;
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.sidebar__brand-name:hover,
+.sidebar__brand-name:focus-visible {
+  color: var(--color-accent);
+  outline: none;
+}
+
+.sidebar__nav {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.sidebar-group {
+  display: grid;
+  gap: 2px;
+}
+
+.sidebar-top-link {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sidebar-top-link:hover,
+.sidebar-top-link:focus-visible,
+.sidebar-top-link.is-active {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  outline: none;
+}
+
+.sidebar-group__header {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-group__chevron {
+  grid-column: 4;
+  justify-self: end;
+  color: var(--color-text-muted);
+  transition: transform 120ms ease;
+}
+
+.sidebar-group[data-collapsed="true"] .sidebar-group__chevron {
+  transform: rotate(-90deg);
+}
+
+.sidebar-group__items {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding-left: var(--space-3);
+}
+
+.sidebar-link {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.sidebar-link:hover,
+.sidebar-link:focus-visible {
+  color: var(--color-text);
+  outline: none;
+}
+
+.sidebar-link.is-active {
+  color: var(--color-text);
+}
+
+/* Magic-bar — single absolutely-positioned pill per NavGroup that tracks the
+   active (or hovered/focused) link. Provides the highlight that used to live
+   on .sidebar-link directly. */
+.sidebar-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 160ms ease;
+}
+
+.sidebar-indicator[data-visible="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-indicator {
+    transition: opacity 160ms ease;
+  }
+}
+
+.sidebar-link__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.sidebar-group__count,
+.sidebar-link__count {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sidebar-group__count {
+  min-width: 2ch;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.sidebar-link__count {
+  min-width: 2ch;
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  line-height: 1;
+  opacity: 0.76;
+}
+
+.sidebar-link.is-active .sidebar-link__count {
+  color: var(--color-text);
+  opacity: 0.9;
+}
+
+.sidebar__footer {
+  display: grid;
+  gap: 2px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-footer-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sidebar-footer-btn:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.sidebar-footer-btn.is-active {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.sidebar-footer-btn[aria-busy="true"] {
+  color: var(--color-text);
+}
+
+.sidebar-footer-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+}

@@ -33,8 +33,7 @@ function mapSkillRow(dto: SkillTableRowDto): SkillListRow {
     name: dto.name,
     description: dto.description,
     displayStatus: dto.displayStatus,
-    attentionMessage: dto.attentionMessage,
-    canManage: dto.actions.canManage,
+    actions: dto.actions,
     cells: dto.cells,
   };
 }

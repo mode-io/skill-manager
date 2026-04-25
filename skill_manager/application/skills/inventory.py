@@ -4,10 +4,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from skill_manager.domain import HarnessScan, SourceDescriptor, StoreScan, stable_id
+from .identity import SourceDescriptor, stable_id
+from .observations import SkillStoreScan, SkillsHarnessScan
 
 
-EntryKind = Literal["managed", "unmanaged", "builtin"]
+EntryKind = Literal["managed", "unmanaged"]
 
 
 @dataclass(frozen=True)
@@ -15,11 +16,12 @@ class InventoryColumn:
     harness: str
     label: str
     logo_key: str | None
+    installed: bool
 
 
 @dataclass(frozen=True)
 class InventorySighting:
-    kind: Literal["shared", "harness", "builtin"]
+    kind: Literal["shared", "harness"]
     harness: str | None
     label: str
     scope: str | None
@@ -48,7 +50,7 @@ class InventoryEntry:
         self.sightings.append(sighting)
 
     def detail_sightings(self) -> list[InventorySighting]:
-        order = {"shared": 0, "harness": 1, "builtin": 2}
+        order = {"shared": 0, "harness": 1}
         return sorted(
             self.sightings,
             key=lambda item: (
@@ -84,13 +86,22 @@ class SkillInventory:
         self._by_ref = {entry.skill_ref: entry for entry in entries}
 
     @classmethod
-    def from_snapshot(cls, *, store_scan: StoreScan, harness_scans: tuple[HarnessScan, ...]) -> "SkillInventory":
+    def from_snapshot(
+        cls,
+        *,
+        store_scan: SkillStoreScan,
+        harness_scans: tuple[SkillsHarnessScan, ...],
+    ) -> "SkillInventory":
         from .policy import sort_entries
 
         columns = tuple(
-            InventoryColumn(harness=scan.harness, label=scan.label, logo_key=scan.logo_key)
+            InventoryColumn(
+                harness=scan.harness,
+                label=scan.label,
+                logo_key=scan.logo_key,
+                installed=scan.installed,
+            )
             for scan in harness_scans
-            if scan.manageable
         )
         entries: list[InventoryEntry] = []
         shared_path_index: dict[Path, InventoryEntry] = {}
@@ -127,7 +138,6 @@ class SkillInventory:
             shared_match_index[_managed_entry_key(entry)] = entry
 
         unmanaged_entries: dict[str, InventoryEntry] = {}
-        builtin_entries: dict[str, InventoryEntry] = {}
 
         for scan in harness_scans:
             for observation in scan.skills:
@@ -167,34 +177,7 @@ class SkillInventory:
                     unmanaged_entries[key] = entry
                 entry.add_sighting(sighting)
 
-            for builtin in scan.builtins:
-                source = SourceDescriptor(kind="builtin", locator=f"{builtin.harness}:{builtin.builtin_id}")
-                key = stable_id("builtin", builtin.declared_name, builtin.builtin_id)
-                entry = builtin_entries.get(key)
-                if entry is None:
-                    entry = InventoryEntry(
-                        skill_ref=f"builtin:{key}",
-                        name=builtin.declared_name,
-                        description=builtin.detail,
-                        kind="builtin",
-                        source=source,
-                    )
-                    builtin_entries[key] = entry
-                entry.add_sighting(
-                    InventorySighting(
-                        kind="builtin",
-                        harness=builtin.harness,
-                        label=builtin.label,
-                        scope=None,
-                        path=None,
-                        revision=None,
-                        source=source,
-                        detail=builtin.detail,
-                    )
-                )
-
         entries.extend(unmanaged_entries.values())
-        entries.extend(builtin_entries.values())
         sort_entries(entries)
         return cls(
             columns=columns,

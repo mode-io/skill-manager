@@ -1,0 +1,87 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* MCP in-use / needs-review pages                                            */
+/* -------------------------------------------------------------------------- */
+
+.mcp-server-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mcp-server-card[data-pending="true"] {
+  opacity: 0.7;
+}
+
+.mcp-server-card__transport {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.mcp-server-card__transport code {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.mcp-server-card__config-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  padding: 2px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  border-color: color-mix(in srgb, var(--color-warning, #f59e0b) 36%, transparent);
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
+  color: var(--color-warning, #f59e0b);
+}
+
+.mcp-server-card__detail {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Drift overlay on harness logos */
+.harness-stack__item[data-drifted="true"]::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-warning, #f59e0b);
+  border: 1.5px solid var(--color-surface);
+  box-sizing: content-box;
+}
+
+.mcp-matrix__server-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mcp-matrix__server-button:focus-visible {
+  outline: none;
+}
+
+.mcp-matrix__server-button:focus-visible .matrix-table__name-text {
+  color: var(--color-accent);
+}
+
+}

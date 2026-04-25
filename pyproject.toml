@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "certifi>=2024.0.0",
   "fastapi>=0.135,<0.136",
+  "tomli-w>=1.2,<2",
   "uvicorn>=0.44,<0.45",
   "certifi>=2024.8.30,<2026",
 ]

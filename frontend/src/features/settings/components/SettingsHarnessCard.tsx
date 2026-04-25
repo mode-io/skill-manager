@@ -1,6 +1,5 @@
-import { HoverTooltip } from "../../../components/ui/HoverTooltip";
 import { ToggleSwitch } from "../../../components/ToggleSwitch";
-import { HarnessMark } from "../../skills/components/harness/HarnessMark";
+import { HarnessAvatar } from "../../../components/harness/HarnessAvatar";
 import type { SettingsHarness } from "../api/types";
 
 interface SettingsHarnessCardProps {
@@ -9,55 +8,31 @@ interface SettingsHarnessCardProps {
   onToggle: (harness: string, nextEnabled: boolean) => void;
 }
 
-function supportTooltipCopy(harness: SettingsHarness): string {
-  if (harness.supportEnabled) {
-    return "Turn off to make skill-manager ignore this harness. Your local files stay unchanged.";
-  }
-  return "Turn on to let skill-manager discover and manage skills for this harness. Nothing is moved or deleted.";
-}
-
-export function SettingsHarnessCard({
-  harness,
-  pending,
-  onToggle,
-}: SettingsHarnessCardProps) {
+export function SettingsHarnessCard({ harness, pending, onToggle }: SettingsHarnessCardProps) {
   return (
-    <article className="settings-harness-card">
-      <div className="settings-harness-card__header">
-        <div className="settings-harness-card__identity">
-          <HarnessMark harness={harness.harness} label={harness.label} logoKey={harness.logoKey} />
-          <span className={`ui-status-badge ${harness.installed ? "ui-status-badge--success" : "ui-status-badge--muted"}`}>
-            {harness.installed ? "Installed" : "Not installed"}
-          </span>
-        </div>
-        <HoverTooltip copy={supportTooltipCopy(harness)} disabled={pending} align="end" side="top">
-          <span className="settings-harness-card__toggle">
-            <ToggleSwitch
-              checked={harness.supportEnabled}
-              disabled={pending}
-              label="Enabled"
-              ariaLabel={`Enable ${harness.label} support`}
-              pendingLabel="Saving..."
-              onCheckedChange={(checked) => onToggle(harness.harness, checked)}
-            />
-          </span>
-        </HoverTooltip>
+    <div className="settings-row">
+      <span className="settings-row__icon">
+        <HarnessAvatar harness={harness.harness} label={harness.label} logoKey={harness.logoKey} />
+      </span>
+      <div className="settings-row__body">
+        <p className="settings-row__title">{harness.label}</p>
+        <p className="settings-row__sub">
+          {harness.installed ? "Detected on this machine" : "Not detected on this machine"}
+        </p>
       </div>
-
-      <div className="settings-harness-card__body">
-        <dl className="settings-harness-card__locations">
-          <div className="settings-harness-card__location-row">
-            <dt>Managed location</dt>
-            <dd>
-              {harness.managedLocation ? (
-                <span className="settings-harness-card__path">{harness.managedLocation}</span>
-              ) : (
-                <span className="settings-harness-card__path settings-harness-card__path--muted">Unavailable</span>
-              )}
-            </dd>
-          </div>
-        </dl>
+      <div className="settings-row__controls">
+        {harness.managedLocation ? (
+          <span className="settings-path">{harness.managedLocation}</span>
+        ) : null}
+        <ToggleSwitch
+          checked={harness.supportEnabled}
+          disabled={pending}
+          label=""
+          ariaLabel={`Enable ${harness.label} support`}
+          pendingLabel="Saving..."
+          onCheckedChange={(checked) => onToggle(harness.harness, checked)}
+        />
       </div>
-    </article>
+    </div>
   );
 }

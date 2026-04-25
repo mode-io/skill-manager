@@ -1,0 +1,557 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* MCP marketplace                                                             */
+/* -------------------------------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.chip--verified {
+  color: var(--color-accent);
+  border-color: var(--color-accent-soft);
+  background: var(--color-accent-softer);
+}
+
+.chip--capability {
+  color: var(--color-text);
+}
+
+.chip--capability strong {
+  margin-left: 4px;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.market-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.mcp-card__body {
+  -webkit-line-clamp: 3;
+}
+
+.mcp-card__footer {
+  gap: var(--space-3);
+}
+
+.mcp-card__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.cli-card__avatar {
+  position: relative;
+  gap: 0;
+  background: var(--color-surface-raised);
+}
+
+.cli-card__avatar svg {
+  position: absolute;
+  inset: 9px auto auto 9px;
+  opacity: 0.34;
+}
+
+.cli-card__avatar span {
+  position: relative;
+  z-index: 1;
+  transform: translate(4px, 5px);
+}
+
+.cli-card__body {
+  -webkit-line-clamp: 3;
+}
+
+.cli-card__footer {
+  align-items: flex-end;
+}
+
+/* Filter group lives in the shared marketplace layout — a single DOM node that
+   animates smoothly in both directions when the user toggles between Skills and MCP.
+   We transition max-width + opacity + transform + negative margin to collapse the
+   flex gap when hidden so the neighbouring tab pill doesn't jump. */
+
+.mcp-filter-group {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  clip-path: inset(0);
+  visibility: visible;
+  transition:
+    max-width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 0s;
+}
+
+.mcp-filter-group[data-state="visible"] {
+  /* Match the natural content width (~217px) so the transition uses its full
+     duration instead of stopping early when max-width exceeds content. */
+  max-width: 240px;
+  opacity: 1;
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.mcp-filter-group[data-state="hidden"] {
+  max-width: 0;
+  margin-left: calc(-1 * var(--space-3));
+  opacity: 0;
+  transform: translateX(4px);
+  pointer-events: none;
+  /* visibility flips to hidden AFTER the fade/slide finishes so the transition
+     still plays — but once fully hidden the subtree is removed from painting,
+     so flex children that overflow the clipped container can't ghost through. */
+  visibility: hidden;
+  transition:
+    max-width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 240ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcp-filter-group {
+    transition: none;
+  }
+}
+
+/* MCP detail modal */
+
+.mcp-detail__meta-stack,
+.cli-detail__meta-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mcp-detail__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.mcp-detail__about {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.mcp-detail__capabilities {
+  gap: var(--space-2);
+}
+
+.mcp-detail__connection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mcp-detail__connection-label {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.mcp-detail__connection-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.mcp-detail__connection-url {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-detail__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  padding: 4px var(--space-3);
+}
+
+.cli-detail__title-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.cli-detail__title-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.cli-detail__title-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cli-detail__title-avatar svg {
+  position: absolute;
+  inset: 10px auto auto 10px;
+  opacity: 0.28;
+}
+
+.cli-detail__title-avatar span {
+  position: relative;
+  z-index: 1;
+  transform: translate(5px, 6px);
+  font-weight: 700;
+  font-size: var(--font-size-md);
+}
+
+.cli-detail__title-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cli-detail__title-copy h2 {
+  margin: 0;
+}
+
+.cli-detail__title-copy code {
+  width: fit-content;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cli-detail__facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.cli-detail__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cli-detail__fact--accent {
+  color: var(--color-accent);
+}
+
+.cli-detail__fact-separator {
+  color: color-mix(in srgb, var(--color-text-muted) 48%, transparent);
+}
+
+.cli-detail__markdown {
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.cli-detail__markdown h1,
+.cli-detail__markdown h2,
+.cli-detail__markdown h3,
+.cli-detail__markdown h4 {
+  color: var(--color-text);
+}
+
+.cli-detail__metadata dd,
+.cli-detail__metadata dt {
+  margin: 0;
+}
+
+.cli-detail__command-row {
+  margin-top: 0;
+}
+
+.cli-detail__metadata {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.cli-detail__metadata div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cli-detail__metadata div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.cli-detail__metadata dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.cli-detail__metadata dd {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.mcp-detail__tool-list,
+.mcp-detail__resource-list,
+.mcp-detail__prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mcp-detail__show-more {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+}
+
+/* Tool entry */
+
+.mcp-tool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.mcp-tool__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mcp-tool__name {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+
+.mcp-tool__description {
+  margin: 0;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.mcp-tool__params-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mcp-tool__params-heading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mcp-tool__params {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  align-items: start;
+}
+
+.mcp-tool__param {
+  display: contents;
+}
+
+.mcp-tool__param-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.mcp-tool__param-type {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  align-self: start;
+}
+
+.mcp-tool__param-required {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.mcp-tool__param-body {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.mcp-tool__param-body p {
+  margin: 0;
+}
+
+.mcp-tool__param-annotations {
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-family: var(--font-mono);
+}
+
+/* Resource + prompt rows */
+
+.mcp-detail__resource,
+.mcp-detail__prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.mcp-detail__resource-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.mcp-detail__resource-head code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.mcp-detail__resource-mime {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+}
+
+.mcp-detail__resource-uri {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.mcp-detail__resource p,
+.mcp-detail__prompt p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.mcp-detail__prompt-args {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.mcp-detail__prompt-args code {
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+@media (max-width: 680px) {
+  .detail-sheet__meta {
+    gap: var(--space-2);
+  }
+
+  .mcp-tool__params {
+    grid-template-columns: 1fr;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .mcp-tool__param {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+}

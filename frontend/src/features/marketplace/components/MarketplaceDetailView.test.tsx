@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useMarketplaceDetailQuery, useMarketplaceDocumentQuery } from "../api/queries";
@@ -85,5 +85,14 @@ describe("MarketplaceDetailView", () => {
 
     expect(screen.getAllByRole("heading", { name: "Mode Switch" })).not.toHaveLength(0);
     expect(screen.queryByLabelText("Refreshing preview")).not.toBeInTheDocument();
+    const sourceRail = screen.getByLabelText("Source links for mode-io/skills");
+    expect(within(sourceRail).getByRole("link", { name: /mode-io\/skills/i })).toHaveAttribute(
+      "href",
+      "https://github.com/mode-io/skills",
+    );
+    expect(within(sourceRail).getByRole("link", { name: "View on skills.sh" })).toHaveAttribute(
+      "href",
+      "https://skills.sh/mode-io/skills/mode-switch",
+    );
   });
 });

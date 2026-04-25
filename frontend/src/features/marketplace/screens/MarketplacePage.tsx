@@ -1,140 +1,89 @@
-import { useEffect, useRef } from "react";
-
 import { ErrorBanner } from "../../../components/ErrorBanner";
-import { LoadingSpinner } from "../../../components/LoadingSpinner";
-import { SearchInput } from "../../../components/SearchInput";
 import { MarketplaceCard } from "../components/MarketplaceCard";
+import { MarketplaceFeedPane } from "../components/MarketplaceFeedPane";
 import { MarketplaceDetailSheet } from "../components/MarketplaceDetailSheet";
 import { useMarketplaceController } from "../model/use-marketplace-controller";
 
-export default function MarketplacePage() {
+export interface MarketplacePageProps {
+  isActive: boolean;
+  query: string;
+  onQueryChange: (value: string) => void;
+  onItemCountChange: (count: number) => void;
+}
+
+export default function MarketplacePage({
+  isActive,
+  query,
+  onQueryChange,
+  onItemCountChange,
+}: MarketplacePageProps) {
   const {
-    query,
     errorMessage,
     selectedItemId,
     selectedItem,
     items,
     feedQuery,
-    mode,
     status,
     hasMore,
     loadingMore,
-    searchSubmitPending,
-    resultLabel,
-    setQuery,
-    submitSearch,
     openItem,
     closeItem,
     installItem,
     isInstallPending,
     openInstalledSkill,
     dismissError,
-  } = useMarketplaceController();
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const pagingRef = useRef(false);
+  } = useMarketplaceController({ query, onQueryChange });
+  const feedErrorMessage =
+    feedQuery.error instanceof Error
+      ? feedQuery.error.message
+      : "Unable to load the marketplace.";
 
-  useEffect(() => {
-    if (status !== "ready" || !hasMore) {
-      return;
-    }
-    const node = sentinelRef.current;
-    if (!node) {
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting) || pagingRef.current) {
-          return;
-        }
-        pagingRef.current = true;
-        void feedQuery.fetchNextPage().finally(() => {
-          pagingRef.current = false;
-        });
-      },
-      { rootMargin: "240px" },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [feedQuery, hasMore, status]);
-  const feedErrorMessage = feedQuery.error instanceof Error ? feedQuery.error.message : "Unable to load the marketplace.";
+  // Only open the detail modal if this tab is active AND the URL item id
+  // is in our namespace (skills.sh items are prefixed `skillssh:`).
+  const ownsItemId = Boolean(selectedItemId?.startsWith("skillssh:"));
+  const resolvedItemId = isActive && ownsItemId ? selectedItemId : null;
 
   return (
     <>
-      <section className="marketplace-page">
-        <div className="marketplace-page__hero">
-          <div>
-            <h2>Marketplace</h2>
-            <p className="page-header__copy">
-              Browse the all-time skills.sh leaderboard and preview repo-backed skills before installing them into the managed store.
-            </p>
-          </div>
+      {errorMessage && !selectedItemId ? (
+        <div className="page-chrome page-chrome--floating">
+          <ErrorBanner message={errorMessage} onDismiss={dismissError} />
         </div>
+      ) : null}
 
-        {errorMessage && !selectedItemId ? <ErrorBanner message={errorMessage} onDismiss={dismissError} /> : null}
-
-        <div className="marketplace-toolbar">
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            onSubmit={() => void submitSearch()}
-            placeholder="Search skills.sh by skill name or topic"
-            submitPending={searchSubmitPending}
-          />
-        </div>
-
-        <div className="marketplace-header">
-          <div>
-            <h3>{resultLabel}</h3>
-            <p className="marketplace-header__note">
-              {mode === "popular"
-                ? "Ranked by all-time installs on skills.sh. GitHub stars are shown as repository context."
-                : "Search results are still ordered by installs. Enter at least 2 characters to query skills.sh."}
-            </p>
+      <MarketplaceFeedPane
+        isActive={isActive}
+        status={status}
+        itemCount={items.length}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        loadingLabel="Loading marketplace"
+        errorMessage={feedErrorMessage}
+        onItemCountChange={onItemCountChange}
+        onLoadMore={() => feedQuery.fetchNextPage()}
+      >
+        <>
+          <div className="market-grid">
+            {items.map((item) => (
+              <MarketplaceCard
+                key={item.id}
+                item={item}
+                selected={item.id === selectedItemId}
+                installing={isInstallPending(item.id)}
+                onOpenDetail={() => openItem(item.id)}
+                onInstall={() => void installItem(item)}
+                onOpenInstalledSkill={openInstalledSkill}
+              />
+            ))}
           </div>
-        </div>
-
-        {status === "loading" && items.length === 0 ? (
-          <div className="panel-state">
-            <LoadingSpinner label="Loading marketplace" />
-          </div>
-        ) : null}
-
-        {status === "error" ? (
-          <div className="panel-state">
-            <ErrorBanner message={feedErrorMessage} />
-          </div>
-        ) : null}
-
-        {status === "ready" ? (
-          <>
-            <div className="marketplace-grid">
-              {items.map((item) => (
-                <MarketplaceCard
-                  key={item.id}
-                  item={item}
-                  selected={item.id === selectedItemId}
-                  installing={isInstallPending(item.id)}
-                  onOpenDetail={() => openItem(item.id)}
-                  onInstall={() => void installItem(item)}
-                  onOpenInstalledSkill={openInstalledSkill}
-                />
-              ))}
-            </div>
-            {hasMore ? <div ref={sentinelRef} className="marketplace-load-sentinel" aria-hidden="true" /> : null}
-            {loadingMore ? (
-              <div className="marketplace-load-more">
-                <LoadingSpinner size="sm" label="Loading more marketplace skills" />
-              </div>
-            ) : null}
-          </>
-        ) : null}
-      </section>
+        </>
+      </MarketplaceFeedPane>
 
       <MarketplaceDetailSheet
-        itemId={selectedItemId}
+        itemId={resolvedItemId}
         initialItem={selectedItem}
-        installPending={selectedItemId ? isInstallPending(selectedItemId) : false}
-        actionErrorMessage={selectedItemId ? errorMessage : ""}
+        installPending={resolvedItemId ? isInstallPending(resolvedItemId) : false}
+        actionErrorMessage={resolvedItemId ? errorMessage : ""}
         onDismissActionError={dismissError}
         onClose={closeItem}
         onInstall={installItem}

@@ -3,7 +3,6 @@ import { ChevronDown } from "lucide-react";
 
 interface DetailDisclosureProps {
   title: string;
-  eyebrow?: string;
   defaultOpen?: boolean;
   className?: string;
   children: ReactNode;
@@ -11,7 +10,6 @@ interface DetailDisclosureProps {
 
 export function DetailDisclosure({
   title,
-  eyebrow,
   defaultOpen = false,
   className = "",
   children,
@@ -21,19 +19,20 @@ export function DetailDisclosure({
 
   return (
     <section className={`skill-detail-disclosure${isOpen ? " is-open" : ""}${className ? ` ${className}` : ""}`}>
-      <button
-        type="button"
-        className="skill-detail-disclosure__trigger"
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        <span className="skill-detail-disclosure__heading">
-          {eyebrow ? <span className="skill-detail-disclosure__eyebrow">{eyebrow}</span> : null}
-          <span className="skill-detail-disclosure__title">{title}</span>
-        </span>
-        <ChevronDown className="skill-detail-disclosure__chevron" size={16} aria-hidden="true" />
-      </button>
+      <h3 className="skill-detail-disclosure__header">
+        <button
+          type="button"
+          className="skill-detail-disclosure__trigger"
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          onClick={() => setIsOpen((current) => !current)}
+        >
+          <span className="skill-detail-disclosure__heading">
+            <span className="skill-detail-disclosure__title">{title}</span>
+          </span>
+          <ChevronDown className="skill-detail-disclosure__chevron" size={16} aria-hidden="true" />
+        </button>
+      </h3>
       <div className="skill-detail-disclosure__frame" id={panelId}>
         <div className="skill-detail-disclosure__body">{children}</div>
       </div>

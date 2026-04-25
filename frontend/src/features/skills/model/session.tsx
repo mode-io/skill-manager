@@ -1,78 +1,78 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import {
-  resetUnmanagedSkillsFilters,
-  resetManagedSkillsFilters,
-  type UnmanagedSkillsFilterState,
-  type ManagedSkillsFilterState,
+  resetSkillsNeedsReviewFilters,
+  resetSkillsInUseFilters,
+  type SkillsNeedsReviewFilterState,
+  type SkillsInUseFilterState,
 } from "./selectors";
 
-type SkillsWorkspaceTab = "managed" | "unmanaged";
+type SkillsWorkspaceTab = "inUse" | "needsReview";
 
 interface SkillsWorkspaceSessionContextValue {
-  managedFilters: ManagedSkillsFilterState;
-  unmanagedFilters: UnmanagedSkillsFilterState;
-  managedScrollTop: number | null;
-  unmanagedScrollTop: number | null;
-  updateManagedFilters: (partial: Partial<ManagedSkillsFilterState>) => void;
-  updateUnmanagedFilters: (partial: Partial<UnmanagedSkillsFilterState>) => void;
-  resetManagedFilters: () => void;
-  resetUnmanagedFilters: () => void;
+  inUseFilters: SkillsInUseFilterState;
+  needsReviewFilters: SkillsNeedsReviewFilterState;
+  inUseScrollTop: number | null;
+  needsReviewScrollTop: number | null;
+  updateInUseFilters: (partial: Partial<SkillsInUseFilterState>) => void;
+  updateNeedsReviewFilters: (partial: Partial<SkillsNeedsReviewFilterState>) => void;
+  resetInUseFilters: () => void;
+  resetNeedsReviewFilters: () => void;
   setScrollPosition: (tab: SkillsWorkspaceTab, scrollTop: number) => void;
 }
 
 const SkillsWorkspaceSessionContext = createContext<SkillsWorkspaceSessionContextValue | null>(null);
 
 export function SkillsWorkspaceSessionProvider({ children }: { children: ReactNode }) {
-  const [managedFilters, setManagedFilters] = useState<ManagedSkillsFilterState>(() => resetManagedSkillsFilters());
-  const [unmanagedFilters, setUnmanagedFilters] = useState<UnmanagedSkillsFilterState>(() => resetUnmanagedSkillsFilters());
-  const [managedScrollTop, setManagedScrollTop] = useState<number | null>(null);
-  const [unmanagedScrollTop, setUnmanagedScrollTop] = useState<number | null>(null);
+  const [inUseFilters, setInUseFilters] = useState<SkillsInUseFilterState>(() => resetSkillsInUseFilters());
+  const [needsReviewFilters, setNeedsReviewFilters] = useState<SkillsNeedsReviewFilterState>(() => resetSkillsNeedsReviewFilters());
+  const [inUseScrollTop, setInUseScrollTop] = useState<number | null>(null);
+  const [needsReviewScrollTop, setNeedsReviewScrollTop] = useState<number | null>(null);
 
-  const updateManagedFilters = useCallback((partial: Partial<ManagedSkillsFilterState>) => {
-    setManagedFilters((current) => ({ ...current, ...partial }));
+  const updateInUseFilters = useCallback((partial: Partial<SkillsInUseFilterState>) => {
+    setInUseFilters((current) => ({ ...current, ...partial }));
   }, []);
 
-  const updateUnmanagedFilters = useCallback((partial: Partial<UnmanagedSkillsFilterState>) => {
-    setUnmanagedFilters((current) => ({ ...current, ...partial }));
+  const updateNeedsReviewFilters = useCallback((partial: Partial<SkillsNeedsReviewFilterState>) => {
+    setNeedsReviewFilters((current) => ({ ...current, ...partial }));
   }, []);
 
-  const resetManaged = useCallback(() => {
-    setManagedFilters(resetManagedSkillsFilters());
+  const resetInUse = useCallback(() => {
+    setInUseFilters(resetSkillsInUseFilters());
   }, []);
 
-  const resetUnmanaged = useCallback(() => {
-    setUnmanagedFilters(resetUnmanagedSkillsFilters());
+  const resetNeedsReview = useCallback(() => {
+    setNeedsReviewFilters(resetSkillsNeedsReviewFilters());
   }, []);
 
   const setScrollPosition = useCallback((tab: SkillsWorkspaceTab, scrollTop: number) => {
-    if (tab === "managed") {
-      setManagedScrollTop(scrollTop);
+    if (tab === "inUse") {
+      setInUseScrollTop(scrollTop);
       return;
     }
-    setUnmanagedScrollTop(scrollTop);
+    setNeedsReviewScrollTop(scrollTop);
   }, []);
 
   const value = useMemo<SkillsWorkspaceSessionContextValue>(() => ({
-    managedFilters,
-    unmanagedFilters,
-    managedScrollTop,
-    unmanagedScrollTop,
-    updateManagedFilters,
-    updateUnmanagedFilters,
-    resetManagedFilters: resetManaged,
-    resetUnmanagedFilters: resetUnmanaged,
+    inUseFilters,
+    needsReviewFilters,
+    inUseScrollTop,
+    needsReviewScrollTop,
+    updateInUseFilters,
+    updateNeedsReviewFilters,
+    resetInUseFilters: resetInUse,
+    resetNeedsReviewFilters: resetNeedsReview,
     setScrollPosition,
   }), [
-    unmanagedFilters,
-    unmanagedScrollTop,
-    managedFilters,
-    managedScrollTop,
-    resetUnmanaged,
-    resetManaged,
+    needsReviewFilters,
+    needsReviewScrollTop,
+    inUseFilters,
+    inUseScrollTop,
+    resetNeedsReview,
+    resetInUse,
     setScrollPosition,
-    updateUnmanagedFilters,
-    updateManagedFilters,
+    updateNeedsReviewFilters,
+    updateInUseFilters,
   ]);
 
   return (
@@ -82,21 +82,21 @@ export function SkillsWorkspaceSessionProvider({ children }: { children: ReactNo
   );
 }
 
-export function useManagedSkillsSession() {
+export function useSkillsInUseSession() {
   const context = useSkillsWorkspaceSession();
   return {
-    filters: context.managedFilters,
-    updateFilters: context.updateManagedFilters,
-    resetFilters: context.resetManagedFilters,
+    filters: context.inUseFilters,
+    updateFilters: context.updateInUseFilters,
+    resetFilters: context.resetInUseFilters,
   };
 }
 
-export function useUnmanagedSkillsSession() {
+export function useSkillsNeedsReviewSession() {
   const context = useSkillsWorkspaceSession();
   return {
-    filters: context.unmanagedFilters,
-    updateFilters: context.updateUnmanagedFilters,
-    resetFilters: context.resetUnmanagedFilters,
+    filters: context.needsReviewFilters,
+    updateFilters: context.updateNeedsReviewFilters,
+    resetFilters: context.resetNeedsReviewFilters,
   };
 }
 
@@ -107,7 +107,7 @@ export function useSkillsTabScroll(
 ) {
   const context = useSkillsWorkspaceSession();
   const restoredRef = useRef(false);
-  const targetScrollTop = tab === "managed" ? context.managedScrollTop : context.unmanagedScrollTop;
+  const targetScrollTop = tab === "inUse" ? context.inUseScrollTop : context.needsReviewScrollTop;
 
   useLayoutEffect(() => {
     if (!ready || restoredRef.current || targetScrollTop === null) {

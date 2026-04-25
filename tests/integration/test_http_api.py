@@ -17,7 +17,7 @@ class HttpApiTests(unittest.TestCase):
             settings = harness.get_json("/api/settings")
 
             self.assertTrue(health["ok"])
-            self.assertEqual(skills["summary"]["managed"], 0)
+            self.assertEqual(skills["summary"], {"managed": 0, "unmanaged": 0})
             self.assertEqual(skills["rows"], [])
             self.assertEqual(len(settings["harnesses"]), 5)
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
@@ -35,7 +35,7 @@ class HttpApiTests(unittest.TestCase):
             settings = harness.get_json("/api/settings")
 
             self.assertTrue(health["ok"])
-            self.assertEqual(skills["summary"]["managed"], 0)
+            self.assertEqual(skills["summary"], {"managed": 0, "unmanaged": 0})
             self.assertEqual(skills["rows"], [])
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
             self.assertFalse(openclaw["installed"])
@@ -63,14 +63,15 @@ class HttpApiTests(unittest.TestCase):
             skills = harness.get_json("/api/skills")
 
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
+            trace_lens = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
             source_status = harness.get_json(f"/api/skills/{shared_audit['skillRef']}/source-status")
-            review_helper = next(row for row in skills["rows"] if row["name"] == "Review Helper")
-            builtin_detail = harness.get_json(f"/api/skills/{review_helper['skillRef']}")
-            builtin_source_status = harness.get_json(f"/api/skills/{review_helper['skillRef']}/source-status")
 
+            self.assertEqual(skills["summary"], {"managed": 1, "unmanaged": 2})
             self.assertEqual(shared_audit["displayStatus"], "Managed")
-            self.assertNotIn("isBuiltin", shared_audit)
+            self.assertEqual(shared_audit["actions"], {"canManage": False, "canStopManaging": False, "canDelete": True})
+            self.assertEqual(trace_lens["displayStatus"], "Unmanaged")
+            self.assertEqual(trace_lens["actions"], {"canManage": True, "canStopManaging": False, "canDelete": False})
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertEqual(
                 [cell["label"] for cell in detail["harnessCells"]],
@@ -91,24 +92,6 @@ class HttpApiTests(unittest.TestCase):
                 "repoUrl": "https://github.com/mode-io/shared-audit",
                 "folderUrl": None,
             })
-            self.assertFalse(builtin_detail["actions"]["canDelete"])
-            self.assertIsNone(builtin_source_status["updateStatus"])
-            self.assertIsNone(builtin_detail["actions"]["stopManagingStatus"])
-            self.assertEqual(builtin_detail["actions"]["stopManagingHarnessLabels"], [])
-            self.assertEqual(builtin_detail["actions"]["deleteHarnessLabels"], [])
-            self.assertEqual(
-                builtin_detail["harnessCells"],
-                [
-                    {"harness": "codex", "label": "Codex", "logoKey": "codex", "state": "empty", "interactive": False},
-                    {"harness": "claude", "label": "Claude", "logoKey": "claude", "state": "empty", "interactive": False},
-                    {"harness": "cursor", "label": "Cursor", "logoKey": "cursor", "state": "empty", "interactive": False},
-                    {"harness": "opencode", "label": "OpenCode", "logoKey": "opencode", "state": "builtin", "interactive": False},
-                    {"harness": "openclaw", "label": "OpenClaw", "logoKey": "openclaw", "state": "empty", "interactive": False},
-                ],
-            )
-            self.assertIsNone(builtin_detail["documentMarkdown"])
-            self.assertNotIn("advanced", builtin_detail)
-            self.assertIsNone(builtin_detail["sourceLinks"])
 
     def test_managed_detail_returns_shared_store_location_before_tool_links(self) -> None:
         with AppTestHarness(fixture_factory=seed_managed_linked_fixture) as harness:

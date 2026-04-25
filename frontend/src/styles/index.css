@@ -1,0 +1,49 @@
+/* Cascade layer order — declared once, enforced everywhere.
+ *
+ *   reset       → element resets
+ *   tokens      → custom properties (design tokens)
+ *   base        → element-level rules (scrollbars; add html/body here if needed)
+ *   components  → shared, app-wide primitives (buttons, cards, dialogs, …)
+ *   features    → feature-specific styles colocated under features/<name>/styles/
+ *   utilities   → helper classes
+ *   overrides   → escape hatch (empty by default)
+ *
+ * Lower-numbered layers lose to higher-numbered ones regardless of source
+ * order. Source order within a layer wins ties. Each file below already
+ * wraps its contents in the appropriate @layer { … } block, so @import
+ * order here only affects in-layer ties — cross-layer cascade is locked.
+ *
+ * Adding a new shared primitive: create a file in styles/components/
+ * (wrap contents in @layer components { … }) and @import it below.
+ * See frontend/src/styles/README.md for more.
+ */
+@layer reset, tokens, base, components, features, utilities, overrides;
+
+@import "./reset.css" layer(reset);
+@import "./tokens.css" layer(tokens);
+@import "./scrollbars.css" layer(base);
+
+/* Shared component primitives.
+ * Order preserves the original app.css → ui.css → dialogs.css sequence so
+ * in-layer source-order ties resolve identically to pre-split behavior. */
+@import "./components/page.css";
+@import "./components/sidebar.css";
+@import "./components/filter.css";
+@import "./components/bulk-bar.css";
+@import "./components/toast.css";
+@import "./components/empty-panel.css";
+@import "./components/cards.css";
+@import "./components/action-pill.css";
+@import "./components/needs-review-row.css";
+@import "./components/view-mode-toggle.css";
+@import "./components/buttons.css";
+@import "./components/chips.css";
+@import "./components/harness.css";
+@import "./components/note.css";
+@import "./components/error-banner.css";
+@import "./components/spinner.css";
+@import "./components/popup.css";
+@import "./components/detail-sheet.css";
+@import "./dialogs.css";
+
+@import "./utilities.css";

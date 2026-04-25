@@ -36,8 +36,8 @@ export function MarketplaceDetailSheet({
     }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="marketplace-detail-overlay" />
-        <Dialog.Content className="marketplace-detail-sheet ui-scrollbar" aria-label="Marketplace skill details">
+        <Dialog.Overlay className="dialog-overlay" />
+        <Dialog.Content className="detail-sheet ui-scrollbar" aria-label="Marketplace skill details">
           <Dialog.Title className="u-visually-hidden">Marketplace skill details</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
             Preview a marketplace skill before opening it in Skills or installing it.

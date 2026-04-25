@@ -34,8 +34,8 @@ class ResolveAppPathsTests(unittest.TestCase):
             self.assertEqual(paths.config_dir, base)
             self.assertEqual(paths.data_dir, base)
             self.assertEqual(paths.state_dir, base)
-            self.assertEqual(paths.shared_store_root, base / "shared")
-            self.assertEqual(paths.shared_store_manifest, base / "manifest.json")
+            self.assertEqual(paths.skills_store_root, base / "shared")
+            self.assertEqual(paths.skills_store_manifest, base / "manifest.json")
             self.assertEqual(paths.marketplace_cache_root, base / "marketplace")
             self.assertEqual(paths.settings_path, base / "settings.json")
             self.assertEqual(paths.runtime_state_path, base / "runtime.json")
@@ -54,7 +54,7 @@ class ResolveAppPathsTests(unittest.TestCase):
             self.assertEqual(paths.config_dir, root / "cfg" / APP_NAME)
             self.assertEqual(paths.data_dir, root / "data" / APP_NAME)
             self.assertEqual(paths.state_dir, root / "state" / APP_NAME)
-            self.assertEqual(paths.shared_store_root, root / "data" / APP_NAME / "shared")
+            self.assertEqual(paths.skills_store_root, root / "data" / APP_NAME / "shared")
             self.assertEqual(paths.settings_path, root / "cfg" / APP_NAME / "settings.json")
 
     def test_settings_path_env_overrides_settings_path(self) -> None:
