@@ -1,7 +1,7 @@
 {
   "name": "skill-manager",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "VITE_API_BASE=/api vite --host 127.0.0.1 --port 5173",

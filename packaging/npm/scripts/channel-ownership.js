@@ -38,27 +38,31 @@ function packageRootPath() {
   return path.resolve(__dirname, "..");
 }
 
+function isNonEmptyDirectory(directory) {
+  try {
+    return fs.statSync(directory).isDirectory() && fs.readdirSync(directory).length > 0;
+  } catch {
+    return false;
+  }
+}
+
 function detectHomebrewInstall() {
   const prefixes = new Set();
   const envPrefix = String(process.env.HOMEBREW_PREFIX || "").trim();
   if (envPrefix) {
     prefixes.add(envPrefix);
   }
-  prefixes.add("/opt/homebrew");
-  prefixes.add("/usr/local");
 
   const brewPrefix = spawnSync("brew", ["--prefix"], { encoding: "utf8" });
   if (brewPrefix.status === 0 && brewPrefix.stdout.trim()) {
     prefixes.add(brewPrefix.stdout.trim());
+  } else {
+    prefixes.add("/opt/homebrew");
+    prefixes.add("/usr/local");
   }
 
   const brewList = spawnSync("brew", ["list", "--versions", "skill-manager"], { encoding: "utf8" });
   if (brewList.status === 0 && brewList.stdout.trim()) {
-    return true;
-  }
-
-  const formulaPrefix = spawnSync("brew", ["--prefix", "skill-manager"], { encoding: "utf8" });
-  if (formulaPrefix.status === 0 && formulaPrefix.stdout.trim()) {
     return true;
   }
 
@@ -69,7 +73,7 @@ function detectHomebrewInstall() {
     if (fs.existsSync(path.join(prefix, "opt", "skill-manager"))) {
       return true;
     }
-    if (fs.existsSync(path.join(prefix, "Cellar", "skill-manager"))) {
+    if (isNonEmptyDirectory(path.join(prefix, "Cellar", "skill-manager"))) {
       return true;
     }
   }
