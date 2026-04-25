@@ -194,4 +194,37 @@ if [[ "$RUNTIME_CONFLICT_OUTPUT" != *"skill-manager is already installed via Hom
   exit 1
 fi
 
+TAPPED_BREW_ROOT="$TMP_DIR/tapped-homebrew"
+TAPPED_BIN_DIR="$TMP_DIR/tapped-bin"
+mkdir -p "$TAPPED_BREW_ROOT" "$TAPPED_BIN_DIR"
+cat >"$TAPPED_BIN_DIR/brew" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "\${1:-}" == "--prefix" && \$# -eq 1 ]]; then
+  printf '%s\n' "$TAPPED_BREW_ROOT"
+  exit 0
+fi
+if [[ "\${1:-}" == "--prefix" && "\${2:-}" == "skill-manager" ]]; then
+  printf '%s\n' "$TAPPED_BREW_ROOT/opt/skill-manager"
+  exit 0
+fi
+if [[ "\${1:-}" == "list" && "\${2:-}" == "--versions" && "\${3:-}" == "skill-manager" ]]; then
+  exit 1
+fi
+exit 1
+EOF
+chmod +x "$TAPPED_BIN_DIR/brew"
+
+PATH="$TAPPED_BIN_DIR:$PATH" \
+  npm install --global --prefix "$TMP_DIR/tapped-global-prefix" "./$PACK_FILE" >/dev/null
+
+TAPPED_VERSION_OUTPUT="$(
+  PATH="$TAPPED_BIN_DIR:$PATH" \
+  "$TMP_DIR/tapped-global-prefix/bin/skill-manager" --version
+)"
+if [[ ! "$TAPPED_VERSION_OUTPUT" =~ ^skill-manager[[:space:]][0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  echo "Tapped-but-uninstalled Homebrew case unexpectedly blocked npm wrapper: $TAPPED_VERSION_OUTPUT" >&2
+  exit 1
+fi
+
 "$TMP_DIR/node_modules/.bin/skill-manager" stop --state-dir "$TMP_DIR/runtime" >/dev/null
