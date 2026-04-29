@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>A local-first control center for AI extensions.</strong><br />
-  Use, review, and discover Skills, MCP servers, and CLI tools across agent harnesses.
+  Use, review, and discover Skills, MCP servers, slash commands, and CLI tools across agent harnesses.
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 ## Why it exists
 
-AI extensions are scattered across harness-specific folders, MCP config files, and marketplace sources. Skill Manager gives those pieces one local control surface:
+AI extensions are scattered across harness-specific folders, MCP config files, slash command locations, and marketplace sources. Skill Manager gives those pieces one local control surface:
 
 | Product idea | What it means |
 |---|---|
@@ -35,6 +35,7 @@ AI extensions are scattered across harness-specific folders, MCP config files, a
 - See what is in use, what needs review, and where extensions are active.
 - Adopt local Skills into one shared inventory, then enable or disable them per harness.
 - Install or adopt MCP server configs, resolve differences, and enable them where supported.
+- Manage reusable slash commands once, then sync them to supported harnesses.
 - Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
 
 ## Product tour
@@ -70,6 +71,19 @@ Typical flow:
 4. Resolve config differences, disable harness bindings, or uninstall it from one place.
 
 ![skill-market-skill-matrxi](./assets/skill-manager-mcp-matrix.png)
+
+### Slash commands
+
+Use slash commands as one shared prompt library instead of rewriting the same command in each harness-specific format.
+
+Typical flow:
+
+1. Create a slash command with a name, description, and prompt.
+2. Use `$ARGUMENTS` where runtime input should be inserted.
+3. Sync it to supported harnesses.
+4. Review existing harness command files and adopt them into the shared library when needed.
+
+![skill-market-slash-commands-matrix](./assets/skill-manager-slash_commands-matrix.png)
 
 ### Marketplace
 
@@ -130,13 +144,13 @@ skill-manager start
   </tr>
 </table>
 
-| Harness | Skills | MCP servers |
-|---|---:|---:|
-| Codex CLI | Yes | Yes |
-| Claude Code | Yes | Yes |
-| Cursor | Yes | Yes |
-| OpenCode | Yes | Yes |
-| OpenClaw | Yes | Not Yet |
+| Harness | Skills | MCP servers | Slash commands |
+|---|---:|---:|---:|
+| Codex CLI | Yes | Yes | Yes |
+| Claude Code | Yes | Yes | Yes |
+| Cursor | Yes | Yes | Yes |
+| OpenCode | Yes | Yes | Yes |
+| OpenClaw | Yes | Not Yet | Not Yet |
 
 ## Local-first safety
 
@@ -151,6 +165,7 @@ Actions that can change local state include:
 - installing an MCP server into a source harness
 - adopting an existing MCP config
 - enabling, disabling, resolving, or uninstalling an MCP server
+- creating, updating, syncing, importing, or deleting a slash command
 - changing harness support settings
 
 App-owned files live under `~/Library/Application Support/skill-manager` on macOS.
@@ -176,6 +191,16 @@ When Skill Manager finds different configs for the same MCP server, it asks you 
 
 ![skill-market-overview](./assets/skill-manager-mcp-translation.svg)
 
+### Slash commands
+
+Slash commands are stored as YAML files under one Skill Manager command library, then rendered into each supported harness format:
+
+- OpenCode, Claude Code, and Cursor use Markdown command files.
+- Codex uses prompt files under `~/.codex/prompts`.
+- OpenClaw slash command writes are not yet supported.
+
+When Skill Manager finds an unmanaged command file in a supported harness, it can import that command into the shared library and record the existing target file as managed state.
+
 ### CLIs
 
 CLI marketplace entries are preview-only.
@@ -188,6 +213,8 @@ Useful paths:
 
 - shared skills store: `~/Library/Application Support/skill-manager/shared`
 - MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
+- slash command library: `~/.slash-command-manager/commands`
+- slash command sync state: `~/.slash-command-manager/sync-state.json`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
 
@@ -265,7 +292,7 @@ npm run build
 ### Extension families
 
 - [ ] Hook support
-- [ ] Slash command support
+- [x] Slash command support
 - [ ] Plugin support
 
 ### Harness expansion
