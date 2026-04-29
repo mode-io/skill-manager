@@ -14,6 +14,12 @@ import {
   useSkillsListQuery,
   type SkillsWorkspaceData,
 } from "../../features/skills/public";
+import {
+  invalidateSlashCommandQueries,
+  slashCommandRoutes,
+  useSlashCommandsQuery,
+  type SlashCommandListDto,
+} from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
 
 export interface OverviewStatMetric {
@@ -40,9 +46,9 @@ export interface OverviewExtensionFact {
 }
 
 export interface OverviewExtensionKind {
-  key: "skills" | "mcp";
+  key: "skills" | "slash-commands" | "mcp";
   label: string;
-  iconKey: "skills" | "mcp";
+  iconKey: "skills" | "slash-commands" | "mcp";
   facts: OverviewExtensionFact[];
   actions: OverviewExtensionAction[];
 }
@@ -95,11 +101,13 @@ export interface OverviewModel {
 
 export function useOverviewData() {
   const skillsQuery = useSkillsListQuery();
+  const slashCommandsQuery = useSlashCommandsQuery();
   const mcpQuery = useMcpInventoryQuery();
-  const model = useOverviewModel(skillsQuery.data, mcpQuery.data);
+  const model = useOverviewModel(skillsQuery.data, slashCommandsQuery.data, mcpQuery.data);
 
   return {
     skillsQuery,
+    slashCommandsQuery,
     mcpQuery,
     model,
   };
@@ -108,6 +116,7 @@ export function useOverviewData() {
 export async function invalidateOverviewData(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     invalidateSkillsQueries(queryClient),
+    invalidateSlashCommandQueries(queryClient),
     invalidateMcpQueries(queryClient),
   ]);
 }
@@ -118,17 +127,21 @@ interface HarnessAccumulator extends OverviewHarnessRow {
 
 export function useOverviewModel(
   skills: SkillsWorkspaceData | null | undefined,
+  slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
 ): OverviewModel {
-  return useMemo(() => buildOverviewModel(skills, mcp), [skills, mcp]);
+  return useMemo(() => buildOverviewModel(skills, slashCommands, mcp), [skills, slashCommands, mcp]);
 }
 
 export function buildOverviewModel(
   skills: SkillsWorkspaceData | null | undefined,
+  slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
 ): OverviewModel {
   const inUseSkills = skills?.summary.managed ?? null;
   const skillsToReview = skills?.summary.unmanaged ?? null;
+  const inUseSlashCommands = slashCommands?.commands?.length ?? null;
+  const slashCommandsToReview = slashCommands?.reviewCommands?.length ?? null;
   const inUseMcpServers = mcp?.entries.filter((entry) => entry.kind === "managed").length ?? null;
   const mcpConfigsToReview = mcp?.entries.filter((entry) => entry.kind === "unmanaged").length ?? null;
   const differentConfigMcpServers =
@@ -141,24 +154,28 @@ export function buildOverviewModel(
   const unavailableHarnesses = mcp?.columns.filter((column) => column.mcpWritable === false).length ?? null;
   const reviewItems = buildReviewItems({
     skillsToReview,
+    slashCommandsToReview,
     mcpConfigsToReview,
     differentConfigMcpServers,
     inventoryIssues,
     unavailableHarnesses,
   });
   const harnessRows = buildHarnessRows(skills, mcp);
-  const hasOverviewData = Boolean(skills || mcp);
+  const hasOverviewData = Boolean(skills || slashCommands || mcp);
 
   return {
     stats: buildStats({
       inUseSkills,
+      inUseSlashCommands,
       inUseMcpServers,
       needsReview: hasOverviewData ? reviewItems.reduce((total, item) => total + item.count, 0) : null,
       harnesses: hasOverviewData ? harnessRows.length : null,
     }),
     extensions: buildExtensions({
       inUseSkills,
+      inUseSlashCommands,
       skillsToReview,
+      slashCommandsToReview,
       inUseMcpServers,
       mcpConfigsToReview,
       differentConfigMcpServers,
@@ -173,20 +190,23 @@ export function buildOverviewModel(
 
 function buildStats({
   inUseSkills,
+  inUseSlashCommands,
   inUseMcpServers,
   needsReview,
   harnesses,
 }: {
   inUseSkills: number | null;
+  inUseSlashCommands: number | null;
   inUseMcpServers: number | null;
   needsReview: number | null;
   harnesses: number | null;
 }): OverviewStats {
   return {
     inUse: {
-      value: sumKnown(inUseSkills, inUseMcpServers),
+      value: sumKnown(inUseSkills, inUseSlashCommands, inUseMcpServers),
       detail: [
         formatMetricPart(inUseSkills, "skill", "skills"),
+        formatMetricPart(inUseSlashCommands, "command", "commands"),
         formatMetricPart(inUseMcpServers, "MCP", "MCP"),
       ].join(" · "),
     },
@@ -211,7 +231,9 @@ function sumKnown(...values: Array<number | null>): number | null {
 
 function buildExtensions({
   inUseSkills,
+  inUseSlashCommands,
   skillsToReview,
+  slashCommandsToReview,
   inUseMcpServers,
   mcpConfigsToReview,
   differentConfigMcpServers,
@@ -219,7 +241,9 @@ function buildExtensions({
   unavailableHarnesses,
 }: {
   inUseSkills: number | null;
+  inUseSlashCommands: number | null;
   skillsToReview: number | null;
+  slashCommandsToReview: number | null;
   inUseMcpServers: number | null;
   mcpConfigsToReview: number | null;
   differentConfigMcpServers: number | null;
@@ -238,6 +262,19 @@ function buildExtensions({
       actions: [
         { label: "In use", to: skillsRoutes.inUse, primary: true },
         { label: "Needs review", to: skillsRoutes.needsReview },
+      ],
+    },
+    {
+      key: "slash-commands",
+      label: "Slash Commands",
+      iconKey: "slash-commands",
+      facts: [
+        { label: "in use", value: inUseSlashCommands },
+        { label: "review", value: slashCommandsToReview, tone: "warning" },
+      ],
+      actions: [
+        { label: "In use", to: slashCommandRoutes.inUse, primary: true },
+        { label: "Needs review", to: slashCommandRoutes.needsReview },
       ],
     },
     {
@@ -304,12 +341,14 @@ function formatCount(value: number | null): string {
 
 function buildReviewItems({
   skillsToReview,
+  slashCommandsToReview,
   mcpConfigsToReview,
   differentConfigMcpServers,
   inventoryIssues,
   unavailableHarnesses,
 }: {
   skillsToReview: number | null;
+  slashCommandsToReview: number | null;
   mcpConfigsToReview: number | null;
   differentConfigMcpServers: number | null;
   inventoryIssues: number | null;
@@ -324,6 +363,16 @@ function buildReviewItems({
       count: skillsToReview,
       to: skillsRoutes.needsReview,
       tone: "neutral",
+    });
+  }
+  if (slashCommandsToReview && slashCommandsToReview > 0) {
+    items.push({
+      key: "slash-commands-review",
+      label: "Slash commands",
+      description: "Unmanaged, changed, or missing command files need a decision.",
+      count: slashCommandsToReview,
+      to: slashCommandRoutes.needsReview,
+      tone: "warning",
     });
   }
   if (mcpConfigsToReview && mcpConfigsToReview > 0) {

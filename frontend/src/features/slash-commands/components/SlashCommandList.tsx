@@ -7,6 +7,7 @@ import { MatrixHarnessIcon } from "../../../components/matrix";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { SlashCommandDto, SlashSyncEntryDto, SlashTargetDto } from "../api/types";
+import { countSyncedTargets } from "../model/selectors";
 
 interface SlashCommandListProps {
   commands: SlashCommandDto[];
@@ -14,7 +15,7 @@ interface SlashCommandListProps {
   pendingName: string | null;
   pendingTarget: string | null;
   checkedNames: ReadonlySet<string>;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onSetAllTargets: (command: SlashCommandDto, target: "enabled" | "disabled") => void;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
   onToggleChecked: (name: string) => void;
@@ -27,7 +28,7 @@ export function SlashCommandList({
   pendingName,
   pendingTarget,
   checkedNames,
-  onEdit,
+  onOpen,
   onSetAllTargets,
   onToggleTarget,
   onToggleChecked,
@@ -52,7 +53,7 @@ export function SlashCommandList({
           pending={pendingName === command.name}
           pendingTarget={pendingName === command.name ? pendingTarget : null}
           checked={checkedNames.has(command.name)}
-          onEdit={onEdit}
+          onOpen={onOpen}
           onSetAllTargets={onSetAllTargets}
           onToggleTarget={onToggleTarget}
           onToggleChecked={onToggleChecked}
@@ -69,7 +70,7 @@ function SlashCommandCard({
   pending,
   pendingTarget,
   checked,
-  onEdit,
+  onOpen,
   onSetAllTargets,
   onToggleTarget,
   onToggleChecked,
@@ -80,13 +81,13 @@ function SlashCommandCard({
   pending: boolean;
   pendingTarget: string | null;
   checked: boolean;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onSetAllTargets: (command: SlashCommandDto, target: "enabled" | "disabled") => void;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
   onToggleChecked: (name: string) => void;
   onDelete: (command: SlashCommandDto) => void;
 }) {
-  const activeCount = countSynced(command);
+  const activeCount = countSyncedTargets(command);
   const allEnabled = targets.length > 0 && activeCount === targets.length;
   const setAllTarget: "enabled" | "disabled" = allEnabled ? "disabled" : "enabled";
   const menuItems = useMemo<CardMenuItem[]>(
@@ -106,11 +107,11 @@ function SlashCommandCard({
     <article
       className="skill-card slash-command-card"
       data-selected={checked}
-      onClick={() => onEdit(command)}
+      onClick={() => onOpen(command)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onEdit(command);
+          onOpen(command);
         }
       }}
       role="button"
@@ -119,10 +120,7 @@ function SlashCommandCard({
       <div className="skill-card__head">
         <div className="slash-command-card__title">
           <OverflowTooltipText as="h3" className="skill-card__name">
-            /{command.name}
-          </OverflowTooltipText>
-          <OverflowTooltipText as="span" className="slash-row__codex">
-            /prompts:{command.name}
+            {command.name}
           </OverflowTooltipText>
         </div>
         <span aria-hidden="true" />
@@ -200,7 +198,7 @@ function SlashTargetStack({
               data-state={synced ? "enabled" : "disabled"}
               data-pending={pendingTarget === target.id ? "true" : undefined}
               style={{ zIndex: targets.length - index }}
-              disabled={disabled}
+              disabled={disabled || !target.enabled}
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleTarget(command, target);
@@ -219,10 +217,6 @@ function SlashTargetStack({
       })}
     </span>
   );
-}
-
-function countSynced(command: SlashCommandDto): number {
-  return command.syncTargets.filter((entry) => entry.status === "synced").length;
 }
 
 function targetTitle(label: string, entry: SlashSyncEntryDto | undefined): string {

@@ -1,6 +1,9 @@
 from .catalog import harness_definitions_for_family, supported_harness_definitions, supported_harness_ids
 from .contracts import (
     BindingProfile,
+    CommandFileBindingProfile,
+    CommandFileRenderFormat,
+    CommandFileScope,
     ConfigSubtreeBindingProfile,
     FamilyKey,
     FileTreeBindingProfile,
@@ -17,6 +20,9 @@ from .support_store import HarnessSupportPreferences, HarnessSupportStore
 
 __all__ = [
     "BindingProfile",
+    "CommandFileBindingProfile",
+    "CommandFileRenderFormat",
+    "CommandFileScope",
     "ConfigSubtreeBindingProfile",
     "FamilyBinding",
     "FamilyKey",

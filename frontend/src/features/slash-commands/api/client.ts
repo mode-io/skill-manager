@@ -5,6 +5,7 @@ import type {
   SlashCommandListDto,
   SlashCommandMutationRequest,
   SlashCommandMutationResponse,
+  SlashCommandResolveRequest,
   SlashCommandUpdateRequest,
   SlashSyncRequest,
 } from "./types";
@@ -43,6 +44,12 @@ export async function importSlashCommand(
   body: SlashCommandImportRequest,
 ): Promise<SlashCommandMutationResponse> {
   return postJson<SlashCommandMutationResponse>("/slash-commands/review/import", body);
+}
+
+export async function resolveSlashCommandReview(
+  body: SlashCommandResolveRequest,
+): Promise<SlashCommandMutationResponse> {
+  return postJson<SlashCommandMutationResponse>("/slash-commands/review/resolve", body);
 }
 
 export async function deleteSlashCommand(name: string): Promise<SlashCommandDeleteResponse> {

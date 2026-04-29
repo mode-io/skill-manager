@@ -69,7 +69,7 @@ export function SlashCommandFormDialog({
     ? "Use lowercase letters, numbers, and hyphens, for example code-review."
     : "";
   const canSubmit = trimmedName && !nameError && description.trim() && prompt.trim();
-  const title = mode === "create" ? "New slash command" : "Edit slash command";
+  const title = mode === "create" ? "New slash command" : "Edit command";
 
   function toggleTarget(target: SlashTargetId): void {
     setSelectedTargets((current) =>
@@ -157,6 +157,7 @@ export function SlashCommandFormDialog({
               <div className="detail-sheet__bindings">
                 {targets.map((target) => {
                   const checked = selectedTargets.includes(target.id);
+                  const targetDisabled = pending || !target.enabled;
                   return (
                     <div
                       key={target.id}
@@ -174,7 +175,7 @@ export function SlashCommandFormDialog({
                         <button
                           type="button"
                           className={`action-pill ${checked ? "action-pill--danger" : "action-pill--accent"}`}
-                          disabled={pending}
+                          disabled={targetDisabled}
                           onClick={() => toggleTarget(target.id)}
                           aria-pressed={checked}
                           aria-label={`${checked ? "Disable" : "Enable"} ${target.label}`}
@@ -190,7 +191,7 @@ export function SlashCommandFormDialog({
 
             {writtenEntries.length > 0 ? (
               <section className="slash-written-locations" aria-labelledby="slash-written-locations-title">
-                <h3 id="slash-written-locations-title">Write locations</h3>
+                <h3 id="slash-written-locations-title">Locations</h3>
                 <div className="detail-sheet__bindings">
                   {writtenEntries.map((entry) => (
                     <SlashWrittenLocationRow

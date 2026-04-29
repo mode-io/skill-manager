@@ -2880,6 +2880,41 @@
         "title": "SlashCommandMutationResponse",
         "type": "object"
       },
+      "SlashCommandResolveRequest": {
+        "properties": {
+          "action": {
+            "enum": [
+              "restore_managed",
+              "adopt_target",
+              "remove_binding"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "name",
+          "action"
+        ],
+        "title": "SlashCommandResolveRequest",
+        "type": "object"
+      },
       "SlashCommandResponse": {
         "properties": {
           "description": {
@@ -2913,6 +2948,19 @@
       },
       "SlashCommandReviewResponse": {
         "properties": {
+          "actions": {
+            "items": {
+              "enum": [
+                "import",
+                "restore_managed",
+                "adopt_target",
+                "remove_binding"
+              ],
+              "type": "string"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
           "canImport": {
             "title": "Canimport",
             "type": "boolean"
@@ -2935,6 +2983,15 @@
               }
             ],
             "title": "Error"
+          },
+          "kind": {
+            "enum": [
+              "unmanaged",
+              "drifted",
+              "missing"
+            ],
+            "title": "Kind",
+            "type": "string"
           },
           "name": {
             "title": "Name",
@@ -2969,6 +3026,7 @@
         },
         "required": [
           "reviewRef",
+          "kind",
           "target",
           "targetLabel",
           "name",
@@ -2976,7 +3034,8 @@
           "description",
           "prompt",
           "commandExists",
-          "canImport"
+          "canImport",
+          "actions"
         ],
         "title": "SlashCommandReviewResponse",
         "type": "object"
@@ -3044,6 +3103,9 @@
               "removed",
               "not_selected",
               "blocked_manual_file",
+              "blocked_modified_file",
+              "missing",
+              "drifted",
               "failed"
             ],
             "title": "Status",
@@ -3096,9 +3158,25 @@
       },
       "SlashTargetResponse": {
         "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
           "defaultSelected": {
             "title": "Defaultselected",
             "type": "boolean"
+          },
+          "docsUrl": {
+            "title": "Docsurl",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "fileGlob": {
+            "title": "Fileglob",
+            "type": "string"
           },
           "id": {
             "enum": [
@@ -3122,9 +3200,40 @@
             "title": "Outputdir",
             "type": "string"
           },
+          "renderFormat": {
+            "enum": [
+              "frontmatter_markdown",
+              "cursor_plaintext"
+            ],
+            "title": "Renderformat",
+            "type": "string"
+          },
           "rootPath": {
             "title": "Rootpath",
             "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "global",
+              "project"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "supportNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supportnote"
+          },
+          "supportsFrontmatter": {
+            "title": "Supportsfrontmatter",
+            "type": "boolean"
           }
         },
         "required": [
@@ -3133,7 +3242,14 @@
           "rootPath",
           "outputDir",
           "invocationPrefix",
-          "defaultSelected"
+          "renderFormat",
+          "scope",
+          "docsUrl",
+          "fileGlob",
+          "supportsFrontmatter",
+          "defaultSelected",
+          "enabled",
+          "available"
         ],
         "title": "SlashTargetResponse",
         "type": "object"
@@ -4787,6 +4903,44 @@
           }
         },
         "summary": "Import Slash Command"
+      }
+    },
+    "/api/slash-commands/review/resolve": {
+      "post": {
+        "operationId": "resolve_slash_command_review_api_slash_commands_review_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashCommandResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Slash Command Review"
       }
     },
     "/api/slash-commands/{name}": {

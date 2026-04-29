@@ -16,16 +16,21 @@ import { getHarnessPresentation } from "../../../components/harness/harnessPrese
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { SlashCommandDto, SlashTargetDto } from "../api/types";
-
-type SlashBucket = "disabled" | "selective" | "enabled";
-type SlashTerminalBucket = "disabled" | "enabled";
+import {
+  bucketForSlashCommand,
+  enabledTargetsForCommand,
+  type SlashBucket,
+  type SlashCommandBuckets,
+  type SlashTerminalBucket,
+} from "../model/selectors";
 
 interface SlashCommandBoardProps {
   commands: SlashCommandDto[];
+  buckets: SlashCommandBuckets;
   targets: SlashTargetDto[];
   pendingName: string | null;
   checkedNames: ReadonlySet<string>;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onToggleChecked: (name: string) => void;
   onSetAllTargets: (command: SlashCommandDto, target: SlashTerminalBucket) => Promise<void> | void;
 }
@@ -38,10 +43,11 @@ function isTerminalBucket(value: unknown): value is SlashTerminalBucket {
 
 export function SlashCommandBoard({
   commands,
+  buckets: baseBuckets,
   targets,
   pendingName,
   checkedNames,
-  onEdit,
+  onOpen,
   onToggleChecked,
   onSetAllTargets,
 }: SlashCommandBoardProps) {
@@ -64,7 +70,7 @@ export function SlashCommandBoard({
   }, [pendingName, transitionTarget.size]);
 
   const buckets = useMemo(() => {
-    const base = bucketCommands(commands, targets.length);
+    const base = baseBuckets;
     if (transitionTarget.size === 0) return base;
 
     const pinned = new Map<string, SlashCommandDto>();
@@ -86,7 +92,7 @@ export function SlashCommandBoard({
       rebucketed[transitionTarget.get(name)!].push(command);
     }
     return rebucketed;
-  }, [commands, targets.length, transitionTarget]);
+  }, [baseBuckets, commands, transitionTarget]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -98,7 +104,7 @@ export function SlashCommandBoard({
       if (!command) return;
 
       const targetBucket = over.id;
-      const currentBucket = bucketForCommand(command, targets.length);
+      const currentBucket = bucketForSlashCommand(command, targets.length);
       if (TERMINAL_BUCKETS.has(currentBucket) && currentBucket === targetBucket) {
         return;
       }
@@ -130,7 +136,7 @@ export function SlashCommandBoard({
               targets={targets}
               pending={pendingName === command.name}
               checked={checkedNames.has(command.name)}
-              onEdit={onEdit}
+              onOpen={onOpen}
               onToggleChecked={onToggleChecked}
             />
           ))}
@@ -150,7 +156,7 @@ export function SlashCommandBoard({
               targets={targets}
               pending={pendingName === command.name}
               checked={checkedNames.has(command.name)}
-              onEdit={onEdit}
+              onOpen={onOpen}
               onToggleChecked={onToggleChecked}
             />
           ))}
@@ -170,7 +176,7 @@ export function SlashCommandBoard({
               targets={targets}
               pending={pendingName === command.name}
               checked={checkedNames.has(command.name)}
-              onEdit={onEdit}
+              onOpen={onOpen}
               onToggleChecked={onToggleChecked}
             />
           ))}
@@ -235,14 +241,14 @@ function SlashBoardCard({
   targets,
   pending,
   checked,
-  onEdit,
+  onOpen,
   onToggleChecked,
 }: {
   command: SlashCommandDto;
   targets: SlashTargetDto[];
   pending: boolean;
   checked: boolean;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onToggleChecked: (name: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -263,12 +269,12 @@ function SlashBoardCard({
       data-pending={pending ? "true" : undefined}
       style={style}
       onClick={() => {
-        if (!isDragging) onEdit(command);
+        if (!isDragging) onOpen(command);
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onEdit(command);
+          onOpen(command);
         }
       }}
       role="button"
@@ -277,7 +283,7 @@ function SlashBoardCard({
       <div className="skill-card__head">
         <div className="slash-command-card__title">
           <OverflowTooltipText as="h3" className="skill-card__name">
-            /{command.name}
+            {command.name}
           </OverflowTooltipText>
         </div>
         <span aria-hidden="true" />
@@ -305,12 +311,7 @@ function SlashBoardTargetStack({
   command: SlashCommandDto;
   targets: SlashTargetDto[];
 }) {
-  const synced = new Set(
-    command.syncTargets
-      .filter((entry) => entry.status === "synced")
-      .map((entry) => entry.target),
-  );
-  const enabledTargets = targets.filter((target) => synced.has(target.id));
+  const enabledTargets = enabledTargetsForCommand(command, targets);
   return (
     <div className="skill-card__harness-row">
       <div className="harness-stack" aria-label={`Enabled on ${enabledTargets.length} targets`}>
@@ -337,24 +338,4 @@ function SlashBoardTargetStack({
       </span>
     </div>
   );
-}
-
-function bucketCommands(
-  commands: SlashCommandDto[],
-  targetCount: number,
-): Record<SlashBucket, SlashCommandDto[]> {
-  return commands.reduce<Record<SlashBucket, SlashCommandDto[]>>(
-    (acc, command) => {
-      acc[bucketForCommand(command, targetCount)].push(command);
-      return acc;
-    },
-    { disabled: [], selective: [], enabled: [] },
-  );
-}
-
-function bucketForCommand(command: SlashCommandDto, targetCount: number): SlashBucket {
-  const enabledCount = command.syncTargets.filter((entry) => entry.status === "synced").length;
-  if (enabledCount === 0 || targetCount === 0) return "disabled";
-  if (enabledCount === targetCount) return "enabled";
-  return "selective";
 }

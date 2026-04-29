@@ -6,7 +6,21 @@ from pydantic import BaseModel, Field
 
 
 SlashTargetId = Literal["opencode", "claude", "cursor", "codex"]
-SlashSyncStatus = Literal["synced", "removed", "not_selected", "blocked_manual_file", "failed"]
+SlashRenderFormat = Literal["frontmatter_markdown", "cursor_plaintext"]
+SlashCommandScope = Literal["global", "project"]
+SlashSyncStatus = Literal[
+    "synced",
+    "removed",
+    "not_selected",
+    "blocked_manual_file",
+    "blocked_modified_file",
+    "missing",
+    "drifted",
+    "failed",
+]
+SlashReviewKind = Literal["unmanaged", "drifted", "missing"]
+SlashReviewAction = Literal["import", "restore_managed", "adopt_target", "remove_binding"]
+SlashReviewResolveAction = Literal["restore_managed", "adopt_target", "remove_binding"]
 
 
 class SlashTargetResponse(BaseModel):
@@ -15,7 +29,15 @@ class SlashTargetResponse(BaseModel):
     rootPath: str
     outputDir: str
     invocationPrefix: str
+    renderFormat: SlashRenderFormat
+    scope: SlashCommandScope
+    docsUrl: str
+    fileGlob: str
+    supportsFrontmatter: bool
+    supportNote: str | None = None
     defaultSelected: bool
+    enabled: bool
+    available: bool
 
 
 class SlashSyncEntryResponse(BaseModel):
@@ -32,13 +54,28 @@ class SlashCommandResponse(BaseModel):
     syncTargets: list[SlashSyncEntryResponse]
 
 
+class SlashCommandReviewResponse(BaseModel):
+    reviewRef: str
+    kind: SlashReviewKind
+    target: SlashTargetId
+    targetLabel: str
+    name: str
+    path: str
+    description: str
+    prompt: str
+    commandExists: bool
+    canImport: bool
+    actions: list[SlashReviewAction]
+    error: str | None = None
+
+
 class SlashCommandListResponse(BaseModel):
     storePath: str
     syncStatePath: str
     targets: list[SlashTargetResponse]
     defaultTargets: list[SlashTargetId]
     commands: list[SlashCommandResponse]
-    reviewCommands: list["SlashCommandReviewResponse"]
+    reviewCommands: list[SlashCommandReviewResponse]
 
 
 class SlashCommandMutationRequest(BaseModel):
@@ -58,22 +95,15 @@ class SlashSyncRequest(BaseModel):
     targets: list[SlashTargetId] | None = None
 
 
-class SlashCommandReviewResponse(BaseModel):
-    reviewRef: str
-    target: SlashTargetId
-    targetLabel: str
-    name: str
-    path: str
-    description: str
-    prompt: str
-    commandExists: bool
-    canImport: bool
-    error: str | None = None
-
-
 class SlashCommandImportRequest(BaseModel):
     target: SlashTargetId
     name: str = Field(..., min_length=1)
+
+
+class SlashCommandResolveRequest(BaseModel):
+    target: SlashTargetId
+    name: str = Field(..., min_length=1)
+    action: SlashReviewResolveAction
 
 
 class SlashCommandMutationResponse(BaseModel):
@@ -89,13 +119,19 @@ class SlashCommandDeleteResponse(BaseModel):
 
 __all__ = [
     "SlashCommandDeleteResponse",
-    "SlashCommandListResponse",
+    "SlashCommandScope",
     "SlashCommandImportRequest",
+    "SlashCommandListResponse",
     "SlashCommandMutationRequest",
     "SlashCommandMutationResponse",
-    "SlashCommandReviewResponse",
+    "SlashCommandResolveRequest",
     "SlashCommandResponse",
+    "SlashCommandReviewResponse",
     "SlashCommandUpdateRequest",
+    "SlashReviewAction",
+    "SlashReviewKind",
+    "SlashReviewResolveAction",
+    "SlashRenderFormat",
     "SlashSyncEntryResponse",
     "SlashSyncRequest",
     "SlashSyncStatus",

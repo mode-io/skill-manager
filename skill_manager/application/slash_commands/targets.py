@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import cast
 
-from skill_manager.harness.resolution import ResolutionContext
+from skill_manager.harness import CommandFileBindingProfile, HarnessKernelService
 
 from .models import SlashTarget, SlashTargetId
 
@@ -10,46 +10,35 @@ from .models import SlashTarget, SlashTargetId
 TARGET_ORDER: tuple[SlashTargetId, ...] = ("opencode", "claude", "cursor", "codex")
 
 
-def resolve_slash_targets(context: ResolutionContext) -> tuple[SlashTarget, ...]:
-    home = context.home
-    opencode_root = home / ".config" / "opencode"
-    claude_root = home / ".claude"
-    cursor_root = home / ".cursor"
-    codex_root = home / ".codex"
-    return (
-        SlashTarget(
-            id="opencode",
-            label="OpenCode",
-            root_path=opencode_root,
-            output_dir=opencode_root / "commands",
-            invocation_prefix="/",
-            default_selected=opencode_root.exists(),
-        ),
-        SlashTarget(
-            id="claude",
-            label="Claude Code",
-            root_path=claude_root,
-            output_dir=claude_root / "commands",
-            invocation_prefix="/",
-            default_selected=claude_root.exists(),
-        ),
-        SlashTarget(
-            id="cursor",
-            label="Cursor",
-            root_path=cursor_root,
-            output_dir=cursor_root / "commands",
-            invocation_prefix="/",
-            default_selected=cursor_root.exists(),
-        ),
-        SlashTarget(
-            id="codex",
-            label="Codex",
-            root_path=codex_root,
-            output_dir=codex_root / "prompts",
-            invocation_prefix="/prompts:",
-            default_selected=codex_root.exists(),
-        ),
-    )
+def resolve_slash_targets(kernel: HarnessKernelService) -> tuple[SlashTarget, ...]:
+    enabled = set(kernel.enabled_harness_ids_for_family("slash_commands"))
+    targets: dict[str, SlashTarget] = {}
+    for binding in kernel.bindings_for_family("slash_commands"):
+        profile = binding.profile
+        if not isinstance(profile, CommandFileBindingProfile):
+            continue
+        target_id = cast(SlashTargetId, binding.definition.harness)
+        root_path = profile.resolve_root_path(kernel.context)
+        output_dir = profile.resolve_output_dir(kernel.context)
+        is_enabled = target_id in enabled
+        available = root_path.exists()
+        targets[target_id] = SlashTarget(
+            id=target_id,
+            label=binding.definition.label,
+            root_path=root_path,
+            output_dir=output_dir,
+            invocation_prefix=profile.invocation_prefix,
+            render_format=profile.render_format,
+            scope=profile.scope,
+            docs_url=profile.docs_url,
+            file_glob=profile.file_glob,
+            supports_frontmatter=profile.supports_frontmatter,
+            support_note=profile.support_note,
+            enabled=is_enabled,
+            available=available,
+            default_selected=is_enabled and available,
+        )
+    return tuple(targets[target_id] for target_id in TARGET_ORDER if target_id in targets)
 
 
 def default_target_ids(targets: tuple[SlashTarget, ...]) -> tuple[SlashTargetId, ...]:
@@ -60,8 +49,4 @@ def target_by_id(targets: tuple[SlashTarget, ...], target_id: str) -> SlashTarge
     return next((target for target in targets if target.id == target_id), None)
 
 
-def slash_manager_root(context: ResolutionContext) -> Path:
-    return context.home / ".slash-command-manager"
-
-
-__all__ = ["TARGET_ORDER", "default_target_ids", "resolve_slash_targets", "slash_manager_root", "target_by_id"]
+__all__ = ["TARGET_ORDER", "default_target_ids", "resolve_slash_targets", "target_by_id"]

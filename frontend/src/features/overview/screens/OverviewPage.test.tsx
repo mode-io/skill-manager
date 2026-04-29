@@ -111,16 +111,54 @@ function mcpInventoryPayload() {
   };
 }
 
+function slashCommandsPayload() {
+  return {
+    storePath: "/tmp/home/Library/Application Support/skill-manager/slash-commands/commands",
+    syncStatePath: "/tmp/home/Library/Application Support/skill-manager/slash-commands/sync-state.json",
+    targets: [],
+    defaultTargets: [],
+    commands: [
+      {
+        name: "code-review",
+        description: "Review code",
+        prompt: "$ARGUMENTS",
+        syncTargets: [],
+      },
+    ],
+    reviewCommands: [
+      {
+        reviewRef: "codex:missing-command:missing",
+        kind: "missing",
+        target: "codex",
+        targetLabel: "Codex",
+        name: "missing-command",
+        path: "/tmp/home/.codex/prompts/missing-command.md",
+        description: "Missing command",
+        prompt: "",
+        commandExists: true,
+        canImport: false,
+        actions: ["restore_managed", "remove_binding"],
+        error: null,
+      },
+    ],
+  };
+}
+
 function stubOverviewApi({
   skills = skillsPayload(),
+  slashCommands = slashCommandsPayload(),
   mcp = mcpInventoryPayload(),
 }: {
   skills?: unknown;
+  slashCommands?: unknown;
   mcp?: unknown;
 } = {}) {
   fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url === "/api/skills") return skills instanceof Error ? errorJson(skills.message) : okJson(skills);
+    if (url === "/api/slash-commands") {
+      return slashCommands instanceof Error ? errorJson(slashCommands.message) : okJson(slashCommands);
+    }
     if (url === "/api/mcp/servers") return mcp instanceof Error ? errorJson(mcp.message) : okJson(mcp);
     return okJson({});
   });
@@ -171,7 +209,7 @@ describe("OverviewPage", () => {
     expect(within(stats).getByText("In use")).toBeInTheDocument();
     expect(within(stats).getAllByText("Needs review")).toHaveLength(1);
     expect(within(stats).getByText("Harnesses")).toBeInTheDocument();
-    await within(stats).findByText("2 skills · 2 MCP");
+    await within(stats).findByText("2 skills · 1 command · 2 MCP");
     expect(within(stats).getByText("adoption · config · inventory")).toBeInTheDocument();
     expect(within(stats).getByText("2 observed")).toBeInTheDocument();
     expect(screen.queryByText(["skill-manager", "status"].join(" "))).not.toBeInTheDocument();
@@ -194,6 +232,12 @@ describe("OverviewPage", () => {
     expect(within(skillsCard).getByRole("link", { name: "In use" })).toHaveAttribute("href", "/skills/use");
     expect(within(skillsCard).getByRole("link", { name: "Needs review" })).toHaveAttribute("href", "/skills/review");
     expect(within(skillsCard).queryByRole("link", { name: "Marketplace" })).not.toBeInTheDocument();
+
+    const slashCard = screen.getByRole("heading", { name: "Slash Commands" }).closest("article") as HTMLElement;
+    expect(within(slashCard).getByText("1 in use")).toBeInTheDocument();
+    expect(within(slashCard).getByText("1 review")).toBeInTheDocument();
+    expect(within(slashCard).getByRole("link", { name: "In use" })).toHaveAttribute("href", "/slash-commands/use");
+    expect(within(slashCard).getByRole("link", { name: "Needs review" })).toHaveAttribute("href", "/slash-commands/review");
 
     const mcpCard = screen.getByRole("heading", { name: "MCP Servers" }).closest("article") as HTMLElement;
     expect(within(mcpCard).getByText("2 in use")).toBeInTheDocument();

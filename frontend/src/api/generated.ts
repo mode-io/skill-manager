@@ -619,6 +619,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/slash-commands/review/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Slash Command Review */
+        post: operations["resolve_slash_command_review_api_slash_commands_review_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/slash-commands/{name}": {
         parameters: {
             query?: never;
@@ -1540,6 +1557,21 @@ export interface components {
             /** Sync */
             sync: components["schemas"]["SlashSyncEntryResponse"][];
         };
+        /** SlashCommandResolveRequest */
+        SlashCommandResolveRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "restore_managed" | "adopt_target" | "remove_binding";
+            /** Name */
+            name: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "opencode" | "claude" | "cursor" | "codex";
+        };
         /** SlashCommandResponse */
         SlashCommandResponse: {
             /** Description */
@@ -1553,6 +1585,8 @@ export interface components {
         };
         /** SlashCommandReviewResponse */
         SlashCommandReviewResponse: {
+            /** Actions */
+            actions: ("import" | "restore_managed" | "adopt_target" | "remove_binding")[];
             /** Canimport */
             canImport: boolean;
             /** Commandexists */
@@ -1561,6 +1595,11 @@ export interface components {
             description: string;
             /** Error */
             error?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "unmanaged" | "drifted" | "missing";
             /** Name */
             name: string;
             /** Path */
@@ -1596,7 +1635,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "synced" | "removed" | "not_selected" | "blocked_manual_file" | "failed";
+            status: "synced" | "removed" | "not_selected" | "blocked_manual_file" | "blocked_modified_file" | "missing" | "drifted" | "failed";
             /**
              * Target
              * @enum {string}
@@ -1610,8 +1649,16 @@ export interface components {
         };
         /** SlashTargetResponse */
         SlashTargetResponse: {
+            /** Available */
+            available: boolean;
             /** Defaultselected */
             defaultSelected: boolean;
+            /** Docsurl */
+            docsUrl: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Fileglob */
+            fileGlob: string;
             /**
              * Id
              * @enum {string}
@@ -1623,8 +1670,22 @@ export interface components {
             label: string;
             /** Outputdir */
             outputDir: string;
+            /**
+             * Renderformat
+             * @enum {string}
+             */
+            renderFormat: "frontmatter_markdown" | "cursor_plaintext";
             /** Rootpath */
             rootPath: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "global" | "project";
+            /** Supportnote */
+            supportNote?: string | null;
+            /** Supportsfrontmatter */
+            supportsFrontmatter: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -2815,6 +2876,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SlashCommandImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_slash_command_review_api_slash_commands_review_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashCommandResolveRequest"];
             };
         };
         responses: {

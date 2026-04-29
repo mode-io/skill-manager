@@ -193,13 +193,15 @@ When Skill Manager finds different configs for the same MCP server, it asks you 
 
 ### Slash commands
 
-Slash commands are stored as YAML files under one Skill Manager command library, then rendered into each supported harness format:
+Slash commands are stored as TOML records under Skill Manager app storage, then rendered into each supported harness format:
 
-- OpenCode, Claude Code, and Cursor use Markdown command files.
-- Codex uses prompt files under `~/.codex/prompts`.
+- OpenCode writes Markdown command files under `~/.config/opencode/commands` and invokes them with `/`.
+- Claude Code writes Markdown command files under `~/.claude/commands` and invokes them with `/`.
+- Cursor writes plain text command files under `~/.cursor/commands` and invokes them with `/`.
+- Codex writes prompt files under `~/.codex/prompts` and invokes them with `/prompts:`.
 - OpenClaw slash command writes are not yet supported.
 
-When Skill Manager finds an unmanaged command file in a supported harness, it can import that command into the shared library and record the existing target file as managed state.
+Skill Manager tracks target ownership with sync state and content hashes. It will not overwrite an untracked command file automatically, and it reports managed files as changed or missing when the target no longer matches the last synced hash. Review actions let you adopt unmanaged commands, restore managed content, adopt a changed harness command as the new source, or remove a broken binding while leaving the harness file untouched.
 
 ### CLIs
 
@@ -213,8 +215,8 @@ Useful paths:
 
 - shared skills store: `~/Library/Application Support/skill-manager/shared`
 - MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
-- slash command library: `~/.slash-command-manager/commands`
-- slash command sync state: `~/.slash-command-manager/sync-state.json`
+- slash command library: `~/Library/Application Support/skill-manager/slash-commands/commands`
+- slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
 

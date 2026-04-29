@@ -195,8 +195,8 @@ describe("App shell", () => {
 
 function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; reviewCount?: number } = {}) {
   return {
-    storePath: "/tmp/home/.slash-command-manager/commands",
-    syncStatePath: "/tmp/home/.slash-command-manager/sync-state.json",
+    storePath: "/tmp/home/Library/Application Support/skill-manager/slash-commands/commands",
+    syncStatePath: "/tmp/home/Library/Application Support/skill-manager/slash-commands/sync-state.json",
     targets: [
       {
         id: "opencode",
@@ -204,6 +204,14 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
         rootPath: "/tmp/home/.config/opencode",
         outputDir: "/tmp/home/.config/opencode/commands",
         invocationPrefix: "/",
+        renderFormat: "frontmatter_markdown",
+        scope: "global",
+        docsUrl: "https://opencode.ai/docs/commands/",
+        fileGlob: "*.md",
+        supportsFrontmatter: true,
+        supportNote: null,
+        enabled: true,
+        available: true,
         defaultSelected: true,
       },
       {
@@ -212,6 +220,14 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
         rootPath: "/tmp/home/.claude",
         outputDir: "/tmp/home/.claude/commands",
         invocationPrefix: "/",
+        renderFormat: "frontmatter_markdown",
+        scope: "global",
+        docsUrl: "https://code.claude.com/docs/en/slash-commands",
+        fileGlob: "*.md",
+        supportsFrontmatter: true,
+        supportNote: null,
+        enabled: true,
+        available: true,
         defaultSelected: true,
       },
       {
@@ -220,6 +236,14 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
         rootPath: "/tmp/home/.cursor",
         outputDir: "/tmp/home/.cursor/commands",
         invocationPrefix: "/",
+        renderFormat: "cursor_plaintext",
+        scope: "global",
+        docsUrl: "https://cursor.com/changelog/1-6",
+        fileGlob: "*.md",
+        supportsFrontmatter: false,
+        supportNote: null,
+        enabled: true,
+        available: true,
         defaultSelected: true,
       },
       {
@@ -228,6 +252,14 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
         rootPath: "/tmp/home/.codex",
         outputDir: "/tmp/home/.codex/prompts",
         invocationPrefix: "/prompts:",
+        renderFormat: "frontmatter_markdown",
+        scope: "global",
+        docsUrl: "https://developers.openai.com/codex/custom-prompts",
+        fileGlob: "*.md",
+        supportsFrontmatter: true,
+        supportNote: null,
+        enabled: true,
+        available: true,
         defaultSelected: true,
       },
     ],
@@ -240,6 +272,7 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
     })),
     reviewCommands: Array.from({ length: reviewCount }, (_item, index) => ({
       reviewRef: `codex:review-${index + 1}`,
+      kind: "unmanaged",
       target: "codex",
       targetLabel: "Codex",
       name: `review-${index + 1}`,
@@ -248,6 +281,7 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
       prompt: "$ARGUMENTS",
       commandExists: false,
       canImport: true,
+      actions: ["import"],
       error: null,
     })),
   };

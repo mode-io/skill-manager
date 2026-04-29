@@ -6,6 +6,7 @@ import {
   deleteSlashCommand,
   fetchSlashCommands,
   importSlashCommand,
+  resolveSlashCommandReview,
   syncSlashCommand,
   updateSlashCommand,
 } from "./client";
@@ -16,6 +17,7 @@ import {
 } from "./keys";
 import type {
   SlashCommandMutationRequest,
+  SlashCommandResolveRequest,
   SlashCommandUpdateRequest,
   SlashSyncRequest,
 } from "./types";
@@ -38,7 +40,9 @@ export function useCreateSlashCommandMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: SlashCommandMutationRequest) => createSlashCommand(body),
-    onSuccess: async () => invalidateSlashCommandQueries(queryClient),
+    onSuccess: () => {
+      void invalidateSlashCommandQueries(queryClient);
+    },
   });
 }
 
@@ -47,7 +51,9 @@ export function useUpdateSlashCommandMutation() {
   return useMutation({
     mutationFn: ({ name, body }: { name: string; body: SlashCommandUpdateRequest }) =>
       updateSlashCommand(name, body),
-    onSuccess: async () => invalidateSlashCommandQueries(queryClient),
+    onSuccess: () => {
+      void invalidateSlashCommandQueries(queryClient);
+    },
   });
 }
 
@@ -72,6 +78,14 @@ export function useImportSlashCommandMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: importSlashCommand,
+    onSuccess: async () => invalidateSlashCommandQueries(queryClient),
+  });
+}
+
+export function useResolveSlashCommandReviewMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SlashCommandResolveRequest) => resolveSlashCommandReview(body),
     onSuccess: async () => invalidateSlashCommandQueries(queryClient),
   });
 }

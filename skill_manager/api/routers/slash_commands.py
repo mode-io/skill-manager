@@ -10,6 +10,7 @@ from skill_manager.api.schemas import (
     SlashCommandListResponse,
     SlashCommandMutationRequest,
     SlashCommandMutationResponse,
+    SlashCommandResolveRequest,
     SlashCommandResponse,
     SlashCommandUpdateRequest,
     SlashSyncRequest,
@@ -52,6 +53,18 @@ def import_slash_command(
     return container.slash_command_mutations.import_unmanaged_command(
         target=body.target,
         name=body.name,
+    )
+
+
+@router.post("/review/resolve", response_model=SlashCommandMutationResponse)
+def resolve_slash_command_review(
+    body: SlashCommandResolveRequest,
+    container: BackendContainer = Depends(get_container),
+) -> dict[str, object]:
+    return container.slash_command_mutations.resolve_review_command(
+        target=body.target,
+        name=body.name,
+        action=body.action,
     )
 
 

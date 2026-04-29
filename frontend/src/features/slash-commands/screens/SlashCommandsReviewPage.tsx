@@ -1,5 +1,3 @@
-import { useMemo, useState } from "react";
-
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { FilterBar } from "../../../components/FilterBar";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
@@ -7,55 +5,40 @@ import { PageHeader } from "../../../components/PageHeader";
 import { NeedsReviewRow } from "../../../components/cards/NeedsReviewRow";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { getHarnessPresentation } from "../../../components/harness/harnessPresentation";
-import { useToast } from "../../../components/Toast";
-import { useImportSlashCommandMutation, useSlashCommandsQuery } from "../api/queries";
-import type { SlashCommandReviewDto } from "../api/types";
+import { SlashCommandReviewDetailSheet } from "../components/detail/SlashCommandReviewDetailSheet";
+import {
+  reviewActionTitle,
+  primaryReviewAction,
+  reviewActionLabel,
+  reviewMetaText,
+} from "../model/selectors";
+import {
+  reviewKey,
+  useSlashCommandsReviewController,
+} from "../model/useSlashCommandsReviewController";
+import type { SlashCommandReviewDto, SlashReviewAction } from "../api/types";
 
 export default function SlashCommandsReviewPage() {
-  const query = useSlashCommandsQuery();
-  const importMutation = useImportSlashCommandMutation();
-  const { toast } = useToast();
-  const [search, setSearch] = useState("");
-  const [actionError, setActionError] = useState("");
-  const [importAllPending, setImportAllPending] = useState(false);
-
-  const rows = useMemo(() => {
-    const allRows = query.data?.reviewCommands ?? [];
-    const needle = search.trim().toLowerCase();
-    if (!needle) return allRows;
-    return allRows.filter((row) =>
-      `${row.name} ${row.description} ${row.targetLabel} ${row.path}`.toLowerCase().includes(needle),
-    );
-  }, [query.data, search]);
-
-  async function handleImport(row: SlashCommandReviewDto): Promise<void> {
-    setActionError("");
-    try {
-      await importMutation.mutateAsync({ target: row.target, name: row.name });
-      toast("Slash command imported");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to import slash command.");
-    }
-  }
+  const controller = useSlashCommandsReviewController();
+  const {
+    actionError,
+    eligibleImportRows,
+    importAllPending,
+    pendingKey,
+    query,
+    rows,
+    search,
+    selectedCanonicalCommand,
+    selectedRow,
+    closeReviewDetail,
+    openReviewDetail,
+    setActionError,
+    setSearch,
+    handleAction,
+    handleImportAll,
+  } = controller;
 
   const total = query.data?.reviewCommands.length ?? 0;
-  const eligibleRows = query.data?.reviewCommands.filter((row) => row.canImport) ?? [];
-
-  async function handleImportAll(): Promise<void> {
-    if (eligibleRows.length === 0) return;
-    setActionError("");
-    setImportAllPending(true);
-    try {
-      for (const row of eligibleRows) {
-        await importMutation.mutateAsync({ target: row.target, name: row.name });
-      }
-      toast("Slash commands imported");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to import slash commands.");
-    } finally {
-      setImportAllPending(false);
-    }
-  }
 
   return (
     <>
@@ -64,19 +47,19 @@ export default function SlashCommandsReviewPage() {
           title="Slash commands to review"
           subtitle={
             total > 0
-              ? `${total} command${total === 1 ? "" : "s"} found outside Skill Manager.`
-              : "No unmanaged slash command files were found."
+              ? `${total} command${total === 1 ? "" : "s"} found outside normal managed state.`
+              : "No unmanaged, changed, or missing slash command files were found."
           }
           actions={
             <button
               type="button"
               className="action-pill action-pill--md action-pill--accent"
-              disabled={eligibleRows.length === 0 || importMutation.isPending}
+              disabled={eligibleImportRows.length === 0 || importAllPending}
               onClick={() => {
                 void handleImportAll();
               }}
             >
-              {importAllPending ? <LoadingSpinner size="sm" label="Importing all commands" /> : null}
+              {importAllPending ? <LoadingSpinner size="sm" label="Adopting all commands" /> : null}
               Adopt all eligible
             </button>
           }
@@ -106,8 +89,9 @@ export default function SlashCommandsReviewPage() {
             <SlashCommandReviewRow
               key={row.reviewRef}
               row={row}
-              pending={!importAllPending && importMutation.isPending && importMutation.variables?.name === row.name}
-              onImport={handleImport}
+              pendingKey={pendingKey}
+              onAction={handleAction}
+              onOpen={openReviewDetail}
             />
           ))}
         </section>
@@ -115,23 +99,37 @@ export default function SlashCommandsReviewPage() {
         <div className="empty-panel">
           <h3 className="empty-panel__title">Nothing needs review</h3>
           <p className="empty-panel__body">
-            Slash command files in target folders are either already managed or no target folders contain commands.
+            Slash command files in target folders are already managed or no supported target folders contain commands.
           </p>
         </div>
       )}
+
+      <SlashCommandReviewDetailSheet
+        row={selectedRow}
+        canonicalCommand={selectedCanonicalCommand}
+        targets={query.data?.targets ?? []}
+        pendingKey={pendingKey}
+        actionError={actionError}
+        onClose={closeReviewDetail}
+        onAction={handleAction}
+      />
     </>
   );
 }
 
 function SlashCommandReviewRow({
   row,
-  pending,
-  onImport,
+  pendingKey,
+  onAction,
+  onOpen,
 }: {
   row: SlashCommandReviewDto;
-  pending: boolean;
-  onImport: (row: SlashCommandReviewDto) => Promise<void>;
+  pendingKey: string | null;
+  onAction: (row: SlashCommandReviewDto, action?: SlashReviewAction | null) => Promise<boolean>;
+  onOpen: (row: SlashCommandReviewDto) => void;
 }) {
+  const primaryAction = primaryReviewAction(row);
+  const secondaryActions = row.actions.filter((action) => action !== primaryAction);
   const presentation = getHarnessPresentation(row.target === "claude" ? "claude" : row.target);
   const logo = (
     <UiTooltip content={row.targetLabel}>
@@ -147,16 +145,37 @@ function SlashCommandReviewRow({
 
   return (
     <NeedsReviewRow
-      name={`/${row.name}`}
+      name={row.name}
       logos={<span className="harness-stack">{logo}</span>}
-      metaText={`Found in ${row.targetLabel}`}
+      metaText={reviewMetaText(row)}
+      statusChip={
+        secondaryActions.length > 0 ? (
+          <span className="slash-review-actions">
+            {secondaryActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                className="action-pill"
+                title={reviewActionTitle(action)}
+                disabled={pendingKey === reviewKey(row.target, row.name, action)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void onAction(row, action);
+                }}
+              >
+                {reviewActionLabel(action)}
+              </button>
+            ))}
+          </span>
+        ) : undefined
+      }
       description={row.description || row.path}
-      actionLabel="Import"
-      actionTitle={row.canImport ? "Add this slash command to Skill Manager" : row.error ?? "Cannot import"}
-      pending={pending}
-      actionDisabled={!row.canImport}
-      onOpen={() => undefined}
-      onAction={() => void onImport(row)}
+      actionLabel={reviewActionLabel(primaryAction)}
+      actionTitle={primaryAction ? reviewActionTitle(primaryAction) : row.error ?? "Cannot update"}
+      pending={primaryAction ? pendingKey === reviewKey(row.target, row.name, primaryAction) : false}
+      actionDisabled={!primaryAction}
+      onOpen={() => onOpen(row)}
+      onAction={() => void onAction(row, primaryAction)}
     />
   );
 }

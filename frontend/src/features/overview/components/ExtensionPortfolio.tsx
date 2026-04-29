@@ -1,4 +1,4 @@
-import { BookOpen, Terminal } from "lucide-react";
+import { BookOpen, Command, Terminal } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -68,6 +68,7 @@ function ExtensionRow({
 
 function extensionIcon(key: OverviewExtensionKind["iconKey"]): ReactNode {
   if (key === "skills") return <BookOpen size={18} />;
+  if (key === "slash-commands") return <Command size={18} />;
   return <Terminal size={18} />;
 }
 

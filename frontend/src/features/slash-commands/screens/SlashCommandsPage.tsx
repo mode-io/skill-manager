@@ -1,28 +1,19 @@
-import { useMemo, useState } from "react";
 import { Columns3, LayoutGrid, Plus, Rows3 } from "lucide-react";
 
-import { BulkActionBar, type MultiSelectAction } from "../../../components/BulkActionBar";
+import { BulkActionBar } from "../../../components/BulkActionBar";
 import { ConfirmActionDialog } from "../../../components/ConfirmActionDialog";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { FilterBar } from "../../../components/FilterBar";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
-import { useToast } from "../../../components/Toast";
 import { ViewModeToggle, type ViewModeOption } from "../../../components/ViewModeToggle";
 import { SlashCommandBoard } from "../components/SlashCommandBoard";
 import { SlashCommandFormDialog } from "../components/SlashCommandFormDialog";
 import { SlashCommandList } from "../components/SlashCommandList";
 import { SlashCommandMatrix } from "../components/SlashCommandMatrix";
-import { useSlashCommandsViewMode, type SlashCommandsViewMode } from "../model/useSlashCommandsViewMode";
-import {
-  useCreateSlashCommandMutation,
-  useDeleteSlashCommandMutation,
-  useSlashCommandsQuery,
-  useSyncSlashCommandMutation,
-  useUpdateSlashCommandMutation,
-} from "../api/queries";
-import type { SlashCommandDto, SlashTargetId } from "../api/types";
-import type { SlashTargetDto } from "../api/types";
+import { SlashCommandDetailSheet } from "../components/detail/SlashCommandDetailSheet";
+import { useSlashCommandsController } from "../model/useSlashCommandsController";
+import type { SlashCommandsViewMode } from "../model/useSlashCommandsViewMode";
 
 const VIEW_MODE_OPTIONS: readonly ViewModeOption<SlashCommandsViewMode>[] = [
   { value: "grid", label: "Grid", icon: LayoutGrid },
@@ -31,213 +22,44 @@ const VIEW_MODE_OPTIONS: readonly ViewModeOption<SlashCommandsViewMode>[] = [
 ];
 
 export default function SlashCommandsPage() {
-  const query = useSlashCommandsQuery();
-  const createMutation = useCreateSlashCommandMutation();
-  const updateMutation = useUpdateSlashCommandMutation();
-  const syncMutation = useSyncSlashCommandMutation();
-  const deleteMutation = useDeleteSlashCommandMutation();
-  const { toast } = useToast();
-
-  const [search, setSearch] = useState("");
-  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
-  const [editingCommand, setEditingCommand] = useState<SlashCommandDto | null>(null);
-  const [actionError, setActionError] = useState("");
-  const [pendingTargetKey, setPendingTargetKey] = useState<string | null>(null);
-  const [checkedNames, setCheckedNames] = useState<Set<string>>(() => new Set());
-  const [bulkPending, setBulkPending] = useState<MultiSelectAction | null>(null);
-  const [deleteCommand, setDeleteCommand] = useState<SlashCommandDto | null>(null);
-  const [viewMode, setViewMode] = useSlashCommandsViewMode();
-
-  const data = query.data;
-  const commands = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    if (!data || !needle) return data?.commands ?? [];
-    return data.commands.filter((command) =>
-      `${command.name} ${command.description}`.toLowerCase().includes(needle),
-    );
-  }, [data, search]);
-
-  const pendingName = syncMutation.isPending
-    ? syncMutation.variables?.name ?? null
-    : updateMutation.isPending
-      ? updateMutation.variables?.name ?? null
-      : deleteMutation.isPending
-        ? deleteMutation.variables?.name ?? null
-        : null;
-  const pendingTarget = pendingName ? pendingTargetKey?.split(":")[1] ?? null : null;
-  const formPending = createMutation.isPending || updateMutation.isPending;
-
-  function openCreate(): void {
-    setEditingCommand(null);
-    setFormMode("create");
-  }
-
-  function openEdit(command: SlashCommandDto): void {
-    setEditingCommand(command);
-    setFormMode("edit");
-  }
-
-  async function handleSubmit(value: {
-    name: string;
-    description: string;
-    prompt: string;
-    targets: SlashTargetId[];
-  }): Promise<void> {
-    setActionError("");
-    try {
-      const result =
-        formMode === "edit" && editingCommand
-          ? await updateMutation.mutateAsync({
-              name: editingCommand.name,
-              body: {
-                description: value.description,
-                prompt: value.prompt,
-                targets: value.targets,
-              },
-            })
-          : await createMutation.mutateAsync(value);
-      setFormMode(null);
-      setEditingCommand(null);
-      toast(result.ok ? "Slash command saved" : "Saved with sync warnings");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to save slash command.");
-    }
-  }
-
-  async function handleToggleTarget(command: SlashCommandDto, target: SlashTargetDto): Promise<void> {
-    setActionError("");
-    setPendingTargetKey(`${command.name}:${target.id}`);
-    const syncedTargets = command.syncTargets
-      .filter((entry) => entry.status === "synced")
-      .map((entry) => entry.target);
-    const isEnabled = syncedTargets.includes(target.id);
-    const nextTargets = isEnabled
-      ? syncedTargets.filter((item) => item !== target.id)
-      : [...syncedTargets, target.id];
-    try {
-      const result = await syncMutation.mutateAsync({
-        name: command.name,
-        body: { targets: nextTargets },
-      });
-      toast(
-        result.ok
-          ? `${target.label} ${isEnabled ? "disabled" : "enabled"}`
-          : "Sync finished with warnings",
-      );
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to update sync target.");
-    } finally {
-      setPendingTargetKey(null);
-    }
-  }
-
-  async function handleSetAllTargets(
-    command: SlashCommandDto,
-    target: "enabled" | "disabled",
-  ): Promise<void> {
-    if (!data) return;
-    setActionError("");
-    setPendingTargetKey(`${command.name}:all`);
-    try {
-      const targets = target === "enabled" ? data.targets.map((item) => item.id) : [];
-      const result = await syncMutation.mutateAsync({
-        name: command.name,
-        body: { targets },
-      });
-      toast(
-        result.ok
-          ? target === "enabled"
-            ? "Slash command enabled"
-            : "Slash command disabled"
-          : "Sync finished with warnings",
-      );
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to update slash command.");
-    } finally {
-      setPendingTargetKey(null);
-    }
-  }
-
-  function handleToggleChecked(name: string): void {
-    setCheckedNames((current) => {
-      const next = new Set(current);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      return next;
-    });
-  }
-
-  async function handleBulkEnableAll(): Promise<void> {
-    if (!data || checkedNames.size === 0) return;
-    setBulkPending("enable-all");
-    setActionError("");
-    try {
-      const targets = data.targets.map((target) => target.id);
-      for (const name of checkedNames) {
-        await syncMutation.mutateAsync({ name, body: { targets } });
-      }
-      setCheckedNames(new Set());
-      toast("Slash commands enabled");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to enable slash commands.");
-    } finally {
-      setBulkPending(null);
-    }
-  }
-
-  async function handleBulkDisableAll(): Promise<void> {
-    if (checkedNames.size === 0) return;
-    setBulkPending("disable-all");
-    setActionError("");
-    try {
-      for (const name of checkedNames) {
-        await syncMutation.mutateAsync({ name, body: { targets: [] } });
-      }
-      setCheckedNames(new Set());
-      toast("Slash commands disabled");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to disable slash commands.");
-    } finally {
-      setBulkPending(null);
-    }
-  }
-
-  async function handleBulkDelete(): Promise<void> {
-    if (checkedNames.size === 0) return;
-    setBulkPending("delete");
-    setActionError("");
-    try {
-      for (const name of checkedNames) {
-        await deleteMutation.mutateAsync({ name });
-      }
-      setCheckedNames(new Set());
-      toast("Slash commands deleted");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to delete slash commands.");
-    } finally {
-      setBulkPending(null);
-    }
-  }
-
-  async function executeDeleteCommand(): Promise<void> {
-    if (!deleteCommand) return;
-    setActionError("");
-    try {
-      await deleteMutation.mutateAsync({ name: deleteCommand.name });
-      setDeleteCommand(null);
-      setCheckedNames((current) => {
-        const next = new Set(current);
-        next.delete(deleteCommand.name);
-        return next;
-      });
-      toast("Slash command deleted");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to delete slash command.");
-    }
-  }
+  const controller = useSlashCommandsController();
+  const {
+    actionError,
+    buckets,
+    bulkPending,
+    checkedNames,
+    commands,
+    data,
+    deleteCommand,
+    deletePending,
+    editingCommand,
+    formMode,
+    formPending,
+    pendingName,
+    pendingTarget,
+    query,
+    search,
+    selectedCommand,
+    setActionError,
+    setCheckedNames,
+    setDeleteCommand,
+    setFormMode,
+    setSearch,
+    viewMode,
+    setViewMode,
+    executeDeleteCommand,
+    handleBulkDelete,
+    handleBulkDisableAll,
+    handleBulkEnableAll,
+    handleSetAllTargets,
+    handleSubmit,
+    handleToggleChecked,
+    handleToggleTarget,
+    closeDetail,
+    openCreate,
+    openDetail,
+    openEdit,
+  } = controller;
 
   return (
     <>
@@ -268,9 +90,7 @@ export default function SlashCommandsPage() {
         />
       </div>
 
-      {actionError ? (
-        <ErrorBanner message={actionError} onDismiss={() => setActionError("")} />
-      ) : null}
+      {actionError ? <ErrorBanner message={actionError} onDismiss={() => setActionError("")} /> : null}
       {query.error ? (
         <ErrorBanner message={query.error instanceof Error ? query.error.message : "Unable to load slash commands."} />
       ) : null}
@@ -283,10 +103,11 @@ export default function SlashCommandsPage() {
         viewMode === "board" ? (
           <SlashCommandBoard
             commands={commands}
+            buckets={buckets}
             targets={data.targets}
             pendingName={pendingName}
             checkedNames={checkedNames}
-            onEdit={openEdit}
+            onOpen={openDetail}
             onToggleChecked={handleToggleChecked}
             onSetAllTargets={handleSetAllTargets}
           />
@@ -297,7 +118,7 @@ export default function SlashCommandsPage() {
             pendingName={pendingName}
             pendingTarget={pendingTarget}
             checkedNames={checkedNames}
-            onEdit={openEdit}
+            onOpen={openDetail}
             onToggleChecked={handleToggleChecked}
             onToggleTarget={(command, target) => {
               void handleToggleTarget(command, target);
@@ -310,7 +131,7 @@ export default function SlashCommandsPage() {
             pendingName={pendingName}
             pendingTarget={pendingTarget}
             checkedNames={checkedNames}
-            onEdit={openEdit}
+            onOpen={openDetail}
             onSetAllTargets={(command, target) => {
               void handleSetAllTargets(command, target);
             }}
@@ -321,6 +142,21 @@ export default function SlashCommandsPage() {
             onDelete={setDeleteCommand}
           />
         )
+      ) : null}
+
+      {data ? (
+        <SlashCommandDetailSheet
+          command={selectedCommand}
+          targets={data.targets}
+          pendingName={pendingName}
+          pendingTarget={pendingTarget}
+          onClose={closeDetail}
+          onEdit={openEdit}
+          onDelete={setDeleteCommand}
+          onToggleTarget={(command, target) => {
+            void handleToggleTarget(command, target);
+          }}
+        />
       ) : null}
 
       {data ? (
@@ -351,17 +187,17 @@ export default function SlashCommandsPage() {
             checkedNames.size === 1 ? "" : "s"
           }?`,
           confirmDescription:
-            "This removes the source YAML and generated command files for every selected slash command.",
+            "This removes the source command and generated command files for every selected slash command.",
         }}
       />
 
       <ConfirmActionDialog
         open={deleteCommand !== null}
-        title={`Delete /${deleteCommand?.name ?? "slash command"}?`}
-        description="This removes the source YAML and generated command files from every synced target."
+        title={`Delete ${deleteCommand?.name ?? "slash command"}?`}
+        description="This removes the source command and generated command files from every synced target."
         confirmLabel="Delete"
         pendingLabel="Deleting"
-        isPending={deleteMutation.isPending}
+        isPending={deletePending}
         onOpenChange={(open) => {
           if (!open) setDeleteCommand(null);
         }}

@@ -6,19 +6,19 @@ import {
   MatrixHarnessIcon,
   MatrixSortableHeader,
   MatrixTable,
-  type MatrixSortDirection,
 } from "../../../components/matrix";
 import { getHarnessPresentation } from "../../../components/harness/harnessPresentation";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { SlashCommandDto, SlashTargetDto } from "../api/types";
-
-type SortKey = "name" | "coverage" | { target: string };
-
-interface SortState {
-  key: SortKey;
-  direction: MatrixSortDirection;
-}
+import {
+  enabledTargetsForCommand,
+  sortSlashCommands,
+  slashSortKeysEqual,
+  syncedTargetIds,
+  type SlashMatrixSortKey,
+  type SlashMatrixSortState,
+} from "../model/selectors";
 
 interface SlashCommandMatrixProps {
   commands: SlashCommandDto[];
@@ -26,12 +26,12 @@ interface SlashCommandMatrixProps {
   pendingName: string | null;
   pendingTarget: string | null;
   checkedNames: ReadonlySet<string>;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onToggleChecked: (name: string) => void;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
 }
 
-const INITIAL_SORT: SortState = { key: "name", direction: "asc" };
+const INITIAL_SORT: SlashMatrixSortState = { key: "name", direction: "asc" };
 
 export function SlashCommandMatrix({
   commands,
@@ -39,19 +39,19 @@ export function SlashCommandMatrix({
   pendingName,
   pendingTarget,
   checkedNames,
-  onEdit,
+  onOpen,
   onToggleChecked,
   onToggleTarget,
 }: SlashCommandMatrixProps) {
-  const [sort, setSort] = useState<SortState>(INITIAL_SORT);
+  const [sort, setSort] = useState<SlashMatrixSortState>(INITIAL_SORT);
   const sortedCommands = useMemo(
-    () => sortCommands(commands, sort),
+    () => sortSlashCommands(commands, sort),
     [commands, sort],
   );
 
-  function requestSort(key: SortKey): void {
+  function requestSort(key: SlashMatrixSortKey): void {
     setSort((current) => {
-      if (sortKeysEqual(current.key, key)) {
+      if (slashSortKeysEqual(current.key, key)) {
         return { key, direction: current.direction === "asc" ? "desc" : "asc" };
       }
       return { key, direction: "asc" };
@@ -72,18 +72,18 @@ export function SlashCommandMatrix({
           <MatrixSortableHeader
             label="Name"
             align="identity"
-            active={sortKeysEqual(sort.key, "name")}
+            active={slashSortKeysEqual(sort.key, "name")}
             direction={sort.direction}
             onClick={() => requestSort("name")}
           />
           {targets.map((target) => {
-            const key: SortKey = { target: target.id };
+            const key: SlashMatrixSortKey = { target: target.id };
             return (
               <MatrixSortableHeader
                 key={target.id}
                 label={target.label}
                 align="harness"
-                active={sortKeysEqual(sort.key, key)}
+                active={slashSortKeysEqual(sort.key, key)}
                 direction={sort.direction}
                 logoOnly
                 leading={
@@ -104,7 +104,7 @@ export function SlashCommandMatrix({
           <MatrixSortableHeader
             label="Active"
             align="end"
-            active={sortKeysEqual(sort.key, "coverage")}
+            active={slashSortKeysEqual(sort.key, "coverage")}
             direction={sort.direction}
             onClick={() => requestSort("coverage")}
           />
@@ -119,7 +119,7 @@ export function SlashCommandMatrix({
             pending={pendingName === command.name}
             pendingTarget={pendingName === command.name ? pendingTarget : null}
             checked={checkedNames.has(command.name)}
-            onEdit={onEdit}
+            onOpen={onOpen}
             onToggleChecked={onToggleChecked}
             onToggleTarget={onToggleTarget}
           />
@@ -135,7 +135,7 @@ function SlashCommandMatrixRow({
   pending,
   pendingTarget,
   checked,
-  onEdit,
+  onOpen,
   onToggleChecked,
   onToggleTarget,
 }: {
@@ -144,7 +144,7 @@ function SlashCommandMatrixRow({
   pending: boolean;
   pendingTarget: string | null;
   checked: boolean;
-  onEdit: (command: SlashCommandDto) => void;
+  onOpen: (command: SlashCommandDto) => void;
   onToggleChecked: (name: string) => void;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
 }) {
@@ -164,14 +164,11 @@ function SlashCommandMatrixRow({
 
       <td
         className="matrix-table__cell matrix-table__cell--identity"
-        onClick={() => onEdit(command)}
+        onClick={() => onOpen(command)}
       >
         <div className="matrix-table__name-row slash-matrix-name-row">
           <OverflowTooltipText as="span" className="matrix-table__name-text">
-            /{command.name}
-          </OverflowTooltipText>
-          <OverflowTooltipText as="span" className="slash-row__codex">
-            /prompts:{command.name}
+            {command.name}
           </OverflowTooltipText>
         </div>
         {command.description ? (
@@ -189,7 +186,7 @@ function SlashCommandMatrixRow({
               ariaLabel={`${isEnabled ? "Disable" : "Enable"} ${target.label} for ${command.name}`}
               state={isEnabled ? "enabled" : "disabled"}
               pending={pending && pendingTarget === target.id}
-              disabled={pending}
+              disabled={pending || !target.enabled}
               ariaPressed={isEnabled}
               onClick={() => onToggleTarget(command, target)}
             >
@@ -227,8 +224,7 @@ function SlashMatrixTargetStack({
   command: SlashCommandDto;
   targets: SlashTargetDto[];
 }) {
-  const enabled = syncedTargetIds(command);
-  const enabledTargets = targets.filter((target) => enabled.has(target.id));
+  const enabledTargets = enabledTargetsForCommand(command, targets);
   return (
     <div className="skill-card__harness-row">
       <div className="harness-stack" aria-label={`Enabled on ${enabledTargets.length} targets`}>
@@ -255,36 +251,4 @@ function SlashMatrixTargetStack({
       </span>
     </div>
   );
-}
-
-function syncedTargetIds(command: SlashCommandDto): Set<string> {
-  return new Set(
-    command.syncTargets
-      .filter((entry) => entry.status === "synced")
-      .map((entry) => entry.target),
-  );
-}
-
-function sortCommands(commands: SlashCommandDto[], sort: SortState): SlashCommandDto[] {
-  const direction = sort.direction === "asc" ? 1 : -1;
-  return [...commands].sort((left, right) => {
-    const comparison = compareBySortKey(left, right, sort.key);
-    if (comparison !== 0) return comparison * direction;
-    return left.name.localeCompare(right.name);
-  });
-}
-
-function compareBySortKey(left: SlashCommandDto, right: SlashCommandDto, key: SortKey): number {
-  if (key === "name") return left.name.localeCompare(right.name);
-  if (key === "coverage") return syncedTargetIds(left).size - syncedTargetIds(right).size;
-  const leftEnabled = syncedTargetIds(left).has(key.target) ? 1 : 0;
-  const rightEnabled = syncedTargetIds(right).has(key.target) ? 1 : 0;
-  return leftEnabled - rightEnabled;
-}
-
-function sortKeysEqual(left: SortKey, right: SortKey): boolean {
-  if (typeof left === "string" || typeof right === "string") {
-    return left === right;
-  }
-  return left.target === right.target;
 }

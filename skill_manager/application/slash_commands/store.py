@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import json
 import re
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+import tomli_w
 
 from skill_manager.atomic_files import atomic_write_text, file_lock
 from skill_manager.errors import MutationError
 
-from .models import SlashCommand, SlashTargetId
+from .models import SlashCommand
 
 
 COMMAND_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -18,7 +20,6 @@ COMMAND_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 class SlashCommandStorePaths:
     root: Path
     commands_dir: Path
-    sync_state_path: Path
 
 
 class SlashCommandStore:
@@ -32,10 +33,7 @@ class SlashCommandStore:
     def list_commands(self) -> tuple[SlashCommand, ...]:
         if not self.paths.commands_dir.is_dir():
             return ()
-        commands: list[SlashCommand] = []
-        for path in sorted(self.paths.commands_dir.glob("*.yaml")):
-            commands.append(self._read_command_path(path))
-        return tuple(commands)
+        return tuple(self._read_command_path(path) for path in sorted(self.paths.commands_dir.glob("*.toml")))
 
     def get_command(self, name: str) -> SlashCommand | None:
         validate_command_name(name)
@@ -59,6 +57,12 @@ class SlashCommandStore:
             self._write_command_path(path, command)
         return command
 
+    def upsert_command(self, command: SlashCommand) -> SlashCommand:
+        validate_command(command)
+        with file_lock(self.lock_path):
+            self._write_command_path(self.command_path(command.name), command)
+        return command
+
     def update_command(self, name: str, *, description: str, prompt: str) -> SlashCommand:
         validate_command_name(name)
         command = SlashCommand(name=name, description=description, prompt=prompt)
@@ -79,60 +83,17 @@ class SlashCommandStore:
             path.unlink()
 
     def command_path(self, name: str) -> Path:
-        return self.paths.commands_dir / f"{name}.yaml"
-
-    def load_sync_state(self) -> dict[str, dict[str, str]]:
-        if not self.paths.sync_state_path.is_file():
-            return {}
-        payload = json.loads(self.paths.sync_state_path.read_text(encoding="utf-8"))
-        if not isinstance(payload, dict):
-            return {}
-        state: dict[str, dict[str, str]] = {}
-        for command_name, targets in payload.items():
-            if not isinstance(command_name, str) or not isinstance(targets, dict):
-                continue
-            state[command_name] = {
-                str(target): str(path)
-                for target, path in targets.items()
-                if isinstance(target, str) and isinstance(path, str)
-            }
-        return state
-
-    def write_sync_state(self, state: dict[str, dict[str, str]]) -> None:
-        self.paths.root.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-        atomic_write_text(self.paths.sync_state_path, payload)
-
-    def replace_sync_state_for(self, name: str, targets: dict[SlashTargetId, Path]) -> None:
-        with file_lock(self.lock_path):
-            state = self.load_sync_state()
-            if targets:
-                state[name] = {target: str(path) for target, path in targets.items()}
-            else:
-                state.pop(name, None)
-            self.write_sync_state(state)
-
-    def add_sync_state_target(self, name: str, target: SlashTargetId, path: Path) -> None:
-        with file_lock(self.lock_path):
-            state = self.load_sync_state()
-            current = dict(state.get(name, {}))
-            current[target] = str(path)
-            state[name] = current
-            self.write_sync_state(state)
-
-    def remove_sync_state_for(self, name: str) -> dict[str, str]:
-        with file_lock(self.lock_path):
-            state = self.load_sync_state()
-            previous = state.pop(name, {})
-            self.write_sync_state(state)
-        return previous
+        return self.paths.commands_dir / f"{name}.toml"
 
     def _read_command_path(self, path: Path) -> SlashCommand:
-        payload = _parse_command_yaml(path.read_text(encoding="utf-8"))
+        try:
+            payload = tomllib.loads(path.read_text(encoding="utf-8"))
+        except tomllib.TOMLDecodeError as error:
+            raise MutationError(f"{path.name}: invalid command TOML", status=400) from error
         command = SlashCommand(
-            name=payload.get("name", ""),
-            description=payload.get("description", ""),
-            prompt=payload.get("prompt", ""),
+            name=_string_field(payload, "name"),
+            description=_string_field(payload, "description"),
+            prompt=_string_field(payload, "prompt"),
         )
         try:
             validate_command(command)
@@ -147,7 +108,14 @@ class SlashCommandStore:
 
     def _write_command_path(self, path: Path, command: SlashCommand) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(path, _dump_command_yaml(command))
+        payload = tomli_w.dumps(
+            {
+                "name": command.name,
+                "description": command.description.strip(),
+                "prompt": command.prompt.rstrip(),
+            }
+        )
+        atomic_write_text(path, payload)
 
 
 def validate_command(command: SlashCommand) -> None:
@@ -166,64 +134,9 @@ def validate_command_name(name: str) -> None:
         )
 
 
-def _dump_command_yaml(command: SlashCommand) -> str:
-    prompt_lines = command.prompt.rstrip().splitlines() or [""]
-    indented_prompt = "\n".join(f"  {line}" if line else "" for line in prompt_lines)
-    return "\n".join(
-        [
-            f"name: {_quote_yaml_scalar(command.name)}",
-            f"description: {_quote_yaml_scalar(command.description.strip())}",
-            "prompt: |",
-            indented_prompt,
-            "",
-        ]
-    )
-
-
-def _parse_command_yaml(content: str) -> dict[str, str]:
-    lines = content.splitlines()
-    result: dict[str, str] = {}
-    index = 0
-    while index < len(lines):
-        line = lines[index]
-        index += 1
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        if ":" not in line:
-            raise MutationError("invalid command YAML", status=400)
-        key, raw_value = line.split(":", 1)
-        key = key.strip()
-        value = raw_value.strip()
-        if key not in {"name", "description", "prompt"}:
-            continue
-        if key == "prompt" and value in {"|", "|-"}:
-            block: list[str] = []
-            while index < len(lines):
-                block_line = lines[index]
-                if block_line and not block_line[0].isspace():
-                    break
-                block.append(block_line[2:] if block_line.startswith("  ") else block_line.lstrip())
-                index += 1
-            result[key] = "\n".join(block).rstrip()
-        else:
-            result[key] = _unquote_yaml_scalar(value)
-    return result
-
-
-def _quote_yaml_scalar(value: str) -> str:
-    return json.dumps(value, ensure_ascii=False)
-
-
-def _unquote_yaml_scalar(value: str) -> str:
-    value = value.strip()
-    if not value:
-        return ""
-    if value[0] in {"'", '"'}:
-        try:
-            return json.loads(value) if value[0] == '"' else value[1:-1]
-        except json.JSONDecodeError as error:
-            raise MutationError("invalid quoted scalar in command YAML", status=400) from error
-    return value
+def _string_field(payload: dict[str, object], key: str) -> str:
+    value = payload.get(key, "")
+    return value if isinstance(value, str) else ""
 
 
 __all__ = [
