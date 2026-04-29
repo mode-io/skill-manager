@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from skill_manager.application import BackendContainer
 
 from .errors import install_error_handlers
-from .routers import health, marketplace, mcp, settings, skills
+from .routers import health, marketplace, mcp, settings, skills, slash_commands
 
 
 def create_app(
@@ -23,6 +23,7 @@ def create_app(
     app.include_router(health.router)
     app.include_router(settings.router)
     app.include_router(skills.router)
+    app.include_router(slash_commands.router)
     app.include_router(marketplace.router)
     app.include_router(mcp.router)
 

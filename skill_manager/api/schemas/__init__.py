@@ -69,6 +69,19 @@ from .skills import (
     SkillsPageResponse,
     SkillsSummaryResponse,
 )
+from .slash_commands import (
+    SlashCommandDeleteResponse,
+    SlashCommandImportRequest,
+    SlashCommandListResponse,
+    SlashCommandMutationRequest,
+    SlashCommandMutationResponse,
+    SlashCommandResponse,
+    SlashCommandReviewResponse,
+    SlashCommandUpdateRequest,
+    SlashSyncEntryResponse,
+    SlashSyncRequest,
+    SlashTargetResponse,
+)
 
 __all__ = [
     "AdoptMcpRequest",
@@ -138,4 +151,15 @@ __all__ = [
     "SkillUpdateStatus",
     "SkillsPageResponse",
     "SkillsSummaryResponse",
+    "SlashCommandDeleteResponse",
+    "SlashCommandImportRequest",
+    "SlashCommandListResponse",
+    "SlashCommandMutationRequest",
+    "SlashCommandMutationResponse",
+    "SlashCommandResponse",
+    "SlashCommandReviewResponse",
+    "SlashCommandUpdateRequest",
+    "SlashSyncEntryResponse",
+    "SlashSyncRequest",
+    "SlashTargetResponse",
 ]

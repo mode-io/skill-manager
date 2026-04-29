@@ -17,6 +17,14 @@ from .mcp.query import McpQueryService
 from .mcp.read_models import McpReadModelService
 from .mcp.store import McpServerStore
 from .settings import SettingsMutationService, SettingsQueryService
+from .slash_commands import (
+    SlashCommandMutationService,
+    SlashCommandQueryService,
+    SlashCommandStore,
+    SlashCommandStorePaths,
+    resolve_slash_targets,
+    slash_manager_root,
+)
 from .skills import SkillsMutationService, SkillsQueryService
 from .skills.marketplace import (
     MarketplaceCatalog,
@@ -43,6 +51,9 @@ class BackendContainer:
     skills_mutations: SkillsMutationService
     settings_queries: SettingsQueryService
     settings_mutations: SettingsMutationService
+    slash_command_store: SlashCommandStore
+    slash_command_queries: SlashCommandQueryService
+    slash_command_mutations: SlashCommandMutationService
     skills_marketplace_catalog: MarketplaceCatalog
     skills_marketplace_documents: MarketplaceDocumentService
     skills_marketplace_queries: MarketplaceQueryService
@@ -81,6 +92,21 @@ def build_backend_container(
     skills_queries = SkillsQueryService(skills_read_models, active_source_fetcher)
     skills_mutations = SkillsMutationService(skills_read_models, skills_queries, active_source_fetcher)
     settings_queries = SettingsQueryService(harness_kernel)
+    slash_root = slash_manager_root(harness_kernel.context)
+    slash_targets = resolve_slash_targets(harness_kernel.context)
+    slash_command_store = SlashCommandStore(
+        SlashCommandStorePaths(
+            root=slash_root,
+            commands_dir=slash_root / "commands",
+            sync_state_path=slash_root / "sync-state.json",
+        )
+    )
+    slash_command_queries = SlashCommandQueryService(slash_command_store, slash_targets)
+    slash_command_mutations = SlashCommandMutationService(
+        slash_command_store,
+        slash_command_queries,
+        slash_targets,
+    )
 
     cache = MarketplaceCache.from_environment(active_env)
     skills_catalog = marketplace_catalog or MarketplaceCatalog.from_environment(
@@ -133,6 +159,9 @@ def build_backend_container(
         skills_mutations=skills_mutations,
         settings_queries=settings_queries,
         settings_mutations=settings_mutations,
+        slash_command_store=slash_command_store,
+        slash_command_queries=slash_command_queries,
+        slash_command_mutations=slash_command_mutations,
         skills_marketplace_catalog=skills_catalog,
         skills_marketplace_documents=skills_documents,
         skills_marketplace_queries=skills_marketplace_queries,

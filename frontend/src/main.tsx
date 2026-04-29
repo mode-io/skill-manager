@@ -13,6 +13,7 @@ import "./components/detail/index.css";
 import "./features/overview/styles/overview.css";
 import "./features/marketplace/styles/cards.css";
 import "./features/settings/styles/settings.css";
+import "./features/slash-commands/styles/slash-commands.css";
 import "./features/skills/styles/detail.css";
 import "./features/skills/styles/board.css";
 import "./components/matrix/matrix.css";

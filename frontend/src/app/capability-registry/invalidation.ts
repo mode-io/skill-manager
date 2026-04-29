@@ -4,6 +4,7 @@ import { invalidateMarketplaceQueries } from "../../features/marketplace/public"
 import { invalidateMcpQueries } from "../../features/mcp/public";
 import { invalidateSettingsQueries } from "../../features/settings/public";
 import { invalidateSkillsQueries } from "../../features/skills/public";
+import { invalidateSlashCommandQueries } from "../../features/slash-commands/public";
 
 export async function invalidateCapabilityQueries(queryClient: QueryClient): Promise<void> {
   await Promise.all([
@@ -11,5 +12,6 @@ export async function invalidateCapabilityQueries(queryClient: QueryClient): Pro
     invalidateMcpQueries(queryClient),
     invalidateSettingsQueries(queryClient),
     invalidateMarketplaceQueries(queryClient),
+    invalidateSlashCommandQueries(queryClient),
   ]);
 }

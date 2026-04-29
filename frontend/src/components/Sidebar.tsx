@@ -10,6 +10,7 @@ import {
 import {
   BookOpen,
   ChevronDown,
+  Command,
   LayoutDashboard,
   RefreshCw,
   Settings,
@@ -102,6 +103,7 @@ export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
 
 function sidebarIcon(iconKey: SidebarIconKey): ReactNode {
   if (iconKey === "skills") return <BookOpen size={16} />;
+  if (iconKey === "slash-commands") return <Command size={16} />;
   if (iconKey === "mcp") return <Terminal size={16} />;
   if (iconKey === "marketplace") return <Store size={16} />;
   return <LayoutDashboard size={16} />;

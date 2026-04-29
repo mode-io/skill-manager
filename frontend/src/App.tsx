@@ -15,6 +15,8 @@ import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
 const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
 const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
 const SettingsPage = lazy(() => import("./features/settings/screens/SettingsPage"));
+const SlashCommandsPage = lazy(() => import("./features/slash-commands/screens/SlashCommandsPage"));
+const SlashCommandsReviewPage = lazy(() => import("./features/slash-commands/screens/SlashCommandsReviewPage"));
 const McpNeedsReviewPage = lazy(() => import("./features/mcp/screens/McpNeedsReviewPage"));
 const McpInUsePage = lazy(() => import("./features/mcp/screens/McpInUsePage"));
 
@@ -114,6 +116,24 @@ function AppContent() {
             <Route path="mcp" element={null} />
             <Route path="clis" element={null} />
           </Route>
+
+          <Route path="slash-commands" element={<Navigate to="/slash-commands/use" replace />} />
+          <Route
+            path="slash-commands/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading slash commands" />}>
+                <SlashCommandsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="slash-commands/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading slash commands" />}>
+                <SlashCommandsReviewPage />
+              </Suspense>
+            }
+          />
 
           <Route
             path="settings"
