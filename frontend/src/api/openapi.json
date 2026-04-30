@@ -2700,6 +2700,560 @@
         "title": "SkillsSummaryResponse",
         "type": "object"
       },
+      "SlashCommandDeleteResponse": {
+        "properties": {
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "sync": {
+            "items": {
+              "$ref": "#/components/schemas/SlashSyncEntryResponse"
+            },
+            "title": "Sync",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "sync"
+        ],
+        "title": "SlashCommandDeleteResponse",
+        "type": "object"
+      },
+      "SlashCommandImportRequest": {
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "name"
+        ],
+        "title": "SlashCommandImportRequest",
+        "type": "object"
+      },
+      "SlashCommandListResponse": {
+        "properties": {
+          "commands": {
+            "items": {
+              "$ref": "#/components/schemas/SlashCommandResponse"
+            },
+            "title": "Commands",
+            "type": "array"
+          },
+          "defaultTargets": {
+            "items": {
+              "enum": [
+                "opencode",
+                "claude",
+                "cursor",
+                "codex"
+              ],
+              "type": "string"
+            },
+            "title": "Defaulttargets",
+            "type": "array"
+          },
+          "reviewCommands": {
+            "items": {
+              "$ref": "#/components/schemas/SlashCommandReviewResponse"
+            },
+            "title": "Reviewcommands",
+            "type": "array"
+          },
+          "storePath": {
+            "title": "Storepath",
+            "type": "string"
+          },
+          "syncStatePath": {
+            "title": "Syncstatepath",
+            "type": "string"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/SlashTargetResponse"
+            },
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "storePath",
+          "syncStatePath",
+          "targets",
+          "defaultTargets",
+          "commands",
+          "reviewCommands"
+        ],
+        "title": "SlashCommandListResponse",
+        "type": "object"
+      },
+      "SlashCommandMutationRequest": {
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "targets": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "opencode",
+                    "claude",
+                    "cursor",
+                    "codex"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targets"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "prompt"
+        ],
+        "title": "SlashCommandMutationRequest",
+        "type": "object"
+      },
+      "SlashCommandMutationResponse": {
+        "properties": {
+          "command": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlashCommandResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "sync": {
+            "items": {
+              "$ref": "#/components/schemas/SlashSyncEntryResponse"
+            },
+            "title": "Sync",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "command",
+          "sync"
+        ],
+        "title": "SlashCommandMutationResponse",
+        "type": "object"
+      },
+      "SlashCommandResolveRequest": {
+        "properties": {
+          "action": {
+            "enum": [
+              "restore_managed",
+              "adopt_target",
+              "remove_binding"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "name",
+          "action"
+        ],
+        "title": "SlashCommandResolveRequest",
+        "type": "object"
+      },
+      "SlashCommandResponse": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "syncTargets": {
+            "items": {
+              "$ref": "#/components/schemas/SlashSyncEntryResponse"
+            },
+            "title": "Synctargets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "prompt",
+          "syncTargets"
+        ],
+        "title": "SlashCommandResponse",
+        "type": "object"
+      },
+      "SlashCommandReviewResponse": {
+        "properties": {
+          "actions": {
+            "items": {
+              "enum": [
+                "import",
+                "restore_managed",
+                "adopt_target",
+                "remove_binding"
+              ],
+              "type": "string"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "canImport": {
+            "title": "Canimport",
+            "type": "boolean"
+          },
+          "commandExists": {
+            "title": "Commandexists",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "kind": {
+            "enum": [
+              "unmanaged",
+              "drifted",
+              "missing"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "reviewRef": {
+            "title": "Reviewref",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Target",
+            "type": "string"
+          },
+          "targetLabel": {
+            "title": "Targetlabel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reviewRef",
+          "kind",
+          "target",
+          "targetLabel",
+          "name",
+          "path",
+          "description",
+          "prompt",
+          "commandExists",
+          "canImport",
+          "actions"
+        ],
+        "title": "SlashCommandReviewResponse",
+        "type": "object"
+      },
+      "SlashCommandUpdateRequest": {
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "targets": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "opencode",
+                    "claude",
+                    "cursor",
+                    "codex"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targets"
+          }
+        },
+        "required": [
+          "description",
+          "prompt"
+        ],
+        "title": "SlashCommandUpdateRequest",
+        "type": "object"
+      },
+      "SlashSyncEntryResponse": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "synced",
+              "removed",
+              "not_selected",
+              "blocked_manual_file",
+              "blocked_modified_file",
+              "missing",
+              "drifted",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "path",
+          "status"
+        ],
+        "title": "SlashSyncEntryResponse",
+        "type": "object"
+      },
+      "SlashSyncRequest": {
+        "properties": {
+          "targets": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "opencode",
+                    "claude",
+                    "cursor",
+                    "codex"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targets"
+          }
+        },
+        "title": "SlashSyncRequest",
+        "type": "object"
+      },
+      "SlashTargetResponse": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "defaultSelected": {
+            "title": "Defaultselected",
+            "type": "boolean"
+          },
+          "docsUrl": {
+            "title": "Docsurl",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "fileGlob": {
+            "title": "Fileglob",
+            "type": "string"
+          },
+          "id": {
+            "enum": [
+              "opencode",
+              "claude",
+              "cursor",
+              "codex"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "invocationPrefix": {
+            "title": "Invocationprefix",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "outputDir": {
+            "title": "Outputdir",
+            "type": "string"
+          },
+          "renderFormat": {
+            "enum": [
+              "frontmatter_markdown",
+              "cursor_plaintext"
+            ],
+            "title": "Renderformat",
+            "type": "string"
+          },
+          "rootPath": {
+            "title": "Rootpath",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "global",
+              "project"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "supportNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supportnote"
+          },
+          "supportsFrontmatter": {
+            "title": "Supportsfrontmatter",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "rootPath",
+          "outputDir",
+          "invocationPrefix",
+          "renderFormat",
+          "scope",
+          "docsUrl",
+          "fileGlob",
+          "supportsFrontmatter",
+          "defaultSelected",
+          "enabled",
+          "available"
+        ],
+        "title": "SlashTargetResponse",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -4257,6 +4811,308 @@
           }
         },
         "summary": "Update Skill"
+      }
+    },
+    "/api/slash-commands": {
+      "get": {
+        "operationId": "list_slash_commands_api_slash_commands_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Slash Commands"
+      },
+      "post": {
+        "operationId": "create_slash_command_api_slash_commands_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashCommandMutationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Slash Command"
+      }
+    },
+    "/api/slash-commands/review/import": {
+      "post": {
+        "operationId": "import_slash_command_api_slash_commands_review_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashCommandImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Slash Command"
+      }
+    },
+    "/api/slash-commands/review/resolve": {
+      "post": {
+        "operationId": "resolve_slash_command_review_api_slash_commands_review_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashCommandResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Slash Command Review"
+      }
+    },
+    "/api/slash-commands/{name}": {
+      "delete": {
+        "operationId": "delete_slash_command_api_slash_commands__name__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Slash Command"
+      },
+      "get": {
+        "operationId": "get_slash_command_api_slash_commands__name__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Slash Command"
+      },
+      "put": {
+        "operationId": "update_slash_command_api_slash_commands__name__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashCommandUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Slash Command"
+      }
+    },
+    "/api/slash-commands/{name}/sync": {
+      "post": {
+        "operationId": "sync_slash_command_api_slash_commands__name__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlashSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlashCommandMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Slash Command"
       }
     }
   }

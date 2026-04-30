@@ -7,7 +7,9 @@ from typing import Callable, Literal, Mapping, TypeAlias
 from .resolution import ResolutionContext
 
 
-FamilyKey = Literal["skills", "mcp"]
+FamilyKey = Literal["skills", "mcp", "slash_commands"]
+CommandFileRenderFormat = Literal["frontmatter_markdown", "cursor_plaintext"]
+CommandFileScope = Literal["global", "project"]
 PathResolver = Callable[[ResolutionContext], Path]
 SubtreePath: TypeAlias = tuple[str, ...]
 SubtreePathResolver = Callable[[ResolutionContext], SubtreePath]
@@ -70,6 +72,30 @@ class ConfigSubtreeBindingProfile:
         return tuple(_dedupe_subtree_paths(paths))
 
 
+@dataclass(frozen=True)
+class CommandFileBindingProfile:
+    shape: Literal["command-file"] = "command-file"
+    root_path_resolver: PathResolver | None = None
+    output_dir_resolver: PathResolver | None = None
+    invocation_prefix: str = "/"
+    render_format: CommandFileRenderFormat = "frontmatter_markdown"
+    scope: CommandFileScope = "global"
+    docs_url: str = ""
+    file_glob: str = "*.md"
+    supports_frontmatter: bool = True
+    support_note: str | None = None
+
+    def resolve_root_path(self, context: ResolutionContext) -> Path:
+        if self.root_path_resolver is None:
+            raise ValueError("command-file binding profile is missing a root_path_resolver")
+        return self.root_path_resolver(context)
+
+    def resolve_output_dir(self, context: ResolutionContext) -> Path:
+        if self.output_dir_resolver is None:
+            raise ValueError("command-file binding profile is missing an output_dir_resolver")
+        return self.output_dir_resolver(context)
+
+
 def _dedupe_subtree_paths(paths: list[SubtreePath]) -> list[SubtreePath]:
     seen: set[SubtreePath] = set()
     result: list[SubtreePath] = []
@@ -92,7 +118,7 @@ def _dedupe_paths(paths: list[Path]) -> list[Path]:
     return result
 
 
-BindingProfile: TypeAlias = FileTreeBindingProfile | ConfigSubtreeBindingProfile
+BindingProfile: TypeAlias = FileTreeBindingProfile | ConfigSubtreeBindingProfile | CommandFileBindingProfile
 
 
 @dataclass(frozen=True)
@@ -121,6 +147,9 @@ class HarnessStatus:
 
 __all__ = [
     "BindingProfile",
+    "CommandFileScope",
+    "CommandFileBindingProfile",
+    "CommandFileRenderFormat",
     "ConfigSubtreeBindingProfile",
     "FamilyKey",
     "FileTreeBindingProfile",

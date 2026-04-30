@@ -17,6 +17,18 @@ from .mcp.query import McpQueryService
 from .mcp.read_models import McpReadModelService
 from .mcp.store import McpServerStore
 from .settings import SettingsMutationService, SettingsQueryService
+from .slash_commands import (
+    SlashCommandMutationService,
+    SlashCommandPathPolicy,
+    SlashCommandPlanner,
+    SlashCommandQueryService,
+    SlashCommandReadModelService,
+    SlashCommandStore,
+    SlashCommandStorePaths,
+    SlashCommandSyncStateStore,
+    migrate_legacy_slash_commands,
+    resolve_slash_targets,
+)
 from .skills import SkillsMutationService, SkillsQueryService
 from .skills.marketplace import (
     MarketplaceCatalog,
@@ -43,6 +55,11 @@ class BackendContainer:
     skills_mutations: SkillsMutationService
     settings_queries: SettingsQueryService
     settings_mutations: SettingsMutationService
+    slash_command_store: SlashCommandStore
+    slash_command_sync_state: SlashCommandSyncStateStore
+    slash_command_read_models: SlashCommandReadModelService
+    slash_command_queries: SlashCommandQueryService
+    slash_command_mutations: SlashCommandMutationService
     skills_marketplace_catalog: MarketplaceCatalog
     skills_marketplace_documents: MarketplaceDocumentService
     skills_marketplace_queries: MarketplaceQueryService
@@ -81,6 +98,37 @@ def build_backend_container(
     skills_queries = SkillsQueryService(skills_read_models, active_source_fetcher)
     skills_mutations = SkillsMutationService(skills_read_models, skills_queries, active_source_fetcher)
     settings_queries = SettingsQueryService(harness_kernel)
+    slash_targets = resolve_slash_targets(harness_kernel)
+    slash_command_store = SlashCommandStore(
+        SlashCommandStorePaths(
+            root=paths.slash_command_store_root,
+            commands_dir=paths.slash_command_commands_dir,
+        )
+    )
+    slash_command_sync_state = SlashCommandSyncStateStore(paths.slash_command_sync_state_path)
+    slash_command_path_policy = SlashCommandPathPolicy()
+    migrate_legacy_slash_commands(
+        command_store=slash_command_store,
+        sync_state_store=slash_command_sync_state,
+        context=harness_kernel.context,
+        targets=slash_targets,
+        path_policy=slash_command_path_policy,
+    )
+    slash_command_read_models = SlashCommandReadModelService(
+        slash_command_store,
+        slash_command_sync_state,
+        slash_targets,
+        slash_command_path_policy,
+    )
+    slash_command_queries = SlashCommandQueryService(slash_command_read_models)
+    slash_command_mutations = SlashCommandMutationService(
+        slash_command_store,
+        slash_command_sync_state,
+        slash_command_queries,
+        slash_command_read_models,
+        SlashCommandPlanner(slash_command_path_policy),
+        slash_targets,
+    )
 
     cache = MarketplaceCache.from_environment(active_env)
     skills_catalog = marketplace_catalog or MarketplaceCatalog.from_environment(
@@ -133,6 +181,11 @@ def build_backend_container(
         skills_mutations=skills_mutations,
         settings_queries=settings_queries,
         settings_mutations=settings_mutations,
+        slash_command_store=slash_command_store,
+        slash_command_sync_state=slash_command_sync_state,
+        slash_command_read_models=slash_command_read_models,
+        slash_command_queries=slash_command_queries,
+        slash_command_mutations=slash_command_mutations,
         skills_marketplace_catalog=skills_catalog,
         skills_marketplace_documents=skills_documents,
         skills_marketplace_queries=skills_marketplace_queries,

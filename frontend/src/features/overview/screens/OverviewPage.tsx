@@ -15,13 +15,20 @@ import { StatisticsBand } from "../components/StatisticsBand";
 
 export default function OverviewPage() {
   const queryClient = useQueryClient();
-  const { skillsQuery, mcpQuery, model } = useOverviewData();
+  const { skillsQuery, slashCommandsQuery, mcpQuery, model } = useOverviewData();
   const [refreshing, setRefreshing] = useState(false);
 
   const skillsLoading = skillsQuery.isPending && !skillsQuery.data;
+  const slashCommandsLoading = slashCommandsQuery.isPending && !slashCommandsQuery.data;
   const mcpLoading = mcpQuery.isPending && !mcpQuery.data;
-  const loading = skillsLoading || mcpLoading;
-  const bothFailed = skillsQuery.isError && mcpQuery.isError && !skillsQuery.data && !mcpQuery.data;
+  const loading = skillsLoading || slashCommandsLoading || mcpLoading;
+  const bothFailed =
+    skillsQuery.isError &&
+    slashCommandsQuery.isError &&
+    mcpQuery.isError &&
+    !skillsQuery.data &&
+    !slashCommandsQuery.data &&
+    !mcpQuery.data;
 
   async function refreshOverview() {
     setRefreshing(true);
@@ -54,6 +61,9 @@ export default function OverviewPage() {
         <div className="overview-page">
           {skillsQuery.isError && !skillsQuery.data ? (
             <ErrorBanner message={`Unable to load skills: ${errorMessage(skillsQuery.error)}`} />
+          ) : null}
+          {slashCommandsQuery.isError && !slashCommandsQuery.data ? (
+            <ErrorBanner message={`Unable to load slash commands: ${errorMessage(slashCommandsQuery.error)}`} />
           ) : null}
           {mcpQuery.isError && !mcpQuery.data ? (
             <ErrorBanner message={`Unable to load MCP servers: ${errorMessage(mcpQuery.error)}`} />

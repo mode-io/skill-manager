@@ -584,6 +584,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/slash-commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Slash Commands */
+        get: operations["list_slash_commands_api_slash_commands_get"];
+        put?: never;
+        /** Create Slash Command */
+        post: operations["create_slash_command_api_slash_commands_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/slash-commands/review/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Slash Command */
+        post: operations["import_slash_command_api_slash_commands_review_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/slash-commands/review/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Slash Command Review */
+        post: operations["resolve_slash_command_review_api_slash_commands_review_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/slash-commands/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Slash Command */
+        get: operations["get_slash_command_api_slash_commands__name__get"];
+        /** Update Slash Command */
+        put: operations["update_slash_command_api_slash_commands__name__put"];
+        post?: never;
+        /** Delete Slash Command */
+        delete: operations["delete_slash_command_api_slash_commands__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/slash-commands/{name}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Slash Command */
+        post: operations["sync_slash_command_api_slash_commands__name__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1417,6 +1505,187 @@ export interface components {
             managed: number;
             /** Unmanaged */
             unmanaged: number;
+        };
+        /** SlashCommandDeleteResponse */
+        SlashCommandDeleteResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Sync */
+            sync: components["schemas"]["SlashSyncEntryResponse"][];
+        };
+        /** SlashCommandImportRequest */
+        SlashCommandImportRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "opencode" | "claude" | "cursor" | "codex";
+        };
+        /** SlashCommandListResponse */
+        SlashCommandListResponse: {
+            /** Commands */
+            commands: components["schemas"]["SlashCommandResponse"][];
+            /** Defaulttargets */
+            defaultTargets: ("opencode" | "claude" | "cursor" | "codex")[];
+            /** Reviewcommands */
+            reviewCommands: components["schemas"]["SlashCommandReviewResponse"][];
+            /** Storepath */
+            storePath: string;
+            /** Syncstatepath */
+            syncStatePath: string;
+            /** Targets */
+            targets: components["schemas"]["SlashTargetResponse"][];
+        };
+        /** SlashCommandMutationRequest */
+        SlashCommandMutationRequest: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /** Prompt */
+            prompt: string;
+            /** Targets */
+            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+        };
+        /** SlashCommandMutationResponse */
+        SlashCommandMutationResponse: {
+            command: components["schemas"]["SlashCommandResponse"] | null;
+            /** Ok */
+            ok: boolean;
+            /** Sync */
+            sync: components["schemas"]["SlashSyncEntryResponse"][];
+        };
+        /** SlashCommandResolveRequest */
+        SlashCommandResolveRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "restore_managed" | "adopt_target" | "remove_binding";
+            /** Name */
+            name: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "opencode" | "claude" | "cursor" | "codex";
+        };
+        /** SlashCommandResponse */
+        SlashCommandResponse: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /** Prompt */
+            prompt: string;
+            /** Synctargets */
+            syncTargets: components["schemas"]["SlashSyncEntryResponse"][];
+        };
+        /** SlashCommandReviewResponse */
+        SlashCommandReviewResponse: {
+            /** Actions */
+            actions: ("import" | "restore_managed" | "adopt_target" | "remove_binding")[];
+            /** Canimport */
+            canImport: boolean;
+            /** Commandexists */
+            commandExists: boolean;
+            /** Description */
+            description: string;
+            /** Error */
+            error?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "unmanaged" | "drifted" | "missing";
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Prompt */
+            prompt: string;
+            /** Reviewref */
+            reviewRef: string;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "opencode" | "claude" | "cursor" | "codex";
+            /** Targetlabel */
+            targetLabel: string;
+        };
+        /** SlashCommandUpdateRequest */
+        SlashCommandUpdateRequest: {
+            /** Description */
+            description: string;
+            /** Prompt */
+            prompt: string;
+            /** Targets */
+            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+        };
+        /** SlashSyncEntryResponse */
+        SlashSyncEntryResponse: {
+            /** Error */
+            error?: string | null;
+            /** Path */
+            path: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "synced" | "removed" | "not_selected" | "blocked_manual_file" | "blocked_modified_file" | "missing" | "drifted" | "failed";
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "opencode" | "claude" | "cursor" | "codex";
+        };
+        /** SlashSyncRequest */
+        SlashSyncRequest: {
+            /** Targets */
+            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+        };
+        /** SlashTargetResponse */
+        SlashTargetResponse: {
+            /** Available */
+            available: boolean;
+            /** Defaultselected */
+            defaultSelected: boolean;
+            /** Docsurl */
+            docsUrl: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Fileglob */
+            fileGlob: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "opencode" | "claude" | "cursor" | "codex";
+            /** Invocationprefix */
+            invocationPrefix: string;
+            /** Label */
+            label: string;
+            /** Outputdir */
+            outputDir: string;
+            /**
+             * Renderformat
+             * @enum {string}
+             */
+            renderFormat: "frontmatter_markdown" | "cursor_plaintext";
+            /** Rootpath */
+            rootPath: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "global" | "project";
+            /** Supportnote */
+            supportNote?: string | null;
+            /** Supportsfrontmatter */
+            supportsFrontmatter: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -2531,6 +2800,257 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_slash_commands_api_slash_commands_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandListResponse"];
+                };
+            };
+        };
+    };
+    create_slash_command_api_slash_commands_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashCommandMutationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_slash_command_api_slash_commands_review_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashCommandImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_slash_command_review_api_slash_commands_review_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashCommandResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_slash_command_api_slash_commands__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_slash_command_api_slash_commands__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashCommandUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_slash_command_api_slash_commands__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandDeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_slash_command_api_slash_commands__name__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlashSyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlashCommandMutationResponse"];
                 };
             };
             /** @description Validation Error */

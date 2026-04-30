@@ -3,9 +3,10 @@ import { useMemo } from "react";
 import { productLanguage } from "../../lib/product-language";
 import { mcpRoutes, useMcpInventoryQuery } from "../../features/mcp/public";
 import { skillsRoutes, useSkillsListQuery } from "../../features/skills/public";
+import { slashCommandRoutes, useSlashCommandsQuery } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
 
-export type SidebarIconKey = "overview" | "skills" | "mcp" | "marketplace";
+export type SidebarIconKey = "overview" | "skills" | "slash-commands" | "mcp" | "marketplace";
 
 export interface SidebarLinkModel {
   key: string;
@@ -30,9 +31,12 @@ export interface SidebarModel {
 export function useSidebarModel(): SidebarModel {
   const skillsQuery = useSkillsListQuery();
   const mcpQuery = useMcpInventoryQuery();
+  const slashCommandsQuery = useSlashCommandsQuery();
 
   const inUseSkills = skillsQuery.data?.summary.managed ?? null;
   const needsReviewSkills = skillsQuery.data?.summary.unmanaged ?? null;
+  const slashCommandCount = slashCommandsQuery.data?.commands.length ?? null;
+  const slashCommandReviewCount = slashCommandsQuery.data?.reviewCommands.length ?? null;
   const mcpCounts = mcpSidebarCounts(mcpQuery.data);
 
   return useMemo(
@@ -57,6 +61,26 @@ export function useSidebarModel(): SidebarModel {
               to: skillsRoutes.needsReview,
               label: productLanguage.needsReview,
               count: needsReviewSkills,
+            },
+          ],
+        },
+        {
+          key: "slash-commands",
+          label: "Slash Commands",
+          iconKey: "slash-commands",
+          count: sumLoadedCounts(slashCommandCount, slashCommandReviewCount),
+          links: [
+            {
+              key: "slash-commands-use",
+              to: slashCommandRoutes.inUse,
+              label: productLanguage.inUse,
+              count: slashCommandCount,
+            },
+            {
+              key: "slash-commands-review",
+              to: slashCommandRoutes.needsReview,
+              label: productLanguage.needsReview,
+              count: slashCommandReviewCount,
             },
           ],
         },
@@ -93,6 +117,8 @@ export function useSidebarModel(): SidebarModel {
       mcpCounts.needsReview,
       mcpCounts.total,
       needsReviewSkills,
+      slashCommandCount,
+      slashCommandReviewCount,
     ],
   );
 }
