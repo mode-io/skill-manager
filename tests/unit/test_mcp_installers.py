@@ -68,7 +68,7 @@ class SmitheryCliInstallProviderTests(unittest.TestCase):
         self.assertEqual(calls[0]["command"], [
             "npx",
             "-y",
-            "@smithery/cli@latest",
+            "@smithery/cli@4.11.1",
             "mcp",
             "add",
             "exa",
@@ -82,8 +82,26 @@ class SmitheryCliInstallProviderTests(unittest.TestCase):
         self.assertEqual(env["NO_COLOR"], "1")
         self.assertIn("SMITHERY_CONFIG_PATH", env)
         settings = calls[0]["settings"]
+        self.assertTrue(settings["userId"].startswith("skill-manager-"))
         self.assertFalse(settings["analyticsConsent"])
         self.assertTrue(settings["askedConsent"])
+        self.assertEqual(settings["cache"], {"servers": {}})
+
+    def test_install_failure_summarizes_cleaned_smithery_output(self) -> None:
+        def runner(_command, **_kwargs):  # noqa: ANN001
+            class Result:
+                returncode = 1
+                stdout = "\x1b[31mfirst line\x1b[0m\nstdout failure"
+                stderr = "stderr detail\nfinal smithery failure"
+
+            return Result()
+
+        provider = SmitheryCliInstallProvider(runner=runner)
+
+        with self.assertRaises(MutationError) as captured:
+            provider.install(qualified_name="exa", source_harness="codex")
+
+        self.assertEqual(str(captured.exception), "stdout failure")
 
 
 if __name__ == "__main__":
