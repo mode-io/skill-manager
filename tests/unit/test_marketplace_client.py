@@ -27,16 +27,9 @@ class MarketplaceClientConfigTests(unittest.TestCase):
             "/tmp/custom-ca.pem",
         )
 
-    def test_packaged_runtime_uses_certifi_when_no_override_exists(self) -> None:
-        with (
-            mock.patch("skill_manager.application.marketplace_http._is_packaged_runtime", return_value=True),
-            mock.patch("skill_manager.application.marketplace_http.certifi.where", return_value="/tmp/certifi-ca.pem"),
-        ):
+    def test_certifi_is_used_when_no_override_exists(self) -> None:
+        with mock.patch("skill_manager.application.marketplace_http.certifi.where", return_value="/tmp/certifi-ca.pem"):
             self.assertEqual(str(configured_marketplace_ca_file({})), "/tmp/certifi-ca.pem")
-
-    def test_source_runtime_uses_system_trust_when_no_override_exists(self) -> None:
-        with mock.patch("skill_manager.application.marketplace_http._is_packaged_runtime", return_value=False):
-            self.assertIsNone(configured_marketplace_ca_file({}))
 
 
 class MarketplaceProviderErrorTests(unittest.TestCase):

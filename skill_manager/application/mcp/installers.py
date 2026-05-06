@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Protocol
+from uuid import uuid4
 
 from skill_manager.errors import MutationError
 
 
 _OPENCLAW_UNSUPPORTED_REASON = "Smithery does not provide an OpenClaw MCP installer target"
+_SMITHERY_CLI_PACKAGE = "@smithery/cli@4.11.1"
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
 
@@ -95,7 +99,7 @@ class SmitheryCliInstallProvider:
         command = [
             "npx",
             "-y",
-            "@smithery/cli@latest",
+            _SMITHERY_CLI_PACKAGE,
             "mcp",
             "add",
             qualified_name,
@@ -109,15 +113,18 @@ class SmitheryCliInstallProvider:
         env["NO_COLOR"] = "1"
 
         try:
-            result = self._runner(
-                command,
-                input="n\n",
-                text=True,
-                env=env,
-                cwd=str(self._cwd or Path(env.get("HOME", str(Path.home())))),
-                capture_output=True,
-                timeout=self._timeout_seconds,
-            )
+            with tempfile.TemporaryDirectory(prefix="skill-manager-smithery-") as config_dir:
+                env["SMITHERY_CONFIG_PATH"] = config_dir
+                _write_noninteractive_smithery_settings(Path(env["SMITHERY_CONFIG_PATH"]))
+                result = self._runner(
+                    command,
+                    input="",
+                    text=True,
+                    env=env,
+                    cwd=str(self._cwd or Path(env.get("HOME", str(Path.home())))),
+                    capture_output=True,
+                    timeout=self._timeout_seconds,
+                )
         except subprocess.TimeoutExpired as error:
             raise MutationError(
                 f"Smithery install timed out after {self._timeout_seconds:.0f}s",
@@ -151,6 +158,26 @@ def _summarize_failure(stdout: str, stderr: str) -> str:
     if not lines:
         return ""
     return lines[-1][:500]
+
+
+def _write_noninteractive_smithery_settings(config_dir: Path) -> None:
+    config_dir.mkdir(parents=True, exist_ok=True)
+    settings_path = config_dir / "settings.json"
+    if settings_path.exists():
+        return
+    settings_path.write_text(
+        json.dumps(
+            {
+                "userId": f"skill-manager-{uuid4()}",
+                "analyticsConsent": False,
+                "askedConsent": True,
+                "cache": {"servers": {}},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 __all__ = [
