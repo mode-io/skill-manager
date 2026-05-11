@@ -65,7 +65,7 @@ def serve_foreground(
     container: BackendContainer,
     *,
     host: str = "127.0.0.1",
-    port: int = 8000,
+    port: int = 8082,
     frontend_dist: str | Path | None = None,
     open_browser: bool = True,
 ) -> int:

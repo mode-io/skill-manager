@@ -21,7 +21,7 @@ from skill_manager.runtime.startup import startup_timeout_seconds, wait_for_heal
 
 
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8000
+DEFAULT_PORT = 8082
 COMMANDS = {"serve", "start", "stop", "status"}
 
 
