@@ -19,7 +19,7 @@ LICENSE_FILE = REPO_ROOT / "LICENSE"
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Build a macOS release artifact for skill-manager.")
+    parser = argparse.ArgumentParser(description="Build a release artifact for skill-manager.")
     parser.add_argument("--skip-frontend-build", action="store_true")
     parser.add_argument("--output-dir", default=str(ARTIFACTS_DIR))
     return parser
@@ -29,10 +29,19 @@ def read_version() -> str:
     return VERSION_FILE.read_text(encoding="utf-8").strip()
 
 
+def current_os() -> str:
+    system = platform.system().lower()
+    if system == "darwin":
+        return "darwin"
+    if system == "linux":
+        return "linux"
+    raise RuntimeError(f"unsupported build machine OS: {system}")
+
+
 def current_arch() -> str:
     machine = platform.machine().lower()
     if machine in {"arm64", "aarch64"}:
-        return "arm64"
+        return "aarch64"
     if machine in {"x86_64", "amd64"}:
         return "x64"
     raise RuntimeError(f"unsupported build machine architecture: {machine}")
@@ -79,7 +88,7 @@ def write_checksum(path: Path) -> Path:
 
 
 def package_artifact(bundle_dir: Path, output_dir: Path, version: str) -> tuple[Path, Path]:
-    artifact_name = f"skill-manager-v{version}-darwin-{current_arch()}.tar.gz"
+    artifact_name = f"skill-manager-v{version}-{current_os()}-{current_arch()}.tar.gz"
     output_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = output_dir / artifact_name
     with tarfile.open(artifact_path, "w:gz") as archive:

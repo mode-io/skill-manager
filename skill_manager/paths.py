@@ -65,12 +65,13 @@ def _base_dirs(env: dict[str, str]) -> tuple[Path, Path, Path]:
             else _xdg_dir(env, "XDG_STATE_HOME", default_macos)
         )
     else:
-        config_dir = _xdg_dir(env, "XDG_CONFIG_HOME", home / ".config" / APP_NAME)
-        data_dir = _xdg_dir(env, "XDG_DATA_HOME", home / ".local" / "share" / APP_NAME)
+        root = home / ".skill-manager"
+        config_dir = _xdg_dir(env, "XDG_CONFIG_HOME", root)
+        data_dir = _xdg_dir(env, "XDG_DATA_HOME", root)
         state_dir = (
             Path(state_override)
             if state_override
-            else _xdg_dir(env, "XDG_STATE_HOME", home / ".local" / "state" / APP_NAME)
+            else _xdg_dir(env, "XDG_STATE_HOME", root)
         )
     return config_dir, data_dir, state_dir
 

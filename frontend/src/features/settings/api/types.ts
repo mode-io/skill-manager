@@ -13,4 +13,6 @@ export interface SettingsHarness {
 
 export interface SettingsData {
   harnesses: SettingsHarness[];
+  storePath: string;
+  marketplacePath: string;
 }

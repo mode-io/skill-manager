@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from skill_manager.harness import HarnessStatus
+from skill_manager.paths import resolve_app_paths
 
 
 def settings_payload(
@@ -9,12 +10,15 @@ def settings_payload(
     enabled_harnesses: tuple[str, ...],
 ) -> dict[str, object]:
     enabled_set = set(enabled_harnesses)
+    paths = resolve_app_paths()
 
     return {
         "harnesses": [
             harness_payload(status, support_enabled=status.harness in enabled_set)
             for status in harness_statuses
         ],
+        "storePath": str(paths.skills_store_root),
+        "marketplacePath": str(paths.marketplace_cache_root),
     }
 
 
