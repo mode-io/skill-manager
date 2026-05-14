@@ -11,7 +11,15 @@ class PlatformContextTests(unittest.TestCase):
     def test_macos_platform_context_uses_xdg_fallbacks(self) -> None:
         with TemporaryDirectory() as temp:
             home = Path(temp) / "home"
-            context = resolve_platform_context({"HOME": str(home)}, sys_platform="darwin")
+            context = resolve_platform_context(
+                {
+                    "HOME": str(home),
+                    "XDG_CONFIG_HOME": "",
+                    "XDG_DATA_HOME": "",
+                    "XDG_STATE_HOME": "",
+                },
+                sys_platform="darwin",
+            )
 
             self.assertEqual(context.platform, "macos")
             self.assertEqual(context.sys_platform, "darwin")
