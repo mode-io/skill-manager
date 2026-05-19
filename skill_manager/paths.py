@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from .platform_context import PlatformContext, resolve_platform_context
 
 
 APP_NAME = "skill-manager"
@@ -32,7 +33,8 @@ class AppPaths:
 
 def resolve_app_paths(env: dict[str, str] | None = None) -> AppPaths:
     active_env = _active_env(env)
-    config_dir, data_dir, state_dir = _base_dirs(active_env)
+    context = resolve_platform_context(active_env)
+    config_dir, data_dir, state_dir = _base_dirs(context)
     settings_override = active_env.get(SETTINGS_PATH_ENV)
     settings_path = Path(settings_override) if settings_override else config_dir / "settings.json"
     return AppPaths(
@@ -53,26 +55,25 @@ def resolve_app_paths(env: dict[str, str] | None = None) -> AppPaths:
     )
 
 
-def _base_dirs(env: dict[str, str]) -> tuple[Path, Path, Path]:
-    home = Path(env.get("HOME", str(Path.home())))
-    state_override = env.get(STATE_DIR_ENV)
+def _base_dirs(context: PlatformContext) -> tuple[Path, Path, Path]:
+    state_override = context.env.get(STATE_DIR_ENV)
 
-    if sys.platform == "darwin":
-        default_macos = home / "Library" / "Application Support" / APP_NAME
-        config_dir = _xdg_dir(env, "XDG_CONFIG_HOME", default_macos)
-        data_dir = _xdg_dir(env, "XDG_DATA_HOME", default_macos)
+    if context.platform == "macos":
+        default_macos = context.home / "Library" / "Application Support" / APP_NAME
+        config_dir = _xdg_dir(context.env, "XDG_CONFIG_HOME", default_macos)
+        data_dir = _xdg_dir(context.env, "XDG_DATA_HOME", default_macos)
         state_dir = (
             Path(state_override)
             if state_override
-            else _xdg_dir(env, "XDG_STATE_HOME", default_macos)
+            else _xdg_dir(context.env, "XDG_STATE_HOME", default_macos)
         )
     else:
-        config_dir = _xdg_dir(env, "XDG_CONFIG_HOME", home / ".config" / APP_NAME)
-        data_dir = _xdg_dir(env, "XDG_DATA_HOME", home / ".local" / "share" / APP_NAME)
+        config_dir = _xdg_dir(context.env, "XDG_CONFIG_HOME", context.xdg_config_home / APP_NAME)
+        data_dir = _xdg_dir(context.env, "XDG_DATA_HOME", context.xdg_data_home / APP_NAME)
         state_dir = (
             Path(state_override)
             if state_override
-            else _xdg_dir(env, "XDG_STATE_HOME", home / ".local" / "state" / APP_NAME)
+            else _xdg_dir(context.env, "XDG_STATE_HOME", context.xdg_state_home / APP_NAME)
         )
     return config_dir, data_dir, state_dir
 

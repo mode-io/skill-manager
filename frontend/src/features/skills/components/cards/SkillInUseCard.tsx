@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Loader2, PackageOpen, Power, Trash2 } from "lucide-react";
 
 import { CardMenu, type CardMenuItem } from "../../../../components/cards/CardMenu";
+import { useSkillsCopy } from "../../i18n";
 import { cellActionKey } from "../../model/pending";
 import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
 import type { SkillListRow } from "../../model/types";
@@ -36,12 +37,13 @@ export function SkillInUseCard({
   onRequestRemove,
   onRequestDelete,
 }: SkillInUseCardProps) {
+  const copy = useSkillsCopy();
   const menuItems = useMemo<CardMenuItem[]>(() => {
     const items: CardMenuItem[] = [];
     if (row.actions.canStopManaging) {
       items.push({
         key: "unmanage",
-        label: "Remove from Skill Manager",
+        label: copy.detail.removeFromSkillManager,
         icon: <PackageOpen size={13} aria-hidden="true" />,
         onSelect: () => onRequestRemove(row),
       });
@@ -49,14 +51,14 @@ export function SkillInUseCard({
     if (row.actions.canDelete) {
       items.push({
         key: "delete",
-        label: "Delete",
+        label: copy.detail.delete,
         icon: <Trash2 size={13} aria-hidden="true" />,
         destructive: true,
         onSelect: () => onRequestDelete(row),
       });
     }
     return items;
-  }, [row, onRequestDelete, onRequestRemove]);
+  }, [copy.detail.delete, copy.detail.removeFromSkillManager, row, onRequestDelete, onRequestRemove]);
 
   const interactiveCells = row.cells.filter((cell) => cell.interactive);
   const enabled = interactiveCells.filter((cell) => cell.state === "enabled").length;
@@ -89,7 +91,7 @@ export function SkillInUseCard({
         onToggleChecked={() => onToggleChecked(row.skillRef)}
         menu={
           <CardMenu
-            label={`More actions for ${row.name}`}
+            label={copy.detail.moreActions(row.name)}
             items={menuItems}
             disabled={pendingStructuralAction !== null}
           />
@@ -108,14 +110,14 @@ export function SkillInUseCard({
             event.stopPropagation();
             void onSetAllHarnesses(row.skillRef, target);
           }}
-          aria-label={target === "enabled" ? "Enable on all harnesses" : "Disable everywhere"}
+          aria-label={target === "enabled" ? copy.detail.enableOnAllAria : copy.detail.disableEverywhere}
         >
           {anyCellPending ? (
             <Loader2 size={12} className="card-action-spinner" aria-hidden="true" />
           ) : (
             <Power size={12} aria-hidden="true" />
           )}
-          {target === "enabled" ? "Enable on all" : "Disable everywhere"}
+          {target === "enabled" ? copy.detail.enableOnAll : copy.detail.disableEverywhere}
         </button>
       </div>
     </article>

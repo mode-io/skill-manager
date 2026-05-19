@@ -69,6 +69,7 @@ from .skills import (
     SkillsPageResponse,
     SkillsSummaryResponse,
 )
+from .settings import SettingsHarnessResponse, SettingsResponse, SettingsStorageResponse
 from .slash_commands import (
     SlashCommandDeleteResponse,
     SlashCommandImportRequest,
@@ -137,6 +138,9 @@ __all__ = [
     "OkResponse",
     "ReconcileMcpServerRequest",
     "SetHarnessSupportRequest",
+    "SettingsHarnessResponse",
+    "SettingsResponse",
+    "SettingsStorageResponse",
     "SetMcpServerHarnessesRequest",
     "SetSkillHarnessesFailureResponse",
     "SetSkillHarnessesRequest",

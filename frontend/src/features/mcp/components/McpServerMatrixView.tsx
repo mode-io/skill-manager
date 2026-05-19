@@ -9,6 +9,7 @@ import {
 } from "../../../components/matrix";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import type { McpInventoryColumnDto, McpInventoryEntryDto } from "../api/management-types";
+import { useMcpCopy, type McpCopy } from "../i18n";
 import {
   matrixCellFor,
   matrixColumns,
@@ -40,11 +41,12 @@ export function McpServerMatrixView({
   onEnableHarness,
   onDisableHarness,
 }: McpServerMatrixViewProps) {
+  const copy = useMcpCopy();
   const displayColumns = matrixColumns({ columns });
 
   return (
     <MatrixTable
-      ariaLabel="MCP server harness matrix"
+      ariaLabel={copy.detail.matrix.ariaLabel}
       harnessColumnCount={displayColumns.length}
       harnessColumnWidth="52px"
       compactColumnWidth="140px"
@@ -52,8 +54,8 @@ export function McpServerMatrixView({
     >
       <thead className="matrix-table__head">
         <tr>
-          <th className="matrix-table__th matrix-table__th--checkbox" aria-label="Select" />
-          <th className="matrix-table__th matrix-table__th--identity">Server</th>
+          <th className="matrix-table__th matrix-table__th--checkbox" aria-label={copy.detail.matrix.selectColumn} />
+          <th className="matrix-table__th matrix-table__th--identity">{copy.detail.matrix.serverColumn}</th>
           {displayColumns.map((column) => (
             <MatrixHarnessHeader
               key={column.harness}
@@ -62,10 +64,10 @@ export function McpServerMatrixView({
               harness={column.harness}
             />
           ))}
-          <th className="matrix-table__th matrix-table__th--compact" aria-label="Harnesses">
-            Harnesses
+          <th className="matrix-table__th matrix-table__th--compact" aria-label={copy.detail.matrix.harnessesColumn}>
+            {copy.detail.matrix.harnessesColumn}
           </th>
-          <th className="matrix-table__th matrix-table__th--end">Enabled</th>
+          <th className="matrix-table__th matrix-table__th--end">{copy.detail.matrix.enabledColumn}</th>
         </tr>
       </thead>
       <tbody>
@@ -81,6 +83,7 @@ export function McpServerMatrixView({
             onToggleChecked={onToggleChecked}
             onEnableHarness={onEnableHarness}
             onDisableHarness={onDisableHarness}
+            copy={copy}
           />
         ))}
       </tbody>
@@ -98,6 +101,7 @@ function McpMatrixRow({
   onToggleChecked,
   onEnableHarness,
   onDisableHarness,
+  copy,
 }: {
   entry: McpInventoryEntryDto;
   columns: McpInventoryColumnDto[];
@@ -108,6 +112,7 @@ function McpMatrixRow({
   onToggleChecked: (name: string) => void;
   onEnableHarness: (name: string, harness: string) => void;
   onDisableHarness: (name: string, harness: string) => void;
+  copy: McpCopy;
 }) {
   const coverage = matrixCoverage(entry, columns);
 
@@ -116,7 +121,7 @@ function McpMatrixRow({
       <td className="matrix-table__cell matrix-table__cell--checkbox">
         <CardSelectCheckbox
           checked={checked}
-          label={checked ? `Deselect ${entry.displayName}` : `Select ${entry.displayName}`}
+          label={checked ? copy.detail.deselect(entry.displayName) : copy.detail.select(entry.displayName)}
           onToggle={() => onToggleChecked(entry.name)}
           disabled={pendingServer}
         />
@@ -125,7 +130,7 @@ function McpMatrixRow({
         <button
           type="button"
           className="mcp-matrix__server-button"
-          aria-label={`Open detail for ${entry.displayName}`}
+          aria-label={copy.detail.openDetail(entry.displayName)}
           onClick={() => onOpenDetail(entry.name)}
         >
           <span className="matrix-table__name-row">
@@ -137,7 +142,7 @@ function McpMatrixRow({
         </button>
       </td>
       {columns.map((column) => {
-        const cell = matrixCellFor(entry, column);
+        const cell = matrixCellFor(entry, column, copy);
         return (
           <td key={column.harness} className="matrix-table__cell matrix-table__cell--harness">
             <McpMatrixHarnessCell
@@ -158,7 +163,7 @@ function McpMatrixRow({
       <td className="matrix-table__cell matrix-table__cell--coverage">
         <span
           className="matrix-table__coverage"
-          aria-label={`Enabled on ${coverage.enabled} of ${coverage.writable} writable harnesses`}
+          aria-label={copy.detail.matrix.coverage(coverage.enabled, coverage.writable)}
         >
           <span className="matrix-table__coverage-count">{coverage.enabled}</span>
           <span className="matrix-table__coverage-total" aria-hidden="true">

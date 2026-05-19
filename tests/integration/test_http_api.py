@@ -19,6 +19,15 @@ class HttpApiTests(unittest.TestCase):
             self.assertTrue(health["ok"])
             self.assertEqual(skills["summary"], {"managed": 0, "unmanaged": 0})
             self.assertEqual(skills["rows"], [])
+            self.assertEqual(settings["storage"]["skillsStorePath"], str(harness.spec.skills_store_root))
+            self.assertEqual(
+                settings["storage"]["marketplaceCachePath"],
+                str(harness.spec.xdg_data_home / "skill-manager" / "marketplace"),
+            )
+            self.assertEqual(
+                settings["storage"]["settingsPath"],
+                str(harness.spec.xdg_config_home / "skill-manager" / "settings.json"),
+            )
             self.assertEqual(len(settings["harnesses"]), 5)
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
             self.assertTrue(openclaw["installed"])

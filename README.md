@@ -1,5 +1,7 @@
 # skill-manager
 
+[中文说明](README.zh-CN.md)
+
 <p align="center">
   <img src="assets/skill_manager_logo.svg" alt="Skill Manager" width="520" />
 </p>
@@ -14,7 +16,7 @@
   <a href="https://github.com/mode-io/skill-manager/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mode-io/skill-manager?style=flat-square&color=EA580C" /></a>
   <a href="https://www.npmjs.com/package/@mode-io/skill-manager"><img alt="npm version" src="https://img.shields.io/npm/v/%40mode-io%2Fskill-manager?style=flat-square&logo=npm&logoColor=white" /></a>
   <a href="#install"><img alt="Install with Homebrew" src="https://img.shields.io/badge/install-homebrew-FBBF24?style=flat-square&logo=homebrew&logoColor=111827" /></a>
-  <a href="#install"><img alt="macOS" src="https://img.shields.io/badge/platform-macOS-111827?style=flat-square&logo=apple&logoColor=white" /></a>
+  <a href="#install"><img alt="macOS ARM64/x64 and Linux x64/ARM64" src="https://img.shields.io/badge/platform-macOS%20ARM64%2Fx64%20%2B%20Linux%20x64%2FARM64-111827?style=flat-square&logo=linux&logoColor=white" /></a>
   <a href="#local-first-safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
 
@@ -97,7 +99,7 @@ Marketplace is the discovery surface:
 
 ## Install
 
-### Homebrew (recommended)
+### Homebrew (macOS recommended)
 
 ```bash
 brew tap mode-io/tap
@@ -105,12 +107,14 @@ brew install skill-manager
 skill-manager start
 ```
 
-### npm
+### npm (macOS ARM64/x64 and Linux x64/ARM64)
 
 ```bash
 npm install -g @mode-io/skill-manager
 skill-manager start
 ```
+
+The npm wrapper downloads the native release artifact for the current platform and CPU architecture.
 
 ## Supported harnesses
 
@@ -168,7 +172,7 @@ Actions that can change local state include:
 - creating, updating, syncing, importing, or deleting a slash command
 - changing harness support settings
 
-App-owned files live under `~/Library/Application Support/skill-manager` on macOS.
+App-owned files live under `~/Library/Application Support/skill-manager` on macOS and XDG base directories on Linux.
 
 ## How it works
 
@@ -209,9 +213,9 @@ CLI marketplace entries are preview-only.
 
 ## Configuration
 
-On macOS, app-owned files live under `~/Library/Application Support/skill-manager`.
+On macOS, app-owned files live under `~/Library/Application Support/skill-manager`. On Linux, app-owned files use XDG base directories.
 
-Useful paths:
+Useful macOS paths:
 
 - shared skills store: `~/Library/Application Support/skill-manager/shared`
 - MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
@@ -219,6 +223,15 @@ Useful paths:
 - slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
+
+Useful Linux paths:
+
+- shared skills store: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/shared`
+- MCP manifest: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/mcp/manifest.json`
+- slash command library: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/commands`
+- slash command sync state: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/sync-state.json`
+- marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
+- app settings: `${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
 
 Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual skill roots with environment variables.
 
@@ -286,7 +299,7 @@ npm run build
 ## Troubleshooting
 
 - If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try again.
-- If `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
+- On macOS, if `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
 - If an MCP harness is shown as unavailable, Skill Manager has detected that the local client is missing or does not support the required config surface.
 
 ## More to come

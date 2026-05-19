@@ -5,6 +5,7 @@ import { DetailBindingIdentity } from "../../../../components/detail/DetailBindi
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { DetailSection } from "../../../../components/detail/DetailSection";
 import type { SlashCommandDto, SlashSyncEntryDto, SlashTargetDto } from "../../api/types";
+import { useSlashCommandsCopy, type SlashCommandsCopy } from "../../i18n";
 import { syncedTargetIds } from "../../model/selectors";
 import { SlashCommandContentSections } from "./SlashCommandContentBlocks";
 
@@ -30,6 +31,7 @@ export function SlashCommandDetailView({
   onToggleTarget,
 }: SlashCommandDetailViewProps) {
   const headingId = useId();
+  const copy = useSlashCommandsCopy();
   const commandPending = pendingName === command.name;
   const enabledTargetIds = useMemo(() => syncedTargetIds(command), [command]);
   const writtenEntries = useMemo(
@@ -42,7 +44,7 @@ export function SlashCommandDetailView({
       <div className="slash-command-detail-shell__chrome">
         <DetailHeader
           title={<h2 id={headingId}>{command.name}</h2>}
-          closeLabel="Close slash command detail"
+          closeLabel={copy.detail.close}
           onClose={onClose}
         />
       </div>
@@ -61,13 +63,14 @@ export function SlashCommandDetailView({
             commandPending={commandPending}
             pendingTarget={pendingTarget}
             onToggleTarget={onToggleTarget}
+            copy={copy}
           />
 
-          <LocationsSection entries={writtenEntries} targets={targets} />
+          <LocationsSection entries={writtenEntries} targets={targets} copy={copy} />
         </div>
       </div>
 
-      <footer className="slash-command-detail-shell__footer" aria-label="Slash command actions">
+      <footer className="slash-command-detail-shell__footer" aria-label={copy.detail.actionsAria}>
         <button
           type="button"
           className="action-pill action-pill--md"
@@ -75,7 +78,7 @@ export function SlashCommandDetailView({
           onClick={() => onEdit(command)}
         >
           <Pencil size={13} aria-hidden="true" />
-          Edit
+          {copy.detail.edit}
         </button>
         <button
           type="button"
@@ -84,7 +87,7 @@ export function SlashCommandDetailView({
           onClick={() => onDelete(command)}
         >
           <Trash2 size={13} aria-hidden="true" />
-          Delete
+          {copy.detail.delete}
         </button>
       </footer>
     </>
@@ -98,6 +101,7 @@ function HarnessesSection({
   commandPending,
   pendingTarget,
   onToggleTarget,
+  copy,
 }: {
   command: SlashCommandDto;
   targets: SlashTargetDto[];
@@ -105,10 +109,11 @@ function HarnessesSection({
   commandPending: boolean;
   pendingTarget: string | null;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
+  copy: SlashCommandsCopy;
 }) {
   return (
-    <DetailSection heading="Harnesses">
-      <div className="detail-sheet__bindings" aria-label={`Harnesses for ${command.name}`}>
+    <DetailSection heading={copy.detail.harnesses}>
+      <div className="detail-sheet__bindings" aria-label={copy.detail.harnessesFor(command.name)}>
         {targets.map((target) => {
           const enabled = enabledTargetIds.has(target.id);
           const targetPending = commandPending && pendingTarget === target.id;
@@ -123,9 +128,9 @@ function HarnessesSection({
                 harness={target.id}
                 label={target.label}
                 logoKey={logoKeyForHarness(target.id)}
-                statusLabel={enabled ? "Enabled" : "Disabled"}
+                statusLabel={enabled ? copy.detail.enabled : copy.detail.disabled}
                 tone={enabled ? "enabled" : "disabled"}
-                visibleStatus={enabled ? "Enabled" : null}
+                visibleStatus={enabled ? copy.detail.enabled : null}
               />
               <div className="detail-sheet__binding-actions">
                 <button
@@ -134,12 +139,12 @@ function HarnessesSection({
                   disabled={commandPending || !target.enabled}
                   onClick={() => onToggleTarget(command, target)}
                   aria-pressed={enabled}
-                  aria-label={`${enabled ? "Disable" : "Enable"} ${target.label} for ${command.name}`}
+                  aria-label={enabled ? copy.detail.disableTargetFor(target.label, command.name) : copy.detail.enableTargetFor(target.label, command.name)}
                 >
                   {targetPending ? (
                     <Loader2 size={12} className="card-action-spinner" aria-hidden="true" />
                   ) : null}
-                  {enabled ? "Disable" : "Enable"}
+                  {enabled ? copy.detail.disable : copy.detail.enable}
                 </button>
               </div>
             </div>
@@ -153,13 +158,15 @@ function HarnessesSection({
 function LocationsSection({
   entries,
   targets,
+  copy,
 }: {
   entries: SlashSyncEntryDto[];
   targets: SlashTargetDto[];
+  copy: SlashCommandsCopy;
 }) {
   const targetById = new Map(targets.map((target) => [target.id, target]));
   return (
-    <DetailSection heading="Locations">
+    <DetailSection heading={copy.detail.locations}>
       {entries.length > 0 ? (
         <div className="detail-sheet__bindings">
           {entries.map((entry) => (
@@ -167,11 +174,12 @@ function LocationsSection({
               key={`${entry.target}:${entry.path}`}
               entry={entry}
               target={targetById.get(entry.target)}
+              copy={copy}
             />
           ))}
         </div>
       ) : (
-        <p className="slash-review-detail__empty">No harness locations are enabled.</p>
+        <p className="slash-review-detail__empty">{copy.detail.noHarnessLocations}</p>
       )}
     </DetailSection>
   );
@@ -180,9 +188,11 @@ function LocationsSection({
 function SlashCommandLocationRow({
   entry,
   target,
+  copy,
 }: {
   entry: SlashSyncEntryDto;
   target: SlashTargetDto | undefined;
+  copy: SlashCommandsCopy;
 }) {
   const label = target?.label ?? entry.target;
   return (
@@ -191,9 +201,9 @@ function SlashCommandLocationRow({
         harness={entry.target}
         label={label}
         logoKey={logoKeyForHarness(entry.target)}
-        statusLabel="Written"
+        statusLabel={copy.detail.written}
         tone="enabled"
-        visibleStatus="Written"
+        visibleStatus={copy.detail.written}
       />
       <p className="slash-written-location-row__path">{entry.path}</p>
     </div>

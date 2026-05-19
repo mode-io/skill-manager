@@ -2,6 +2,7 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { MarketplaceCard } from "../components/MarketplaceCard";
 import { MarketplaceFeedPane } from "../components/MarketplaceFeedPane";
 import { MarketplaceDetailSheet } from "../components/MarketplaceDetailSheet";
+import { useMarketplaceCopy } from "../i18n";
 import { useMarketplaceController } from "../model/use-marketplace-controller";
 
 export interface MarketplacePageProps {
@@ -17,6 +18,7 @@ export default function MarketplacePage({
   onQueryChange,
   onItemCountChange,
 }: MarketplacePageProps) {
+  const copy = useMarketplaceCopy();
   const {
     errorMessage,
     selectedItemId,
@@ -36,7 +38,7 @@ export default function MarketplacePage({
   const feedErrorMessage =
     feedQuery.error instanceof Error
       ? feedQuery.error.message
-      : "Unable to load the marketplace.";
+      : copy.errors.skills;
 
   // Only open the detail modal if this tab is active AND the URL item id
   // is in our namespace (skills.sh items are prefixed `skillssh:`).
@@ -57,7 +59,8 @@ export default function MarketplacePage({
         itemCount={items.length}
         hasMore={hasMore}
         loadingMore={loadingMore}
-        loadingLabel="Loading marketplace"
+        loadingLabel={copy.loading.skills}
+        loadingMoreLabel={copy.loading.more}
         errorMessage={feedErrorMessage}
         onItemCountChange={onItemCountChange}
         onLoadMore={() => feedQuery.fetchNextPage()}

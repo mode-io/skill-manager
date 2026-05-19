@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { FilterBar } from "../../../components/FilterBar";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
+import { useCommonCopy } from "../../../i18n";
 import { SkillsNeedsReviewList } from "../components/cards/SkillsNeedsReviewList";
 import { SkillsEmptyState } from "../components/pane/SkillsEmptyState";
+import { useSkillsCopy } from "../i18n";
 import { useSkillsWorkspace } from "../model/workspace-context";
 import {
   countAdoptableLocalSkillRows,
@@ -28,6 +30,8 @@ export default function SkillsNeedsReviewPage() {
     isInitialLoading,
   } = useSkillsWorkspace();
   const { filters, updateFilters, resetFilters } = useSkillsNeedsReviewSession();
+  const copy = useSkillsCopy();
+  const common = useCommonCopy();
 
   const rows = useMemo(() => filterNeedsReviewRows(data, filters), [data, filters]);
   const hasActiveFilters = useMemo(() => hasActiveNeedsReviewFilters(filters), [filters]);
@@ -39,12 +43,8 @@ export default function SkillsNeedsReviewPage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Skills to review"
-          subtitle={
-            needsReviewCount > 0
-              ? `${needsReviewCount} skill${needsReviewCount === 1 ? "" : "s"} need${needsReviewCount === 1 ? "s" : ""} a review decision.`
-              : "No local skill folders need review across your harnesses."
-          }
+          title={copy.review.title}
+          subtitle={copy.review.subtitle(needsReviewCount)}
           actions={
             <button
               type="button"
@@ -53,9 +53,9 @@ export default function SkillsNeedsReviewPage() {
               onClick={onManageAll}
             >
               {pendingBulkAction === "manage-all" ? (
-                <LoadingSpinner size="sm" label="Adopting all skills" />
+                <LoadingSpinner size="sm" label={copy.review.adoptingAllSkills} />
               ) : null}
-              Adopt all eligible
+              {copy.review.adoptAllEligible}
             </button>
           }
         />
@@ -64,18 +64,18 @@ export default function SkillsNeedsReviewPage() {
           <FilterBar
             searchValue={filters.search}
             onSearchChange={(search) => updateFilters({ search })}
-            searchPlaceholder="Search skills to review..."
-            searchLabel="Search skills to review"
+            searchPlaceholder={copy.review.searchPlaceholder}
+            searchLabel={copy.review.searchLabel}
           />
         ) : null}
       </div>
 
       {isInitialLoading ? (
         <div className="panel-state">
-          <LoadingSpinner size="md" label="Loading skills to review" />
+          <LoadingSpinner size="md" label={copy.review.loading} />
         </div>
       ) : status === "error" ? (
-        <div className="panel-state">Unable to load skills to review.</div>
+        <div className="panel-state">{copy.review.unableToLoad}</div>
       ) : isReady && data ? (
         rows.length > 0 ? (
           <SkillsNeedsReviewList
@@ -87,20 +87,19 @@ export default function SkillsNeedsReviewPage() {
             onManageSkill={onManageSkill}
           />
         ) : needsReviewCount > 0 ? (
-          <SkillsEmptyState onResetFilters={resetFilters} />
+          <SkillsEmptyState copy={copy.filters} onResetFilters={resetFilters} />
         ) : (
           <div className="empty-panel">
-            <h3 className="empty-panel__title">Nothing needs review</h3>
+            <h3 className="empty-panel__title">{copy.review.emptyTitle}</h3>
             <p className="empty-panel__body">
-              Your local harness folders are either already in use through Skill Manager or currently empty. Install
-              from the marketplace to add new skills.
+              {copy.review.emptyBody}
             </p>
             <div className="empty-panel__actions">
               <Link
                 to="/marketplace/skills"
                 className="action-pill action-pill--md action-pill--accent"
               >
-                Open Marketplace
+                {common.actions.openMarketplace}
               </Link>
             </div>
           </div>

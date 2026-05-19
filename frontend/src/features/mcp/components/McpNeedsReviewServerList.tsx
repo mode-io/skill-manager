@@ -1,4 +1,5 @@
 import type { McpIdentityGroupDto } from "../api/management-types";
+import { useMcpCopy } from "../i18n";
 import { McpNeedsReviewServerRow } from "./McpNeedsReviewServerRow";
 
 interface McpNeedsReviewServerListProps {
@@ -16,8 +17,9 @@ export function McpNeedsReviewServerList({
   onAdoptIdentical,
   onChooseConfigToAdopt,
 }: McpNeedsReviewServerListProps) {
+  const copy = useMcpCopy();
   return (
-    <div className="needs-review-rows" aria-label="MCP configs to review">
+    <div className="needs-review-rows" aria-label={copy.detail.list.reviewAriaLabel}>
       {groups.map((group) => (
         <McpNeedsReviewServerRow
           key={group.name}

@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { OverviewReviewItem } from "../../../app/capability-registry";
+import { useOverviewCopy } from "../i18n";
 
 interface ReviewQueueProps {
   items: OverviewReviewItem[];
@@ -9,10 +10,12 @@ interface ReviewQueueProps {
 }
 
 export function ReviewQueue({ items, loading }: ReviewQueueProps) {
+  const copy = useOverviewCopy();
+
   return (
     <section className="overview-review-queue" aria-labelledby="overview-review-title">
       <div className="overview-section__head">
-        <h2 id="overview-review-title">Review</h2>
+        <h2 id="overview-review-title">{copy.sections.review}</h2>
       </div>
       {loading ? (
         <div className="overview-review-list" aria-hidden="true">
@@ -34,7 +37,7 @@ export function ReviewQueue({ items, loading }: ReviewQueueProps) {
       ) : (
         <div className="overview-review-empty">
           <CheckCircle2 size={18} />
-          <span>No local adoption or config review is waiting.</span>
+          <span>{copy.sections.noReviewWaiting}</span>
         </div>
       )}
     </section>

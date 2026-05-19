@@ -81,6 +81,9 @@ function detectHomebrewInstall() {
 }
 
 function assertNoHomebrewConflict({ globalInstall = false, invocationPath } = {}) {
+  if (process.platform !== "darwin") {
+    return;
+  }
   if (isRepoCheckout()) {
     return;
   }

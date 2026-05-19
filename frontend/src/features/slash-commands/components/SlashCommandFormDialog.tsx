@@ -4,6 +4,7 @@ import { Loader2, X } from "lucide-react";
 
 import { DetailBindingIdentity } from "../../../components/detail/DetailBindingIdentity";
 import type { SlashCommandDto, SlashSyncEntryDto, SlashTargetDto, SlashTargetId } from "../api/types";
+import { useSlashCommandsCopy, type SlashCommandsCopy } from "../i18n";
 
 interface SlashCommandFormValue {
   name: string;
@@ -33,6 +34,7 @@ export function SlashCommandFormDialog({
   onOpenChange,
   onSubmit,
 }: SlashCommandFormDialogProps) {
+  const copy = useSlashCommandsCopy();
   const initialTargets = useMemo(() => {
     if (!command) return defaultTargets;
     return command.syncTargets
@@ -66,10 +68,10 @@ export function SlashCommandFormDialog({
 
   const trimmedName = name.trim();
   const nameError = trimmedName && !isValidCommandName(trimmedName)
-    ? "Use lowercase letters, numbers, and hyphens, for example code-review."
+    ? copy.detail.form.nameError
     : "";
   const canSubmit = trimmedName && !nameError && description.trim() && prompt.trim();
-  const title = mode === "create" ? "New slash command" : "Edit command";
+  const title = mode === "create" ? copy.detail.form.createTitle : copy.detail.form.editTitle;
 
   function toggleTarget(target: SlashTargetId): void {
     setSelectedTargets((current) =>
@@ -103,11 +105,11 @@ export function SlashCommandFormDialog({
             <div>
               <Dialog.Title className="dialog-title">{title}</Dialog.Title>
               <Dialog.Description className="dialog-description">
-                Save one prompt and sync it into selected global command folders.
+                {copy.detail.form.description}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <button type="button" className="icon-button" aria-label="Close" disabled={pending}>
+              <button type="button" className="icon-button" aria-label={copy.detail.form.close} disabled={pending}>
                 <X size={16} aria-hidden="true" />
               </button>
             </Dialog.Close>
@@ -115,7 +117,7 @@ export function SlashCommandFormDialog({
 
           <div className="slash-form">
             <label className="slash-field">
-              <span>Name</span>
+              <span>{copy.detail.form.name}</span>
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -132,28 +134,28 @@ export function SlashCommandFormDialog({
             </label>
 
             <label className="slash-field">
-              <span>Description</span>
+              <span>{copy.detail.form.descriptionLabel}</span>
               <input
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 disabled={pending}
-                placeholder="Review code for bugs and security risks"
+                placeholder={copy.detail.form.descriptionPlaceholder}
               />
             </label>
 
             <label className="slash-field">
-              <span>Prompt</span>
+              <span>{copy.detail.form.prompt}</span>
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 disabled={pending}
-                placeholder="Review the following content:\n\n$ARGUMENTS"
+                placeholder={copy.detail.form.promptPlaceholder}
                 rows={10}
               />
             </label>
 
             <fieldset className="slash-target-picker">
-              <legend>Harnesses</legend>
+              <legend>{copy.detail.form.harnesses}</legend>
               <div className="detail-sheet__bindings">
                 {targets.map((target) => {
                   const checked = selectedTargets.includes(target.id);
@@ -168,7 +170,7 @@ export function SlashCommandFormDialog({
                         harness={target.id}
                         label={target.label}
                         logoKey={target.id === "claude" ? "claude" : target.id}
-                        statusLabel={checked ? "Enabled" : "Disabled"}
+                        statusLabel={checked ? copy.detail.enabled : copy.detail.disabled}
                         tone={checked ? "enabled" : "disabled"}
                       />
                       <div className="detail-sheet__binding-actions">
@@ -178,9 +180,9 @@ export function SlashCommandFormDialog({
                           disabled={targetDisabled}
                           onClick={() => toggleTarget(target.id)}
                           aria-pressed={checked}
-                          aria-label={`${checked ? "Disable" : "Enable"} ${target.label}`}
+                          aria-label={checked ? copy.detail.disableTargetFor(target.label, trimmedName) : copy.detail.enableTargetFor(target.label, trimmedName)}
                         >
-                          {checked ? "Disable" : "Enable"}
+                          {checked ? copy.detail.disable : copy.detail.enable}
                         </button>
                       </div>
                     </div>
@@ -191,13 +193,14 @@ export function SlashCommandFormDialog({
 
             {writtenEntries.length > 0 ? (
               <section className="slash-written-locations" aria-labelledby="slash-written-locations-title">
-                <h3 id="slash-written-locations-title">Locations</h3>
+                <h3 id="slash-written-locations-title">{copy.detail.locations}</h3>
                 <div className="detail-sheet__bindings">
                   {writtenEntries.map((entry) => (
                     <SlashWrittenLocationRow
                       key={`${entry.target}:${entry.path}`}
                       entry={entry}
                       target={targetById.get(entry.target)}
+                      copy={copy}
                     />
                   ))}
                 </div>
@@ -207,7 +210,7 @@ export function SlashCommandFormDialog({
 
           <div className="dialog-actions">
             <button type="button" className="btn btn-ghost" disabled={pending} onClick={() => onOpenChange(false)}>
-              Cancel
+              {copy.detail.form.cancel}
             </button>
             <button
               type="button"
@@ -218,7 +221,7 @@ export function SlashCommandFormDialog({
               }}
             >
               {pending ? <Loader2 size={13} className="slash-spinner" aria-hidden="true" /> : null}
-              {mode === "create" ? "Create" : "Save"}
+              {mode === "create" ? copy.detail.form.create : copy.detail.form.save}
             </button>
           </div>
         </Dialog.Content>
@@ -230,9 +233,11 @@ export function SlashCommandFormDialog({
 function SlashWrittenLocationRow({
   entry,
   target,
+  copy,
 }: {
   entry: SlashSyncEntryDto;
   target: SlashTargetDto | undefined;
+  copy: SlashCommandsCopy;
 }) {
   const label = target?.label ?? entry.target;
   return (
@@ -241,9 +246,9 @@ function SlashWrittenLocationRow({
         harness={entry.target}
         label={label}
         logoKey={entry.target === "claude" ? "claude" : entry.target}
-        statusLabel="Written"
+        statusLabel={copy.detail.written}
         tone="enabled"
-        visibleStatus="Written"
+        visibleStatus={copy.detail.written}
       />
       <p className="slash-written-location-row__path">{entry.path}</p>
     </div>

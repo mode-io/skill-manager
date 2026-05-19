@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from skill_manager.errors import MutationError
 from skill_manager.harness import (
+    FileTreeAvailability,
     FileTreeBindingProfile,
     HarnessKernelService,
 )
@@ -29,6 +30,8 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         path_env: str | None,
         managed_root: Path,
         discovery_roots: tuple["_ResolvedRoot", ...],
+        availability: FileTreeAvailability,
+        app_probe_paths: tuple[Path, ...],
     ) -> None:
         self.harness = harness
         self.label = label
@@ -37,6 +40,8 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         self._path_env = path_env
         self.managed_root = managed_root
         self._discovery_roots = self._dedupe_roots(discovery_roots)
+        self._availability = availability
+        self._app_probe_paths = app_probe_paths
 
     def status(self) -> SkillsHarnessStatus:
         return SkillsHarnessStatus(
@@ -148,7 +153,12 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         return None
 
     def _is_installed(self) -> bool:
-        return shutil.which(self._install_probe, path=self._path_env) is not None
+        cli_available = shutil.which(self._install_probe, path=self._path_env) is not None
+        if self._availability == "cli":
+            return cli_available
+        if self._availability == "cli_or_app":
+            return cli_available or any(path.exists() for path in self._app_probe_paths)
+        return cli_available
 
     def _dedupe_roots(
         self,
@@ -207,6 +217,10 @@ def build_skills_adapters(kernel: HarnessKernelService) -> tuple[FileTreeSkillsA
                 path_env=kernel.context.env.get("PATH"),
                 managed_root=managed_root,
                 discovery_roots=resolved_roots,
+                availability=profile.availability,
+                app_probe_paths=tuple(
+                    resolver(kernel.context) for resolver in profile.app_probe_paths
+                ),
             )
         )
     return tuple(adapters)

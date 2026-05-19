@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { PageHeader } from "../../../components/PageHeader";
+import { useCommonCopy } from "../../../i18n";
 import {
   invalidateOverviewData,
   useOverviewData,
@@ -12,11 +13,14 @@ import { HarnessCoverageMap } from "../components/HarnessCoverageMap";
 import { MarketplacePanel } from "../components/MarketplacePanel";
 import { ReviewQueue } from "../components/ReviewQueue";
 import { StatisticsBand } from "../components/StatisticsBand";
+import { useOverviewCopy } from "../i18n";
 
 export default function OverviewPage() {
   const queryClient = useQueryClient();
   const { skillsQuery, slashCommandsQuery, mcpQuery, model } = useOverviewData();
   const [refreshing, setRefreshing] = useState(false);
+  const copy = useOverviewCopy();
+  const common = useCommonCopy();
 
   const skillsLoading = skillsQuery.isPending && !skillsQuery.data;
   const slashCommandsLoading = slashCommandsQuery.isPending && !slashCommandsQuery.data;
@@ -42,31 +46,31 @@ export default function OverviewPage() {
   return (
     <>
       <div className="page-chrome">
-        <PageHeader title="Overview" />
+        <PageHeader title={copy.screen.title} />
       </div>
 
       {bothFailed ? (
         <div className="panel-state overview-error-state">
-          <span>Unable to load overview data.</span>
+          <span>{copy.screen.unableToLoadOverview}</span>
           <button
             type="button"
             className="action-pill action-pill--md action-pill--accent"
             onClick={() => void refreshOverview()}
             disabled={refreshing}
           >
-            {refreshing ? "Refreshing..." : "Refresh"}
+            {refreshing ? `${common.actions.refreshing}...` : common.actions.refresh}
           </button>
         </div>
       ) : (
         <div className="overview-page">
           {skillsQuery.isError && !skillsQuery.data ? (
-            <ErrorBanner message={`Unable to load skills: ${errorMessage(skillsQuery.error)}`} />
+            <ErrorBanner message={copy.screen.unableToLoadSkills(errorMessage(skillsQuery.error))} />
           ) : null}
           {slashCommandsQuery.isError && !slashCommandsQuery.data ? (
-            <ErrorBanner message={`Unable to load slash commands: ${errorMessage(slashCommandsQuery.error)}`} />
+            <ErrorBanner message={copy.screen.unableToLoadSlashCommands(errorMessage(slashCommandsQuery.error))} />
           ) : null}
           {mcpQuery.isError && !mcpQuery.data ? (
-            <ErrorBanner message={`Unable to load MCP servers: ${errorMessage(mcpQuery.error)}`} />
+            <ErrorBanner message={copy.screen.unableToLoadMcpServers(errorMessage(mcpQuery.error))} />
           ) : null}
 
           <StatisticsBand stats={model.stats} loading={loading} />

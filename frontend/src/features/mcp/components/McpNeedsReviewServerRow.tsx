@@ -2,6 +2,7 @@ import { NeedsReviewRow } from "../../../components/cards/NeedsReviewRow";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { getHarnessPresentation } from "../../../components/harness/harnessPresentation";
 import type { McpIdentityGroupDto, McpIdentitySightingDto } from "../api/management-types";
+import { useMcpCopy } from "../i18n";
 
 interface McpNeedsReviewServerRowProps {
   group: McpIdentityGroupDto;
@@ -9,11 +10,6 @@ interface McpNeedsReviewServerRowProps {
   onOpenDetail: (name: string) => void;
   onAdoptIdentical: (name: string) => void;
   onChooseConfigToAdopt: (name: string) => void;
-}
-
-function harnessSummary(group: McpIdentityGroupDto): string {
-  const n = group.sightings.length;
-  return `Found in ${n} harness${n === 1 ? "" : "es"}`;
 }
 
 function HarnessLogo({ sighting, zIndex }: { sighting: McpIdentitySightingDto; zIndex: number }) {
@@ -38,10 +34,13 @@ export function McpNeedsReviewServerRow({
   onAdoptIdentical,
   onChooseConfigToAdopt,
 }: McpNeedsReviewServerRowProps) {
+  const copy = useMcpCopy();
   const statusChip = group.identical ? (
-    <span className="card-status-pill card-status-pill--success">Identical</span>
+    <span className="card-status-pill card-status-pill--success">{copy.detail.review.identical}</span>
   ) : (
-    <span className="card-status-pill card-status-pill--warning">Differs across harnesses</span>
+    <span className="card-status-pill card-status-pill--warning">
+      {copy.detail.review.differsAcrossHarnesses}
+    </span>
   );
 
   return (
@@ -58,22 +57,22 @@ export function McpNeedsReviewServerRow({
           ))}
         </span>
       }
-      metaText={harnessSummary(group)}
+      metaText={copy.detail.review.foundInHarnesses(group.sightings.length)}
       statusChip={
         <>
           {statusChip}
           {group.marketplaceLink ? (
             <span className="card-status-pill card-status-pill--accent">
-              Match in marketplace
+              {copy.detail.review.marketplaceMatch}
             </span>
           ) : null}
         </>
       }
-      actionLabel={group.identical ? "Adopt" : "Choose config to adopt"}
+      actionLabel={group.identical ? copy.detail.review.adopt : copy.detail.review.chooseConfigToAdopt}
       actionTitle={
         group.identical
-          ? "Add this server to Skill Manager"
-          : "Choose which config Skill Manager should keep"
+          ? copy.detail.review.addTooltip
+          : copy.detail.review.chooseTooltip
       }
       pending={pending}
       onOpen={() => onOpenDetail(group.name)}

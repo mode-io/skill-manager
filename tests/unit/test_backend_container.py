@@ -138,6 +138,11 @@ class BackendContainerServiceTests(unittest.TestCase):
 
             settings = container.settings_queries.get_settings()
 
+            self.assertEqual(settings["storage"]["skillsStorePath"], str(spec.skills_store_root))
+            self.assertEqual(
+                settings["storage"]["marketplaceCachePath"],
+                str(spec.xdg_data_home / "skill-manager" / "marketplace"),
+            )
             self.assertEqual(len(settings["harnesses"]), 5)
             codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
             self.assertIn("managedLocation", codex)

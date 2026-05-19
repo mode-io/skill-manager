@@ -76,6 +76,9 @@ jobs:
       - name: Check version sync
         run: ./.venv/bin/python scripts/sync_version.py --check
 
+      - name: Check release target resolver
+        run: npm run release-targets:check
+
       - name: Frontend typecheck
         run: npm run typecheck
 
@@ -88,12 +91,29 @@ jobs:
       - name: Frontend build
         run: npm run build
 
-  package-smoke-arm64:
-    runs-on: macos-14
+  package-smoke:
+    name: package-smoke-${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
     if: startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch'
     needs:
       - backend-compat
       - frontend-validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-14
+            homebrew: true
+          - target: darwin-x64
+            runner: macos-15-intel
+            homebrew: true
+          - target: linux-x64
+            runner: ubuntu-latest
+            homebrew: false
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+            homebrew: false
     steps:
       - uses: actions/checkout@v6
 
@@ -119,73 +139,23 @@ jobs:
       - name: Validate packaged binary
         run: |
           VERSION="$(cat skill_manager/VERSION)"
-          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           ./.venv/bin/python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
 
       - name: Validate npm wrapper with local artifact
         run: |
-          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
 
       - name: Validate Homebrew formula install smoke
+        if: matrix.homebrew
         run: |
           VERSION="$(cat skill_manager/VERSION)"
-          ARTIFACT="$(find .artifacts/release -name '*darwin-arm64.tar.gz' -print -quit)"
+          ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
 
       - name: Upload packaged artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: package-smoke-arm64
-          path: .artifacts/release/*
-
-  package-smoke-x64:
-    runs-on: macos-15-intel
-    if: startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'workflow_dispatch'
-    needs:
-      - backend-compat
-      - frontend-validate
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install build dependencies
-        run: |
-          python -m venv .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r requirements.txt .[build]
-          npm ci
-
-      - name: Build release artifact
-        run: ./.venv/bin/python scripts/build_release.py
-
-      - name: Validate packaged binary
-        run: |
-          VERSION="$(cat skill_manager/VERSION)"
-          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
-          ./.venv/bin/python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
-
-      - name: Validate npm wrapper with local artifact
-        run: |
-          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
-          bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
-
-      - name: Validate Homebrew formula install smoke
-        run: |
-          VERSION="$(cat skill_manager/VERSION)"
-          ARTIFACT="$(find .artifacts/release -name '*darwin-x64.tar.gz' -print -quit)"
-          bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
-
-      - name: Upload packaged artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: package-smoke-x64
+          name: package-smoke-${{ matrix.target }}
           path: .artifacts/release/*

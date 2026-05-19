@@ -7,10 +7,13 @@ import {
   useRef,
   useState,
 } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import {
   BookOpen,
+  Check,
   ChevronDown,
   Command,
+  Languages,
   LayoutDashboard,
   RefreshCw,
   Settings,
@@ -23,6 +26,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useSidebarModel, type SidebarIconKey } from "../app/capability-registry";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useToast } from "./Toast";
+import { useCommonCopy, useLocale } from "../i18n";
 
 interface SidebarProps {
   onRefresh: () => void | Promise<void>;
@@ -32,9 +36,10 @@ interface SidebarProps {
 export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
   const model = useSidebarModel();
   const { toast } = useToast();
+  const common = useCommonCopy();
 
   return (
-    <aside className="sidebar ui-scrollbar--thin" aria-label="Primary navigation">
+    <aside className="sidebar ui-scrollbar--thin" aria-label={common.nav.primary}>
       <div className="sidebar__brand">
         <Link to="/overview" className="sidebar__brand-name">
           skill-manager
@@ -78,26 +83,86 @@ export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
           disabled={refreshPending}
           aria-busy={refreshPending}
         >
-          {refreshPending ? <LoadingSpinner size="sm" label="Refreshing" /> : <RefreshCw size={16} />}
-          <span>Refresh</span>
+          {refreshPending ? <LoadingSpinner size="sm" label={common.actions.refreshing} /> : <RefreshCw size={16} />}
+          <span>{common.actions.refresh}</span>
         </button>
         <button
           type="button"
           className="sidebar-footer-btn"
-          onClick={() => toast("Light theme — coming soon")}
+          onClick={() => toast(common.nav.lightComingSoon)}
         >
           <SunMedium size={16} />
-          <span>Light</span>
+          <span>{common.nav.light}</span>
         </button>
+        <SidebarLanguageMenu />
         <NavLink
           to="/settings"
           className={({ isActive }) => `sidebar-footer-btn${isActive ? " is-active" : ""}`}
         >
           <Settings size={16} />
-          <span>Settings</span>
+          <span>{common.nav.settings}</span>
         </NavLink>
       </div>
     </aside>
+  );
+}
+
+function SidebarLanguageMenu() {
+  const common = useCommonCopy();
+  const { locale, setLocale, supportedLocales } = useLocale();
+  const activeLabel = supportedLocales.find((option) => option.value === locale)?.nativeLabel ?? locale;
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className="sidebar-footer-btn"
+          aria-label={common.language.ariaLabel(activeLabel)}
+          aria-haspopup="menu"
+        >
+          <Languages size={16} />
+          <span>{activeLabel}</span>
+          <ChevronDown className="sidebar-footer-btn__chevron" size={14} aria-hidden="true" />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          className="ui-popup ui-popup--menu ui-menu"
+          side="right"
+          align="end"
+          sideOffset={8}
+        >
+          <ul className="ui-menu__list" role="menu" aria-label={common.language.label}>
+            {supportedLocales.map((option) => {
+              const selected = option.value === locale;
+              return (
+                <li key={option.value}>
+                  <Popover.Close asChild>
+                    <button
+                      type="button"
+                      className="ui-menu__item"
+                      data-selected={selected || undefined}
+                      role="menuitemradio"
+                      aria-checked={selected}
+                      onClick={() => setLocale(option.value)}
+                    >
+                      <span className="ui-menu__icon" aria-hidden="true">
+                        {selected ? <Check size={14} /> : null}
+                      </span>
+                      <span className="ui-menu__label">{option.nativeLabel}</span>
+                      <span className="ui-menu__meta">
+                        {selected ? common.language.selected : option.label}
+                      </span>
+                    </button>
+                  </Popover.Close>
+                </li>
+              );
+            })}
+          </ul>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 

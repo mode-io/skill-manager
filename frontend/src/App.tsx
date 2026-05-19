@@ -12,6 +12,7 @@ import SkillsNeedsReviewPage from "./features/skills/screens/SkillsNeedsReviewPa
 import SkillsInUsePage from "./features/skills/screens/SkillsInUsePage";
 import ScanConfigPage from "./features/skills/screens/ScanConfigPage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
+import { LocaleProvider, useCommonCopy } from "./i18n";
 
 const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
 const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
@@ -35,11 +36,13 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <UiTooltipProvider>
-          <AppContent />
-        </UiTooltipProvider>
-      </ToastProvider>
+      <LocaleProvider>
+        <ToastProvider>
+          <UiTooltipProvider>
+            <AppContent />
+          </UiTooltipProvider>
+        </ToastProvider>
+      </LocaleProvider>
     </QueryClientProvider>
   );
 }
@@ -47,6 +50,7 @@ export function App() {
 function AppContent() {
   const queryClient = useQueryClient();
   const [refreshPending, setRefreshPending] = useState(false);
+  const common = useCommonCopy();
 
   async function handleRefreshData() {
     setRefreshPending(true);
@@ -66,7 +70,7 @@ function AppContent() {
           <Route
             path="overview"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading overview" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.overview} />}>
                 <OverviewPage />
               </Suspense>
             }
@@ -85,7 +89,7 @@ function AppContent() {
           <Route
             path="mcp/use"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading MCP" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.mcp} />}>
                 <McpInUsePage />
               </Suspense>
             }
@@ -93,7 +97,7 @@ function AppContent() {
           <Route
             path="mcp/review"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading MCP" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.mcp} />}>
                 <McpNeedsReviewPage />
               </Suspense>
             }
@@ -104,7 +108,7 @@ function AppContent() {
           <Route
             path="marketplace"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.marketplace} />}>
                 <MarketplaceLayout />
               </Suspense>
             }
@@ -123,7 +127,7 @@ function AppContent() {
           <Route
             path="slash-commands/use"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading slash commands" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.slashCommands} />}>
                 <SlashCommandsPage />
               </Suspense>
             }
@@ -131,7 +135,7 @@ function AppContent() {
           <Route
             path="slash-commands/review"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading slash commands" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.slashCommands} />}>
                 <SlashCommandsReviewPage />
               </Suspense>
             }
@@ -140,7 +144,7 @@ function AppContent() {
           <Route
             path="settings"
             element={
-              <Suspense fallback={<RouteLoadingPanel label="Loading settings" />}>
+              <Suspense fallback={<RouteLoadingPanel label={common.loading.settings} />}>
                 <SettingsPage />
               </Suspense>
             }

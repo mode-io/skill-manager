@@ -7,7 +7,15 @@ import {
 } from "../queries";
 import { settingsSupportActionKey } from "./pending";
 
-export function useSettingsPageController() {
+interface SettingsPageControllerCopy {
+  unableToUpdateHarnessSupport: string;
+}
+
+const defaultCopy: SettingsPageControllerCopy = {
+  unableToUpdateHarnessSupport: "Unable to update harness support.",
+};
+
+export function useSettingsPageController(copy: SettingsPageControllerCopy = defaultCopy) {
   const [errorMessage, setErrorMessage] = useState("");
   const settingsQuery = useSettingsQuery();
   const supportMutation = useHarnessSupportMutation();
@@ -21,7 +29,7 @@ export function useSettingsPageController() {
         () => supportMutation.mutateAsync({ harness, enabled: nextEnabled }),
       );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to update harness support.");
+      setErrorMessage(error instanceof Error ? error.message : copy.unableToUpdateHarnessSupport);
     }
   }
 

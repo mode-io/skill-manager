@@ -2984,6 +2984,124 @@
         "title": "SetSkillHarnessesResultResponse",
         "type": "object"
       },
+      "SettingsHarnessResponse": {
+        "properties": {
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          },
+          "managedLocation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managedlocation"
+          },
+          "supportEnabled": {
+            "title": "Supportenabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "supportEnabled",
+          "installed",
+          "managedLocation"
+        ],
+        "title": "SettingsHarnessResponse",
+        "type": "object"
+      },
+      "SettingsResponse": {
+        "properties": {
+          "harnesses": {
+            "items": {
+              "$ref": "#/components/schemas/SettingsHarnessResponse"
+            },
+            "title": "Harnesses",
+            "type": "array"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/SettingsStorageResponse"
+          }
+        },
+        "required": [
+          "storage",
+          "harnesses"
+        ],
+        "title": "SettingsResponse",
+        "type": "object"
+      },
+      "SettingsStorageResponse": {
+        "properties": {
+          "configDir": {
+            "title": "Configdir",
+            "type": "string"
+          },
+          "dataDir": {
+            "title": "Datadir",
+            "type": "string"
+          },
+          "marketplaceCachePath": {
+            "title": "Marketplacecachepath",
+            "type": "string"
+          },
+          "platform": {
+            "enum": [
+              "macos",
+              "linux"
+            ],
+            "title": "Platform",
+            "type": "string"
+          },
+          "settingsPath": {
+            "title": "Settingspath",
+            "type": "string"
+          },
+          "skillsStorePath": {
+            "title": "Skillsstorepath",
+            "type": "string"
+          },
+          "stateDir": {
+            "title": "Statedir",
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform",
+          "configDir",
+          "dataDir",
+          "stateDir",
+          "skillsStorePath",
+          "marketplaceCachePath",
+          "settingsPath"
+        ],
+        "title": "SettingsStorageResponse",
+        "type": "object"
+      },
       "SkillDetailActionsResponse": {
         "properties": {
           "canDelete": {
@@ -5359,9 +5477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Settings Api Settings Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/SettingsResponse"
                 }
               }
             },

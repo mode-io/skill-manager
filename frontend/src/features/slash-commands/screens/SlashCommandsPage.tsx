@@ -12,17 +12,15 @@ import { SlashCommandFormDialog } from "../components/SlashCommandFormDialog";
 import { SlashCommandList } from "../components/SlashCommandList";
 import { SlashCommandMatrix } from "../components/SlashCommandMatrix";
 import { SlashCommandDetailSheet } from "../components/detail/SlashCommandDetailSheet";
+import { useCommonCopy } from "../../../i18n";
+import { useSlashCommandsCopy } from "../i18n";
 import { useSlashCommandsController } from "../model/useSlashCommandsController";
 import type { SlashCommandsViewMode } from "../model/useSlashCommandsViewMode";
 
-const VIEW_MODE_OPTIONS: readonly ViewModeOption<SlashCommandsViewMode>[] = [
-  { value: "grid", label: "Grid", icon: LayoutGrid },
-  { value: "board", label: "Board", icon: Columns3 },
-  { value: "matrix", label: "Matrix", icon: Rows3 },
-];
-
 export default function SlashCommandsPage() {
   const controller = useSlashCommandsController();
+  const copy = useSlashCommandsCopy();
+  const common = useCommonCopy();
   const {
     actionError,
     buckets,
@@ -60,24 +58,29 @@ export default function SlashCommandsPage() {
     openDetail,
     openEdit,
   } = controller;
+  const viewModeOptions: readonly ViewModeOption<SlashCommandsViewMode>[] = [
+    { value: "grid", label: copy.inUse.viewModes.grid, icon: LayoutGrid },
+    { value: "board", label: copy.inUse.viewModes.board, icon: Columns3 },
+    { value: "matrix", label: copy.inUse.viewModes.matrix, icon: Rows3 },
+  ];
 
   return (
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Slash Commands"
-          subtitle="Create one global prompt and sync it into local slash command folders."
+          title={copy.inUse.title}
+          subtitle={copy.inUse.subtitle}
           actions={
             <>
               <ViewModeToggle
                 mode={viewMode}
-                options={VIEW_MODE_OPTIONS}
-                ariaLabel="Slash commands view mode"
+                options={viewModeOptions}
+                ariaLabel={copy.inUse.viewModeAria}
                 onChange={setViewMode}
               />
               <button type="button" className="action-pill action-pill--md" onClick={openCreate}>
                 <Plus size={14} aria-hidden="true" />
-                New command
+                {copy.inUse.newCommand}
               </button>
             </>
           }
@@ -85,19 +88,19 @@ export default function SlashCommandsPage() {
         <FilterBar
           searchValue={search}
           onSearchChange={setSearch}
-          searchPlaceholder="Search slash commands"
-          searchLabel="Search slash commands"
+          searchPlaceholder={copy.inUse.searchPlaceholder}
+          searchLabel={copy.inUse.searchLabel}
         />
       </div>
 
       {actionError ? <ErrorBanner message={actionError} onDismiss={() => setActionError("")} /> : null}
       {query.error ? (
-        <ErrorBanner message={query.error instanceof Error ? query.error.message : "Unable to load slash commands."} />
+        <ErrorBanner message={query.error instanceof Error ? query.error.message : copy.inUse.unableToLoad} />
       ) : null}
 
       {query.isPending ? (
         <div className="panel-state">
-          <LoadingSpinner label="Loading slash commands" />
+          <LoadingSpinner label={copy.inUse.loading} />
         </div>
       ) : data ? (
         viewMode === "board" ? (
@@ -182,21 +185,18 @@ export default function SlashCommandsPage() {
         onDisableAll={handleBulkDisableAll}
         onDelete={handleBulkDelete}
         destructive={{
-          actionLabel: "Delete",
-          confirmTitle: `Delete ${checkedNames.size} slash command${
-            checkedNames.size === 1 ? "" : "s"
-          }?`,
-          confirmDescription:
-            "This removes the source command and generated command files for every selected slash command.",
+          actionLabel: common.actions.delete,
+          confirmTitle: copy.inUse.bulkDeleteTitle(checkedNames.size),
+          confirmDescription: copy.inUse.bulkDeleteDescription,
         }}
       />
 
       <ConfirmActionDialog
         open={deleteCommand !== null}
-        title={`Delete ${deleteCommand?.name ?? "slash command"}?`}
-        description="This removes the source command and generated command files from every synced target."
-        confirmLabel="Delete"
-        pendingLabel="Deleting"
+        title={copy.inUse.deleteTitle(deleteCommand?.name ?? "slash command")}
+        description={copy.inUse.deleteDescription}
+        confirmLabel={common.actions.delete}
+        pendingLabel={copy.inUse.deleting}
         isPending={deletePending}
         onOpenChange={(open) => {
           if (!open) setDeleteCommand(null);

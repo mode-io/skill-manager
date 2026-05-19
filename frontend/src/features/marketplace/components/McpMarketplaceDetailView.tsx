@@ -9,6 +9,7 @@ import { useToast } from "../../../components/Toast";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { useMcpMarketplaceDetailQuery } from "../api/mcp-queries";
 import type { McpMarketplaceItemDto } from "../api/mcp-types";
+import { useMarketplaceCopy, type MarketplaceCopy } from "../i18n";
 import { formatMcpUseCount } from "../model/formatters";
 import {
   detailInstallAvailability,
@@ -31,6 +32,7 @@ export function McpMarketplaceDetailView({
   onClose,
 }: McpMarketplaceDetailViewProps) {
   const headingId = useId();
+  const copy = useMarketplaceCopy();
   const detailQuery = useMcpMarketplaceDetailQuery(qualifiedName);
   const detail = detailQuery.data ?? null;
   const queryErrorMessage =
@@ -57,13 +59,13 @@ export function McpMarketplaceDetailView({
           <DetailHeader
             title={<h2 id={headingId}>{headerDisplayName}</h2>}
             meta={<p className="market-card__repo">{qualifiedName}</p>}
-            closeLabel="Close MCP preview"
+            closeLabel={copy.detail.mcp.closePreview}
             onClose={onClose}
           />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
           <div className="panel-state">
-            <LoadingSpinner label="Loading MCP details" />
+            <LoadingSpinner label={copy.detail.mcp.loadingDetails} />
           </div>
         </div>
       </>
@@ -75,14 +77,14 @@ export function McpMarketplaceDetailView({
       <>
         <div className="skill-detail__chrome">
           <DetailHeader
-            title={<h2 id={headingId}>Unable to load MCP server</h2>}
-            closeLabel="Close MCP preview"
+            title={<h2 id={headingId}>{copy.detail.mcp.unableTitle}</h2>}
+            closeLabel={copy.detail.mcp.closePreview}
             onClose={onClose}
           />
-          <ErrorBanner message={queryErrorMessage || "Unable to load MCP server detail."} />
+          <ErrorBanner message={queryErrorMessage || copy.detail.mcp.unableDetail} />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
-          <p className="muted-text">Try reopening the server from the marketplace grid.</p>
+          <p className="muted-text">{copy.detail.mcp.tryReopen}</p>
         </div>
       </>
     );
@@ -100,13 +102,13 @@ export function McpMarketplaceDetailView({
 
   function handleCopy(value: string, label: string): void {
     if (!navigator.clipboard?.writeText) {
-      toast(`${label} copied`);
+      toast(copy.detail.mcp.copied(label));
       return;
     }
     void navigator.clipboard
       .writeText(value)
-      .then(() => toast(`${label} copied`))
-      .catch(() => toast("Copy failed"));
+      .then(() => toast(copy.detail.mcp.copied(label)))
+      .catch(() => toast(copy.detail.mcp.copyFailed));
   }
 
   const installButton = (
@@ -143,15 +145,15 @@ export function McpMarketplaceDetailView({
                 <span className="detail-sheet__divider" aria-hidden="true">·</span>
                 <div className="chip-cluster">
                   <span className={`chip chip--${headerIsRemote ? "remote" : "local"}`}>
-                    {headerIsRemote ? "Remote" : "Local"}
+                    {headerIsRemote ? copy.detail.mcp.remote : copy.detail.mcp.local}
                   </span>
                   {fallbackVerified ? (
                     <span className="chip chip--verified">
                       <CheckCircle2 size={12} aria-hidden="true" />
-                      Verified
+                      {copy.detail.mcp.verified}
                     </span>
                   ) : null}
-                  <UiTooltip content={`${fallbackUseCount.toLocaleString()} calls`}>
+                  <UiTooltip content={copy.detail.mcp.calls(fallbackUseCount.toLocaleString())}>
                     <span className="mcp-detail__stat">
                       <Activity size={12} aria-hidden="true" />
                       {formatMcpUseCount(fallbackUseCount)}
@@ -160,50 +162,50 @@ export function McpMarketplaceDetailView({
                 </div>
               </div>
               <DetailSourceLinks
-                ariaLabel={`Source links for ${headerDisplayName}`}
+                ariaLabel={copy.detail.mcp.sourceLinksAria(headerDisplayName)}
                 links={[
                   {
                     href: headerExternalUrl,
-                    label: "View on smithery.ai",
+                    label: copy.detail.mcp.viewOnSmithery,
                     kind: "marketplace",
                   },
                 ]}
               />
             </div>
           }
-          closeLabel="Close MCP preview"
+          closeLabel={copy.detail.mcp.closePreview}
           onClose={onClose}
         />
         {queryErrorMessage ? <ErrorBanner message={queryErrorMessage} /> : null}
       </div>
 
       <div className="skill-detail__body detail-sheet__body" aria-labelledby={headingId}>
-        <Section heading="About">
-          <AboutBody text={detail.description} />
+        <Section heading={copy.detail.mcp.about}>
+          <AboutBody text={detail.description} copy={copy} />
         </Section>
 
         {(detail.capabilityCounts.tools > 0 ||
           detail.capabilityCounts.resources > 0 ||
           detail.capabilityCounts.prompts > 0) && (
-          <Section heading="Capabilities">
+          <Section heading={copy.detail.mcp.capabilities}>
             <div className="chip-cluster mcp-detail__capabilities">
               {detail.capabilityCounts.tools > 0 ? (
-                <CapabilityCount label="Tools" count={detail.capabilityCounts.tools} />
+                <CapabilityCount label={copy.detail.mcp.toolsLabel} count={detail.capabilityCounts.tools} />
               ) : null}
               {detail.capabilityCounts.resources > 0 ? (
-                <CapabilityCount label="Resources" count={detail.capabilityCounts.resources} />
+                <CapabilityCount label={copy.detail.mcp.resourcesLabel} count={detail.capabilityCounts.resources} />
               ) : null}
               {detail.capabilityCounts.prompts > 0 ? (
-                <CapabilityCount label="Prompts" count={detail.capabilityCounts.prompts} />
+                <CapabilityCount label={copy.detail.mcp.promptsLabel} count={detail.capabilityCounts.prompts} />
               ) : null}
             </div>
           </Section>
         )}
 
-        <Section heading="Connection">
+        <Section heading={copy.detail.mcp.connection}>
           {remoteConnection ? (
             <div className="mcp-detail__connection">
-              <p className="mcp-detail__connection-label">Deployment URL</p>
+              <p className="mcp-detail__connection-label">{copy.detail.mcp.deploymentUrl}</p>
               <div className="mcp-detail__connection-row">
                 <code className="mcp-detail__connection-url">
                   {remoteConnection.deploymentUrl ?? detail.deploymentUrl ?? ""}
@@ -214,18 +216,18 @@ export function McpMarketplaceDetailView({
                   onClick={() =>
                     handleCopy(
                       remoteConnection.deploymentUrl ?? detail.deploymentUrl ?? "",
-                      "Deployment URL",
+                      copy.detail.mcp.deploymentUrl,
                     )
                   }
                 >
                   <Copy size={13} aria-hidden="true" />
-                  Copy
+                  {copy.detail.mcp.copy}
                 </button>
               </div>
             </div>
           ) : localConnection?.stdioCommand ? (
             <div className="mcp-detail__connection">
-              <p className="mcp-detail__connection-label">Local stdio command</p>
+              <p className="mcp-detail__connection-label">{copy.detail.mcp.localStdioCommand}</p>
               <div className="mcp-detail__connection-row">
                 <code className="mcp-detail__connection-url">
                   {[localConnection.stdioCommand, ...(localConnection.stdioArgs ?? [])].join(" ")}
@@ -236,24 +238,24 @@ export function McpMarketplaceDetailView({
                   onClick={() =>
                     handleCopy(
                       [localConnection.stdioCommand, ...(localConnection.stdioArgs ?? [])].join(" "),
-                      "Command",
+                      copy.detail.mcp.command,
                     )
                   }
                 >
                   <Copy size={13} aria-hidden="true" />
-                  Copy
+                  {copy.detail.mcp.copy}
                 </button>
               </div>
             </div>
           ) : (
             <p className="muted-text">
-              The source installer will write the actual local command into the selected harness.
+              {copy.detail.mcp.sourceInstallerWillWrite}
             </p>
           )}
         </Section>
 
         {detail.tools.length > 0 ? (
-          <Section heading={`Tools (${detail.tools.length})`}>
+          <Section heading={copy.detail.mcp.tools(detail.tools.length)}>
             <div className="mcp-detail__tool-list">
               {toolsToShow.map((tool) => (
                 <McpToolEntry key={tool.name} tool={tool} />
@@ -265,7 +267,7 @@ export function McpMarketplaceDetailView({
                 className="btn btn-ghost mcp-detail__show-more"
                 onClick={() => setShowAllTools(true)}
               >
-                Show {remainingToolCount} more
+                {copy.detail.mcp.showMore(remainingToolCount)}
               </button>
             ) : null}
             {showAllTools && detail.tools.length > TOOL_INITIAL_COUNT ? (
@@ -274,14 +276,14 @@ export function McpMarketplaceDetailView({
                 className="btn btn-ghost mcp-detail__show-more"
                 onClick={() => setShowAllTools(false)}
               >
-                Collapse tools
+                {copy.detail.mcp.collapseTools}
               </button>
             ) : null}
           </Section>
         ) : null}
 
         {detail.resources.length > 0 ? (
-          <Section heading={`Resources (${detail.resources.length})`}>
+          <Section heading={copy.detail.mcp.resources(detail.resources.length)}>
             <div className="mcp-detail__resource-list">
               {detail.resources.map((resource, index) => (
                 <div key={`${resource.name}-${index}`} className="mcp-detail__resource">
@@ -300,7 +302,7 @@ export function McpMarketplaceDetailView({
         ) : null}
 
         {detail.prompts.length > 0 ? (
-          <Section heading={`Prompts (${detail.prompts.length})`}>
+          <Section heading={copy.detail.mcp.prompts(detail.prompts.length)}>
             <div className="mcp-detail__prompt-list">
               {detail.prompts.map((prompt, index) => (
                 <div key={`${prompt.name}-${index}`} className="mcp-detail__prompt">
@@ -346,11 +348,11 @@ function CapabilityCount({ label, count }: { label: string; count: number }) {
 
 const ABOUT_COLLAPSE_LENGTH = 420;
 
-function AboutBody({ text }: { text: string }) {
+function AboutBody({ text, copy }: { text: string; copy: MarketplaceCopy }) {
   const [expanded, setExpanded] = useState(false);
   const content = text.trim();
   if (!content) {
-    return <p className="muted-text">No description provided.</p>;
+    return <p className="muted-text">{copy.detail.mcp.noDescription}</p>;
   }
   const shouldCollapse = content.length > ABOUT_COLLAPSE_LENGTH;
   const visible = expanded || !shouldCollapse ? content : `${content.slice(0, ABOUT_COLLAPSE_LENGTH).trim()}…`;
@@ -363,7 +365,7 @@ function AboutBody({ text }: { text: string }) {
           className="btn btn-ghost mcp-detail__show-more"
           onClick={() => setExpanded((prev) => !prev)}
         >
-          {expanded ? "Show less" : "Show more"}
+          {expanded ? copy.detail.mcp.showLessText : copy.detail.mcp.showMoreText}
         </button>
       ) : null}
     </div>

@@ -91,6 +91,11 @@ class ResolveAppPathsTests(unittest.TestCase):
             self.assertEqual(paths.data_dir, home / ".local" / "share" / APP_NAME)
             self.assertEqual(paths.state_dir, home / ".local" / "state" / APP_NAME)
 
+    def test_unsupported_platform_fails_clearly(self) -> None:
+        with isolated_env("win32"), TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(RuntimeError, "unsupported platform: win32"):
+                resolve_app_paths({"HOME": str(Path(temp) / "home")})
+
 
 if __name__ == "__main__":
     unittest.main()

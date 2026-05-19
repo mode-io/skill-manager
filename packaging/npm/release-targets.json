@@ -1,0 +1,36 @@
+{
+  "targets": [
+    {
+      "id": "darwin-arm64",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodePlatform": "darwin",
+      "nodeArch": "arm64",
+      "machineAliases": ["arm64", "aarch64"]
+    },
+    {
+      "id": "darwin-x64",
+      "platform": "darwin",
+      "arch": "x64",
+      "nodePlatform": "darwin",
+      "nodeArch": "x64",
+      "machineAliases": ["x86_64", "amd64"]
+    },
+    {
+      "id": "linux-x64",
+      "platform": "linux",
+      "arch": "x64",
+      "nodePlatform": "linux",
+      "nodeArch": "x64",
+      "machineAliases": ["x86_64", "amd64"]
+    },
+    {
+      "id": "linux-arm64",
+      "platform": "linux",
+      "arch": "arm64",
+      "nodePlatform": "linux",
+      "nodeArch": "arm64",
+      "machineAliases": ["arm64", "aarch64"]
+    }
+  ]
+}

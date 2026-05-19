@@ -1795,6 +1795,47 @@ export interface components {
             /** Succeeded */
             succeeded: string[];
         };
+        /** SettingsHarnessResponse */
+        SettingsHarnessResponse: {
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Managedlocation */
+            managedLocation: string | null;
+            /** Supportenabled */
+            supportEnabled: boolean;
+        };
+        /** SettingsResponse */
+        SettingsResponse: {
+            /** Harnesses */
+            harnesses: components["schemas"]["SettingsHarnessResponse"][];
+            storage: components["schemas"]["SettingsStorageResponse"];
+        };
+        /** SettingsStorageResponse */
+        SettingsStorageResponse: {
+            /** Configdir */
+            configDir: string;
+            /** Datadir */
+            dataDir: string;
+            /** Marketplacecachepath */
+            marketplaceCachePath: string;
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "macos" | "linux";
+            /** Settingspath */
+            settingsPath: string;
+            /** Skillsstorepath */
+            skillsStorePath: string;
+            /** Statedir */
+            stateDir: string;
+        };
         /** SkillDetailActionsResponse */
         SkillDetailActionsResponse: {
             /** Candelete */
@@ -3132,9 +3173,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SettingsResponse"];
                 };
             };
         };

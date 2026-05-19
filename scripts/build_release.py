@@ -4,11 +4,12 @@ from __future__ import annotations
 import argparse
 from hashlib import sha256
 from pathlib import Path
-import platform
 import shutil
 import subprocess
 import sys
 import tarfile
+
+from release_targets import artifact_name, resolve_current_target
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +20,7 @@ LICENSE_FILE = REPO_ROOT / "LICENSE"
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Build a macOS release artifact for skill-manager.")
+    parser = argparse.ArgumentParser(description="Build a release artifact for skill-manager.")
     parser.add_argument("--skip-frontend-build", action="store_true")
     parser.add_argument("--output-dir", default=str(ARTIFACTS_DIR))
     return parser
@@ -27,15 +28,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 def read_version() -> str:
     return VERSION_FILE.read_text(encoding="utf-8").strip()
-
-
-def current_arch() -> str:
-    machine = platform.machine().lower()
-    if machine in {"arm64", "aarch64"}:
-        return "arm64"
-    if machine in {"x86_64", "amd64"}:
-        return "x64"
-    raise RuntimeError(f"unsupported build machine architecture: {machine}")
 
 
 def run(command: list[str]) -> None:
@@ -79,9 +71,9 @@ def write_checksum(path: Path) -> Path:
 
 
 def package_artifact(bundle_dir: Path, output_dir: Path, version: str) -> tuple[Path, Path]:
-    artifact_name = f"skill-manager-v{version}-darwin-{current_arch()}.tar.gz"
+    target = resolve_current_target()
     output_dir.mkdir(parents=True, exist_ok=True)
-    artifact_path = output_dir / artifact_name
+    artifact_path = output_dir / artifact_name(version, target)
     with tarfile.open(artifact_path, "w:gz") as archive:
         archive.add(bundle_dir, arcname="skill-manager")
     checksum_path = write_checksum(artifact_path)

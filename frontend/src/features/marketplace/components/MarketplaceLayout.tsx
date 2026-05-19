@@ -9,6 +9,7 @@ import {
 import { FilterBar } from "../../../components/FilterBar";
 import { PageHeader } from "../../../components/PageHeader";
 import RouteLoadingPanel from "../../../components/RouteLoadingPanel";
+import { useMarketplaceCopy, type MarketplaceCopy } from "../i18n";
 import { marketplaceRoutes } from "../public";
 import type { McpMarketplaceFilter } from "../api/mcp-types";
 import { InstallingProvider } from "../model/installing-context";
@@ -24,12 +25,7 @@ import {
   prefetchMarketplacePopularFeed,
 } from "../lazy";
 
-const FILTER_OPTIONS: { value: McpMarketplaceFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "remote", label: "Remote" },
-  { value: "local", label: "Local" },
-  { value: "verified", label: "Verified" },
-];
+const FILTER_VALUES: McpMarketplaceFilter[] = ["all", "remote", "local", "verified"];
 
 function isFilterValue(value: string): value is McpMarketplaceFilter {
   return (["all", "remote", "local", "verified"] as const).includes(
@@ -49,37 +45,8 @@ interface MarketplaceTabDefinition {
   prefetchFeed: typeof prefetchMarketplacePopularFeed;
 }
 
-const MARKETPLACE_TABS: readonly MarketplaceTabDefinition[] = [
-  {
-    key: "skills",
-    label: "Skills",
-    to: marketplaceRoutes.skills,
-    searchPlaceholder: "Search skills.sh by name or topic",
-    searchLabel: "Search marketplace",
-    prefetchPage: prefetchMarketplacePage,
-    prefetchFeed: prefetchMarketplacePopularFeed,
-  },
-  {
-    key: "mcp",
-    label: "MCP",
-    to: marketplaceRoutes.mcp,
-    searchPlaceholder: "Search MCP servers",
-    searchLabel: "Search MCP marketplace",
-    prefetchPage: prefetchMarketplaceMcpPage,
-    prefetchFeed: prefetchMarketplaceMcpFeed,
-  },
-  {
-    key: "clis",
-    label: "CLIs",
-    to: marketplaceRoutes.clis,
-    searchPlaceholder: "Search CLIs",
-    searchLabel: "Search CLI marketplace",
-    prefetchPage: prefetchMarketplaceCliPage,
-    prefetchFeed: prefetchMarketplaceCliFeed,
-  },
-];
-
 export default function MarketplaceLayout() {
+  const copy = useMarketplaceCopy();
   const [query, setQuery] = useState("");
   const [skillsCount, setSkillsCount] = useState<number | null>(null);
   const [mcpCount, setMcpCount] = useState<number | null>(null);
@@ -93,7 +60,8 @@ export default function MarketplaceLayout() {
     : location.pathname.endsWith("/clis")
       ? "clis"
       : "skills";
-  const activeTabDefinition = MARKETPLACE_TABS.find((tab) => tab.key === activeTab) ?? MARKETPLACE_TABS[0];
+  const tabs = useMarketplaceTabs(copy);
+  const activeTabDefinition = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
   const isMcp = activeTab === "mcp";
   const isCli = activeTab === "clis";
 
@@ -156,10 +124,10 @@ export default function MarketplaceLayout() {
     <InstallingProvider>
       <div className="page-chrome">
         <PageHeader
-          title="Marketplace"
+          title={copy.title}
           actions={isCli ? (
             <p className="marketplace-preview-note">
-              Preview only · Skill Manager does not install or manage CLIs
+              {copy.previewOnlyNote}
             </p>
           ) : undefined}
         />
@@ -171,8 +139,8 @@ export default function MarketplaceLayout() {
           searchLabel={activeTabDefinition.searchLabel}
           trailing={
             <>
-              <div className="pill-group" role="group" aria-label="Marketplace type">
-                {MARKETPLACE_TABS.map((tab) => {
+              <div className="pill-group" role="group" aria-label={copy.typeAria}>
+                {tabs.map((tab) => {
                   const count = tab.key === "skills" ? skillsCount : tab.key === "mcp" ? mcpCount : cliCount;
                   return (
                     <NavLink
@@ -197,19 +165,19 @@ export default function MarketplaceLayout() {
                 className="pill-group mcp-filter-group"
                 data-state={isMcp ? "visible" : "hidden"}
                 role="group"
-                aria-label="Filter MCP servers"
+                aria-label={copy.mcpFilterAria}
                 aria-hidden={!isMcp}
               >
-                {FILTER_OPTIONS.map((option) => (
+                {FILTER_VALUES.map((value) => (
                   <button
-                    key={option.value}
+                    key={value}
                     type="button"
                     className="pill-group__pill"
-                    data-active={mcpFilter === option.value}
+                    data-active={mcpFilter === value}
                     tabIndex={isMcp ? 0 : -1}
-                    onClick={() => setMcpFilter(option.value)}
+                    onClick={() => setMcpFilter(value)}
                   >
-                    {option.label}
+                    {filterLabel(copy, value)}
                   </button>
                 ))}
               </div>
@@ -224,7 +192,7 @@ export default function MarketplaceLayout() {
           data-tab-state={activeTab === "skills" ? "visible" : "hidden"}
         >
           {hasVisitedSkills ? (
-            <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
+            <Suspense fallback={<RouteLoadingPanel label={copy.loading.marketplace} />}>
               <LazyMarketplacePage
                 {...pageProps}
                 isActive={activeTab === "skills"}
@@ -238,7 +206,7 @@ export default function MarketplaceLayout() {
           data-tab-state={activeTab === "mcp" ? "visible" : "hidden"}
         >
           {hasVisitedMcp ? (
-            <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
+            <Suspense fallback={<RouteLoadingPanel label={copy.loading.marketplace} />}>
               <LazyMarketplaceMcpPage
                 {...pageProps}
                 isActive={activeTab === "mcp"}
@@ -252,7 +220,7 @@ export default function MarketplaceLayout() {
           data-tab-state={activeTab === "clis" ? "visible" : "hidden"}
         >
           {hasVisitedClis ? (
-            <Suspense fallback={<RouteLoadingPanel label="Loading marketplace" />}>
+            <Suspense fallback={<RouteLoadingPanel label={copy.loading.marketplace} />}>
               <LazyMarketplaceCliPage
                 {...pageProps}
                 isActive={activeTab === "clis"}
@@ -264,6 +232,48 @@ export default function MarketplaceLayout() {
       </div>
     </InstallingProvider>
   );
+}
+
+function useMarketplaceTabs(copy: MarketplaceCopy): readonly MarketplaceTabDefinition[] {
+  return useMemo(
+    () => [
+      {
+        key: "skills",
+        label: copy.tabs.skills,
+        to: marketplaceRoutes.skills,
+        searchPlaceholder: copy.search.skillsPlaceholder,
+        searchLabel: copy.search.skillsLabel,
+        prefetchPage: prefetchMarketplacePage,
+        prefetchFeed: prefetchMarketplacePopularFeed,
+      },
+      {
+        key: "mcp",
+        label: copy.tabs.mcp,
+        to: marketplaceRoutes.mcp,
+        searchPlaceholder: copy.search.mcpPlaceholder,
+        searchLabel: copy.search.mcpLabel,
+        prefetchPage: prefetchMarketplaceMcpPage,
+        prefetchFeed: prefetchMarketplaceMcpFeed,
+      },
+      {
+        key: "clis",
+        label: copy.tabs.clis,
+        to: marketplaceRoutes.clis,
+        searchPlaceholder: copy.search.cliPlaceholder,
+        searchLabel: copy.search.cliLabel,
+        prefetchPage: prefetchMarketplaceCliPage,
+        prefetchFeed: prefetchMarketplaceCliFeed,
+      },
+    ],
+    [copy],
+  );
+}
+
+function filterLabel(copy: MarketplaceCopy, value: McpMarketplaceFilter): string {
+  if (value === "all") return copy.filters.all;
+  if (value === "remote") return copy.filters.remote;
+  if (value === "local") return copy.filters.local;
+  return copy.filters.verified;
 }
 
 function usePrevious<T>(value: T): T | null {

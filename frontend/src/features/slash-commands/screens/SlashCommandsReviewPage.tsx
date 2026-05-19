@@ -6,11 +6,9 @@ import { NeedsReviewRow } from "../../../components/cards/NeedsReviewRow";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { getHarnessPresentation } from "../../../components/harness/harnessPresentation";
 import { SlashCommandReviewDetailSheet } from "../components/detail/SlashCommandReviewDetailSheet";
+import { useSlashCommandsCopy, type SlashCommandsCopy } from "../i18n";
 import {
-  reviewActionTitle,
   primaryReviewAction,
-  reviewActionLabel,
-  reviewMetaText,
 } from "../model/selectors";
 import {
   reviewKey,
@@ -20,6 +18,7 @@ import type { SlashCommandReviewDto, SlashReviewAction } from "../api/types";
 
 export default function SlashCommandsReviewPage() {
   const controller = useSlashCommandsReviewController();
+  const copy = useSlashCommandsCopy();
   const {
     actionError,
     eligibleImportRows,
@@ -44,12 +43,8 @@ export default function SlashCommandsReviewPage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Slash commands to review"
-          subtitle={
-            total > 0
-              ? `${total} command${total === 1 ? "" : "s"} found outside normal managed state.`
-              : "No unmanaged, changed, or missing slash command files were found."
-          }
+          title={copy.review.title}
+          subtitle={copy.review.subtitle(total)}
           actions={
             <button
               type="button"
@@ -59,8 +54,8 @@ export default function SlashCommandsReviewPage() {
                 void handleImportAll();
               }}
             >
-              {importAllPending ? <LoadingSpinner size="sm" label="Adopting all commands" /> : null}
-              Adopt all eligible
+              {importAllPending ? <LoadingSpinner size="sm" label={copy.review.adoptingAllCommands} /> : null}
+              {copy.review.adoptAllEligible}
             </button>
           }
         />
@@ -68,27 +63,28 @@ export default function SlashCommandsReviewPage() {
           <FilterBar
             searchValue={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search slash commands to review"
-            searchLabel="Search slash commands to review"
+            searchPlaceholder={copy.review.searchPlaceholder}
+            searchLabel={copy.review.searchLabel}
           />
         ) : null}
       </div>
 
       {actionError ? <ErrorBanner message={actionError} onDismiss={() => setActionError("")} /> : null}
       {query.error ? (
-        <ErrorBanner message={query.error instanceof Error ? query.error.message : "Unable to load slash commands."} />
+        <ErrorBanner message={query.error instanceof Error ? query.error.message : copy.inUse.unableToLoad} />
       ) : null}
 
       {query.isPending ? (
         <div className="panel-state">
-          <LoadingSpinner label="Loading slash commands to review" />
+          <LoadingSpinner label={copy.review.loading} />
         </div>
       ) : rows.length > 0 ? (
-        <section className="needs-review-rows" aria-label="Slash commands to review list">
+        <section className="needs-review-rows" aria-label={copy.review.listAria}>
           {rows.map((row) => (
             <SlashCommandReviewRow
               key={row.reviewRef}
               row={row}
+              copy={copy}
               pendingKey={pendingKey}
               onAction={handleAction}
               onOpen={openReviewDetail}
@@ -97,9 +93,9 @@ export default function SlashCommandsReviewPage() {
         </section>
       ) : (
         <div className="empty-panel">
-          <h3 className="empty-panel__title">Nothing needs review</h3>
+          <h3 className="empty-panel__title">{copy.review.emptyTitle}</h3>
           <p className="empty-panel__body">
-            Slash command files in target folders are already managed or no supported target folders contain commands.
+            {copy.review.emptyBody}
           </p>
         </div>
       )}
@@ -119,11 +115,13 @@ export default function SlashCommandsReviewPage() {
 
 function SlashCommandReviewRow({
   row,
+  copy,
   pendingKey,
   onAction,
   onOpen,
 }: {
   row: SlashCommandReviewDto;
+  copy: SlashCommandsCopy;
   pendingKey: string | null;
   onAction: (row: SlashCommandReviewDto, action?: SlashReviewAction | null) => Promise<boolean>;
   onOpen: (row: SlashCommandReviewDto) => void;
@@ -147,7 +145,7 @@ function SlashCommandReviewRow({
     <NeedsReviewRow
       name={row.name}
       logos={<span className="harness-stack">{logo}</span>}
-      metaText={reviewMetaText(row)}
+      metaText={copy.review.metaText(row)}
       statusChip={
         secondaryActions.length > 0 ? (
           <span className="slash-review-actions">
@@ -156,22 +154,22 @@ function SlashCommandReviewRow({
                 key={action}
                 type="button"
                 className="action-pill"
-                title={reviewActionTitle(action)}
+                title={copy.review.actionTitle(action)}
                 disabled={pendingKey === reviewKey(row.target, row.name, action)}
                 onClick={(event) => {
                   event.stopPropagation();
                   void onAction(row, action);
                 }}
               >
-                {reviewActionLabel(action)}
+                {copy.review.actionLabel(action)}
               </button>
             ))}
           </span>
         ) : undefined
       }
       description={row.description || row.path}
-      actionLabel={reviewActionLabel(primaryAction)}
-      actionTitle={primaryAction ? reviewActionTitle(primaryAction) : row.error ?? "Cannot update"}
+      actionLabel={copy.review.actionLabel(primaryAction)}
+      actionTitle={primaryAction ? copy.review.actionTitle(primaryAction) : row.error ?? copy.review.cannotUpdate}
       pending={primaryAction ? pendingKey === reviewKey(row.target, row.name, primaryAction) : false}
       actionDisabled={!primaryAction}
       onOpen={() => onOpen(row)}

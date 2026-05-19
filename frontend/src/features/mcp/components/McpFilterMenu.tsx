@@ -1,13 +1,6 @@
 import { SelectionMenu } from "../../../components/ui/SelectionMenu";
 import type { InUsePillValue } from "../model/selectors";
-
-const PILL_LABELS: Record<InUsePillValue, string> = {
-  all: "All",
-  enabled: "Enabled",
-  "all-harnesses": "Enabled on all",
-  unbound: "Unbound",
-  drifted: "Different config",
-};
+import { useMcpCopy } from "../i18n";
 
 const OPTIONS: InUsePillValue[] = ["all", "enabled", "all-harnesses", "unbound", "drifted"];
 
@@ -18,9 +11,10 @@ interface McpFilterMenuProps {
 }
 
 export function McpFilterMenu({ pill, counts, onChange }: McpFilterMenuProps) {
+  const copy = useMcpCopy();
   const options = OPTIONS.map((value) => ({
     value,
-    label: PILL_LABELS[value],
+    label: pillLabel(copy, value),
     meta: counts[value],
   }));
 
@@ -29,8 +23,16 @@ export function McpFilterMenu({ pill, counts, onChange }: McpFilterMenuProps) {
       value={pill}
       options={options}
       active={pill !== "all"}
-      ariaLabel={`Filter: ${PILL_LABELS[pill]}`}
+      ariaLabel={copy.inUse.filters.aria(pillLabel(copy, pill))}
       onChange={onChange}
     />
   );
+}
+
+function pillLabel(copy: ReturnType<typeof useMcpCopy>, value: InUsePillValue): string {
+  if (value === "all") return copy.inUse.filters.all;
+  if (value === "enabled") return copy.inUse.filters.enabled;
+  if (value === "all-harnesses") return copy.inUse.filters.allHarnesses;
+  if (value === "unbound") return copy.inUse.filters.unbound;
+  return copy.inUse.filters.drifted;
 }

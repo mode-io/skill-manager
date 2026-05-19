@@ -2,6 +2,7 @@ import { type KeyboardEvent, useState } from "react";
 import { CheckCircle2, Star, TerminalSquare } from "lucide-react";
 
 import type { CliMarketplaceItemDto } from "../api/cli-types";
+import { useMarketplaceCopy } from "../i18n";
 import { formatMarketplaceStars } from "../model/formatters";
 
 interface CliMarketplaceCardProps {
@@ -30,6 +31,7 @@ export function CliMarketplaceCard({
   selected,
   onOpenDetail,
 }: CliMarketplaceCardProps) {
+  const copy = useMarketplaceCopy();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const avatarSrc = item.iconUrl && !avatarFailed ? item.iconUrl : null;
 
@@ -48,7 +50,7 @@ export function CliMarketplaceCard({
       tabIndex={0}
       onClick={onOpenDetail}
       onKeyDown={handleKeyDown}
-      aria-label={`Open CLI marketplace detail for ${item.name}`}
+      aria-label={copy.detail.cards.openCliMarketplaceDetail(item.name)}
       data-selected={selected}
     >
       <div className="market-card__head">
@@ -56,7 +58,7 @@ export function CliMarketplaceCard({
           {avatarSrc ? (
             <img
               src={avatarSrc}
-              alt={`Avatar for ${item.name}`}
+              alt={copy.detail.cards.avatarFor(item.name)}
               onError={() => setAvatarFailed(true)}
             />
           ) : (
@@ -73,7 +75,7 @@ export function CliMarketplaceCard({
       </div>
 
       <p className="market-card__body cli-card__body">
-        {item.description || "No description provided."}
+        {item.description || copy.detail.cli.noDescription}
       </p>
 
       <div className="market-card__footer cli-card__footer">
@@ -83,7 +85,7 @@ export function CliMarketplaceCard({
           {item.isOfficial ? (
             <span className="chip chip--verified">
               <CheckCircle2 size={12} aria-hidden="true" />
-              Official
+              {copy.detail.cli.official}
             </span>
           ) : null}
           {item.isTui ? <span className="chip">TUI</span> : null}

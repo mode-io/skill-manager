@@ -204,6 +204,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  width: 100%;
   padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
@@ -214,6 +215,11 @@
   text-decoration: none;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
+}
+
+.sidebar-footer-btn__chevron {
+  margin-left: auto;
+  color: var(--color-text-subtle);
 }
 
 .sidebar-footer-btn:hover {

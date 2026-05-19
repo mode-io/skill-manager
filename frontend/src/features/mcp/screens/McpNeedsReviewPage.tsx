@@ -11,7 +11,9 @@ import {
   type McpConfigChoiceOption,
 } from "../components/edit/McpConfigChoiceDialog";
 import { McpNeedsReviewServerList } from "../components/McpNeedsReviewServerList";
+import { useCommonCopy } from "../../../i18n";
 import type { McpIdentityGroupDto } from "../api/management-types";
+import { useMcpCopy } from "../i18n";
 import { useMcpManagementController } from "../model/use-mcp-management-controller";
 
 const DETAIL_PARAM = "server";
@@ -30,6 +32,8 @@ export default function McpNeedsReviewPage() {
   const selectedName = searchParams.get(DETAIL_PARAM);
   const [search, setSearch] = useState("");
   const [chooseConfigName, setChooseConfigName] = useState<string | null>(null);
+  const copy = useMcpCopy();
+  const common = useCommonCopy();
 
   const groups = needsReviewByServer?.servers ?? [];
   const filtered = useMemo(() => {
@@ -76,12 +80,8 @@ export default function McpNeedsReviewPage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="MCP configs to review"
-          subtitle={
-            totalServers > 0
-              ? `${totalServers} unique server${totalServers === 1 ? "" : "s"} across your harness configs.`
-              : "No local MCP config entries need review across your harnesses."
-          }
+          title={copy.review.title}
+          subtitle={copy.review.subtitle(totalServers)}
           actions={
             identicalCount > 0 ? (
               <button
@@ -91,7 +91,7 @@ export default function McpNeedsReviewPage() {
                   void onAdoptIdenticalServers();
                 }}
               >
-                Adopt identical servers ({identicalCount})
+                {copy.review.adoptIdentical(identicalCount)}
               </button>
             ) : null
           }
@@ -100,8 +100,8 @@ export default function McpNeedsReviewPage() {
           <FilterBar
             searchValue={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search by server name..."
-            searchLabel="Search MCP configs to review"
+            searchPlaceholder={copy.review.searchPlaceholder}
+            searchLabel={copy.review.searchLabel}
           />
         ) : null}
       </div>
@@ -112,7 +112,7 @@ export default function McpNeedsReviewPage() {
 
       {isNeedsReviewByServerLoading ? (
         <div className="panel-state">
-          <LoadingSpinner size="md" label="Loading MCP configs to review" />
+          <LoadingSpinner size="md" label={copy.review.loading} />
         </div>
       ) : isReady ? (
         filtered.length > 0 ? (
@@ -125,31 +125,30 @@ export default function McpNeedsReviewPage() {
           />
         ) : totalServers > 0 ? (
           <div className="empty-panel">
-            <h3 className="empty-panel__title">No matches</h3>
-            <p className="empty-panel__body">Clear the search to see all MCP configs that need review.</p>
+            <h3 className="empty-panel__title">{common.status.noMatches}</h3>
+            <p className="empty-panel__body">{copy.review.noMatchesBody}</p>
             <div className="empty-panel__actions">
               <button
                 type="button"
                 className="action-pill action-pill--md"
                 onClick={() => setSearch("")}
               >
-                Clear search
+                {common.actions.clearSearch}
               </button>
             </div>
           </div>
         ) : (
           <div className="empty-panel">
-            <h3 className="empty-panel__title">No local MCP configs need review</h3>
+            <h3 className="empty-panel__title">{copy.review.emptyTitle}</h3>
             <p className="empty-panel__body">
-              Your harness configs only reference MCP servers that skill-manager already tracks. Install a new server
-              from the marketplace to add more.
+              {copy.review.emptyBody}
             </p>
             <div className="empty-panel__actions">
               <Link
                 to="/marketplace/mcp"
                 className="action-pill action-pill--md action-pill--accent"
               >
-                Open Marketplace
+                {common.actions.openMarketplace}
               </Link>
             </div>
           </div>

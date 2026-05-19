@@ -2,6 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
 
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useCommonCopy } from "../i18n";
 
 interface ConfirmActionDialogProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function ConfirmActionDialog({
   onOpenChange,
   onConfirm,
 }: ConfirmActionDialogProps) {
+  const common = useCommonCopy();
+
   return (
     <Dialog.Root
       open={open}
@@ -71,7 +74,7 @@ export function ConfirmActionDialog({
               disabled={isPending}
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {common.actions.cancel}
             </button>
             <button
               type="button"

@@ -2,6 +2,7 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { CliMarketplaceCard } from "../components/CliMarketplaceCard";
 import { CliMarketplaceDetailSheet } from "../components/CliMarketplaceDetailSheet";
 import { MarketplaceFeedPane } from "../components/MarketplaceFeedPane";
+import { useMarketplaceCopy } from "../i18n";
 import { useCliMarketplaceController } from "../model/use-cli-marketplace-controller";
 
 export interface MarketplaceCliPageProps {
@@ -17,6 +18,7 @@ export default function MarketplaceCliPage({
   onQueryChange,
   onItemCountChange,
 }: MarketplaceCliPageProps) {
+  const copy = useMarketplaceCopy();
   const {
     submittedQuery,
     items,
@@ -33,7 +35,7 @@ export default function MarketplaceCliPage({
   const feedErrorMessage =
     feedQuery.error instanceof Error
       ? feedQuery.error.message
-      : "Unable to load CLI marketplace.";
+      : copy.errors.cli;
 
   const ownsItemId = Boolean(selectedId?.startsWith("clisdev:"));
   const resolvedItemId = isActive && ownsItemId ? selectedId : null;
@@ -52,7 +54,8 @@ export default function MarketplaceCliPage({
         itemCount={items.length}
         hasMore={hasMore}
         loadingMore={loadingMore}
-        loadingLabel="Loading CLI marketplace"
+        loadingLabel={copy.loading.cli}
+        loadingMoreLabel={copy.loading.more}
         errorMessage={feedErrorMessage}
         onItemCountChange={onItemCountChange}
         onLoadMore={() => feedQuery.fetchNextPage()}
@@ -60,8 +63,8 @@ export default function MarketplaceCliPage({
           <div className="panel-state">
             <p className="muted-text">
               {submittedQuery
-                ? `No CLIs match “${submittedQuery}”.`
-                : "No CLIs found."}
+                ? copy.empty.cliQuery(submittedQuery)
+                : copy.empty.cli}
             </p>
           </div>
         }

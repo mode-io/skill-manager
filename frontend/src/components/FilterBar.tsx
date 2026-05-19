@@ -1,6 +1,8 @@
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { useCommonCopy } from "../i18n";
+
 export interface PillOption {
   value: string;
   label: string;
@@ -21,28 +23,32 @@ interface FilterBarProps {
 export function FilterBar({
   searchValue,
   onSearchChange,
-  searchPlaceholder = "Search...",
-  searchLabel = "Filter search",
+  searchPlaceholder,
+  searchLabel,
   pills,
   activePill,
   onPillChange,
   trailing,
 }: FilterBarProps) {
+  const common = useCommonCopy();
+  const renderedSearchPlaceholder = searchPlaceholder ?? common.search.placeholder;
+  const renderedSearchLabel = searchLabel ?? common.search.label;
+
   return (
     <div className="filter-bar">
       <div className="filter-bar__search">
         <Search size={15} aria-hidden="true" />
         <input
           type="search"
-          aria-label={searchLabel}
-          placeholder={searchPlaceholder}
+          aria-label={renderedSearchLabel}
+          placeholder={renderedSearchPlaceholder}
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </div>
 
       {pills && pills.length > 0 ? (
-        <div className="pill-group" role="group" aria-label="Filter options">
+        <div className="pill-group" role="group" aria-label={common.search.filterOptions}>
           {pills.map((pill) => (
             <button
               key={pill.value}

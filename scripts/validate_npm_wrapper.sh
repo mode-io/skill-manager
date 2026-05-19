@@ -152,9 +152,10 @@ if document.get("status") not in {"ready", "unavailable"}:
     raise SystemExit(f"marketplace document response was malformed: {document!r}")
 PY
 
-FAKE_BIN_DIR="$TMP_DIR/fake-bin"
-mkdir -p "$FAKE_BIN_DIR"
-cat >"$FAKE_BIN_DIR/brew" <<'EOF'
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  FAKE_BIN_DIR="$TMP_DIR/fake-bin"
+  mkdir -p "$FAKE_BIN_DIR"
+  cat >"$FAKE_BIN_DIR/brew" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "${1:-}" == "--prefix" && $# -eq 1 ]]; then
@@ -171,33 +172,33 @@ if [[ "${1:-}" == "list" && "${2:-}" == "--versions" && "${3:-}" == "skill-manag
 fi
 exit 1
 EOF
-chmod +x "$FAKE_BIN_DIR/brew"
+  chmod +x "$FAKE_BIN_DIR/brew"
 
-CONFLICT_OUTPUT="$(
-  PATH="$FAKE_BIN_DIR:$PATH" \
-  npm install --global --prefix "$TMP_DIR/global-prefix" "./$PACK_FILE" 2>&1 || true
-)"
-if [[ "$CONFLICT_OUTPUT" != *"skill-manager is already installed via Homebrew. Run 'brew uninstall skill-manager' before 'npm install -g @mode-io/skill-manager', or keep using the Homebrew installation."* ]]; then
-  echo "Global npm conflict check did not emit the expected remediation message." >&2
-  echo "$CONFLICT_OUTPUT" >&2
-  exit 1
-fi
+  CONFLICT_OUTPUT="$(
+    PATH="$FAKE_BIN_DIR:$PATH" \
+    npm install --global --prefix "$TMP_DIR/global-prefix" "./$PACK_FILE" 2>&1 || true
+  )"
+  if [[ "$CONFLICT_OUTPUT" != *"skill-manager is already installed via Homebrew. Run 'brew uninstall skill-manager' before 'npm install -g @mode-io/skill-manager', or keep using the Homebrew installation."* ]]; then
+    echo "Global npm conflict check did not emit the expected remediation message." >&2
+    echo "$CONFLICT_OUTPUT" >&2
+    exit 1
+  fi
 
-ln -sf "$TMP_DIR/node_modules/@mode-io/skill-manager/bin/skill-manager.js" "$TMP_DIR/global-skill-manager"
-RUNTIME_CONFLICT_OUTPUT="$(
-  PATH="$FAKE_BIN_DIR:$PATH" \
-  "$TMP_DIR/global-skill-manager" --version 2>&1 || true
-)"
-if [[ "$RUNTIME_CONFLICT_OUTPUT" != *"skill-manager is already installed via Homebrew. Run 'brew uninstall skill-manager' before 'npm install -g @mode-io/skill-manager', or keep using the Homebrew installation."* ]]; then
-  echo "Runtime conflict check did not emit the expected remediation message." >&2
-  echo "$RUNTIME_CONFLICT_OUTPUT" >&2
-  exit 1
-fi
+  ln -sf "$TMP_DIR/node_modules/@mode-io/skill-manager/bin/skill-manager.js" "$TMP_DIR/global-skill-manager"
+  RUNTIME_CONFLICT_OUTPUT="$(
+    PATH="$FAKE_BIN_DIR:$PATH" \
+    "$TMP_DIR/global-skill-manager" --version 2>&1 || true
+  )"
+  if [[ "$RUNTIME_CONFLICT_OUTPUT" != *"skill-manager is already installed via Homebrew. Run 'brew uninstall skill-manager' before 'npm install -g @mode-io/skill-manager', or keep using the Homebrew installation."* ]]; then
+    echo "Runtime conflict check did not emit the expected remediation message." >&2
+    echo "$RUNTIME_CONFLICT_OUTPUT" >&2
+    exit 1
+  fi
 
-TAPPED_BREW_ROOT="$TMP_DIR/tapped-homebrew"
-TAPPED_BIN_DIR="$TMP_DIR/tapped-bin"
-mkdir -p "$TAPPED_BREW_ROOT" "$TAPPED_BIN_DIR"
-cat >"$TAPPED_BIN_DIR/brew" <<EOF
+  TAPPED_BREW_ROOT="$TMP_DIR/tapped-homebrew"
+  TAPPED_BIN_DIR="$TMP_DIR/tapped-bin"
+  mkdir -p "$TAPPED_BREW_ROOT" "$TAPPED_BIN_DIR"
+  cat >"$TAPPED_BIN_DIR/brew" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "\${1:-}" == "--prefix" && \$# -eq 1 ]]; then
@@ -213,18 +214,19 @@ if [[ "\${1:-}" == "list" && "\${2:-}" == "--versions" && "\${3:-}" == "skill-ma
 fi
 exit 1
 EOF
-chmod +x "$TAPPED_BIN_DIR/brew"
+  chmod +x "$TAPPED_BIN_DIR/brew"
 
-PATH="$TAPPED_BIN_DIR:$PATH" \
-  npm install --global --prefix "$TMP_DIR/tapped-global-prefix" "./$PACK_FILE" >/dev/null
-
-TAPPED_VERSION_OUTPUT="$(
   PATH="$TAPPED_BIN_DIR:$PATH" \
-  "$TMP_DIR/tapped-global-prefix/bin/skill-manager" --version
-)"
-if [[ ! "$TAPPED_VERSION_OUTPUT" =~ ^skill-manager[[:space:]][0-9]+\.[0-9]+\.[0-9]+ ]]; then
-  echo "Tapped-but-uninstalled Homebrew case unexpectedly blocked npm wrapper: $TAPPED_VERSION_OUTPUT" >&2
-  exit 1
+    npm install --global --prefix "$TMP_DIR/tapped-global-prefix" "./$PACK_FILE" >/dev/null
+
+  TAPPED_VERSION_OUTPUT="$(
+    PATH="$TAPPED_BIN_DIR:$PATH" \
+    "$TMP_DIR/tapped-global-prefix/bin/skill-manager" --version
+  )"
+  if [[ ! "$TAPPED_VERSION_OUTPUT" =~ ^skill-manager[[:space:]][0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    echo "Tapped-but-uninstalled Homebrew case unexpectedly blocked npm wrapper: $TAPPED_VERSION_OUTPUT" >&2
+    exit 1
+  fi
 fi
 
 "$TMP_DIR/node_modules/.bin/skill-manager" stop --state-dir "$TMP_DIR/runtime" >/dev/null

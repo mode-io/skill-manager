@@ -9,23 +9,7 @@ const { spawnSync } = require("node:child_process");
 
 const packageJson = require("../package.json");
 const { assertNoHomebrewConflict, isGlobalNpmInstall } = require("./channel-ownership");
-
-function artifactArch() {
-  if (process.platform !== "darwin") {
-    throw new Error(`Unsupported platform: ${process.platform}. npm distribution is macOS-first.`);
-  }
-  if (process.arch === "arm64") {
-    return "arm64";
-  }
-  if (process.arch === "x64") {
-    return "x64";
-  }
-  throw new Error(`Unsupported architecture: ${process.arch}`);
-}
-
-function artifactName(version) {
-  return `skill-manager-v${version}-darwin-${artifactArch()}.tar.gz`;
-}
+const { artifactName } = require("./release-targets");
 
 function releaseBaseUrl(version) {
   return process.env.SKILL_MANAGER_RELEASE_BASE_URL || `https://github.com/mode-io/skill-manager/releases/download/v${version}`;

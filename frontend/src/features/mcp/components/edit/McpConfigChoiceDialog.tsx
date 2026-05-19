@@ -8,6 +8,7 @@ import type {
   McpEnvEntryDto,
   McpServerSpecDto,
 } from "../../api/management-types";
+import { useMcpCopy } from "../../i18n";
 import {
   envChipLabel,
   formatEnvKeyPreview,
@@ -46,6 +47,7 @@ export function McpConfigChoiceDialog({
   onClose,
   onConfirm,
 }: McpConfigChoiceDialogProps) {
+  const copy = useMcpCopy();
   const recommendedId = useMemo(
     () => pickRecommendedConfigChoice(options.map(toConfigChoiceDto)),
     [options],
@@ -61,11 +63,11 @@ export function McpConfigChoiceDialog({
   }, [serverName, options, recommendedId]);
 
   const chosen = options.find((option) => option.id === chosenId);
-  const title = mode === "adopt" ? "Choose config to adopt" : "Resolve different configs";
+  const title = mode === "adopt" ? copy.detail.configChoice.adoptTitle : copy.detail.configChoice.resolveTitle;
   const description = mode === "adopt"
-    ? "Pick the config to store as the Skill Manager config. Other harness entries will be rewritten to match it."
-    : "Pick the config Skill Manager should manage. Current bindings will be rewritten to match it.";
-  const confirmLabel = mode === "adopt" ? "Adopt" : "Apply config";
+    ? copy.detail.configChoice.adoptDescription
+    : copy.detail.configChoice.resolveDescription;
+  const confirmLabel = mode === "adopt" ? copy.detail.configChoice.adoptConfirm : copy.detail.configChoice.applyConfig;
 
   async function handleCommit(): Promise<void> {
     if (!chosen) return;
@@ -80,7 +82,7 @@ export function McpConfigChoiceDialog({
     <Dialog.Root open={open} onOpenChange={(next) => (next ? null : onClose())}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="mcp-choose-version" aria-label={`${title} for ${serverName}`}>
+        <Dialog.Content className="mcp-choose-version" aria-label={copy.detail.configChoice.ariaLabel(title, serverName)}>
           <header className="mcp-choose-version__head">
             <div>
               <Dialog.Title className="mcp-choose-version__title">
@@ -94,7 +96,7 @@ export function McpConfigChoiceDialog({
               <button
                 type="button"
                 className="mcp-choose-version__close"
-                aria-label="Close config choice dialog"
+                aria-label={copy.detail.configChoice.close}
                 disabled={pending}
               >
                 <X size={16} aria-hidden="true" />
@@ -134,7 +136,7 @@ export function McpConfigChoiceDialog({
                     <div className="mcp-choose-version__option-head">
                       <strong className="mcp-choose-version__option-label">{option.label}</strong>
                       {isRecommended ? (
-                        <span className="chip chip--verified">Recommended</span>
+                        <span className="chip chip--verified">{copy.detail.configChoice.recommended}</span>
                       ) : null}
                     </div>
                     <p className="mcp-choose-version__summary">{summary.primary}</p>
@@ -142,7 +144,7 @@ export function McpConfigChoiceDialog({
                       {summary.credentialInUrl ? (
                         <span className="chip chip--warning mcp-choose-version__fact-chip">
                           <AlertTriangle size={11} aria-hidden="true" />
-                          Credential in URL
+                          {copy.detail.configChoice.credentialInUrl}
                         </span>
                       ) : null}
                       {summary.envCount > 0 ? (
@@ -156,7 +158,7 @@ export function McpConfigChoiceDialog({
                         </>
                       ) : !summary.credentialInUrl ? (
                         <span className="mcp-choose-version__env-keys">
-                          No environment values
+                          {copy.detail.configChoice.noEnvironmentValues}
                         </span>
                       ) : null}
                     </div>
@@ -178,7 +180,7 @@ export function McpConfigChoiceDialog({
                       ) : (
                         <ChevronRight size={12} aria-hidden="true" />
                       )}
-                      {isExpanded ? "Hide config preview" : "Show config preview"}
+                      {isExpanded ? copy.detail.configChoice.hidePreview : copy.detail.configChoice.showPreview}
                     </button>
                     {isExpanded ? (
                       <pre className="mcp-choose-version__payload ui-scrollbar">
@@ -198,9 +200,9 @@ export function McpConfigChoiceDialog({
               onClick={onClose}
               disabled={pending}
             >
-              Cancel
+              {copy.detail.configChoice.cancel}
             </button>
-            <UiTooltip content={mode === "adopt" ? "Add to Skill Manager using the selected config" : "Apply the selected config to current bindings"}>
+            <UiTooltip content={mode === "adopt" ? copy.detail.configChoice.adoptTooltip : copy.detail.configChoice.resolveTooltip}>
               <button
                 type="button"
                 className="action-pill"

@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
+import { LOCALE_STORAGE_KEY } from "./i18n";
 import { createRouteFetchMock, okJson } from "./test/fetch";
 import { mcpInventoryEntry, mcpInventoryPayload } from "./test/fixtures/mcp";
 import { skillsPayload } from "./test/fixtures/skills";
@@ -20,7 +21,7 @@ function stubEmptyApi() {
         { match: "/api/skills", response: skillsPayload() },
         { match: "/api/scan/configs", response: { configs: [], activeId: null } },
         { match: "/api/mcp/servers", response: mcpInventoryPayload() },
-        { match: "/api/settings", response: { harnesses: [] } },
+        { match: "/api/settings", response: settingsPayload() },
         { match: "/api/slash-commands", response: slashCommandsPayload() },
         {
           match: (url) =>
@@ -38,12 +39,16 @@ function stubEmptyApi() {
 
 describe("App shell", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    document.documentElement.lang = "en";
     stubDesktopMatchMedia();
     stubEmptyApi();
     vi.stubGlobal("fetch", fetchMock);
   });
 
   afterEach(() => {
+    window.localStorage.clear();
+    document.documentElement.lang = "en";
     fetchMock.mockReset();
     vi.unstubAllGlobals();
   });
@@ -77,7 +82,7 @@ describe("App shell", () => {
         );
       }
       if (url === "/api/settings") {
-        return okJson({ harnesses: [] });
+        return okJson(settingsPayload());
       }
       if (url === "/api/slash-commands") {
         return okJson(slashCommandsPayload({ count: 4, reviewCount: 2 }));
@@ -195,6 +200,40 @@ describe("App shell", () => {
       expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument(),
     );
   });
+
+  it("switches the app chrome to Chinese from the sidebar footer while preserving product terms", async () => {
+    renderApp("/settings");
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Interface language")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Language: English" }));
+    fireEvent.click(await screen.findByRole("menuitemradio", { name: /中文/ }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "设置" })).toBeInTheDocument(),
+    );
+    expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-CN");
+    await waitFor(() => expect(document.documentElement.lang).toBe("zh-CN"));
+    expect(screen.getByRole("link", { name: /^总览$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "刷新" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "设置" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Skill/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /MCP 服务器/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^商城$/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^CLI$/ })).toBeInTheDocument();
+    expect(screen.queryByText("界面语言")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: /^总览$/ }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "总览" })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("heading", { name: "Skill 商城" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "MCP 商城" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "CLI 商城" })).toBeInTheDocument();
+  });
 });
 
 function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; reviewCount?: number } = {}) {
@@ -288,5 +327,20 @@ function slashCommandsPayload({ count = 0, reviewCount = 0 }: { count?: number; 
       actions: ["import"],
       error: null,
     })),
+  };
+}
+
+function settingsPayload() {
+  return {
+    storage: {
+      platform: "linux",
+      configDir: "/tmp/config/skill-manager",
+      dataDir: "/tmp/data/skill-manager",
+      stateDir: "/tmp/state/skill-manager",
+      skillsStorePath: "/tmp/data/skill-manager/shared",
+      marketplaceCachePath: "/tmp/data/skill-manager/marketplace",
+      settingsPath: "/tmp/config/skill-manager/settings.json",
+    },
+    harnesses: [],
   };
 }

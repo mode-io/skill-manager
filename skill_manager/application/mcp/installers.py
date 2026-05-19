@@ -14,6 +14,7 @@ from skill_manager.errors import MutationError
 
 
 _OPENCLAW_UNSUPPORTED_REASON = "Smithery does not provide an OpenClaw MCP installer target"
+_SMITHERY_CLI_PACKAGE = "@smithery/cli@4.11.1"
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
 
@@ -98,7 +99,7 @@ class SmitheryCliInstallProvider:
         command = [
             "npx",
             "-y",
-            "@smithery/cli@latest",
+            _SMITHERY_CLI_PACKAGE,
             "mcp",
             "add",
             qualified_name,

@@ -1,23 +1,25 @@
 import type { OverviewStats } from "../../../app/capability-registry";
+import { useOverviewCopy } from "../i18n";
 
 interface StatisticsBandProps {
   stats: OverviewStats;
   loading: boolean;
 }
 
-const STAT_LABELS: Array<{
-  key: keyof OverviewStats;
-  label: string;
-}> = [
-  { key: "inUse", label: "In use" },
-  { key: "needsReview", label: "Needs review" },
-  { key: "harnesses", label: "Harnesses" },
-];
-
 export function StatisticsBand({ stats, loading }: StatisticsBandProps) {
+  const copy = useOverviewCopy();
+  const statLabels: Array<{
+    key: keyof OverviewStats;
+    label: string;
+  }> = [
+    { key: "inUse", label: copy.stats.inUse },
+    { key: "needsReview", label: copy.stats.needsReview },
+    { key: "harnesses", label: copy.stats.harnesses },
+  ];
+
   return (
-    <section className="overview-stats-band" aria-label="Inventory statistics">
-      {STAT_LABELS.map((item) => (
+    <section className="overview-stats-band" aria-label={copy.sections.inventoryStatistics}>
+      {statLabels.map((item) => (
         <article
           className="overview-stat-tile"
           key={item.key}

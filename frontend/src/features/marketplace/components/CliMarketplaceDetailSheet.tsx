@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 import type { CliMarketplaceItemDto } from "../api/cli-types";
+import { useMarketplaceCopy } from "../i18n";
 import { CliMarketplaceDetailView } from "./CliMarketplaceDetailView";
 
 interface CliMarketplaceDetailSheetProps {
@@ -14,6 +15,8 @@ export function CliMarketplaceDetailSheet({
   initialItem,
   onClose,
 }: CliMarketplaceDetailSheetProps) {
+  const copy = useMarketplaceCopy();
+
   if (!itemId) {
     return null;
   }
@@ -29,11 +32,10 @@ export function CliMarketplaceDetailSheet({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="detail-sheet ui-scrollbar" aria-label="CLI details">
-          <Dialog.Title className="u-visually-hidden">CLI details</Dialog.Title>
+        <Dialog.Content className="detail-sheet ui-scrollbar" aria-label={copy.detail.sheet.cliLabel}>
+          <Dialog.Title className="u-visually-hidden">{copy.detail.sheet.cliLabel}</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
-            Preview CLI marketplace metadata and links. Skill Manager does not install or
-            manage CLIs.
+            {copy.detail.sheet.cliDescription}
           </Dialog.Description>
           <CliMarketplaceDetailView
             key={itemId}

@@ -6,6 +6,7 @@ import { ArrowUpRight, Loader2, Plus } from "lucide-react";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { UiTooltipTriggerBoundary } from "../../../components/ui/UiTooltipTriggerBoundary";
 import type { McpInstallTargetDto } from "../api/mcp-types";
+import { useMarketplaceCopy } from "../i18n";
 import type { InstalledState } from "../model/installed-lookup";
 import type {
   McpInstallAvailability,
@@ -40,6 +41,7 @@ export function McpInstallButton({
   installing,
   onInstall,
 }: McpInstallButtonProps) {
+  const copy = useMarketplaceCopy();
   const sourceOptions =
     installTargetState.kind === "ready"
       ? installTargetState.targets.filter(
@@ -54,27 +56,27 @@ export function McpInstallButton({
         type="button"
         className="action-pill"
         disabled
-        aria-label={`Installing ${displayName}`}
+        aria-label={copy.detail.installButton.installingAria(displayName)}
         onClick={stopPropagation}
       >
         <Loader2 size={12} className="mcp-dialog__spinner" aria-hidden="true" />
-        Installing
+        {copy.detail.installButton.installing}
       </button>
     );
   }
 
   if (installedState.kind === "installed") {
     return (
-      <UiTooltip content="Open in MCP servers in use">
+      <UiTooltip content={copy.detail.installButton.openInMcpTooltip}>
         <Link
           to={`/mcp/use?server=${encodeURIComponent(installedState.managedName)}`}
           className="action-pill"
           style={{ textDecoration: "none" }}
-          aria-label={`Open ${displayName} in MCPs`}
+          aria-label={copy.detail.installButton.openInMcpAria(displayName)}
           onClick={stopPropagation}
         >
           <ArrowUpRight size={12} aria-hidden="true" />
-          Open in MCPs
+          {copy.detail.installButton.openInMcp}
         </Link>
       </UiTooltip>
     );
@@ -86,11 +88,11 @@ export function McpInstallButton({
         type="button"
         className="action-pill"
         disabled
-        aria-label={`Add ${displayName} to MCPs (unavailable)`}
+        aria-label={copy.detail.installButton.addToMcpUnavailableAria(displayName)}
         onClick={stopPropagation}
       >
         <Plus size={12} aria-hidden="true" />
-        Add to MCPs
+        {copy.detail.installButton.addToMcp}
       </button>
     );
 
@@ -102,20 +104,20 @@ export function McpInstallButton({
   if (installTargetState.kind !== "ready" || sourceOptions.length === 0) {
     const reason =
       installTargetState.kind === "loading"
-        ? "Loading source harness installers"
+        ? copy.detail.installButton.loadingSourceHarnessInstallers
         : installTargetState.kind === "error"
           ? installTargetState.message
-          : "No supported Smithery source harness installers are available";
+          : copy.detail.installButton.noSupportedInstallers;
     const button = (
       <button
         type="button"
         className="action-pill"
         disabled
-        aria-label={`Add ${displayName} to MCPs (unavailable)`}
+        aria-label={copy.detail.installButton.addToMcpUnavailableAria(displayName)}
         onClick={stopPropagation}
       >
         <Plus size={12} aria-hidden="true" />
-        Add to MCPs
+        {copy.detail.installButton.addToMcp}
       </button>
     );
 
@@ -129,10 +131,10 @@ export function McpInstallButton({
           type="button"
           className="action-pill"
           onClick={stopPropagation}
-          aria-label={`Add ${displayName} to MCPs`}
+          aria-label={copy.detail.installButton.addToMcpAria(displayName)}
         >
           <Plus size={12} aria-hidden="true" />
-          Add to MCPs
+          {copy.detail.installButton.addToMcp}
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -142,7 +144,7 @@ export function McpInstallButton({
           sideOffset={6}
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="ui-menu__section-label">Install into source harness</div>
+          <div className="ui-menu__section-label">{copy.detail.installButton.installIntoSourceHarness}</div>
           <ul className="ui-menu__list">
             {sourceOptions.map((option) => (
               <li key={option.harness}>
@@ -158,7 +160,7 @@ export function McpInstallButton({
                     <span className="ui-menu__icon" aria-hidden="true" />
                     <span className="ui-menu__label">{option.label}</span>
                     <span className="ui-menu__meta">
-                      Install with Smithery&apos;s {option.smitheryClient} target
+                      {copy.detail.installButton.installWithSmitheryTarget(option.smitheryClient)}
                     </span>
                   </button>
                 </Popover.Close>

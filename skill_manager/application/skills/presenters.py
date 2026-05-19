@@ -81,12 +81,11 @@ def row_payload(entry: InventoryEntry, columns: tuple[InventoryColumn, ...]) -> 
 def cell_payload(entry: InventoryEntry, column: InventoryColumn) -> dict[str, object]:
     state = cell_state(entry, column.harness)
     # `interactive` is the single source of truth for "this cell can be
-    # flipped right now". It requires both a toggleable state AND an
-    # installed harness CLI — flipping a cell whose CLI doesn't exist
-    # would write a symlink no runtime reads (and cascades misleadingly
-    # through overlapping discovery roots in the catalog). Every
-    # consumer downstream (card counts, board bucketing, harness chip
-    # stack) reads `interactive` and is correct for free.
+    # flipped right now". It requires both a toggleable state and a
+    # harness-specific skills capability, which may be a CLI or an app
+    # installation depending on that harness. Every consumer downstream
+    # (card counts, board bucketing, harness chip stack) reads
+    # `interactive` and is correct for free.
     is_interactive = state in {"enabled", "disabled"} and column.installed
     return {
         "harness": column.harness,

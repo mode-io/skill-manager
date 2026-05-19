@@ -56,6 +56,8 @@
   border-radius: var(--radius-sm);
   background: var(--color-surface-raised);
   color: var(--color-text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .settings-path {

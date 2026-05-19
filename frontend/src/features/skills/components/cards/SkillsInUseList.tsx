@@ -1,5 +1,6 @@
 import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
 import type { SkillListRow } from "../../model/types";
+import { useSkillsCopy } from "../../i18n";
 import { SkillInUseCard } from "./SkillInUseCard";
 
 interface SkillsInUseListProps {
@@ -20,7 +21,7 @@ interface SkillsInUseListProps {
 }
 
 export function SkillsInUseList({
-  ariaLabel = "Skills in use list",
+  ariaLabel,
   rows,
   pendingToggleKeys,
   pendingStructuralActions,
@@ -32,8 +33,10 @@ export function SkillsInUseList({
   onRequestRemove,
   onRequestDelete,
 }: SkillsInUseListProps) {
+  const copy = useSkillsCopy();
+
   return (
-    <section className="skill-grid" aria-label={ariaLabel}>
+    <section className="skill-grid" aria-label={ariaLabel ?? copy.detail.inUseList}>
       {rows.map((row) => (
         <SkillInUseCard
           key={row.skillRef}

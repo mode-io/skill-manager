@@ -112,6 +112,11 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
             "skills": FileTreeBindingProfile(
                 managed_env="SKILL_MANAGER_CURSOR_ROOT",
                 managed_default=lambda context: context.home / ".cursor" / "skills",
+                availability="cli_or_app",
+                app_probe_paths=(
+                    lambda _context: Path("/Applications/Cursor.app"),
+                    lambda context: context.home / "Applications" / "Cursor.app",
+                ),
             ),
             "mcp": ConfigSubtreeBindingProfile(
                 config_path_resolver=lambda context: context.home / ".cursor" / "mcp.json",
@@ -141,6 +146,7 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
             "skills": FileTreeBindingProfile(
                 managed_env="SKILL_MANAGER_OPENCODE_ROOT",
                 managed_default=lambda context: context.xdg_config_home / "opencode" / "skills",
+                availability="cli",
                 discovery_roots=(
                     FileTreeDiscoveryRoot(
                         kind="compat-root",

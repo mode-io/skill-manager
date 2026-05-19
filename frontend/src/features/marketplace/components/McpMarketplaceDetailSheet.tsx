@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 import type { McpMarketplaceItemDto } from "../api/mcp-types";
+import { useMarketplaceCopy } from "../i18n";
 import { McpMarketplaceDetailView } from "./McpMarketplaceDetailView";
 
 interface McpMarketplaceDetailSheetProps {
@@ -14,6 +15,8 @@ export function McpMarketplaceDetailSheet({
   initialItem,
   onClose,
 }: McpMarketplaceDetailSheetProps) {
+  const copy = useMarketplaceCopy();
+
   if (!qualifiedName) {
     return null;
   }
@@ -31,11 +34,11 @@ export function McpMarketplaceDetailSheet({
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
           className="detail-sheet ui-scrollbar"
-          aria-label="MCP server details"
+          aria-label={copy.detail.sheet.mcpLabel}
         >
-          <Dialog.Title className="u-visually-hidden">MCP server details</Dialog.Title>
+          <Dialog.Title className="u-visually-hidden">{copy.detail.sheet.mcpLabel}</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
-            Preview capabilities and connection details for a marketplace MCP server.
+            {copy.detail.sheet.mcpDescription}
           </Dialog.Description>
           <McpMarketplaceDetailView
             qualifiedName={qualifiedName}

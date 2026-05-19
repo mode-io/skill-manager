@@ -45,6 +45,15 @@ describe("settings queries", () => {
 
     const { queryClient } = renderWithAppProviders(<HarnessSupportProbe />);
     queryClient.setQueryData(settingsKeys.detail(), {
+      storage: {
+        platform: "linux",
+        configDir: "/tmp/config/skill-manager",
+        dataDir: "/tmp/data/skill-manager",
+        stateDir: "/tmp/state/skill-manager",
+        skillsStorePath: "/tmp/data/skill-manager/shared",
+        marketplaceCachePath: "/tmp/data/skill-manager/marketplace",
+        settingsPath: "/tmp/config/skill-manager/settings.json",
+      },
       harnesses: [
         {
           harness: "codex",

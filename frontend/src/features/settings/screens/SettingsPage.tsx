@@ -4,20 +4,21 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
 import { SettingsHarnessCard } from "../components/SettingsHarnessCard";
+import { useSettingsCopy } from "../i18n";
 import { useSettingsPageController } from "../model/use-settings-page-controller";
 
-const SKILL_MANAGER_STORE_PATH = "~/Library/Application Support/skill-manager/shared";
-const MARKETPLACE_CACHE_PATH = "~/Library/Application Support/skill-manager/marketplace";
-
 export default function SettingsPage() {
-  const controller = useSettingsPageController();
+  const copy = useSettingsCopy();
+  const controller = useSettingsPageController({
+    unableToUpdateHarnessSupport: copy.errors.unableToUpdateHarnessSupport,
+  });
 
   return (
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Settings"
-          subtitle="Local paths and per-harness discovery."
+          title={copy.title}
+          subtitle={copy.subtitle}
         />
       </div>
 
@@ -27,45 +28,46 @@ export default function SettingsPage() {
 
       {controller.isPending ? (
         <div className="panel-state">
-          <LoadingSpinner label="Loading settings" />
+          <LoadingSpinner label={copy.loading} />
         </div>
       ) : !controller.data ? (
         <div className="panel-state">
-          <p className="muted-text">Unable to load settings.</p>
+          <p className="muted-text">{copy.errors.unableToLoad}</p>
         </div>
       ) : (
         <>
           <section className="settings-section">
-            <h2 className="settings-section__heading">Local storage</h2>
+            <h2 className="settings-section__heading">{copy.storage.heading}</h2>
             <div className="settings-row">
               <span className="settings-row__icon">
                 <Database size={15} />
               </span>
               <div className="settings-row__body">
-                <p className="settings-row__title">Skill Manager store</p>
-                <p className="settings-row__sub">Canonical copies of skills in use live here.</p>
+                <p className="settings-row__title">{copy.storage.storeTitle}</p>
+                <p className="settings-row__sub">{copy.storage.storeSubtitle}</p>
               </div>
-              <span className="settings-path">{SKILL_MANAGER_STORE_PATH}</span>
+              <span className="settings-path">{controller.data.storage.skillsStorePath}</span>
             </div>
             <div className="settings-row">
               <span className="settings-row__icon">
                 <Archive size={15} />
               </span>
               <div className="settings-row__body">
-                <p className="settings-row__title">Marketplace cache</p>
-                <p className="settings-row__sub">Downloaded previews and install bundles.</p>
+                <p className="settings-row__title">{copy.storage.cacheTitle}</p>
+                <p className="settings-row__sub">{copy.storage.cacheSubtitle}</p>
               </div>
-              <span className="settings-path">{MARKETPLACE_CACHE_PATH}</span>
+              <span className="settings-path">{controller.data.storage.marketplaceCachePath}</span>
             </div>
           </section>
 
           <section className="settings-section">
-            <h2 className="settings-section__heading">Harness roots</h2>
+            <h2 className="settings-section__heading">{copy.harnesses.heading}</h2>
             {controller.data.harnesses.map((harness) => (
               <SettingsHarnessCard
                 key={harness.harness}
                 harness={harness}
                 pending={controller.isHarnessPending(harness.harness)}
+                copy={copy.harnesses}
                 onToggle={controller.handleSupportToggle}
               />
             ))}

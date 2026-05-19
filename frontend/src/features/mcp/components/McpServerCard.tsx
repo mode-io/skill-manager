@@ -5,6 +5,7 @@ import { CardMenu, type CardMenuItem } from "../../../components/cards/CardMenu"
 import { CardSelectCheckbox } from "../../../components/cards/CardSelectCheckbox";
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { McpInventoryColumnDto, McpInventoryEntryDto } from "../api/management-types";
+import { useMcpCopy } from "../i18n";
 import { isMcpHarnessAddressable } from "../model/selectors";
 import { McpHarnessLogoStack } from "./McpHarnessLogoStack";
 
@@ -47,6 +48,7 @@ export function McpServerCard({
   onSetHarnesses,
   onRequestUninstall,
 }: McpServerCardProps) {
+  const copy = useMcpCopy();
   const addressableHarnesses = useMemo(
     () => new Set(columns.filter(isMcpHarnessAddressable).map((c) => c.harness)),
     [columns],
@@ -61,19 +63,19 @@ export function McpServerCard({
     ? entry.spec.url
     : entry.spec?.command
       ? `${entry.spec.command} ${(entry.spec.args ?? []).join(" ")}`.trim()
-      : "Installed via skill-manager";
+      : copy.detail.installedViaSkillManager;
 
   const menuItems = useMemo<CardMenuItem[]>(
     () => [
       {
         key: "uninstall",
-        label: "Uninstall",
+        label: copy.detail.uninstall,
         icon: <Trash2 size={13} aria-hidden="true" />,
         destructive: true,
         onSelect: () => onRequestUninstall(entry.name),
       },
     ],
-    [entry.name, onRequestUninstall],
+    [copy.detail.uninstall, entry.name, onRequestUninstall],
   );
 
   return (
@@ -90,7 +92,7 @@ export function McpServerCard({
           onOpenDetail(entry.name);
         }
       }}
-      aria-label={`Open detail for ${entry.displayName}`}
+      aria-label={copy.detail.openDetail(entry.displayName)}
     >
       <div className="skill-card__head">
         <OverflowTooltipText as="h3" className="skill-card__name">
@@ -98,14 +100,14 @@ export function McpServerCard({
         </OverflowTooltipText>
         <span aria-hidden="true" />
         <CardMenu
-          label={`More actions for ${entry.displayName}`}
+          label={copy.detail.moreActions(entry.displayName)}
           items={menuItems}
           disabled={pending}
         />
         <CardSelectCheckbox
           checked={checked}
           onToggle={() => onToggleChecked(entry.name)}
-          label={checked ? `Deselect ${entry.displayName}` : `Select ${entry.displayName}`}
+          label={checked ? copy.detail.deselect(entry.displayName) : copy.detail.select(entry.displayName)}
           disabled={pending}
         />
       </div>
@@ -139,10 +141,10 @@ export function McpServerCard({
           }}
           aria-label={
             differentConfig
-              ? "Resolve config"
+              ? copy.detail.resolveConfig
               : target === "enabled"
-              ? "Enable on all harnesses"
-              : "Disable everywhere"
+              ? copy.detail.enableOnAllAria
+              : copy.detail.disableEverywhere
           }
         >
           {pending ? (
@@ -150,7 +152,7 @@ export function McpServerCard({
           ) : (
             <Power size={12} aria-hidden="true" />
           )}
-          {differentConfig ? "Resolve config" : target === "enabled" ? "Enable on all" : "Disable everywhere"}
+          {differentConfig ? copy.detail.resolveConfig : target === "enabled" ? copy.detail.enableOnAll : copy.detail.disableEverywhere}
         </button>
       </div>
     </article>

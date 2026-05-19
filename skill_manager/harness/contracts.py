@@ -10,6 +10,7 @@ from .resolution import ResolutionContext
 FamilyKey = Literal["skills", "mcp", "slash_commands"]
 CommandFileRenderFormat = Literal["frontmatter_markdown", "cursor_plaintext"]
 CommandFileScope = Literal["global", "project"]
+FileTreeAvailability = Literal["cli", "cli_or_app"]
 PathResolver = Callable[[ResolutionContext], Path]
 SubtreePath: TypeAlias = tuple[str, ...]
 SubtreePathResolver = Callable[[ResolutionContext], SubtreePath]
@@ -29,6 +30,8 @@ class FileTreeBindingProfile:
     managed_env: str | None = None
     managed_default: PathResolver | None = None
     discovery_roots: tuple[FileTreeDiscoveryRoot, ...] = ()
+    availability: FileTreeAvailability = "cli"
+    app_probe_paths: tuple[PathResolver, ...] = ()
 
     def resolve_managed_root(self, context: ResolutionContext) -> Path:
         if self.managed_default is None:
@@ -152,6 +155,7 @@ __all__ = [
     "CommandFileRenderFormat",
     "ConfigSubtreeBindingProfile",
     "FamilyKey",
+    "FileTreeAvailability",
     "FileTreeBindingProfile",
     "FileTreeDiscoveryRoot",
     "HarnessDefinition",

@@ -3,6 +3,7 @@ import { ArrowUpRight, Plus, Star } from "lucide-react";
 
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import type { MarketplaceItemDto } from "../api/types";
+import { useMarketplaceCopy } from "../i18n";
 import { formatMarketplaceInstalls, formatMarketplaceStars } from "../model/formatters";
 
 interface MarketplaceCardProps {
@@ -29,6 +30,7 @@ export function MarketplaceCard({
   onInstall,
   onOpenInstalledSkill,
 }: MarketplaceCardProps) {
+  const copy = useMarketplaceCopy();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const avatarSrc = item.repoImageUrl && !avatarFailed ? item.repoImageUrl : null;
   const stars = item.stars ?? 0;
@@ -56,14 +58,14 @@ export function MarketplaceCard({
       tabIndex={0}
       onClick={onOpenDetail}
       onKeyDown={handleKeyDown}
-      aria-label={`Open marketplace detail for ${item.name}`}
+      aria-label={copy.detail.cards.openSkillMarketplaceDetail(item.name)}
     >
       <div className="market-card__head">
         <div className="market-card__avatar">
           {avatarSrc ? (
             <img
               src={avatarSrc}
-              alt={`Avatar for ${item.repoLabel}`}
+              alt={copy.detail.cards.avatarFor(item.repoLabel)}
               onError={() => setAvatarFailed(true)}
             />
           ) : (
@@ -82,10 +84,10 @@ export function MarketplaceCard({
         ) : null}
       </div>
 
-      <p className="market-card__body">{item.description || "No summary available on skills.sh."}</p>
+      <p className="market-card__body">{item.description || copy.detail.cards.noSkillSummary}</p>
 
       <div className="market-card__footer">
-        <span className="market-card__installs">{installs} installs</span>
+        <span className="market-card__installs">{copy.detail.skill.installs(installs)}</span>
         {item.installation.status === "installed" && item.installation.installedSkillRef ? (
           <button
             type="button"
@@ -94,10 +96,10 @@ export function MarketplaceCard({
               event.stopPropagation();
               handleOpenInstalled();
             }}
-            aria-label={`Open ${item.name} in Skills`}
+            aria-label={copy.detail.skill.openInSkillsAria(item.name)}
           >
             <ArrowUpRight size={12} aria-hidden="true" />
-            Open in Skills
+            {copy.detail.skill.openInSkills}
           </button>
         ) : (
           <button
@@ -107,15 +109,15 @@ export function MarketplaceCard({
               event.stopPropagation();
               onInstall();
             }}
-            aria-label={`Install ${item.name}`}
+            aria-label={copy.detail.skill.installAria(item.name)}
             data-pending={installing || undefined}
           >
             {installing ? (
-              <LoadingSpinner size="sm" label={`Installing ${item.name}`} />
+              <LoadingSpinner size="sm" label={copy.detail.skill.installing(item.name)} />
             ) : (
               <Plus size={12} aria-hidden="true" />
             )}
-            Install
+            {copy.detail.skill.install}
           </button>
         )}
       </div>

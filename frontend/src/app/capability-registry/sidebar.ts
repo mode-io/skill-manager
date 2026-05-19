@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 
-import { productLanguage } from "../../lib/product-language";
 import { mcpRoutes, useMcpInventoryQuery } from "../../features/mcp/public";
 import { skillsRoutes, useSkillsListQuery } from "../../features/skills/public";
 import { slashCommandRoutes, useSlashCommandsQuery } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
+import { useCommonCopy } from "../../i18n";
 
 export type SidebarIconKey = "overview" | "skills" | "slash-commands" | "mcp" | "marketplace";
 
@@ -32,6 +32,7 @@ export function useSidebarModel(): SidebarModel {
   const skillsQuery = useSkillsListQuery();
   const mcpQuery = useMcpInventoryQuery();
   const slashCommandsQuery = useSlashCommandsQuery();
+  const common = useCommonCopy();
 
   const inUseSkills = skillsQuery.data?.summary.managed ?? null;
   const needsReviewSkills = skillsQuery.data?.summary.unmanaged ?? null;
@@ -45,21 +46,21 @@ export function useSidebarModel(): SidebarModel {
         {
           key: "overview",
           to: "/overview",
-          label: "Overview",
+          label: common.nav.overview,
         },
       ],
       groups: [
         {
           key: "skills",
-          label: "Skills",
+          label: common.nav.skills,
           iconKey: "skills",
           count: sumLoadedCounts(inUseSkills, needsReviewSkills),
           links: [
-            { key: "skills-use", to: skillsRoutes.inUse, label: productLanguage.inUse, count: inUseSkills },
+            { key: "skills-use", to: skillsRoutes.inUse, label: common.productLanguage.inUse, count: inUseSkills },
             {
               key: "skills-review",
               to: skillsRoutes.needsReview,
-              label: productLanguage.needsReview,
+              label: common.productLanguage.needsReview,
               count: needsReviewSkills,
             },
             { key: "skills-scan-config", to: skillsRoutes.scanConfig, label: "Scan Config" },
@@ -67,47 +68,47 @@ export function useSidebarModel(): SidebarModel {
         },
         {
           key: "slash-commands",
-          label: "Slash Commands",
+          label: common.nav.slashCommands,
           iconKey: "slash-commands",
           count: sumLoadedCounts(slashCommandCount, slashCommandReviewCount),
           links: [
             {
               key: "slash-commands-use",
               to: slashCommandRoutes.inUse,
-              label: productLanguage.inUse,
+              label: common.productLanguage.inUse,
               count: slashCommandCount,
             },
             {
               key: "slash-commands-review",
               to: slashCommandRoutes.needsReview,
-              label: productLanguage.needsReview,
+              label: common.productLanguage.needsReview,
               count: slashCommandReviewCount,
             },
           ],
         },
         {
           key: "mcp",
-          label: "MCP Servers",
+          label: common.nav.mcpServers,
           iconKey: "mcp",
           count: mcpCounts.total,
           links: [
-            { key: "mcp-use", to: mcpRoutes.inUse, label: productLanguage.inUse, count: mcpCounts.inUse },
+            { key: "mcp-use", to: mcpRoutes.inUse, label: common.productLanguage.inUse, count: mcpCounts.inUse },
             {
               key: "mcp-review",
               to: mcpRoutes.needsReview,
-              label: productLanguage.needsReview,
+              label: common.productLanguage.needsReview,
               count: mcpCounts.needsReview,
             },
           ],
         },
         {
           key: "marketplace",
-          label: "Marketplace",
+          label: common.nav.marketplace,
           iconKey: "marketplace",
           links: [
-            { key: "marketplace-skills", to: marketplaceRoutes.skills, label: "Skills" },
+            { key: "marketplace-skills", to: marketplaceRoutes.skills, label: common.nav.skills },
             { key: "marketplace-mcp", to: marketplaceRoutes.mcp, label: "MCP" },
-            { key: "marketplace-clis", to: marketplaceRoutes.clis, label: "CLIs" },
+            { key: "marketplace-clis", to: marketplaceRoutes.clis, label: common.nav.clis },
           ],
         },
       ],
@@ -120,6 +121,7 @@ export function useSidebarModel(): SidebarModel {
       needsReviewSkills,
       slashCommandCount,
       slashCommandReviewCount,
+      common,
     ],
   );
 }

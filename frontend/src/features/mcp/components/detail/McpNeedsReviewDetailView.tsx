@@ -8,6 +8,7 @@ import { HarnessAvatar } from "../../../../components/harness/HarnessAvatar";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import { UiTooltip } from "../../../../components/ui/UiTooltip";
 import type { McpIdentityGroupDto, McpIdentitySightingDto } from "../../api/management-types";
+import { useMcpCopy } from "../../i18n";
 import { McpDetailShell } from "./McpDetailShell";
 import { McpMarketplaceLinkChip } from "./McpMarketplaceLinkChip";
 
@@ -31,14 +32,15 @@ export function McpNeedsReviewDetailView({
   onChooseConfigToAdopt,
 }: McpNeedsReviewDetailViewProps) {
   const headingId = useId();
+  const copy = useMcpCopy();
 
   if (isLoading || !group) {
     return (
       <McpDetailShell
         chrome={(
           <DetailHeader
-            title={<h2 id={headingId}>Loading…</h2>}
-            closeLabel="Close detail"
+            title={<h2 id={headingId}>{copy.detail.loading}</h2>}
+            closeLabel={copy.detail.closeShort}
             onClose={onClose}
           />
         )}
@@ -47,7 +49,7 @@ export function McpNeedsReviewDetailView({
             {errorMessage ? (
               <ErrorBanner message={errorMessage} />
             ) : (
-              <LoadingSpinner label="Loading server" />
+              <LoadingSpinner label={copy.detail.review.loadingServer} />
             )}
           </div>
         )}
@@ -57,8 +59,8 @@ export function McpNeedsReviewDetailView({
   }
 
   const subtitle = group.identical
-    ? `Identical across ${group.sightings.length} harnesses`
-    : `Different in ${group.sightings.length} harnesses`;
+    ? copy.detail.review.identicalAcross(group.sightings.length)
+    : copy.detail.review.differentIn(group.sightings.length);
 
   return (
     <McpDetailShell
@@ -77,19 +79,19 @@ export function McpNeedsReviewDetailView({
               </div>
             </div>
           }
-          closeLabel="Close detail"
+          closeLabel={copy.detail.closeShort}
           onClose={onClose}
         />
       )}
       body={(
         <>
           {group.marketplaceLink?.description ? (
-            <DetailSection heading="Marketplace metadata">
+            <DetailSection heading={copy.detail.review.marketplaceMetadata}>
               <p className="mcp-detail__about">{group.marketplaceLink.description}</p>
             </DetailSection>
           ) : null}
 
-          <DetailSection heading="Sightings">
+          <DetailSection heading={copy.detail.review.sightings}>
             <div className="mcp-needs-review-detail__sightings">
               {group.sightings.map((sighting) => (
                 <McpNeedsReviewSightingCard key={sighting.harness} sighting={sighting} />
@@ -98,7 +100,7 @@ export function McpNeedsReviewDetailView({
           </DetailSection>
 
           {group.identical && group.canonicalSpec ? (
-            <DetailSection heading="Config to adopt">
+            <DetailSection heading={copy.detail.review.configToAdopt}>
               <pre className="mcp-needs-review-row__preview ui-scrollbar">
                 {JSON.stringify(group.canonicalSpec, null, 2)}
               </pre>
@@ -108,7 +110,7 @@ export function McpNeedsReviewDetailView({
       )}
       footer={(
         group.identical ? (
-          <UiTooltip content="Add this server to Skill Manager">
+          <UiTooltip content={copy.detail.review.addTooltip}>
             <button
               type="button"
               className="action-pill"
@@ -120,11 +122,11 @@ export function McpNeedsReviewDetailView({
               ) : (
                 <Plus size={12} aria-hidden="true" />
               )}
-              Adopt
+              {copy.detail.review.adopt}
             </button>
           </UiTooltip>
         ) : (
-          <UiTooltip content="Choose which config Skill Manager should keep">
+          <UiTooltip content={copy.detail.review.chooseTooltip}>
             <button
               type="button"
               className="action-pill"
@@ -132,7 +134,7 @@ export function McpNeedsReviewDetailView({
               disabled={pending}
             >
               <Plus size={12} aria-hidden="true" />
-              Choose config to adopt
+              {copy.detail.review.chooseConfigToAdopt}
             </button>
           </UiTooltip>
         )

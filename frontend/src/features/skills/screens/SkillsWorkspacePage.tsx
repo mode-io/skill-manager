@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { BulkActionBar } from "../../../components/BulkActionBar";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { SkillDetailModal } from "../components/detail/SkillDetailModal";
+import { useSkillsCopy } from "../i18n";
 import { pendingToggleHarnessesForSkill } from "../model/pending";
 import { useSkillsWorkspaceController } from "../model/use-skills-workspace-controller";
 
@@ -22,6 +23,7 @@ export default function SkillsWorkspacePage() {
     handleDeleteSkill,
     dismissActionError,
   } = useSkillsWorkspaceController();
+  const copy = useSkillsCopy();
 
   const hasData = context.hasData;
   const selectedPendingToggleHarnesses = selectedSkillRef
@@ -50,13 +52,10 @@ export default function SkillsWorkspacePage() {
           onDisableAll={context.onMultiSelectDisableAll}
           onDelete={context.onMultiSelectDelete}
           destructive={{
-            actionLabel: "Delete",
-            confirmTitle: `Delete ${context.multiSelectedRefs.size} skill${
-              context.multiSelectedRefs.size === 1 ? "" : "s"
-            }?`,
-            confirmDescription:
-              "This removes the Skill Manager copy and its symlinks from every harness.",
-            confirmNote: "The source on disk outside the Skill Manager store is not touched.",
+            actionLabel: copy.bulk.delete,
+            confirmTitle: copy.bulk.confirmTitle(context.multiSelectedRefs.size),
+            confirmDescription: copy.bulk.confirmDescription,
+            confirmNote: copy.bulk.confirmNote,
           }}
         />
       ) : null}

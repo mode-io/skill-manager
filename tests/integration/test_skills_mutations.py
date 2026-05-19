@@ -63,6 +63,10 @@ def seed_unmanage_fixture(spec):
         path.symlink_to(target)
 
 
+def seed_cursor_owned_skill_fixture(spec):
+    seed_skill_package(spec.cursor_owned_root, "cursor-built", "Cursor Built")
+
+
 class SkillsMutationTests(unittest.TestCase):
     def test_enable_managed_skill_creates_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
@@ -149,16 +153,16 @@ class SkillsMutationTests(unittest.TestCase):
                 expected_status=422,
             )
 
-    def test_set_skill_harnesses_only_targets_installed_harnesses(self) -> None:
+    def test_set_skill_harnesses_only_targets_available_harnesses(self) -> None:
         """Bulk set-all must not write symlinks into folders no runtime reads.
 
         With only codex + claude CLIs available on PATH, enabling-all should
-        produce symlinks in those two managed roots only, regardless of how
-        many harnesses are supported in the catalog.
+        produce symlinks in those two managed roots plus any valid app-probed
+        harnesses, regardless of how many harnesses are supported in the catalog.
         """
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
-            # Simulate a machine that only has codex + claude installed by
-            # removing the other CLI stubs from the fake PATH.
+            # Simulate missing non-core CLIs by removing their stubs from the
+            # fake PATH. Cursor may still be available through its app probe.
             for cli in ("cursor-agent", "opencode", "openclaw"):
                 stub = harness.spec.bin_dir / cli
                 if stub.exists():
@@ -173,7 +177,6 @@ class SkillsMutationTests(unittest.TestCase):
             installed_by_harness = {col["harness"]: col["installed"] for col in skills["harnessColumns"]}
             self.assertTrue(installed_by_harness["codex"])
             self.assertTrue(installed_by_harness["claude"])
-            self.assertFalse(installed_by_harness["cursor"])
             self.assertFalse(installed_by_harness["opencode"])
             self.assertFalse(installed_by_harness["openclaw"])
 
@@ -184,12 +187,18 @@ class SkillsMutationTests(unittest.TestCase):
 
             self.assertTrue(result["ok"])
             self.assertEqual(result["failed"], [])
-            # Only installed harnesses should flip.
-            self.assertEqual(set(result["succeeded"]), {"codex", "claude"})
+            # Only installed or otherwise interactable harnesses should flip.
+            expected = {"codex", "claude"}
+            if installed_by_harness["cursor"]:
+                expected.add("cursor")
+            self.assertEqual(set(result["succeeded"]), expected)
             self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
             self.assertTrue((harness.spec.claude_root / "shared-audit").is_symlink())
-            # Uninstalled harness folders remain untouched.
-            self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
+            if installed_by_harness["cursor"]:
+                self.assertTrue((harness.spec.cursor_root / "shared-audit").is_symlink())
+            else:
+                self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
+            # Unavailable harness folders remain untouched.
             self.assertFalse((harness.spec.opencode_root / "shared-audit").exists())
             self.assertFalse((harness.spec.openclaw_managed_root / "shared-audit").exists())
 
@@ -219,6 +228,21 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertGreater(result["managedCount"], 0)
             self.assertEqual(result["failures"], [])
             self.assertEqual(refreshed["summary"]["unmanaged"], 0)
+
+    def test_manage_all_ignores_cursor_owned_skills_cursor_directory(self) -> None:
+        with AppTestHarness(fixture_factory=seed_cursor_owned_skill_fixture) as harness:
+            skills = harness.get_json("/api/skills")
+
+            self.assertNotIn("Cursor Built", [row["name"] for row in skills["rows"]])
+
+            result = harness.post_json("/api/skills/manage-all")
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["managedCount"], 0)
+            self.assertEqual(result["failures"], [])
+            self.assertTrue((harness.spec.cursor_owned_root / "cursor-built" / "SKILL.md").is_file())
+            self.assertFalse((harness.spec.cursor_owned_root / "cursor-built").is_symlink())
+            self.assertFalse((harness.spec.cursor_root / "cursor-built").exists())
 
     def test_manage_rejects_missing_harness_install_before_creating_bindings(self) -> None:
         with AppTestHarness(mixed=True) as harness:

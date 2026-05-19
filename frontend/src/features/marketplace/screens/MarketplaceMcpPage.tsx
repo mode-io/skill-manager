@@ -2,6 +2,7 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { MarketplaceFeedPane } from "../components/MarketplaceFeedPane";
 import { McpMarketplaceCard } from "../components/McpMarketplaceCard";
 import { McpMarketplaceDetailSheet } from "../components/McpMarketplaceDetailSheet";
+import { useMarketplaceCopy } from "../i18n";
 import { useMcpMarketplaceController } from "../model/use-mcp-marketplace-controller";
 
 export interface MarketplaceMcpPageProps {
@@ -17,6 +18,7 @@ export default function MarketplaceMcpPage({
   onQueryChange,
   onItemCountChange,
 }: MarketplaceMcpPageProps) {
+  const copy = useMarketplaceCopy();
   const {
     submittedQuery,
     items,
@@ -33,7 +35,7 @@ export default function MarketplaceMcpPage({
   const feedErrorMessage =
     feedQuery.error instanceof Error
       ? feedQuery.error.message
-      : "Unable to load MCP marketplace.";
+      : copy.errors.mcp;
 
   // Skills and CLIs have explicit marketplace namespaces; MCP owns Smithery ids.
   const ownsItemId = Boolean(
@@ -57,7 +59,8 @@ export default function MarketplaceMcpPage({
         itemCount={items.length}
         hasMore={hasMore}
         loadingMore={loadingMore}
-        loadingLabel="Loading MCP marketplace"
+        loadingLabel={copy.loading.mcp}
+        loadingMoreLabel={copy.loading.more}
         errorMessage={feedErrorMessage}
         onItemCountChange={onItemCountChange}
         onLoadMore={() => feedQuery.fetchNextPage()}
@@ -65,8 +68,8 @@ export default function MarketplaceMcpPage({
           <div className="panel-state">
             <p className="muted-text">
               {submittedQuery
-                ? `No MCP servers match “${submittedQuery}”.`
-                : "No MCP servers found."}
+                ? copy.empty.mcpQuery(submittedQuery)
+                : copy.empty.mcp}
             </p>
           </div>
         }

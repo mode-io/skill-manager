@@ -1,20 +1,23 @@
+import type { SkillsCopy } from "../../i18n";
+
 interface SkillsEmptyStateProps {
+  copy: SkillsCopy["filters"];
   onResetFilters: () => void;
 }
 
-export function SkillsEmptyState({ onResetFilters }: SkillsEmptyStateProps) {
+export function SkillsEmptyState({ copy, onResetFilters }: SkillsEmptyStateProps) {
   return (
     <div className="skills-empty-state">
       <div>
-        <h3>No skills match the current filters.</h3>
-        <p>Adjust the search or filter controls to bring skills back into view.</p>
+        <h3>{copy.noMatchTitle}</h3>
+        <p>{copy.noMatchBody}</p>
       </div>
       <button
         type="button"
         className="action-pill action-pill--md"
         onClick={onResetFilters}
       >
-        Clear Filters
+        {copy.clearFilters}
       </button>
     </div>
   );

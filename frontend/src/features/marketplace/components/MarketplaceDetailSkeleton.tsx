@@ -1,19 +1,22 @@
 import { DetailHeader } from "../../../components/detail/DetailHeader";
 import { DetailLoadingChip } from "../../../components/detail/DetailLoadingChip";
+import { useMarketplaceCopy } from "../i18n";
 
 interface MarketplaceDetailSkeletonProps {
   onClose: () => void;
 }
 
 export function MarketplaceDetailSkeleton({ onClose }: MarketplaceDetailSkeletonProps) {
+  const copy = useMarketplaceCopy();
+
   return (
     <>
       <div className="skill-detail__chrome">
         <DetailHeader
           title={<span className="detail-skeleton detail-skeleton--title" aria-hidden="true" />}
           meta={<span className="detail-skeleton detail-skeleton--subtitle" aria-hidden="true" />}
-          utility={<DetailLoadingChip label="Loading Preview" withSpinner />}
-          closeLabel="Close marketplace preview"
+          utility={<DetailLoadingChip label={copy.detail.skill.loadingPreview} withSpinner />}
+          closeLabel={copy.detail.skill.closePreview}
           onClose={onClose}
         />
       </div>

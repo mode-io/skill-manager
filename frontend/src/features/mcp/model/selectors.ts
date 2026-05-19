@@ -8,6 +8,7 @@ import type {
   McpInventoryEntryDto,
   McpServerSpecDto,
 } from "../api/management-types";
+import { mcpCopy, type McpCopy } from "../i18n";
 
 export type InUsePillValue = "all" | "enabled" | "all-harnesses" | "unbound" | "drifted";
 
@@ -127,11 +128,12 @@ export function matrixColumns(inventory: { columns: McpInventoryColumnDto[] } | 
 export function matrixCellFor(
   entry: McpInventoryEntryDto,
   column: McpInventoryColumnDto,
+  copy: McpCopy = mcpCopy.en,
 ): McpMatrixCellModel {
   const binding = entry.sightings.find((candidate) => candidate.harness === column.harness) ?? null;
   const writable = isMcpHarnessAddressable(column);
   const pendingKey = `${entry.name}:${column.harness}`;
-  const baseLabel = `${entry.displayName} on ${column.label}`;
+  const baseLabel = copy.detail.matrix.baseLabel(entry.displayName, column.label);
 
   if (binding?.state === "managed") {
     return {
@@ -139,8 +141,8 @@ export function matrixCellFor(
       binding,
       writable,
       pendingKey,
-      tooltip: `${column.label} — enabled`,
-      ariaLabel: `Disable ${baseLabel}`,
+      tooltip: copy.detail.matrix.enabledTooltip(column.label),
+      ariaLabel: copy.detail.matrix.disable(baseLabel),
       action: "disable",
     };
   }
@@ -152,8 +154,8 @@ export function matrixCellFor(
       binding,
       writable,
       pendingKey,
-      tooltip: `${column.label} — Different config${detail}`,
-      ariaLabel: `Resolve config for ${baseLabel}`,
+      tooltip: copy.detail.matrix.differentTooltip(column.label, detail),
+      ariaLabel: copy.detail.matrix.resolveConfigFor(baseLabel),
       action: "resolve",
     };
   }
@@ -164,8 +166,8 @@ export function matrixCellFor(
       binding,
       writable,
       pendingKey,
-      tooltip: `${column.label} — Found in harness`,
-      ariaLabel: `Open detail for ${baseLabel}`,
+      tooltip: copy.detail.matrix.foundTooltip(column.label),
+      ariaLabel: copy.detail.matrix.openDetailFor(baseLabel),
       action: "open",
     };
   }
@@ -177,7 +179,7 @@ export function matrixCellFor(
       writable,
       pendingKey,
       tooltip: column.mcpUnavailableReason ?? "Unavailable",
-      ariaLabel: `${baseLabel} is unavailable`,
+      ariaLabel: copy.detail.matrix.unavailable(baseLabel),
       action: null,
     };
   }
@@ -187,8 +189,8 @@ export function matrixCellFor(
     binding,
     writable,
     pendingKey,
-    tooltip: `${column.label} — disabled`,
-    ariaLabel: `Enable ${baseLabel}`,
+    tooltip: copy.detail.matrix.disabledTooltip(column.label),
+    ariaLabel: copy.detail.matrix.enable(baseLabel),
     action: "enable",
   };
 }

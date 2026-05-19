@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Columns3, FolderPlus, LayoutGrid, Rows3, Settings2, Shield } from "lucide-react";
+import { Columns3, FolderPlus, LayoutGrid, Rows3 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { SkillActionConfirmDialog } from "../components/dialogs/SkillActionConfirmDialog";
@@ -9,36 +9,22 @@ import { PageHeader } from "../../../components/PageHeader";
 import { useToast } from "../../../components/Toast";
 import { SelectionMenu } from "../../../components/ui/SelectionMenu";
 import { ViewModeToggle, type ViewModeOption } from "../../../components/ViewModeToggle";
+import { useCommonCopy } from "../../../i18n";
 import { BoardView } from "../components/board/BoardView";
 import { SkillsInUseList } from "../components/cards/SkillsInUseList";
 import { MatrixView } from "../components/matrix/MatrixView";
-import { ScanView } from "../components/scan/ScanView";
 import { SkillsEmptyState } from "../components/pane/SkillsEmptyState";
+import { useSkillsCopy } from "../i18n";
 import { useSkillsInUseSession } from "../model/session";
 import {
   filterSkillsInUseRows,
   hasActiveSkillsInUseFilters,
 } from "../model/selectors";
 import { useInUseViewMode, type InUseViewMode } from "../model/useInUseViewMode";
-import { useSkillScan } from "../model/use-skill-scan";
 import { useSkillsWorkspace } from "../model/workspace-context";
 import type { SkillListRow } from "../model/types";
 
 type InUsePillValue = "all" | "enabled" | "all-harnesses" | "off";
-
-const PILL_LABELS: Record<InUsePillValue, string> = {
-  all: "All",
-  enabled: "Enabled",
-  "all-harnesses": "Enabled on all",
-  off: "Off",
-};
-
-const VIEW_MODE_OPTIONS: readonly ViewModeOption<InUseViewMode>[] = [
-  { value: "grid", label: "Grid", icon: LayoutGrid },
-  { value: "board", label: "Board", icon: Columns3 },
-  { value: "matrix", label: "Matrix", icon: Rows3 },
-  { value: "scan", label: "Scan", icon: Shield },
-];
 
 function countEnabledCells(row: SkillListRow): number {
   return row.cells.filter((cell) => cell.state === "enabled").length;
@@ -72,22 +58,10 @@ export default function SkillsInUsePage() {
   } = useSkillsWorkspace();
   const { filters, updateFilters, resetFilters } = useSkillsInUseSession();
   const { toast } = useToast();
+  const copy = useSkillsCopy();
+  const common = useCommonCopy();
   const [pill, setPill] = useState<InUsePillValue>("all");
   const [viewMode, setViewMode] = useInUseViewMode();
-  const [showScanConfig, setShowScanConfig] = useState(false);
-  const {
-    scanState: scanStateMap,
-    getScanState,
-    scanSkill,
-    llmConfig,
-    configs,
-    activeConfigId,
-    addConfig,
-    editConfig,
-    selectConfig,
-    validateConfig,
-    revealConfigApiKey,
-  } = useSkillScan();
   const [pendingConfirm, setPendingConfirm] = useState<{
     action: "unmanage" | "delete";
     skillRef: string;
@@ -119,10 +93,18 @@ export default function SkillsInUsePage() {
     () =>
       (["all", "enabled", "all-harnesses", "off"] as const).map((value) => ({
         value,
-        label: PILL_LABELS[value],
+        label: pillLabel(copy, value),
         meta: pillCounts[value],
       })),
-    [pillCounts],
+    [copy, pillCounts],
+  );
+  const viewModeOptions: readonly ViewModeOption<InUseViewMode>[] = useMemo(
+    () => [
+      { value: "grid", label: copy.inUse.viewModes.grid, icon: LayoutGrid },
+      { value: "board", label: copy.inUse.viewModes.board, icon: Columns3 },
+      { value: "matrix", label: copy.inUse.viewModes.matrix, icon: Rows3 },
+    ],
+    [copy],
   );
 
   const hasActiveFilters =
@@ -170,22 +152,22 @@ export default function SkillsInUsePage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Skills in use"
+          title={copy.inUse.title}
           actions={
             <>
               <ViewModeToggle
                 mode={viewMode}
-                options={VIEW_MODE_OPTIONS}
-                ariaLabel="Skills in use view mode"
+                options={viewModeOptions}
+                ariaLabel={copy.inUse.viewModeAria}
                 onChange={setViewMode}
               />
               <button
                 type="button"
                 className="action-pill action-pill--md"
-                onClick={() => toast("Import folder — coming soon")}
+                onClick={() => toast(copy.inUse.importFolderComingSoon)}
               >
                 <FolderPlus size={14} />
-                Import folder
+                {copy.inUse.importFolder}
               </button>
             </>
           }
@@ -194,25 +176,15 @@ export default function SkillsInUsePage() {
         <FilterBar
           searchValue={filters.search}
           onSearchChange={(search) => updateFilters({ search })}
-          searchPlaceholder="Search by name, tag, description..."
-          searchLabel="Search skills in use"
+          searchPlaceholder={copy.inUse.searchPlaceholder}
+          searchLabel={copy.inUse.searchLabel}
           trailing={
-            viewMode === "scan" ? (
-              <button
-                type="button"
-                className="icon-button scan-settings-trigger"
-                aria-label="Configure LLM scan"
-                title="Configure LLM scan"
-                onClick={() => setShowScanConfig(true)}
-              >
-                <Settings2 size={15} aria-hidden="true" />
-              </button>
-            ) : viewMode === "grid" ? (
+            viewMode === "grid" ? (
               <SelectionMenu
                 value={pill}
                 options={pillOptions}
                 active={pill !== "all"}
-                ariaLabel={`Filter: ${PILL_LABELS[pill]}`}
+                ariaLabel={copy.inUse.filterAria(pillLabel(copy, pill))}
                 onChange={setPill}
               />
             ) : undefined
@@ -222,10 +194,10 @@ export default function SkillsInUsePage() {
 
       {isInitialLoading ? (
         <div className="panel-state">
-          <LoadingSpinner size="md" label="Loading skills in use" />
+          <LoadingSpinner size="md" label={copy.inUse.loading} />
         </div>
       ) : status === "error" ? (
-        <div className="panel-state">Unable to load skills in use.</div>
+        <div className="panel-state">{copy.inUse.unableToLoad}</div>
       ) : isReady && data ? (
         <>
           {rows.length > 0 ? (
@@ -251,25 +223,6 @@ export default function SkillsInUsePage() {
                 onToggleChecked={onToggleMultiSelect}
                 onToggleCell={onToggleCell}
               />
-            ) : viewMode === "scan" ? (
-              <ScanView
-                rows={rows}
-                scanStateMap={scanStateMap}
-                getScanState={getScanState}
-                llmConfig={llmConfig}
-                configs={configs}
-                activeConfigId={activeConfigId}
-                showConfig={showScanConfig}
-                onOpenSkill={onOpenSkill}
-                onScanSkill={scanSkill}
-                onOpenConfig={() => setShowScanConfig(true)}
-                onCloseConfig={() => setShowScanConfig(false)}
-                onSelectConfig={selectConfig}
-                onAddConfig={addConfig}
-                onEditConfig={editConfig}
-                onRevealApiKey={revealConfigApiKey}
-                onValidateConfig={validateConfig}
-              />
             ) : (
               <SkillsInUseList
                 rows={rows}
@@ -285,29 +238,28 @@ export default function SkillsInUsePage() {
               />
             )
           ) : hasInUseInventory || hasActiveFilters ? (
-            <SkillsEmptyState onResetFilters={() => {
+            <SkillsEmptyState copy={copy.filters} onResetFilters={() => {
               resetFilters();
               setPill("all");
             }} />
           ) : (
             <div className="empty-panel">
-              <h3 className="empty-panel__title">No skills in use yet</h3>
+              <h3 className="empty-panel__title">{copy.inUse.emptyTitle}</h3>
               <p className="empty-panel__body">
-                Review local skill folders or install something from the marketplace to start controlling harness
-                coverage here.
+                {copy.inUse.emptyBody}
               </p>
               <div className="empty-panel__actions">
                 <Link
                   to="/skills/review"
                   className="action-pill action-pill--md action-pill--accent"
                 >
-                  Review items
+                  {common.actions.reviewItems}
                 </Link>
                 <Link
                   to="/marketplace/skills"
                   className="action-pill action-pill--md"
                 >
-                  Open Marketplace
+                  {common.actions.openMarketplace}
                 </Link>
               </div>
             </div>
@@ -333,4 +285,11 @@ export default function SkillsInUsePage() {
       ) : null}
     </>
   );
+}
+
+function pillLabel(copy: ReturnType<typeof useSkillsCopy>, value: InUsePillValue): string {
+  if (value === "all") return copy.inUse.pills.all;
+  if (value === "enabled") return copy.inUse.pills.enabled;
+  if (value === "all-harnesses") return copy.inUse.pills.allHarnesses;
+  return copy.inUse.pills.off;
 }

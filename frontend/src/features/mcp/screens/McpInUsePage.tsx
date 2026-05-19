@@ -13,6 +13,8 @@ import { McpServerDetailSheet } from "../components/detail/McpServerDetailSheet"
 import { McpFilterMenu } from "../components/McpFilterMenu";
 import { McpServerCardList } from "../components/McpServerCardList";
 import { McpServerMatrixView } from "../components/McpServerMatrixView";
+import { useCommonCopy } from "../../../i18n";
+import { useMcpCopy } from "../i18n";
 import {
   filterMcpServersInUse,
   pillCounts,
@@ -22,11 +24,6 @@ import { useMcpManagementController } from "../model/use-mcp-management-controll
 import { useMcpInUseViewMode, type McpInUseViewMode } from "../model/useMcpInUseViewMode";
 
 const DETAIL_PARAM = "server";
-
-const VIEW_MODE_OPTIONS: readonly ViewModeOption<McpInUseViewMode>[] = [
-  { value: "cards", label: "Cards", icon: Grid2X2 },
-  { value: "matrix", label: "Matrix", icon: Rows3 },
-];
 
 export default function McpInUsePage() {
   const {
@@ -59,6 +56,15 @@ export default function McpInUsePage() {
   const [search, setSearch] = useState("");
   const [pill, setPill] = useState<InUsePillValue>("all");
   const [viewMode, setViewMode] = useMcpInUseViewMode();
+  const copy = useMcpCopy();
+  const common = useCommonCopy();
+  const viewModeOptions: readonly ViewModeOption<McpInUseViewMode>[] = useMemo(
+    () => [
+      { value: "cards", label: copy.inUse.viewModes.cards, icon: Grid2X2 },
+      { value: "matrix", label: copy.inUse.viewModes.matrix, icon: Rows3 },
+    ],
+    [copy],
+  );
 
   const entries = useMemo(
     () => filterMcpServersInUse(inventory, { search, pill }),
@@ -68,9 +74,7 @@ export default function McpInUsePage() {
   const totalInUse = inventory?.entries.filter((e) => e.kind === "managed").length ?? 0;
   const isReady = status === "ready" && Boolean(inventory);
   const inventoryIssueMessage = inventory?.issues?.length
-    ? `${inventory.issues.length} MCP catalog record${
-        inventory.issues.length === 1 ? "" : "s"
-      } could not be loaded. Valid records are still shown.`
+    ? copy.inUse.inventoryIssue(inventory.issues.length)
     : "";
 
   const setDetailName = useCallback(
@@ -120,21 +124,21 @@ export default function McpInUsePage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="MCP servers in use"
-          subtitle="Browse, enable, and remove MCP servers across your harnesses."
+          title={copy.inUse.title}
+          subtitle={copy.inUse.subtitle}
           actions={
             <>
               <ViewModeToggle
                 mode={viewMode}
-                options={VIEW_MODE_OPTIONS}
-                ariaLabel="MCP servers in use view mode"
+                options={viewModeOptions}
+                ariaLabel={copy.inUse.viewModeAria}
                 onChange={setViewMode}
               />
               <Link
                 to="/marketplace/mcp"
                 className="action-pill action-pill--md action-pill--accent"
               >
-                Browse marketplace
+                {common.actions.browseMarketplace}
               </Link>
             </>
           }
@@ -143,8 +147,8 @@ export default function McpInUsePage() {
           <FilterBar
             searchValue={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search by name or transport..."
-            searchLabel="Search MCP servers"
+            searchPlaceholder={copy.inUse.searchPlaceholder}
+            searchLabel={copy.inUse.searchLabel}
             trailing={<McpFilterMenu pill={pill} counts={counts} onChange={setPill} />}
           />
         ) : null}
@@ -157,10 +161,10 @@ export default function McpInUsePage() {
 
       {isInitialLoading ? (
         <div className="panel-state">
-          <LoadingSpinner size="md" label="Loading MCP servers" />
+          <LoadingSpinner size="md" label={copy.inUse.loading} />
         </div>
       ) : status === "error" ? (
-        <div className="panel-state">{queryErrorMessage || "Unable to load MCP servers."}</div>
+        <div className="panel-state">{queryErrorMessage || copy.inUse.unableToLoad}</div>
       ) : isReady && inventory ? (
         entries.length > 0 ? (
           viewMode === "matrix" ? (
@@ -193,9 +197,9 @@ export default function McpInUsePage() {
           )
         ) : totalInUse > 0 ? (
           <div className="empty-panel">
-            <h3 className="empty-panel__title">No matches</h3>
+            <h3 className="empty-panel__title">{common.status.noMatches}</h3>
             <p className="empty-panel__body">
-              Adjust the search or filter to see other MCP servers.
+              {copy.inUse.noMatchesBody}
             </p>
             <div className="empty-panel__actions">
               <button
@@ -206,25 +210,25 @@ export default function McpInUsePage() {
                   setPill("all");
                 }}
               >
-                Clear filters
+                {common.actions.clearFilters}
               </button>
             </div>
           </div>
         ) : (
           <div className="empty-panel">
-            <h3 className="empty-panel__title">No MCP servers in use yet</h3>
+            <h3 className="empty-panel__title">{copy.inUse.emptyTitle}</h3>
             <p className="empty-panel__body">
-              Install one from the marketplace, or adopt an existing entry from a harness config.
+              {copy.inUse.emptyBody}
             </p>
             <div className="empty-panel__actions">
               <Link
                 to="/marketplace/mcp"
                 className="action-pill action-pill--md action-pill--accent"
               >
-                Open Marketplace
+                {common.actions.openMarketplace}
               </Link>
               <Link to="/mcp/review" className="action-pill action-pill--md">
-                Review items
+                {common.actions.reviewItems}
               </Link>
             </div>
           </div>
@@ -263,21 +267,18 @@ export default function McpInUsePage() {
         onDisableAll={handleMultiSelectDisableAll}
         onDelete={handleMultiSelectUninstall}
         destructive={{
-          actionLabel: "Uninstall",
-          confirmTitle: `Uninstall ${multiSelectedNames.size} server${
-            multiSelectedNames.size === 1 ? "" : "s"
-          }?`,
-          confirmDescription:
-            "Remove each server from the Skill Manager catalog and delete its bindings from all harnesses where it is currently present.",
+          actionLabel: copy.inUse.uninstall.action,
+          confirmTitle: copy.inUse.uninstall.bulkTitle(multiSelectedNames.size),
+          confirmDescription: copy.inUse.uninstall.description,
         }}
       />
 
       <ConfirmActionDialog
         open={confirmUninstallName !== null}
-        title={`Uninstall ${uninstallDisplayName(inventory, confirmUninstallName)}?`}
-        description="Remove this server from the Skill Manager catalog and delete its bindings from all harnesses where it is currently present."
-        confirmLabel="Uninstall"
-        pendingLabel="Uninstalling"
+        title={copy.inUse.uninstall.title(uninstallDisplayName(inventory, confirmUninstallName, copy.inUse.uninstall.fallbackName))}
+        description={copy.inUse.uninstall.singleDescription}
+        confirmLabel={copy.inUse.uninstall.action}
+        pendingLabel={copy.inUse.uninstall.pending}
         isPending={false}
         onOpenChange={(open) => {
           if (!open) setConfirmUninstallName(null);
@@ -291,8 +292,9 @@ export default function McpInUsePage() {
 function uninstallDisplayName(
   inventory: { entries: { name: string; displayName: string }[] } | null,
   name: string | null,
+  fallbackName = "this server",
 ): string {
-  if (!inventory || !name) return "this server";
+  if (!inventory || !name) return fallbackName;
   const entry = inventory.entries.find((e) => e.name === name);
   return entry?.displayName ?? name;
 }

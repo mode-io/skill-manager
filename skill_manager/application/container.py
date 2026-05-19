@@ -101,7 +101,7 @@ def build_backend_container(
     active_source_fetcher = source_fetcher or SourceFetchService()
     skills_queries = SkillsQueryService(skills_read_models, active_source_fetcher)
     skills_mutations = SkillsMutationService(skills_read_models, skills_queries, active_source_fetcher)
-    settings_queries = SettingsQueryService(harness_kernel)
+    settings_queries = SettingsQueryService(harness_kernel, paths)
     slash_targets = resolve_slash_targets(harness_kernel)
     slash_command_store = SlashCommandStore(
         SlashCommandStorePaths(

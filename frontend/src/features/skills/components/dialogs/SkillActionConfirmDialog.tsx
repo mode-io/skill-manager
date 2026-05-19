@@ -1,4 +1,5 @@
 import { ConfirmActionDialog } from "../../../../components/ConfirmActionDialog";
+import { useSkillsCopy } from "../../i18n";
 
 type SkillActionConfirmKind = "unmanage" | "delete";
 
@@ -21,41 +22,32 @@ export function SkillActionConfirmDialog({
   onOpenChange,
   onConfirm,
 }: SkillActionConfirmDialogProps) {
+  const copy = useSkillsCopy();
   const content = action === "unmanage"
     ? {
-        title: "Remove skill from Skill Manager?",
-        description: (
-          <>
-            This removes <strong>{skillName}</strong> from the Skill Manager store and restores local copies only
-            for the harnesses that are currently enabled.
-          </>
-        ),
+        title: copy.confirm.removeTitle,
+        description: copy.confirm.removeDescription(skillName),
         note:
           harnessLabels.length > 0 ? (
-            <p>Will restore to: {harnessLabels.join(", ")}</p>
+            <p>{copy.confirm.restoreTo(harnessLabels)}</p>
           ) : undefined,
-        confirmLabel: "Remove",
-        pendingLabel: "Removing",
+        confirmLabel: copy.confirm.remove,
+        pendingLabel: copy.confirm.removing,
         confirmTone: "primary" as const,
       }
     : {
-        title: "Delete skill from Skill Manager?",
-        description: (
-          <>
-            This will remove <strong>{skillName}</strong> from the shared store and delete its
-            links from all harnesses.
-          </>
-        ),
+        title: copy.confirm.deleteTitle,
+        description: copy.confirm.deleteDescription(skillName),
         note: (
           <>
-            <p>This action cannot be undone.</p>
+            <p>{copy.confirm.cannotUndo}</p>
             {harnessLabels.length > 0 ? (
-              <p>Affected harnesses: {harnessLabels.join(", ")}</p>
+              <p>{copy.confirm.affectedHarnesses(harnessLabels)}</p>
             ) : null}
           </>
         ),
-        confirmLabel: "Delete",
-        pendingLabel: "Deleting skill",
+        confirmLabel: copy.confirm.delete,
+        pendingLabel: copy.confirm.deletingSkill,
         confirmTone: "danger" as const,
       };
 

@@ -1,14 +1,16 @@
 import { ToggleSwitch } from "../../../components/ToggleSwitch";
 import { HarnessAvatar } from "../../../components/harness/HarnessAvatar";
 import type { SettingsHarness } from "../api/types";
+import type { SettingsCopy } from "../i18n";
 
 interface SettingsHarnessCardProps {
   harness: SettingsHarness;
   pending: boolean;
+  copy: SettingsCopy["harnesses"];
   onToggle: (harness: string, nextEnabled: boolean) => void;
 }
 
-export function SettingsHarnessCard({ harness, pending, onToggle }: SettingsHarnessCardProps) {
+export function SettingsHarnessCard({ harness, pending, copy, onToggle }: SettingsHarnessCardProps) {
   return (
     <div className="settings-row">
       <span className="settings-row__icon">
@@ -17,7 +19,7 @@ export function SettingsHarnessCard({ harness, pending, onToggle }: SettingsHarn
       <div className="settings-row__body">
         <p className="settings-row__title">{harness.label}</p>
         <p className="settings-row__sub">
-          {harness.installed ? "Detected on this machine" : "Not detected on this machine"}
+          {harness.installed ? copy.detected : copy.notDetected}
         </p>
       </div>
       <div className="settings-row__controls">
@@ -28,8 +30,8 @@ export function SettingsHarnessCard({ harness, pending, onToggle }: SettingsHarn
           checked={harness.supportEnabled}
           disabled={pending}
           label=""
-          ariaLabel={`Enable ${harness.label} support`}
-          pendingLabel="Saving..."
+          ariaLabel={copy.enableSupport(harness.label)}
+          pendingLabel={copy.saving}
           onCheckedChange={(checked) => onToggle(harness.harness, checked)}
         />
       </div>

@@ -7,6 +7,7 @@ import { MatrixHarnessIcon } from "../../../components/matrix";
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { SlashCommandDto, SlashSyncEntryDto, SlashTargetDto } from "../api/types";
+import { useSlashCommandsCopy, type SlashCommandsCopy } from "../i18n";
 import { countSyncedTargets } from "../model/selectors";
 
 interface SlashCommandListProps {
@@ -34,17 +35,19 @@ export function SlashCommandList({
   onToggleChecked,
   onDelete,
 }: SlashCommandListProps) {
+  const copy = useSlashCommandsCopy();
+
   if (commands.length === 0) {
     return (
       <div className="empty-panel">
-        <p className="empty-panel__title">No slash commands yet</p>
-        <p className="empty-panel__body">Create one command and sync it into your local AI tools.</p>
+        <p className="empty-panel__title">{copy.detail.listEmptyTitle}</p>
+        <p className="empty-panel__body">{copy.detail.listEmptyBody}</p>
       </div>
     );
   }
 
   return (
-    <section className="skill-grid" aria-label="Slash commands in use list">
+    <section className="skill-grid" aria-label={copy.detail.listAria}>
       {commands.map((command) => (
         <SlashCommandCard
           key={command.name}
@@ -58,6 +61,7 @@ export function SlashCommandList({
           onToggleTarget={onToggleTarget}
           onToggleChecked={onToggleChecked}
           onDelete={onDelete}
+          copy={copy}
         />
       ))}
     </section>
@@ -75,6 +79,7 @@ function SlashCommandCard({
   onToggleTarget,
   onToggleChecked,
   onDelete,
+  copy,
 }: {
   command: SlashCommandDto;
   targets: SlashTargetDto[];
@@ -86,6 +91,7 @@ function SlashCommandCard({
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
   onToggleChecked: (name: string) => void;
   onDelete: (command: SlashCommandDto) => void;
+  copy: SlashCommandsCopy;
 }) {
   const activeCount = countSyncedTargets(command);
   const allEnabled = targets.length > 0 && activeCount === targets.length;
@@ -94,13 +100,13 @@ function SlashCommandCard({
     () => [
       {
         key: "delete",
-        label: "Delete",
+        label: copy.detail.delete,
         icon: <Trash2 size={13} aria-hidden="true" />,
         destructive: true,
         onSelect: () => onDelete(command),
       },
     ],
-    [command, onDelete],
+    [command, copy.detail.delete, onDelete],
   );
 
   return (
@@ -125,14 +131,14 @@ function SlashCommandCard({
         </div>
         <span aria-hidden="true" />
         <CardMenu
-          label={`More actions for ${command.name}`}
+          label={copy.detail.moreActions(command.name)}
           items={menuItems}
           disabled={pending}
         />
         <CardSelectCheckbox
           checked={checked}
           onToggle={() => onToggleChecked(command.name)}
-          label={checked ? `Deselect ${command.name}` : `Select ${command.name}`}
+          label={checked ? copy.detail.deselect(command.name) : copy.detail.select(command.name)}
         />
       </div>
 
@@ -145,8 +151,9 @@ function SlashCommandCard({
           pendingTarget={pendingTarget}
           disabled={pending}
           onToggleTarget={onToggleTarget}
+          copy={copy}
         />
-        <span className="skill-card__harness-count" aria-label={`Active on ${activeCount} of ${targets.length} targets`}>
+        <span className="skill-card__harness-count" aria-label={copy.detail.activeOnTargets(activeCount, targets.length)}>
           {activeCount}/{targets.length}
         </span>
         <button
@@ -157,14 +164,14 @@ function SlashCommandCard({
             event.stopPropagation();
             onSetAllTargets(command, setAllTarget);
           }}
-          aria-label={setAllTarget === "enabled" ? "Enable on all targets" : "Disable everywhere"}
+          aria-label={setAllTarget === "enabled" ? copy.detail.enableOnAllTargets : copy.detail.disableEverywhere}
         >
           {pending && (pendingTarget === null || pendingTarget === "all") ? (
             <Loader2 size={12} className="card-action-spinner" aria-hidden="true" />
           ) : (
             <Power size={12} aria-hidden="true" />
           )}
-          {setAllTarget === "enabled" ? "Enable on all" : "Disable everywhere"}
+          {setAllTarget === "enabled" ? copy.detail.enableOnAll : copy.detail.disableEverywhere}
         </button>
       </div>
     </article>
@@ -177,12 +184,14 @@ function SlashTargetStack({
   pendingTarget,
   disabled,
   onToggleTarget,
+  copy,
 }: {
   command: SlashCommandDto;
   targets: SlashTargetDto[];
   pendingTarget: string | null;
   disabled: boolean;
   onToggleTarget: (command: SlashCommandDto, target: SlashTargetDto) => void;
+  copy: SlashCommandsCopy;
 }) {
   const entries = new Map(command.syncTargets.map((entry) => [entry.target, entry]));
   return (
@@ -191,7 +200,7 @@ function SlashTargetStack({
         const entry = entries.get(target.id);
         const synced = entry?.status === "synced";
         return (
-          <UiTooltip key={target.id} content={targetTitle(target.label, entry)}>
+          <UiTooltip key={target.id} content={targetTitle(target.label, entry, copy)}>
             <button
               type="button"
               className="harness-stack__item slash-target-stack__button"
@@ -203,7 +212,7 @@ function SlashTargetStack({
                 event.stopPropagation();
                 onToggleTarget(command, target);
               }}
-              aria-label={`${synced ? "Disable" : "Enable"} ${target.label} for ${command.name}`}
+              aria-label={synced ? copy.detail.disableTargetFor(target.label, command.name) : copy.detail.enableTargetFor(target.label, command.name)}
               aria-pressed={synced}
             >
               <MatrixHarnessIcon
@@ -219,8 +228,8 @@ function SlashTargetStack({
   );
 }
 
-function targetTitle(label: string, entry: SlashSyncEntryDto | undefined): string {
-  if (!entry || entry.status === "not_selected") return `${label}: not selected`;
+function targetTitle(label: string, entry: SlashSyncEntryDto | undefined, copy: SlashCommandsCopy): string {
+  if (!entry || entry.status === "not_selected") return `${label}: ${copy.detail.notSelected}`;
   if (entry.error) return `${label}: ${entry.error}`;
   return `${label}: ${entry.status}`;
 }

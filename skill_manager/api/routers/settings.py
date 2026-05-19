@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends
 
 from skill_manager.application import BackendContainer
 from skill_manager.api.deps import get_container
-from skill_manager.api.schemas import SetHarnessSupportRequest
+from skill_manager.api.schemas import SetHarnessSupportRequest, SettingsResponse
 
 router = APIRouter(prefix="/api/settings")
 
 
-@router.get("")
+@router.get("", response_model=SettingsResponse)
 def settings(container: BackendContainer = Depends(get_container)) -> dict[str, object]:
     return container.settings_queries.get_settings()
 

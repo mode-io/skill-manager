@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 import type { MarketplaceItemDto } from "../api/types";
+import { useMarketplaceCopy } from "../i18n";
 import { MarketplaceDetailView } from "./MarketplaceDetailView";
 
 interface MarketplaceDetailSheetProps {
@@ -24,6 +25,8 @@ export function MarketplaceDetailSheet({
   onInstall,
   onOpenInstalledSkill,
 }: MarketplaceDetailSheetProps) {
+  const copy = useMarketplaceCopy();
+
   if (!itemId) {
     return null;
   }
@@ -37,10 +40,10 @@ export function MarketplaceDetailSheet({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="detail-sheet ui-scrollbar" aria-label="Marketplace skill details">
-          <Dialog.Title className="u-visually-hidden">Marketplace skill details</Dialog.Title>
+        <Dialog.Content className="detail-sheet ui-scrollbar" aria-label={copy.detail.sheet.skillLabel}>
+          <Dialog.Title className="u-visually-hidden">{copy.detail.sheet.skillLabel}</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
-            Preview a marketplace skill before opening it in Skills or installing it.
+            {copy.detail.sheet.skillDescription}
           </Dialog.Description>
           <MarketplaceDetailView
             itemId={itemId}

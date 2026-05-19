@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 import type { McpInventoryColumnDto } from "../../api/management-types";
+import { useMcpCopy } from "../../i18n";
 import { McpServerDetailView } from "./McpServerDetailView";
 
 interface McpServerDetailSheetProps {
@@ -23,6 +24,7 @@ interface McpServerDetailSheetProps {
 }
 
 export function McpServerDetailSheet({ name, onClose, ...rest }: McpServerDetailSheetProps) {
+  const copy = useMcpCopy();
   if (!name) {
     return null;
   }
@@ -37,11 +39,11 @@ export function McpServerDetailSheet({ name, onClose, ...rest }: McpServerDetail
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
           className="detail-sheet mcp-detail-modal"
-          aria-label={`MCP server ${name}`}
+          aria-label={copy.detail.sheet.inUseLabel(name)}
         >
-          <Dialog.Title className="u-visually-hidden">MCP server {name}</Dialog.Title>
+          <Dialog.Title className="u-visually-hidden">{copy.detail.sheet.inUseTitle(name)}</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
-            Inspect and manage an installed MCP server.
+            {copy.detail.sheet.inUseDescription}
           </Dialog.Description>
           <McpServerDetailView name={name} onClose={onClose} {...rest} />
         </Dialog.Content>

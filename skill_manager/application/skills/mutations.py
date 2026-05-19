@@ -66,10 +66,9 @@ class SkillsMutationService:
         failures: list[dict[str, str]] = []
         flipped_any = False
 
-        # Bulk set-all only targets harnesses whose CLI is installed on the
-        # system. Enabling on an uninstalled harness would write a symlink
-        # into a folder no runtime reads, which is misleading and happens
-        # to cascade across overlapping discovery roots in the catalog.
+        # Bulk set-all only targets harnesses that are installed or otherwise
+        # interactable. Enabling on an unavailable harness would write a
+        # symlink into a folder no runtime reads, which is misleading.
         for adapter in self.read_models.enabled_installed_adapters():
             has_binding = adapter.has_binding(entry.package_dir)
             if target == "enabled" and has_binding:

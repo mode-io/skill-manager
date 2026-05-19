@@ -3,6 +3,7 @@ import { Activity, CheckCircle2 } from "lucide-react";
 
 import { UiTooltip } from "../../../components/ui/UiTooltip";
 import type { McpMarketplaceItemDto } from "../api/mcp-types";
+import { useMarketplaceCopy } from "../i18n";
 import { formatMcpUseCount } from "../model/formatters";
 import {
   summaryInstallAvailability,
@@ -22,6 +23,7 @@ function avatarFallbackLabel(item: McpMarketplaceItemDto): string {
 }
 
 export function McpMarketplaceCard({ item, onOpenDetail }: McpMarketplaceCardProps) {
+  const copy = useMarketplaceCopy();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const avatarSrc = item.iconUrl && !avatarFailed ? item.iconUrl : null;
   const installAction = useMcpInstallActionState({
@@ -45,14 +47,14 @@ export function McpMarketplaceCard({ item, onOpenDetail }: McpMarketplaceCardPro
       tabIndex={0}
       onClick={onOpenDetail}
       onKeyDown={handleKeyDown}
-      aria-label={`Open MCP marketplace detail for ${item.displayName}`}
+      aria-label={copy.detail.cards.openMcpMarketplaceDetail(item.displayName)}
     >
       <div className="market-card__head">
         <div className="market-card__avatar">
           {avatarSrc ? (
             <img
               src={avatarSrc}
-              alt={`Icon for ${item.displayName}`}
+              alt={copy.detail.cards.iconFor(item.displayName)}
               onError={() => setAvatarFailed(true)}
             />
           ) : (
@@ -66,23 +68,23 @@ export function McpMarketplaceCard({ item, onOpenDetail }: McpMarketplaceCardPro
       </div>
 
       <p className="market-card__body mcp-card__body">
-        {item.description || "No description provided."}
+        {item.description || copy.detail.mcp.noDescription}
       </p>
 
       <div className="market-card__footer mcp-card__footer">
         <div className="chip-cluster">
           <span className={`chip chip--${item.isRemote ? "remote" : "local"}`}>
-            {item.isRemote ? "Remote" : "Local"}
+            {item.isRemote ? copy.detail.mcp.remote : copy.detail.mcp.local}
           </span>
           {item.isVerified ? (
             <span className="chip chip--verified">
               <CheckCircle2 size={12} aria-hidden="true" />
-              Verified
+              {copy.detail.mcp.verified}
             </span>
           ) : null}
         </div>
         <div className="mcp-card__actions">
-          <UiTooltip content={`${item.useCount.toLocaleString()} calls`}>
+          <UiTooltip content={copy.detail.mcp.calls(item.useCount.toLocaleString())}>
             <span className="market-card__stat">
               <Activity size={12} aria-hidden="true" />
               {formatMcpUseCount(item.useCount)}

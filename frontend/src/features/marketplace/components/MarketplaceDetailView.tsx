@@ -10,6 +10,7 @@ import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { useMarketplaceDetailQuery, useMarketplaceDocumentQuery } from "../api/queries";
 import type { MarketplaceDetailDto, MarketplaceItemDto } from "../api/types";
 import { formatMarketplaceInstalls, formatMarketplaceStars } from "../model/formatters";
+import { useMarketplaceCopy, type MarketplaceCopy } from "../i18n";
 import { MarketplaceDetailPendingDocument, MarketplaceDetailSkeleton } from "./MarketplaceDetailSkeleton";
 
 const MarkdownDocument = lazy(() => import("../../../components/MarkdownDocument"));
@@ -36,6 +37,7 @@ export function MarketplaceDetailView({
   onOpenInstalledSkill,
 }: MarketplaceDetailViewProps) {
   const headingId = useId();
+  const copy = useMarketplaceCopy();
   const detailQuery = useMarketplaceDetailQuery(itemId);
   const documentQuery = useMarketplaceDocumentQuery(itemId);
   const detail = detailQuery.data ?? fallbackDetail(initialItem);
@@ -55,10 +57,10 @@ export function MarketplaceDetailView({
           type="button"
           className="action-pill"
           onClick={() => onOpenInstalledSkill(detail.installation.installedSkillRef!)}
-          aria-label={`Open ${detail.name} in Skills`}
+          aria-label={copy.detail.skill.openInSkillsAria(detail.name)}
         >
           <ArrowUpRight size={12} aria-hidden="true" />
-          Open in Skills
+          {copy.detail.skill.openInSkills}
         </button>
       );
     }
@@ -68,18 +70,18 @@ export function MarketplaceDetailView({
         type="button"
         className="action-pill"
         onClick={() => void onInstall(detail)}
-        aria-label={`Install ${detail.name}`}
+        aria-label={copy.detail.skill.installAria(detail.name)}
         data-pending={installPending || undefined}
       >
         {installPending ? (
-          <LoadingSpinner size="sm" label={`Installing ${detail.name}`} />
+          <LoadingSpinner size="sm" label={copy.detail.skill.installing(detail.name)} />
         ) : (
           <Plus size={12} aria-hidden="true" />
         )}
-        Install
+        {copy.detail.skill.install}
       </button>
     );
-  }, [detail, installPending, onInstall, onOpenInstalledSkill]);
+  }, [copy, detail, installPending, onInstall, onOpenInstalledSkill]);
 
   if (!detail && detailQuery.isPending) {
     return <MarketplaceDetailSkeleton onClose={onClose} />;
@@ -89,11 +91,11 @@ export function MarketplaceDetailView({
     return (
       <>
         <div className="skill-detail__chrome">
-          <ErrorBanner message={queryErrorMessage || "Unable to load marketplace detail."} />
+          <ErrorBanner message={queryErrorMessage || copy.detail.skill.unableToLoad} />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
           <div className="skill-detail__fallback">
-            <p className="muted-text">Try reopening the marketplace item from the grid.</p>
+            <p className="muted-text">{copy.detail.skill.tryReopen}</p>
           </div>
         </div>
       </>
@@ -108,16 +110,16 @@ export function MarketplaceDetailView({
           titleAction={actionButton}
           meta={
             <DetailSourceLinks
-              ariaLabel={`Source links for ${detail.sourceLinks.repoLabel}`}
-              links={marketplaceSourceLinks(detail.sourceLinks)}
+              ariaLabel={copy.detail.skill.sourceLinksAria(detail.sourceLinks.repoLabel)}
+              links={marketplaceSourceLinks(detail.sourceLinks, copy)}
             />
           }
           utility={
             isInitialPreviewLoading ? (
-              <DetailLoadingChip label="Loading Preview" withSpinner />
+              <DetailLoadingChip label={copy.detail.skill.loadingPreview} withSpinner />
             ) : undefined
           }
-          closeLabel="Close marketplace preview"
+          closeLabel={copy.detail.skill.closePreview}
           onClose={onClose}
         />
 
@@ -131,10 +133,16 @@ export function MarketplaceDetailView({
 
       <div className="skill-detail__body detail-sheet__body" aria-labelledby={headingId}>
         <section className="skill-detail__intro">
-          <p className="skill-detail__copy">{detail.description || "No description available."}</p>
+          <p className="skill-detail__copy">{detail.description || copy.detail.skill.noDescription}</p>
           <div className="marketplace-detail__stats">
-            <span className="marketplace-detail__stat">{formatMarketplaceInstalls(detail.installs)} installs</span>
-            {detail.stars ? <span className="marketplace-detail__stat">{formatMarketplaceStars(detail.stars)} GitHub stars</span> : null}
+            <span className="marketplace-detail__stat">
+              {copy.detail.skill.installs(formatMarketplaceInstalls(detail.installs))}
+            </span>
+            {detail.stars ? (
+              <span className="marketplace-detail__stat">
+                {copy.detail.skill.githubStars(formatMarketplaceStars(detail.stars))}
+              </span>
+            ) : null}
           </div>
         </section>
 
@@ -147,7 +155,7 @@ export function MarketplaceDetailView({
             className="skill-detail__disclosure skill-detail__disclosure--document"
           >
             <div className="skill-detail__document-surface">
-              <Suspense fallback={<LoadingSpinner size="sm" label="Loading document" />}>
+              <Suspense fallback={<LoadingSpinner size="sm" label={copy.detail.skill.loadingDocument} />}>
                 <MarkdownDocument markdown={documentMarkdown} />
               </Suspense>
             </div>
@@ -160,6 +168,7 @@ export function MarketplaceDetailView({
 
 function marketplaceSourceLinks(
   sourceLinks: MarketplaceDetailDto["sourceLinks"],
+  copy: MarketplaceCopy,
 ): DetailSourceLink[] {
   const links: DetailSourceLink[] = [
     {
@@ -171,13 +180,13 @@ function marketplaceSourceLinks(
   if (sourceLinks.folderUrl) {
     links.push({
       href: sourceLinks.folderUrl,
-      label: "Open Skill Folder",
+      label: copy.detail.skill.openSkillFolder,
       kind: "folder",
     });
   }
   links.push({
     href: sourceLinks.skillsDetailUrl,
-    label: "View on skills.sh",
+    label: copy.detail.skill.viewOnSkills,
     kind: "marketplace",
   });
   return links;

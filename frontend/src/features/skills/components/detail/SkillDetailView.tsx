@@ -2,6 +2,7 @@ import { useId } from "react";
 
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
+import { useSkillsCopy } from "../../i18n";
 import type { StructuralSkillAction } from "../../model/pending";
 import type { HarnessCellState } from "../../model/types";
 import { useSkillDetailController } from "../../model/use-skill-detail-controller";
@@ -34,6 +35,7 @@ export function SkillDetailView({
   onDeleteSkill,
 }: SkillDetailViewProps) {
   const fallbackHeadingId = useId();
+  const copy = useSkillsCopy();
   const {
       detail,
       isInitialLoading,
@@ -69,8 +71,8 @@ export function SkillDetailView({
         chrome={(
           <div className="skill-detail__chrome">
             <DetailHeader
-              title={<h2 id={fallbackHeadingId}>Unable to load skill</h2>}
-              closeLabel="Close skill details"
+              title={<h2 id={fallbackHeadingId}>{copy.detail.unableToLoad}</h2>}
+              closeLabel={copy.detail.close}
               onClose={onClose}
             />
             <ErrorBanner message={queryErrorMessage} />
@@ -78,7 +80,7 @@ export function SkillDetailView({
         )}
         body={(
           <div className="skill-detail__fallback">
-            <p className="muted-text">Try selecting the skill again, or return to the list and reopen it.</p>
+            <p className="muted-text">{copy.detail.tryAgain}</p>
           </div>
         )}
         bodyAriaLabelledBy={fallbackHeadingId}

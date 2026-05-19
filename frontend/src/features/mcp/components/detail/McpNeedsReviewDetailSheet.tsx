@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 import type { McpIdentityGroupDto } from "../../api/management-types";
+import { useMcpCopy } from "../../i18n";
 import { McpNeedsReviewDetailView } from "./McpNeedsReviewDetailView";
 
 interface McpNeedsReviewDetailSheetProps {
@@ -19,6 +20,7 @@ export function McpNeedsReviewDetailSheet({
   onClose,
   ...rest
 }: McpNeedsReviewDetailSheetProps) {
+  const copy = useMcpCopy();
   if (!name) {
     return null;
   }
@@ -33,11 +35,11 @@ export function McpNeedsReviewDetailSheet({
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
           className="detail-sheet mcp-detail-modal"
-          aria-label={`MCP config to review ${name}`}
+          aria-label={copy.detail.sheet.reviewLabel(name)}
         >
-          <Dialog.Title className="u-visually-hidden">MCP config to review {name}</Dialog.Title>
+          <Dialog.Title className="u-visually-hidden">{copy.detail.sheet.reviewTitle(name)}</Dialog.Title>
           <Dialog.Description className="u-visually-hidden">
-            Inspect an MCP server found across harnesses and adopt it, or choose a config to adopt.
+            {copy.detail.sheet.reviewDescription}
           </Dialog.Description>
           <McpNeedsReviewDetailView onClose={onClose} {...rest} />
         </Dialog.Content>

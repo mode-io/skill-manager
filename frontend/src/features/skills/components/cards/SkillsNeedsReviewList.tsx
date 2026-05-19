@@ -1,5 +1,6 @@
 import type { StructuralSkillAction } from "../../model/pending";
 import type { SkillListRow } from "../../model/types";
+import { useSkillsCopy } from "../../i18n";
 import { SkillNeedsReviewCard } from "./SkillNeedsReviewCard";
 
 interface SkillsNeedsReviewListProps {
@@ -19,8 +20,10 @@ export function SkillsNeedsReviewList({
   onOpenSkill,
   onManageSkill,
 }: SkillsNeedsReviewListProps) {
+  const copy = useSkillsCopy();
+
   return (
-    <section className="needs-review-rows" aria-label="Skills to review list">
+    <section className="needs-review-rows" aria-label={copy.detail.reviewList}>
       {rows.map((row) => (
         <SkillNeedsReviewCard
           key={row.skillRef}

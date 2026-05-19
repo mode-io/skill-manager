@@ -1,4 +1,5 @@
 import { DetailSection } from "../../../../components/detail/DetailSection";
+import { useSlashCommandsCopy } from "../../i18n";
 
 interface SlashCommandTextProps {
   description?: string | null;
@@ -13,15 +14,17 @@ export function SlashCommandContentSections({
   descriptionEmptyText,
   promptEmptyText,
 }: SlashCommandTextProps) {
+  const copy = useSlashCommandsCopy();
+
   return (
     <>
-      <DetailSection heading="Description">
+      <DetailSection heading={copy.detail.description}>
         <SlashCommandDescriptionBlock
           description={description}
           emptyText={descriptionEmptyText}
         />
       </DetailSection>
-      <DetailSection heading="Prompt">
+      <DetailSection heading={copy.detail.prompt}>
         <SlashCommandPromptPreview
           prompt={prompt}
           emptyText={promptEmptyText}
@@ -37,17 +40,19 @@ export function SlashCommandSourcePreview({
   descriptionEmptyText,
   promptEmptyText,
 }: SlashCommandTextProps) {
+  const copy = useSlashCommandsCopy();
+
   return (
     <div className="slash-command-detail__content-preview">
       <div className="slash-command-detail__content-field">
-        <span>Description</span>
+        <span>{copy.detail.description}</span>
         <SlashCommandDescriptionBlock
           description={description}
           emptyText={descriptionEmptyText}
         />
       </div>
       <div className="slash-command-detail__content-field">
-        <span>Prompt</span>
+        <span>{copy.detail.prompt}</span>
         <SlashCommandPromptPreview
           prompt={prompt}
           emptyText={promptEmptyText}
@@ -59,15 +64,17 @@ export function SlashCommandSourcePreview({
 
 export function SlashCommandDescriptionBlock({
   description,
-  emptyText = "No description provided.",
+  emptyText,
 }: {
   description?: string | null;
   emptyText?: string;
 }) {
+  const copy = useSlashCommandsCopy();
+
   return (
     <div className="slash-command-detail__description-block">
       <p className="slash-command-detail__description-text">
-        {description?.trim() || emptyText}
+        {description?.trim() || emptyText || copy.detail.noDescription}
       </p>
     </div>
   );
@@ -75,14 +82,16 @@ export function SlashCommandDescriptionBlock({
 
 export function SlashCommandPromptPreview({
   prompt,
-  emptyText = "No prompt content.",
+  emptyText,
 }: {
   prompt?: string | null;
   emptyText?: string;
 }) {
+  const copy = useSlashCommandsCopy();
+
   return (
     <pre className="slash-command-detail__prompt ui-scrollbar">
-      {prompt?.trim() || emptyText}
+      {prompt?.trim() || emptyText || copy.detail.noPrompt}
     </pre>
   );
 }

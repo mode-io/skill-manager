@@ -1,4 +1,5 @@
 import type { McpInventoryColumnDto, McpInventoryEntryDto } from "../api/management-types";
+import { useMcpCopy } from "../i18n";
 import { McpServerCard } from "./McpServerCard";
 
 interface McpServerCardListProps {
@@ -22,10 +23,11 @@ export function McpServerCardList({
   onToggleChecked,
   onSetHarnesses,
   onRequestUninstall,
-  ariaLabel = "MCP servers list",
+  ariaLabel,
 }: McpServerCardListProps) {
+  const copy = useMcpCopy();
   return (
-    <section className="skill-grid" aria-label={ariaLabel}>
+    <section className="skill-grid" aria-label={ariaLabel ?? copy.detail.list.serversAriaLabel}>
       {entries.map((entry) => (
         <McpServerCard
           key={entry.name}

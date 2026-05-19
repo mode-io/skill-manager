@@ -21,6 +21,7 @@ import {
   type SlashCommandListDto,
 } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
+import { overviewCopy, useOverviewCopy, type OverviewCopy } from "../../features/overview/i18n";
 
 export interface OverviewStatMetric {
   value: number | null;
@@ -130,13 +131,15 @@ export function useOverviewModel(
   slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
 ): OverviewModel {
-  return useMemo(() => buildOverviewModel(skills, slashCommands, mcp), [skills, slashCommands, mcp]);
+  const copy = useOverviewCopy();
+  return useMemo(() => buildOverviewModel(skills, slashCommands, mcp, copy), [skills, slashCommands, mcp, copy]);
 }
 
 export function buildOverviewModel(
   skills: SkillsWorkspaceData | null | undefined,
   slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
+  copy: OverviewCopy = overviewCopy.en,
 ): OverviewModel {
   const inUseSkills = skills?.summary.managed ?? null;
   const skillsToReview = skills?.summary.unmanaged ?? null;
@@ -159,6 +162,7 @@ export function buildOverviewModel(
     differentConfigMcpServers,
     inventoryIssues,
     unavailableHarnesses,
+    copy,
   });
   const harnessRows = buildHarnessRows(skills, mcp);
   const hasOverviewData = Boolean(skills || slashCommands || mcp);
@@ -170,6 +174,7 @@ export function buildOverviewModel(
       inUseMcpServers,
       needsReview: hasOverviewData ? reviewItems.reduce((total, item) => total + item.count, 0) : null,
       harnesses: hasOverviewData ? harnessRows.length : null,
+      copy,
     }),
     extensions: buildExtensions({
       inUseSkills,
@@ -181,8 +186,9 @@ export function buildOverviewModel(
       differentConfigMcpServers,
       inventoryIssues,
       unavailableHarnesses,
+      copy,
     }),
-    marketplaceEntries: buildMarketplaceEntries(),
+    marketplaceEntries: buildMarketplaceEntries(copy),
     reviewItems,
     harnessRows,
   };
@@ -194,29 +200,27 @@ function buildStats({
   inUseMcpServers,
   needsReview,
   harnesses,
+  copy,
 }: {
   inUseSkills: number | null;
   inUseSlashCommands: number | null;
   inUseMcpServers: number | null;
   needsReview: number | null;
   harnesses: number | null;
+  copy: OverviewCopy;
 }): OverviewStats {
   return {
     inUse: {
       value: sumKnown(inUseSkills, inUseSlashCommands, inUseMcpServers),
-      detail: [
-        formatMetricPart(inUseSkills, "skill", "skills"),
-        formatMetricPart(inUseSlashCommands, "command", "commands"),
-        formatMetricPart(inUseMcpServers, "MCP", "MCP"),
-      ].join(" · "),
+      detail: copy.stats.inUseDetail(inUseSkills, inUseSlashCommands, inUseMcpServers),
     },
     needsReview: {
       value: needsReview,
-      detail: "adoption · config · inventory",
+      detail: copy.stats.needsReviewDetail,
     },
     harnesses: {
       value: harnesses,
-      detail: `${formatCount(harnesses)} observed`,
+      detail: copy.stats.harnessesDetail(harnesses),
     },
   };
 }
@@ -239,6 +243,7 @@ function buildExtensions({
   differentConfigMcpServers,
   inventoryIssues,
   unavailableHarnesses,
+  copy,
 }: {
   inUseSkills: number | null;
   inUseSlashCommands: number | null;
@@ -249,42 +254,43 @@ function buildExtensions({
   differentConfigMcpServers: number | null;
   inventoryIssues: number | null;
   unavailableHarnesses: number | null;
+  copy: OverviewCopy;
 }): OverviewExtensionKind[] {
   return [
     {
       key: "skills",
-      label: "Skills",
+      label: copy.extensions.skills,
       iconKey: "skills",
       facts: [
-        { label: "in use", value: inUseSkills },
-        { label: "review", value: skillsToReview, tone: "warning" },
+        { label: copy.extensions.inUseFact, value: inUseSkills },
+        { label: copy.extensions.reviewFact, value: skillsToReview, tone: "warning" },
       ],
       actions: [
-        { label: "In use", to: skillsRoutes.inUse, primary: true },
-        { label: "Needs review", to: skillsRoutes.needsReview },
+        { label: copy.stats.inUse, to: skillsRoutes.inUse, primary: true },
+        { label: copy.stats.needsReview, to: skillsRoutes.needsReview },
       ],
     },
     {
       key: "slash-commands",
-      label: "Slash Commands",
+      label: copy.extensions.slashCommands,
       iconKey: "slash-commands",
       facts: [
-        { label: "in use", value: inUseSlashCommands },
-        { label: "review", value: slashCommandsToReview, tone: "warning" },
+        { label: copy.extensions.inUseFact, value: inUseSlashCommands },
+        { label: copy.extensions.reviewFact, value: slashCommandsToReview, tone: "warning" },
       ],
       actions: [
-        { label: "In use", to: slashCommandRoutes.inUse, primary: true },
-        { label: "Needs review", to: slashCommandRoutes.needsReview },
+        { label: copy.stats.inUse, to: slashCommandRoutes.inUse, primary: true },
+        { label: copy.stats.needsReview, to: slashCommandRoutes.needsReview },
       ],
     },
     {
       key: "mcp",
-      label: "MCP Servers",
+      label: copy.extensions.mcpServers,
       iconKey: "mcp",
       facts: [
-        { label: "in use", value: inUseMcpServers },
+        { label: copy.extensions.inUseFact, value: inUseMcpServers },
         {
-          label: "review",
+          label: copy.extensions.reviewFact,
           value: sumKnown(
             mcpConfigsToReview,
             differentConfigMcpServers,
@@ -295,44 +301,39 @@ function buildExtensions({
         },
       ],
       actions: [
-        { label: "In use", to: mcpRoutes.inUse, primary: true },
-        { label: "Needs review", to: mcpRoutes.needsReview },
+        { label: copy.stats.inUse, to: mcpRoutes.inUse, primary: true },
+        { label: copy.stats.needsReview, to: mcpRoutes.needsReview },
       ],
     },
   ];
 }
 
-function buildMarketplaceEntries(): OverviewMarketplaceEntry[] {
+function buildMarketplaceEntries(copy: OverviewCopy): OverviewMarketplaceEntry[] {
   return [
     {
       key: "skills",
-      label: "Skills Marketplace",
+      label: copy.marketplace.skills,
       iconKey: "skills",
       sourceLabel: "skills.sh",
-      action: { label: "Browse", to: marketplaceRoutes.skills, primary: true },
+      action: { label: copy.marketplace.browse, to: marketplaceRoutes.skills, primary: true },
     },
     {
       key: "mcp",
-      label: "MCP Marketplace",
+      label: copy.marketplace.mcp,
       iconKey: "mcp",
       sourceLabel: "smithery.ai",
-      action: { label: "Browse", to: marketplaceRoutes.mcp, primary: true },
+      action: { label: copy.marketplace.browse, to: marketplaceRoutes.mcp, primary: true },
     },
     {
       key: "clis",
-      label: "CLI Marketplace",
+      label: copy.marketplace.cli,
       iconKey: "clis",
       sourceLabel: "CLIs.dev",
-      badge: "Preview only",
+      badge: copy.marketplace.previewOnly,
       tone: "accent",
-      action: { label: "Browse", to: marketplaceRoutes.clis, primary: true },
+      action: { label: copy.marketplace.browse, to: marketplaceRoutes.clis, primary: true },
     },
   ];
-}
-
-function formatMetricPart(value: number | null, singular: string, plural: string): string {
-  const label = value === 1 ? singular : plural;
-  return `${formatCount(value)} ${label}`;
 }
 
 function formatCount(value: number | null): string {
@@ -346,6 +347,7 @@ function buildReviewItems({
   differentConfigMcpServers,
   inventoryIssues,
   unavailableHarnesses,
+  copy,
 }: {
   skillsToReview: number | null;
   slashCommandsToReview: number | null;
@@ -353,13 +355,14 @@ function buildReviewItems({
   differentConfigMcpServers: number | null;
   inventoryIssues: number | null;
   unavailableHarnesses: number | null;
+  copy: OverviewCopy;
 }): OverviewReviewItem[] {
   const items: OverviewReviewItem[] = [];
   if (skillsToReview && skillsToReview > 0) {
     items.push({
       key: "skills-review",
-      label: "Skills to review",
-      description: "Adopt local skills so they can be enabled consistently.",
+      label: copy.reviewItems.skillsLabel,
+      description: copy.reviewItems.skillsDescription,
       count: skillsToReview,
       to: skillsRoutes.needsReview,
       tone: "neutral",
@@ -368,8 +371,8 @@ function buildReviewItems({
   if (slashCommandsToReview && slashCommandsToReview > 0) {
     items.push({
       key: "slash-commands-review",
-      label: "Slash commands",
-      description: "Unmanaged, changed, or missing command files need a decision.",
+      label: copy.reviewItems.slashCommandsLabel,
+      description: copy.reviewItems.slashCommandsDescription,
       count: slashCommandsToReview,
       to: slashCommandRoutes.needsReview,
       tone: "warning",
@@ -378,8 +381,8 @@ function buildReviewItems({
   if (mcpConfigsToReview && mcpConfigsToReview > 0) {
     items.push({
       key: "mcp-review",
-      label: "MCP configs to review",
-      description: "Adopt existing harness configs into Skill Manager.",
+      label: copy.reviewItems.mcpConfigsLabel,
+      description: copy.reviewItems.mcpConfigsDescription,
       count: mcpConfigsToReview,
       to: mcpRoutes.needsReview,
       tone: "neutral",
@@ -388,8 +391,8 @@ function buildReviewItems({
   if (differentConfigMcpServers && differentConfigMcpServers > 0) {
     items.push({
       key: "different-mcp-configs",
-      label: "Different MCP configs",
-      description: "Resolve which config should become the source of truth.",
+      label: copy.reviewItems.differentMcpLabel,
+      description: copy.reviewItems.differentMcpDescription,
       count: differentConfigMcpServers,
       to: mcpRoutes.inUse,
       tone: "warning",
@@ -398,8 +401,8 @@ function buildReviewItems({
   if (inventoryIssues && inventoryIssues > 0) {
     items.push({
       key: "mcp-inventory-issues",
-      label: "MCP inventory issues",
-      description: "Some Skill Manager MCP records could not be loaded cleanly.",
+      label: copy.reviewItems.inventoryIssuesLabel,
+      description: copy.reviewItems.inventoryIssuesDescription,
       count: inventoryIssues,
       to: mcpRoutes.inUse,
       tone: "danger",
@@ -408,8 +411,8 @@ function buildReviewItems({
   if (unavailableHarnesses && unavailableHarnesses > 0) {
     items.push({
       key: "unavailable-mcp-harnesses",
-      label: "MCP harness unavailable",
-      description: "At least one harness cannot safely receive MCP writes.",
+      label: copy.reviewItems.unavailableHarnessLabel,
+      description: copy.reviewItems.unavailableHarnessDescription,
       count: unavailableHarnesses,
       to: "/settings",
       tone: "warning",

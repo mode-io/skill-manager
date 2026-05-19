@@ -11,6 +11,7 @@ import type {
   McpServerSpecDto,
 } from "../../api/management-types";
 import { useMcpServerDetailQuery } from "../../api/management-queries";
+import { useMcpCopy, type McpCopy } from "../../i18n";
 import {
   McpConfigChoiceDialog,
   type McpConfigChoiceOption,
@@ -52,6 +53,7 @@ export function McpServerDetailView({
   onUninstall,
 }: McpServerDetailViewProps) {
   const headingId = useId();
+  const copy = useMcpCopy();
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const detailQuery = useMcpServerDetailQuery(name);
 
@@ -64,13 +66,13 @@ export function McpServerDetailView({
         chrome={(
           <DetailHeader
             title={<h2 id={headingId}>{name}</h2>}
-            closeLabel="Close MCP server detail"
+            closeLabel={copy.detail.close}
             onClose={onClose}
           />
         )}
         body={(
           <div className="panel-state">
-            <LoadingSpinner label="Loading MCP server" />
+            <LoadingSpinner label={copy.detail.loadingServer} />
           </div>
         )}
         bodyAriaLabelledBy={headingId}
@@ -84,8 +86,8 @@ export function McpServerDetailView({
         chrome={(
           <div className="mcp-detail__chrome">
             <DetailHeader
-              title={<h2 id={headingId}>Unable to load MCP server</h2>}
-              closeLabel="Close MCP server detail"
+              title={<h2 id={headingId}>{copy.detail.unableTitle}</h2>}
+              closeLabel={copy.detail.close}
               onClose={onClose}
             />
             {errorMessage ? <ErrorBanner message={errorMessage} /> : null}
@@ -105,7 +107,7 @@ export function McpServerDetailView({
   const link = detail.marketplaceLink;
   const iconUrl = link?.iconUrl ?? null;
   const description = link?.description ?? "";
-  const configChoices = (detail.configChoices ?? []).map(configChoiceToOption);
+  const configChoices = (detail.configChoices ?? []).map((choice) => configChoiceToOption(choice, copy));
   const hasDifferentConfig = detail.sightings.some((binding) => binding.state === "drifted");
   const canResolveConfig = configChoices.length > 0;
 
@@ -138,14 +140,14 @@ export function McpServerDetailView({
                 </div>
               </div>
             }
-            closeLabel="Close MCP server detail"
+            closeLabel={copy.detail.close}
             onClose={onClose}
           />
         )}
         body={(
           <>
             {description ? (
-              <DetailSection heading="About">
+              <DetailSection heading={copy.detail.about}>
                 <p className="mcp-detail__about">{description}</p>
               </DetailSection>
             ) : null}
@@ -153,8 +155,8 @@ export function McpServerDetailView({
             {hasDifferentConfig ? (
               <div className="mcp-detail__drift-banner">
                 <div>
-                  <strong>Different configs found</strong>
-                  <p>Choose which config Skill Manager should manage, then apply it to current bindings.</p>
+                  <strong>{copy.detail.differentConfigsTitle}</strong>
+                  <p>{copy.detail.differentConfigsBody}</p>
                 </div>
                 <button
                   type="button"
@@ -162,16 +164,16 @@ export function McpServerDetailView({
                   onClick={() => setResolveDialogOpen(true)}
                   disabled={isServerPending || !canResolveConfig}
                 >
-                  Resolve config
+                  {copy.detail.resolveConfig}
                 </button>
               </div>
             ) : null}
 
-            <DetailSection heading="Connection">
-              <ConnectionBlock spec={spec} />
+            <DetailSection heading={copy.detail.connection}>
+              <ConnectionBlock spec={spec} copy={copy} />
             </DetailSection>
 
-            <DetailSection heading="Bindings">
+            <DetailSection heading={copy.detail.bindings}>
               <McpBindingMatrix
                 columns={columns}
                 bindings={detail.sightings}
@@ -185,7 +187,7 @@ export function McpServerDetailView({
               />
             </DetailSection>
 
-            <DetailSection heading="Environment">
+            <DetailSection heading={copy.detail.environment}>
               <McpEnvTable entries={envEntries} />
             </DetailSection>
           </>
@@ -206,7 +208,7 @@ export function McpServerDetailView({
             ) : (
               <Trash2 size={12} aria-hidden="true" />
             )}
-            Uninstall
+            {copy.detail.uninstall}
           </button>
         )}
         bodyAriaLabelledBy={headingId}
@@ -232,12 +234,12 @@ export function McpServerDetailView({
   );
 }
 
-function configChoiceToOption(choice: McpConfigChoiceDto): McpConfigChoiceOption {
+function configChoiceToOption(choice: McpConfigChoiceDto, copy: McpCopy): McpConfigChoiceOption {
   return {
     id: choice.sourceKind === "managed" ? "managed" : (choice.sourceHarness ?? choice.label),
     sourceKind: choice.sourceKind,
     sourceHarness: choice.sourceHarness,
-    label: choice.sourceKind === "managed" ? "Skill Manager config" : choice.label,
+    label: choice.sourceKind === "managed" ? copy.detail.skillManagerConfig : choice.label,
     logoKey: choice.logoKey,
     configPath: choice.configPath,
     payloadPreview: choice.payloadPreview,
@@ -246,18 +248,18 @@ function configChoiceToOption(choice: McpConfigChoiceDto): McpConfigChoiceOption
   };
 }
 
-function ConnectionBlock({ spec }: { spec: McpServerSpecDto | null }) {
+function ConnectionBlock({ spec, copy }: { spec: McpServerSpecDto | null; copy: McpCopy }) {
   if (!spec) {
-    return <p className="muted-text">No connection data.</p>;
+    return <p className="muted-text">{copy.detail.noConnectionData}</p>;
   }
   if (spec.transport === "stdio") {
     const args = Array.isArray(spec.args) ? spec.args.join(" ") : "";
     return (
       <div className="mcp-detail__connection-grid">
-        <Field label="Command">
+        <Field label={copy.detail.command}>
           <code>{spec.command || "—"}</code>
         </Field>
-        <Field label="Args">
+        <Field label={copy.detail.args}>
           <code>{args || "—"}</code>
         </Field>
       </div>
@@ -265,13 +267,13 @@ function ConnectionBlock({ spec }: { spec: McpServerSpecDto | null }) {
   }
   return (
     <div className="mcp-detail__connection-grid">
-      <Field label="URL">
+      <Field label={copy.detail.url}>
         <code>{spec.url || "—"}</code>
       </Field>
-      <Field label="Transport">
+      <Field label={copy.detail.transport}>
         <code>{spec.transport}</code>
       </Field>
-      <Field label="Headers">
+      <Field label={copy.detail.headers}>
         <code>{spec.headers ? JSON.stringify(spec.headers) : "—"}</code>
       </Field>
     </div>

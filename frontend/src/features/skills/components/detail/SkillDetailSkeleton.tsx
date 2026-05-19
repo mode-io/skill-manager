@@ -1,6 +1,7 @@
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { DetailLoadingChip } from "../../../../components/detail/DetailLoadingChip";
 import { DetailSection } from "../../../../components/detail/DetailSection";
+import { useSkillsCopy } from "../../i18n";
 import { SkillDetailShell } from "./SkillDetailShell";
 
 interface SkillDetailSkeletonProps {
@@ -8,6 +9,8 @@ interface SkillDetailSkeletonProps {
 }
 
 export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
+  const copy = useSkillsCopy();
+
   return (
     <SkillDetailShell
       chrome={(
@@ -20,15 +23,15 @@ export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
                 <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
               </div>
             }
-            utility={<DetailLoadingChip label="Loading" />}
-            closeLabel="Close skill details"
+            utility={<DetailLoadingChip label={copy.detail.loading} />}
+            closeLabel={copy.detail.close}
             onClose={onClose}
           />
         </div>
       )}
       body={(
         <>
-        <DetailSection heading="About">
+        <DetailSection heading={copy.detail.about}>
           <div className="detail-skeleton-paragraph">
             <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
             <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />
@@ -49,7 +52,7 @@ export function SkillDetailSkeleton({ onClose }: SkillDetailSkeletonProps) {
           </div>
         </DetailSection>
 
-        <DetailSection heading="Locations">
+        <DetailSection heading={copy.detail.locations}>
           <div className="detail-skeleton-paragraph">
             <span className="detail-skeleton detail-skeleton--label" />
             <span className="detail-skeleton detail-skeleton--line detail-skeleton--line-wide" />

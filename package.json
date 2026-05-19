@@ -1,7 +1,7 @@
 {
   "name": "skill-manager",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "VITE_API_BASE=/api vite --host 127.0.0.1 --port 5173",
@@ -14,6 +14,7 @@
     "build": "VITE_API_BASE=/api vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "release-targets:check": "node scripts/check_release_targets_js.cjs",
     "codegen:openapi": "./.venv/bin/python scripts/dump_openapi.py && openapi-typescript frontend/src/api/openapi.json -o frontend/src/api/generated.ts",
     "codegen:check": "npm run codegen:openapi && git diff --exit-code frontend/src/api/openapi.json frontend/src/api/generated.ts"
   },

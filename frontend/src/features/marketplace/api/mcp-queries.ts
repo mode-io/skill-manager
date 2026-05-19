@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useToast } from "../../../components/Toast";
 import { flattenUniquePageItems, queryPolicy } from "../../../lib/query";
 import { invalidateMcpQueries } from "../../mcp/public";
+import { useMarketplaceCopy } from "../i18n";
 import { useInstallingState } from "../model/installing-context";
 import {
   fetchMcpInstallTargets,
@@ -78,6 +79,7 @@ export function useAddMcpServerMutation() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { begin, finish } = useInstallingState();
+  const copy = useMarketplaceCopy();
 
   return useMutation<
     AddMcpServerResponseDto,
@@ -92,10 +94,10 @@ export function useAddMcpServerMutation() {
       // Invalidate the central inventory so the card button flips to
       // "Open in MCPs" in place. User stays on the marketplace.
       void invalidateMcpQueries(queryClient);
-      toast(`${displayName ?? response.server.name} added to your MCP servers`);
+      toast(copy.detail.installButton.addedToMcp(displayName ?? response.server.name));
     },
     onError: (error) => {
-      toast(error instanceof Error ? error.message : "Install failed");
+      toast(error instanceof Error ? error.message : copy.detail.installButton.installFailed);
     },
     onSettled: (_data, _err, { qualifiedName }) => {
       finish(qualifiedName);

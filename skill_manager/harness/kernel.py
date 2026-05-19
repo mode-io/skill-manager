@@ -89,15 +89,28 @@ class HarnessKernelService:
                     harness=definition.harness,
                     label=definition.label,
                     logo_key=definition.logo_key,
-                    installed=shutil.which(
-                        definition.install_probe,
-                        path=self.context.env.get("PATH"),
-                    )
-                    is not None,
+                    installed=self._is_installed(definition, skills_binding),
                     managed_location=managed_location,
                 )
             )
         return tuple(statuses)
+
+    def _is_installed(
+        self,
+        definition: HarnessDefinition,
+        skills_binding: BindingProfile | None,
+    ) -> bool:
+        cli_available = shutil.which(
+            definition.install_probe,
+            path=self.context.env.get("PATH"),
+        ) is not None
+        if cli_available:
+            return True
+        if not isinstance(skills_binding, FileTreeBindingProfile):
+            return False
+        if skills_binding.availability != "cli_or_app":
+            return False
+        return any(resolver(self.context).exists() for resolver in skills_binding.app_probe_paths)
 
 
 __all__ = ["FamilyBinding", "HarnessKernelService", "harness_definitions_for_family"]

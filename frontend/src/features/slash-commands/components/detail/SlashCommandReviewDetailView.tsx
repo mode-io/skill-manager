@@ -9,10 +9,9 @@ import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { DetailSection } from "../../../../components/detail/DetailSection";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import type { SlashCommandDto, SlashCommandReviewDto, SlashReviewAction, SlashTargetDto } from "../../api/types";
+import { useSlashCommandsCopy, type SlashCommandsCopy } from "../../i18n";
 import {
   primaryReviewAction,
-  reviewActionLabel,
-  reviewActionTitle,
 } from "../../model/selectors";
 import { reviewKey } from "../../model/useSlashCommandsReviewController";
 import {
@@ -40,6 +39,7 @@ export function SlashCommandReviewDetailView({
   onAction,
 }: SlashCommandReviewDetailViewProps) {
   const headingId = useId();
+  const copy = useSlashCommandsCopy();
   const primaryAction = primaryReviewAction(row);
   const orderedActions = primaryAction
     ? [primaryAction, ...row.actions.filter((action) => action !== primaryAction)]
@@ -58,7 +58,7 @@ export function SlashCommandReviewDetailView({
       <div className="slash-review-detail-shell__chrome">
         <DetailHeader
           title={<h2 id={headingId}>{row.name}</h2>}
-          closeLabel="Close slash command detail"
+          closeLabel={copy.detail.close}
           onClose={onClose}
         />
       </div>
@@ -70,32 +70,29 @@ export function SlashCommandReviewDetailView({
 
           {isConflict ? (
             <Notice tone="warning">
-              A managed slash command already uses this name. Adopting the harness command will replace the Skill
-              Manager source.
+              {copy.detail.review.conflictNotice}
             </Notice>
           ) : null}
 
           {row.kind === "drifted" ? (
             <Notice tone="warning">
-              The harness command changed after Skill Manager last synced it. Restore writes the Skill Manager source
-              back to the harness; Adopt updates Skill Manager from this harness command.
+              {copy.detail.review.driftedNotice}
             </Notice>
           ) : null}
 
           {hasCanonicalGap ? (
             <Notice tone="warning">
-              The review entry says this command is managed, but the canonical command is not present in the current
-              slash command list.
+              {copy.detail.review.canonicalGapNotice}
             </Notice>
           ) : null}
 
-          <ReviewContent row={row} canonicalCommand={canonicalCommand} isConflict={isConflict} />
-          <ReviewHarnessesSection row={row} targets={targets} />
-          <ReviewLocationSection row={row} />
+          <ReviewContent row={row} canonicalCommand={canonicalCommand} isConflict={isConflict} copy={copy} />
+          <ReviewHarnessesSection row={row} targets={targets} copy={copy} />
+          <ReviewLocationSection row={row} copy={copy} />
         </div>
       </div>
 
-      <footer className="slash-review-detail-shell__footer" aria-label="Slash command review actions">
+      <footer className="slash-review-detail-shell__footer" aria-label={copy.detail.review.actionsAria}>
         {orderedActions.map((action, index) => {
           const pending = pendingAction === action;
           return (
@@ -103,14 +100,14 @@ export function SlashCommandReviewDetailView({
               key={action}
               type="button"
               className={`action-pill${index === 0 ? " action-pill--accent" : ""}`}
-              title={reviewActionTitle(action)}
+              title={copy.review.actionTitle(action)}
               disabled={Boolean(pendingAction)}
               onClick={() => {
                 void runAction(action);
               }}
             >
               {pending ? <Loader2 size={12} className="card-action-spinner" aria-hidden="true" /> : null}
-              {reviewActionLabel(action)}
+              {copy.review.actionLabel(action)}
             </button>
           );
         })}
@@ -122,14 +119,16 @@ export function SlashCommandReviewDetailView({
 function ReviewHarnessesSection({
   row,
   targets,
+  copy,
 }: {
   row: SlashCommandReviewDto;
   targets: SlashTargetDto[];
+  copy: SlashCommandsCopy;
 }) {
-  const harnesses = reviewHarnessRows(row, targets);
+  const harnesses = reviewHarnessRows(row, targets, copy);
   return (
-    <DetailSection heading="Harnesses">
-      <div className="detail-sheet__bindings" aria-label={`Harness review context for ${row.name}`}>
+    <DetailSection heading={copy.detail.harnesses}>
+      <div className="detail-sheet__bindings" aria-label={copy.detail.review.harnessContext(row.name)}>
         {harnesses.map((harness) => (
           <div
             key={harness.id}
@@ -160,37 +159,39 @@ function ReviewContent({
   row,
   canonicalCommand,
   isConflict,
+  copy,
 }: {
   row: SlashCommandReviewDto;
   canonicalCommand: SlashCommandDto | null;
   isConflict: boolean;
+  copy: SlashCommandsCopy;
 }) {
   if (row.kind === "missing") {
-    return <MissingContent canonicalCommand={canonicalCommand} />;
+    return <MissingContent canonicalCommand={canonicalCommand} copy={copy} />;
   }
   if (isConflict || row.kind === "drifted") {
-    return <ComparisonContent row={row} canonicalCommand={canonicalCommand} />;
+    return <ComparisonContent row={row} canonicalCommand={canonicalCommand} copy={copy} />;
   }
   return (
     <SlashCommandContentSections
       description={row.description}
       prompt={row.prompt}
-      descriptionEmptyText="No description parsed."
-      promptEmptyText="No prompt content parsed."
+      descriptionEmptyText={copy.detail.review.noDescriptionParsed}
+      promptEmptyText={copy.detail.review.noPromptParsed}
     />
   );
 }
 
-function MissingContent({ canonicalCommand }: { canonicalCommand: SlashCommandDto | null }) {
+function MissingContent({ canonicalCommand, copy }: { canonicalCommand: SlashCommandDto | null; copy: SlashCommandsCopy }) {
   return (
-    <DetailSection heading="Skill Manager source">
+    <DetailSection heading={copy.detail.review.skillManagerSource}>
       {canonicalCommand ? (
         <SlashCommandSourcePreview
           description={canonicalCommand.description}
           prompt={canonicalCommand.prompt}
         />
       ) : (
-        <p className="slash-review-detail__empty">No canonical command content is available.</p>
+        <p className="slash-review-detail__empty">{copy.detail.review.noCanonicalContent}</p>
       )}
     </DetailSection>
   );
@@ -199,46 +200,48 @@ function MissingContent({ canonicalCommand }: { canonicalCommand: SlashCommandDt
 function ComparisonContent({
   row,
   canonicalCommand,
+  copy,
 }: {
   row: SlashCommandReviewDto;
   canonicalCommand: SlashCommandDto | null;
+  copy: SlashCommandsCopy;
 }) {
   return (
     <div className="slash-review-detail__comparison">
-      <DetailSection heading="Skill Manager source">
+      <DetailSection heading={copy.detail.review.skillManagerSource}>
         {canonicalCommand ? (
           <SlashCommandSourcePreview
             description={canonicalCommand.description}
             prompt={canonicalCommand.prompt}
           />
         ) : (
-          <p className="slash-review-detail__empty">No canonical command content is available.</p>
+          <p className="slash-review-detail__empty">{copy.detail.review.noCanonicalContent}</p>
         )}
       </DetailSection>
-      <DetailSection heading="Harness command">
+      <DetailSection heading={copy.detail.review.harnessCommand}>
         <SlashCommandSourcePreview
           description={row.description}
           prompt={row.prompt}
-          descriptionEmptyText="No description parsed."
-          promptEmptyText="No prompt content parsed."
+          descriptionEmptyText={copy.detail.review.noDescriptionParsed}
+          promptEmptyText={copy.detail.review.noPromptParsed}
         />
       </DetailSection>
     </div>
   );
 }
 
-function ReviewLocationSection({ row }: { row: SlashCommandReviewDto }) {
+function ReviewLocationSection({ row, copy }: { row: SlashCommandReviewDto; copy: SlashCommandsCopy }) {
   return (
-    <DetailSection heading="Locations">
-      <TargetPathBlock path={row.path} />
+    <DetailSection heading={copy.detail.locations}>
+      <TargetPathBlock path={row.path} copy={copy} />
     </DetailSection>
   );
 }
 
-function TargetPathBlock({ path }: { path: string }) {
+function TargetPathBlock({ path, copy }: { path: string; copy: SlashCommandsCopy }) {
   return (
     <div className="slash-review-detail__target-path">
-      <span>Path</span>
+      <span>{copy.detail.review.path}</span>
       <code>{path}</code>
     </div>
   );
@@ -264,11 +267,11 @@ interface ReviewHarnessRow {
   hint: string | null;
 }
 
-function reviewHarnessRows(row: SlashCommandReviewDto, targets: SlashTargetDto[]): ReviewHarnessRow[] {
+function reviewHarnessRows(row: SlashCommandReviewDto, targets: SlashTargetDto[], copy: SlashCommandsCopy): ReviewHarnessRow[] {
   const hasReviewedTarget = targets.some((target) => target.id === row.target);
-  const rows = targets.map((target) => reviewHarnessRow(row, target.id, target.label, target.id === row.target));
+  const rows = targets.map((target) => reviewHarnessRow(row, target.id, target.label, target.id === row.target, copy));
   if (!hasReviewedTarget) {
-    rows.push(reviewHarnessRow(row, row.target, row.targetLabel, true));
+    rows.push(reviewHarnessRow(row, row.target, row.targetLabel, true, copy));
   }
   return rows;
 }
@@ -278,6 +281,7 @@ function reviewHarnessRow(
   id: string,
   label: string,
   reviewed: boolean,
+  copy: SlashCommandsCopy,
 ): ReviewHarnessRow {
   if (!reviewed) {
     return {
@@ -285,13 +289,13 @@ function reviewHarnessRow(
       label,
       logoKey: logoKeyForHarness(id),
       reviewed,
-      statusLabel: "Not present",
+      statusLabel: copy.detail.review.notPresent,
       visibleStatus: null,
       tone: "disabled",
       hint: null,
     };
   }
-  const statusLabel = reviewHarnessStatusLabel(row);
+  const statusLabel = reviewHarnessStatusLabel(row, copy);
   return {
     id,
     label,
@@ -300,14 +304,14 @@ function reviewHarnessRow(
     statusLabel,
     visibleStatus: statusLabel,
     tone: "warning",
-    hint: row.actions.includes("import") ? "Adopt this command to manage it" : "Resolve from footer",
+    hint: row.actions.includes("import") ? copy.detail.review.adoptHint : copy.detail.review.resolveHint,
   };
 }
 
-function reviewHarnessStatusLabel(row: SlashCommandReviewDto): string {
-  if (row.kind === "drifted") return "Changed in harness";
-  if (row.kind === "missing") return "Missing from harness";
-  return "Found in harness";
+function reviewHarnessStatusLabel(row: SlashCommandReviewDto, copy: SlashCommandsCopy): string {
+  if (row.kind === "drifted") return copy.detail.review.changedInHarness;
+  if (row.kind === "missing") return copy.detail.review.missingFromHarness;
+  return copy.detail.review.foundInHarness;
 }
 
 function logoKeyForHarness(id: string): string {

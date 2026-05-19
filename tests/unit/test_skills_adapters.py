@@ -53,6 +53,40 @@ class SkillsAdapterTests(unittest.TestCase):
             self.assertFalse(openclaw.status().installed)
             self.assertEqual(openclaw.scan().skills, ())
 
+    def test_cursor_skills_use_skills_root_and_ignore_skills_cursor(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            seed_skill_package(spec.cursor_root, "managed-cursor", "Managed Cursor")
+            seed_skill_package(spec.cursor_owned_root, "cursor-built", "Cursor Built")
+
+            cursor = _adapter("cursor", spec)
+            scan = cursor.scan()
+
+            self.assertEqual(cursor.managed_root, spec.cursor_root)
+            self.assertEqual(
+                [skill.package.declared_name for skill in scan.skills],
+                ["Managed Cursor"],
+            )
+
+    def test_cursor_app_probe_keeps_skills_adapter_installed_without_cli(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            (spec.bin_dir / "cursor-agent").unlink()
+            (spec.home / "Applications" / "Cursor.app").mkdir(parents=True)
+
+            cursor = _adapter("cursor", spec)
+            kernel = HarnessKernelService.from_environment(
+                spec.env(),
+                support_store=HarnessSupportStore(spec.root / "settings.json"),
+            )
+            cursor_status = next(
+                status for status in kernel.harness_statuses() if status.harness == "cursor"
+            )
+
+            self.assertTrue(cursor.status().installed)
+            self.assertTrue(cursor_status.installed)
+            self.assertEqual(cursor_status.managed_location, spec.cursor_root)
+
     def test_enable_creates_symlink(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))

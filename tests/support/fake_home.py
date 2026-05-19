@@ -17,6 +17,7 @@ class FakeHomeSpec:
     home: Path
     xdg_config_home: Path
     xdg_data_home: Path
+    xdg_state_home: Path
 
     @property
     def skills_store_root(self) -> Path:
@@ -39,6 +40,10 @@ class FakeHomeSpec:
         return self.home / ".cursor" / "skills"
 
     @property
+    def cursor_owned_root(self) -> Path:
+        return self.home / ".cursor" / "skills-cursor"
+
+    @property
     def opencode_root(self) -> Path:
         return self.xdg_config_home / "opencode" / "skills"
 
@@ -59,6 +64,7 @@ class FakeHomeSpec:
             "HOME": str(self.home),
             "XDG_CONFIG_HOME": str(self.xdg_config_home),
             "XDG_DATA_HOME": str(self.xdg_data_home),
+            "XDG_STATE_HOME": str(self.xdg_state_home),
             "PATH": str(self.bin_dir),
         }
 
@@ -69,6 +75,7 @@ def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> Fa
         home=root / "home",
         xdg_config_home=root / "config",
         xdg_data_home=root / "data",
+        xdg_state_home=root / "state",
     )
     for path in (
         spec.skills_store_root,
@@ -78,6 +85,7 @@ def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> Fa
         spec.cursor_root,
         spec.opencode_root,
         spec.openclaw_managed_root,
+        spec.xdg_state_home,
         spec.bin_dir,
     ):
         path.mkdir(parents=True, exist_ok=True)

@@ -9,6 +9,7 @@ import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { useToast } from "../../../components/Toast";
 import { useCliMarketplaceDetailQuery } from "../api/cli-queries";
 import type { CliMarketplaceItemDto } from "../api/cli-types";
+import { useMarketplaceCopy, type MarketplaceCopy } from "../i18n";
 import { formatMarketplaceStars } from "../model/formatters";
 
 const MarkdownDocument = lazy(() => import("../../../components/MarkdownDocument"));
@@ -25,6 +26,7 @@ export function CliMarketplaceDetailView({
   onClose,
 }: CliMarketplaceDetailViewProps) {
   const headingId = useId();
+  const copy = useMarketplaceCopy();
   const detailQuery = useCliMarketplaceDetailQuery(itemId);
   const detail = detailQuery.data ?? null;
   const { toast } = useToast();
@@ -44,13 +46,13 @@ export function CliMarketplaceDetailView({
 
   function handleCopy(value: string): void {
     if (!navigator.clipboard?.writeText) {
-      toast("Command copied");
+      toast(copy.detail.cli.commandCopied);
       return;
     }
     void navigator.clipboard
       .writeText(value)
-      .then(() => toast("Command copied"))
-      .catch(() => toast("Copy failed"));
+      .then(() => toast(copy.detail.cli.commandCopied))
+      .catch(() => toast(copy.detail.cli.copyFailed));
   }
 
   if (!detail && detailQuery.isPending) {
@@ -60,13 +62,13 @@ export function CliMarketplaceDetailView({
           <DetailHeader
             title={<h2 id={headingId}>{headerName}</h2>}
             meta={<p className="market-card__repo">clis.dev/{headerSlug}</p>}
-            closeLabel="Close CLI preview"
+            closeLabel={copy.detail.cli.closePreview}
             onClose={onClose}
           />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
           <div className="panel-state">
-            <LoadingSpinner label="Loading CLI details" />
+            <LoadingSpinner label={copy.detail.cli.loadingDetails} />
           </div>
         </div>
       </>
@@ -78,14 +80,14 @@ export function CliMarketplaceDetailView({
       <>
         <div className="skill-detail__chrome">
           <DetailHeader
-            title={<h2 id={headingId}>Unable to load CLI</h2>}
-            closeLabel="Close CLI preview"
+            title={<h2 id={headingId}>{copy.detail.cli.unableTitle}</h2>}
+            closeLabel={copy.detail.cli.closePreview}
             onClose={onClose}
           />
-          <ErrorBanner message={queryErrorMessage || "Unable to load CLI detail."} />
+          <ErrorBanner message={queryErrorMessage || copy.detail.cli.unableDetail} />
         </div>
         <div className="skill-detail__body" aria-labelledby={headingId}>
-          <p className="muted-text">Try reopening the CLI from the marketplace grid.</p>
+          <p className="muted-text">{copy.detail.cli.tryReopen}</p>
         </div>
       </>
     );
@@ -93,11 +95,12 @@ export function CliMarketplaceDetailView({
 
   const installCommand = detail.installCommand ?? null;
   const hasSourceMetadata = Boolean(detail.sourceType || detail.vendorName);
-  const headerFacts = cliHeaderFacts(detail, stars);
+  const headerFacts = cliHeaderFacts(detail, stars, copy);
   const sourceLinks = cliSourceLinks({
     marketplaceUrl: headerMarketplaceUrl,
     githubUrl: headerGithubUrl,
     websiteUrl: headerWebsiteUrl,
+    copy,
   });
 
   return (
@@ -129,7 +132,7 @@ export function CliMarketplaceDetailView({
           meta={
             <div className="cli-detail__meta-stack">
               {headerFacts.length > 0 ? (
-                <div className="cli-detail__facts" aria-label={`CLI facts for ${headerName}`}>
+                <div className="cli-detail__facts" aria-label={copy.detail.cli.factsAria(headerName)}>
                   {headerFacts.map((fact, index) => (
                     <Fragment key={`${fact.label}:${index}`}>
                       {index > 0 ? (
@@ -148,12 +151,12 @@ export function CliMarketplaceDetailView({
                 </div>
               ) : null}
               <DetailSourceLinks
-                ariaLabel={`Source links for ${headerName}`}
+                ariaLabel={copy.detail.cli.sourceLinksAria(headerName)}
                 links={sourceLinks}
               />
             </div>
           }
-          closeLabel="Close CLI preview"
+          closeLabel={copy.detail.cli.closePreview}
           onClose={onClose}
         />
         {queryErrorMessage ? <ErrorBanner message={queryErrorMessage} /> : null}
@@ -161,7 +164,7 @@ export function CliMarketplaceDetailView({
 
       <div className="skill-detail__body detail-sheet__body" aria-labelledby={headingId}>
         {installCommand ? (
-          <DetailSection heading="Install command preview">
+          <DetailSection heading={copy.detail.cli.installCommandPreview}>
             <div className="mcp-detail__connection-row cli-detail__command-row">
               <code className="mcp-detail__connection-url">{installCommand}</code>
               <button
@@ -170,18 +173,18 @@ export function CliMarketplaceDetailView({
                 onClick={() => handleCopy(installCommand)}
               >
                 <Copy size={13} aria-hidden="true" />
-                Copy
+                {copy.detail.cli.copy}
               </button>
             </div>
           </DetailSection>
         ) : null}
 
-        <DetailSection heading="About">
+        <DetailSection heading={copy.detail.cli.about}>
           <p className="mcp-detail__about">
-            {detail.description || "No description provided."}
+            {detail.description || copy.detail.cli.noDescription}
           </p>
           {detail.longDescription ? (
-            <Suspense fallback={<LoadingSpinner size="sm" label="Loading CLI preview" />}>
+            <Suspense fallback={<LoadingSpinner size="sm" label={copy.detail.cli.loadingPreview} />}>
               <MarkdownDocument
                 markdown={detail.longDescription}
                 className="skill-detail__markdown cli-detail__markdown"
@@ -191,10 +194,10 @@ export function CliMarketplaceDetailView({
         </DetailSection>
 
         {hasSourceMetadata ? (
-          <DetailSection heading="Source">
+          <DetailSection heading={copy.detail.cli.source}>
             <dl className="cli-detail__metadata">
-              <MetaRow label="Source type" value={detail.sourceType ?? null} />
-              <MetaRow label="Vendor" value={detail.vendorName ?? null} />
+              <MetaRow label={copy.detail.cli.sourceType} value={detail.sourceType ?? null} />
+              <MetaRow label={copy.detail.cli.vendor} value={detail.vendorName ?? null} />
             </dl>
           </DetailSection>
         ) : null}
@@ -215,6 +218,7 @@ interface CliHeaderFact {
 function cliHeaderFacts(
   detail: CliMarketplaceItemDto,
   stars: number | null,
+  copy: MarketplaceCopy,
 ): CliHeaderFact[] {
   const facts: CliHeaderFact[] = [];
   if (detail.category) {
@@ -224,7 +228,7 @@ function cliHeaderFacts(
     facts.push({ label: detail.language });
   }
   if (detail.isOfficial) {
-    facts.push({ label: "Official", accent: true });
+    facts.push({ label: copy.detail.cli.official, accent: true });
   }
   if (detail.isTui) {
     facts.push({ label: "TUI" });
@@ -236,7 +240,7 @@ function cliHeaderFacts(
     facts.push({ label: "Skill" });
   }
   if (stars != null) {
-    facts.push({ label: `${formatMarketplaceStars(stars)} stars` });
+    facts.push({ label: copy.detail.cli.stars(formatMarketplaceStars(stars)) });
   }
   return facts;
 }
@@ -245,30 +249,32 @@ function cliSourceLinks({
   marketplaceUrl,
   githubUrl,
   websiteUrl,
+  copy,
 }: {
   marketplaceUrl: string;
   githubUrl: string | null;
   websiteUrl: string | null;
+  copy: MarketplaceCopy;
 }): DetailSourceLink[] {
   const links: DetailSourceLink[] = [];
   if (githubUrl) {
     links.push({
       href: githubUrl,
-      label: "Repo",
+      label: copy.detail.cli.repo,
       kind: "repo",
     });
   }
   if (websiteUrl) {
     links.push({
       href: websiteUrl,
-      label: "Website",
+      label: copy.detail.cli.website,
       kind: "website",
     });
   }
   if (links.length === 0) {
     links.push({
       href: marketplaceUrl,
-      label: "CLIs.dev",
+      label: copy.detail.cli.clisDev,
       kind: "marketplace",
     });
   }

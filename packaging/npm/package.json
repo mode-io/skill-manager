@@ -1,7 +1,7 @@
 {
   "name": "@mode-io/skill-manager",
-  "version": "0.2.1",
-  "description": "Public macOS installer wrapper for the Mode IO skill-manager native release artifact.",
+  "version": "0.3.1",
+  "description": "Public macOS/Linux installer wrapper for the Mode IO skill-manager native release artifact.",
   "license": "MIT",
   "private": false,
   "bin": {
@@ -15,6 +15,7 @@
   },
   "files": [
     "LICENSE",
+    "release-targets.json",
     "bin",
     "scripts"
   ],
@@ -28,7 +29,8 @@
     "url": "https://github.com/mode-io/skill-manager/issues"
   },
   "os": [
-    "darwin"
+    "darwin",
+    "linux"
   ],
   "cpu": [
     "arm64",

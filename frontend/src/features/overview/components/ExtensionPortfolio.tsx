@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import type { OverviewExtensionKind } from "../../../app/capability-registry";
+import { useOverviewCopy } from "../i18n";
 
 interface ExtensionPortfolioProps {
   extensions: OverviewExtensionKind[];
@@ -10,10 +11,12 @@ interface ExtensionPortfolioProps {
 }
 
 export function ExtensionPortfolio({ extensions, loading }: ExtensionPortfolioProps) {
+  const copy = useOverviewCopy();
+
   return (
     <section className="overview-section" aria-labelledby="overview-extensions-title">
       <div className="overview-section__head">
-        <h2 id="overview-extensions-title">Extensions</h2>
+        <h2 id="overview-extensions-title">{copy.sections.extensions}</h2>
       </div>
       <div className="overview-row-panel">
         {extensions.map((extension) => (
