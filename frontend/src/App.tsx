@@ -10,6 +10,7 @@ import { invalidateCapabilityQueries } from "./app/capability-registry";
 import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
 import SkillsNeedsReviewPage from "./features/skills/screens/SkillsNeedsReviewPage";
 import SkillsInUsePage from "./features/skills/screens/SkillsInUsePage";
+import ScanConfigPage from "./features/skills/screens/ScanConfigPage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
 
 const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
@@ -80,6 +81,7 @@ function AppContent() {
           </Route>
 
           <Route path="mcp" element={<Navigate to="/mcp/use" replace />} />
+          <Route path="scan-config" element={<ScanConfigPage />} />
           <Route
             path="mcp/use"
             element={

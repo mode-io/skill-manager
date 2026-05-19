@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Columns3, FolderPlus, LayoutGrid, Rows3 } from "lucide-react";
+import { Columns3, FolderPlus, LayoutGrid, Rows3, Settings2, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { SkillActionConfirmDialog } from "../components/dialogs/SkillActionConfirmDialog";
@@ -12,6 +12,7 @@ import { ViewModeToggle, type ViewModeOption } from "../../../components/ViewMod
 import { BoardView } from "../components/board/BoardView";
 import { SkillsInUseList } from "../components/cards/SkillsInUseList";
 import { MatrixView } from "../components/matrix/MatrixView";
+import { ScanView } from "../components/scan/ScanView";
 import { SkillsEmptyState } from "../components/pane/SkillsEmptyState";
 import { useSkillsInUseSession } from "../model/session";
 import {
@@ -19,6 +20,7 @@ import {
   hasActiveSkillsInUseFilters,
 } from "../model/selectors";
 import { useInUseViewMode, type InUseViewMode } from "../model/useInUseViewMode";
+import { useSkillScan } from "../model/use-skill-scan";
 import { useSkillsWorkspace } from "../model/workspace-context";
 import type { SkillListRow } from "../model/types";
 
@@ -35,6 +37,7 @@ const VIEW_MODE_OPTIONS: readonly ViewModeOption<InUseViewMode>[] = [
   { value: "grid", label: "Grid", icon: LayoutGrid },
   { value: "board", label: "Board", icon: Columns3 },
   { value: "matrix", label: "Matrix", icon: Rows3 },
+  { value: "scan", label: "Scan", icon: Shield },
 ];
 
 function countEnabledCells(row: SkillListRow): number {
@@ -71,6 +74,20 @@ export default function SkillsInUsePage() {
   const { toast } = useToast();
   const [pill, setPill] = useState<InUsePillValue>("all");
   const [viewMode, setViewMode] = useInUseViewMode();
+  const [showScanConfig, setShowScanConfig] = useState(false);
+  const {
+    scanState: scanStateMap,
+    getScanState,
+    scanSkill,
+    llmConfig,
+    configs,
+    activeConfigId,
+    addConfig,
+    editConfig,
+    selectConfig,
+    validateConfig,
+    revealConfigApiKey,
+  } = useSkillScan();
   const [pendingConfirm, setPendingConfirm] = useState<{
     action: "unmanage" | "delete";
     skillRef: string;
@@ -180,7 +197,17 @@ export default function SkillsInUsePage() {
           searchPlaceholder="Search by name, tag, description..."
           searchLabel="Search skills in use"
           trailing={
-            viewMode === "grid" ? (
+            viewMode === "scan" ? (
+              <button
+                type="button"
+                className="icon-button scan-settings-trigger"
+                aria-label="Configure LLM scan"
+                title="Configure LLM scan"
+                onClick={() => setShowScanConfig(true)}
+              >
+                <Settings2 size={15} aria-hidden="true" />
+              </button>
+            ) : viewMode === "grid" ? (
               <SelectionMenu
                 value={pill}
                 options={pillOptions}
@@ -223,6 +250,25 @@ export default function SkillsInUsePage() {
                 onOpenSkill={onOpenSkill}
                 onToggleChecked={onToggleMultiSelect}
                 onToggleCell={onToggleCell}
+              />
+            ) : viewMode === "scan" ? (
+              <ScanView
+                rows={rows}
+                scanStateMap={scanStateMap}
+                getScanState={getScanState}
+                llmConfig={llmConfig}
+                configs={configs}
+                activeConfigId={activeConfigId}
+                showConfig={showScanConfig}
+                onOpenSkill={onOpenSkill}
+                onScanSkill={scanSkill}
+                onOpenConfig={() => setShowScanConfig(true)}
+                onCloseConfig={() => setShowScanConfig(false)}
+                onSelectConfig={selectConfig}
+                onAddConfig={addConfig}
+                onEditConfig={editConfig}
+                onRevealApiKey={revealConfigApiKey}
+                onValidateConfig={validateConfig}
               />
             ) : (
               <SkillsInUseList

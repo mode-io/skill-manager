@@ -451,6 +451,51 @@
         "title": "CliMarketplacePageResponse",
         "type": "object"
       },
+      "DetectedProviderResponse": {
+        "properties": {
+          "apiKeySource": {
+            "title": "Apikeysource",
+            "type": "string"
+          },
+          "baseUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseurl"
+          },
+          "isAvailable": {
+            "title": "Isavailable",
+            "type": "boolean"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "apiKeySource",
+          "isAvailable"
+        ],
+        "title": "DetectedProviderResponse",
+        "type": "object"
+      },
       "DisableMcpServerRequest": {
         "properties": {
           "harness": {
@@ -615,6 +660,49 @@
           "installToken"
         ],
         "title": "InstallMarketplaceSkillRequest",
+        "type": "object"
+      },
+      "LLMDetectionResponse": {
+        "properties": {
+          "defaultModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultmodel"
+          },
+          "defaultProvider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultprovider"
+          },
+          "hasAnyAvailable": {
+            "title": "Hasanyavailable",
+            "type": "boolean"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/DetectedProviderResponse"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "providers",
+          "hasAnyAvailable"
+        ],
+        "title": "LLMDetectionResponse",
         "type": "object"
       },
       "McpAdoptionIssueResponse": {
@@ -2205,6 +2293,600 @@
           "sourceKind"
         ],
         "title": "ReconcileMcpServerRequest",
+        "type": "object"
+      },
+      "ScanAvailabilityResponse": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "ScanAvailabilityResponse",
+        "type": "object"
+      },
+      "ScanConfigItem": {
+        "properties": {
+          "apiKeyMasked": {
+            "title": "Apikeymasked",
+            "type": "string"
+          },
+          "apiVersion": {
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "awsProfile": {
+            "title": "Awsprofile",
+            "type": "string"
+          },
+          "awsRegion": {
+            "title": "Awsregion",
+            "type": "string"
+          },
+          "baseUrl": {
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "consensusRuns": {
+            "title": "Consensusruns",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "lastValidatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastvalidatedat"
+          },
+          "lastValidationError": {
+            "default": "",
+            "title": "Lastvalidationerror",
+            "type": "string"
+          },
+          "maxTokens": {
+            "title": "Maxtokens",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "baseUrl",
+          "apiKeyMasked",
+          "model",
+          "provider",
+          "apiVersion",
+          "awsRegion",
+          "awsProfile",
+          "maxTokens",
+          "consensusRuns",
+          "isActive"
+        ],
+        "title": "ScanConfigItem",
+        "type": "object"
+      },
+      "ScanConfigListResponse": {
+        "properties": {
+          "activeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activeid"
+          },
+          "configs": {
+            "items": {
+              "$ref": "#/components/schemas/ScanConfigItem"
+            },
+            "title": "Configs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "configs",
+          "activeId"
+        ],
+        "title": "ScanConfigListResponse",
+        "type": "object"
+      },
+      "ScanConfigSaveRequest": {
+        "properties": {
+          "apiKey": {
+            "title": "Apikey",
+            "type": "string"
+          },
+          "apiVersion": {
+            "default": "",
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "awsProfile": {
+            "default": "",
+            "title": "Awsprofile",
+            "type": "string"
+          },
+          "awsRegion": {
+            "default": "",
+            "title": "Awsregion",
+            "type": "string"
+          },
+          "awsSessionToken": {
+            "default": "",
+            "title": "Awssessiontoken",
+            "type": "string"
+          },
+          "baseUrl": {
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "consensusRuns": {
+            "default": 1,
+            "title": "Consensusruns",
+            "type": "integer"
+          },
+          "maxTokens": {
+            "default": 8192,
+            "title": "Maxtokens",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "default": "",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "baseUrl",
+          "apiKey",
+          "model"
+        ],
+        "title": "ScanConfigSaveRequest",
+        "type": "object"
+      },
+      "ScanConfigSecretResponse": {
+        "properties": {
+          "apiKey": {
+            "title": "Apikey",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "title": "ScanConfigSecretResponse",
+        "type": "object"
+      },
+      "ScanConfigValidateRequest": {
+        "properties": {
+          "apiKey": {
+            "title": "Apikey",
+            "type": "string"
+          },
+          "apiVersion": {
+            "default": "",
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "awsProfile": {
+            "default": "",
+            "title": "Awsprofile",
+            "type": "string"
+          },
+          "awsRegion": {
+            "default": "",
+            "title": "Awsregion",
+            "type": "string"
+          },
+          "awsSessionToken": {
+            "default": "",
+            "title": "Awssessiontoken",
+            "type": "string"
+          },
+          "baseUrl": {
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "consensusRuns": {
+            "default": 1,
+            "title": "Consensusruns",
+            "type": "integer"
+          },
+          "existingConfigId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existingconfigid"
+          },
+          "maxTokens": {
+            "default": 8192,
+            "title": "Maxtokens",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "default": "",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "baseUrl",
+          "apiKey",
+          "model"
+        ],
+        "title": "ScanConfigValidateRequest",
+        "type": "object"
+      },
+      "ScanConfigValidationResponse": {
+        "properties": {
+          "durationMs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Durationms"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          }
+        },
+        "required": [
+          "ok",
+          "message"
+        ],
+        "title": "ScanConfigValidationResponse",
+        "type": "object"
+      },
+      "ScanFindingResponse": {
+        "properties": {
+          "analyzer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyzer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "filePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filepath"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lineNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linenumber"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Metadata",
+            "type": "object"
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation"
+          },
+          "ruleId": {
+            "title": "Ruleid",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snippet"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ruleId",
+          "category",
+          "severity",
+          "title",
+          "description"
+        ],
+        "title": "ScanFindingResponse",
+        "type": "object"
+      },
+      "ScanOptionsRequest": {
+        "properties": {
+          "awsProfile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awsprofile"
+          },
+          "awsRegion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awsregion"
+          },
+          "awsSessionToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awssessiontoken"
+          },
+          "llmApiKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmapikey"
+          },
+          "llmApiVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmapiversion"
+          },
+          "llmBaseUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmbaseurl"
+          },
+          "llmConsensusRuns": {
+            "default": 1,
+            "title": "Llmconsensusruns",
+            "type": "integer"
+          },
+          "llmMaxTokens": {
+            "default": 8192,
+            "title": "Llmmaxtokens",
+            "type": "integer"
+          },
+          "llmModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmmodel"
+          },
+          "llmProvider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmprovider"
+          },
+          "useLlm": {
+            "default": true,
+            "title": "Usellm",
+            "type": "boolean"
+          }
+        },
+        "title": "ScanOptionsRequest",
+        "type": "object"
+      },
+      "ScanResultResponse": {
+        "properties": {
+          "analyzersUsed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Analyzersused",
+            "type": "array"
+          },
+          "durationSeconds": {
+            "title": "Durationseconds",
+            "type": "number"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/ScanFindingResponse"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "findingsCount": {
+            "title": "Findingscount",
+            "type": "integer"
+          },
+          "isSafe": {
+            "title": "Issafe",
+            "type": "boolean"
+          },
+          "maxSeverity": {
+            "title": "Maxseverity",
+            "type": "string"
+          },
+          "skillName": {
+            "title": "Skillname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skillName",
+          "isSafe",
+          "maxSeverity",
+          "findingsCount",
+          "findings",
+          "analyzersUsed",
+          "durationSeconds"
+        ],
+        "title": "ScanResultResponse",
         "type": "object"
       },
       "SetHarnessSupportRequest": {
@@ -4323,6 +5005,350 @@
           }
         },
         "summary": "List Unmanaged By Server"
+      }
+    },
+    "/api/scan/availability": {
+      "get": {
+        "operationId": "check_scan_availability_api_scan_availability_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanAvailabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Check Scan Availability"
+      }
+    },
+    "/api/scan/configs": {
+      "get": {
+        "operationId": "list_scan_configs_api_scan_configs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanConfigListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Scan Configs"
+      },
+      "post": {
+        "operationId": "create_scan_config_api_scan_configs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanConfigSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanConfigItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Scan Config"
+      }
+    },
+    "/api/scan/configs/validate": {
+      "post": {
+        "operationId": "validate_scan_config_api_scan_configs_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanConfigValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanConfigValidationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Scan Config"
+      }
+    },
+    "/api/scan/configs/{config_id}": {
+      "delete": {
+        "operationId": "delete_scan_config_api_scan_configs__config_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "config_id",
+            "required": true,
+            "schema": {
+              "title": "Config Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Scan Config"
+      },
+      "put": {
+        "operationId": "update_scan_config_api_scan_configs__config_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "config_id",
+            "required": true,
+            "schema": {
+              "title": "Config Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanConfigSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanConfigItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Scan Config"
+      }
+    },
+    "/api/scan/configs/{config_id}/active": {
+      "put": {
+        "operationId": "set_active_scan_config_api_scan_configs__config_id__active_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "config_id",
+            "required": true,
+            "schema": {
+              "title": "Config Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Active Scan Config"
+      }
+    },
+    "/api/scan/configs/{config_id}/secret": {
+      "get": {
+        "operationId": "reveal_scan_config_secret_api_scan_configs__config_id__secret_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "config_id",
+            "required": true,
+            "schema": {
+              "title": "Config Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanConfigSecretResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reveal Scan Config Secret"
+      }
+    },
+    "/api/scan/llm/detection": {
+      "get": {
+        "operationId": "detect_llm_api_scan_llm_detection_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMDetectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Detect Llm"
+      }
+    },
+    "/api/scan/skills/{skill_ref}": {
+      "post": {
+        "operationId": "scan_skill_api_scan_skills__skill_ref__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_ref",
+            "required": true,
+            "schema": {
+              "title": "Skill Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ScanOptionsRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scan Skill"
       }
     },
     "/api/settings": {

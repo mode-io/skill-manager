@@ -139,3 +139,9 @@ class SkillsQueryService:
 
     def can_stop_managing(self, entry: InventoryEntry) -> bool:
         return can_stop_managing(entry)
+
+    def get_skill_path(self, skill_ref: str) -> Path | None:
+        entry = self.inventory().find(skill_ref)
+        if entry is None:
+            return None
+        return self.resolve_detail_package_root(entry)

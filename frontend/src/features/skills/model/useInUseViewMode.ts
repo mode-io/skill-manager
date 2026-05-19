@@ -1,11 +1,11 @@
 import { usePersistentViewMode } from "../../../lib/usePersistentViewMode";
 
-export type InUseViewMode = "grid" | "board" | "matrix";
+export type InUseViewMode = "grid" | "board" | "matrix" | "scan";
 
 const STORAGE_KEY = "skillmgr.inUse.view";
 
 function isValidMode(value: unknown): value is InUseViewMode {
-  return value === "grid" || value === "board" || value === "matrix";
+  return value === "grid" || value === "board" || value === "matrix" || value === "scan";
 }
 
 function normalizeLegacyMode(value: unknown): InUseViewMode | null {

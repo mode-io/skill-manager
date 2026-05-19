@@ -62,6 +62,7 @@ export function useSidebarModel(): SidebarModel {
               label: productLanguage.needsReview,
               count: needsReviewSkills,
             },
+            { key: "skills-scan-config", to: skillsRoutes.scanConfig, label: "Scan Config" },
           ],
         },
         {

@@ -363,6 +363,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/scan/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check Scan Availability */
+        get: operations["check_scan_availability_api_scan_availability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scan Configs */
+        get: operations["list_scan_configs_api_scan_configs_get"];
+        put?: never;
+        /** Create Scan Config */
+        post: operations["create_scan_config_api_scan_configs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/configs/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Scan Config */
+        post: operations["validate_scan_config_api_scan_configs_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/configs/{config_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Scan Config */
+        put: operations["update_scan_config_api_scan_configs__config_id__put"];
+        post?: never;
+        /** Delete Scan Config */
+        delete: operations["delete_scan_config_api_scan_configs__config_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/configs/{config_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Active Scan Config */
+        put: operations["set_active_scan_config_api_scan_configs__config_id__active_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/configs/{config_id}/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reveal Scan Config Secret */
+        get: operations["reveal_scan_config_secret_api_scan_configs__config_id__secret_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/llm/detection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detect Llm */
+        get: operations["detect_llm_api_scan_llm_detection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scan/skills/{skill_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scan Skill */
+        post: operations["scan_skill_api_scan_skills__skill_ref__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings": {
         parameters: {
             query?: never;
@@ -799,6 +937,19 @@ export interface components {
             /** Nextoffset */
             nextOffset?: number | null;
         };
+        /** DetectedProviderResponse */
+        DetectedProviderResponse: {
+            /** Apikeysource */
+            apiKeySource: string;
+            /** Baseurl */
+            baseUrl?: string | null;
+            /** Isavailable */
+            isAvailable: boolean;
+            /** Model */
+            model?: string | null;
+            /** Provider */
+            provider: string;
+        };
         /** DisableMcpServerRequest */
         DisableMcpServerRequest: {
             /**
@@ -867,6 +1018,17 @@ export interface components {
         InstallMarketplaceSkillRequest: {
             /** Installtoken */
             installToken: string;
+        };
+        /** LLMDetectionResponse */
+        LLMDetectionResponse: {
+            /** Defaultmodel */
+            defaultModel?: string | null;
+            /** Defaultprovider */
+            defaultProvider?: string | null;
+            /** Hasanyavailable */
+            hasAnyAvailable: boolean;
+            /** Providers */
+            providers: components["schemas"]["DetectedProviderResponse"][];
         };
         /** McpAdoptionIssueResponse */
         McpAdoptionIssueResponse: {
@@ -1351,6 +1513,249 @@ export interface components {
              * @enum {string}
              */
             sourceKind: "managed" | "harness";
+        };
+        /** ScanAvailabilityResponse */
+        ScanAvailabilityResponse: {
+            /** Available */
+            available: boolean;
+        };
+        /** ScanConfigItem */
+        ScanConfigItem: {
+            /** Apikeymasked */
+            apiKeyMasked: string;
+            /** Apiversion */
+            apiVersion: string;
+            /** Awsprofile */
+            awsProfile: string;
+            /** Awsregion */
+            awsRegion: string;
+            /** Baseurl */
+            baseUrl: string;
+            /** Consensusruns */
+            consensusRuns: number;
+            /** Id */
+            id: number;
+            /** Isactive */
+            isActive: boolean;
+            /** Lastvalidatedat */
+            lastValidatedAt?: string | null;
+            /**
+             * Lastvalidationerror
+             * @default
+             */
+            lastValidationError: string;
+            /** Maxtokens */
+            maxTokens: number;
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /** Provider */
+            provider: string;
+        };
+        /** ScanConfigListResponse */
+        ScanConfigListResponse: {
+            /** Activeid */
+            activeId: number | null;
+            /** Configs */
+            configs: components["schemas"]["ScanConfigItem"][];
+        };
+        /** ScanConfigSaveRequest */
+        ScanConfigSaveRequest: {
+            /** Apikey */
+            apiKey: string;
+            /**
+             * Apiversion
+             * @default
+             */
+            apiVersion: string;
+            /**
+             * Awsprofile
+             * @default
+             */
+            awsProfile: string;
+            /**
+             * Awsregion
+             * @default
+             */
+            awsRegion: string;
+            /**
+             * Awssessiontoken
+             * @default
+             */
+            awsSessionToken: string;
+            /** Baseurl */
+            baseUrl: string;
+            /**
+             * Consensusruns
+             * @default 1
+             */
+            consensusRuns: number;
+            /**
+             * Maxtokens
+             * @default 8192
+             */
+            maxTokens: number;
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /**
+             * Provider
+             * @default
+             */
+            provider: string;
+        };
+        /** ScanConfigSecretResponse */
+        ScanConfigSecretResponse: {
+            /** Apikey */
+            apiKey: string;
+        };
+        /** ScanConfigValidateRequest */
+        ScanConfigValidateRequest: {
+            /** Apikey */
+            apiKey: string;
+            /**
+             * Apiversion
+             * @default
+             */
+            apiVersion: string;
+            /**
+             * Awsprofile
+             * @default
+             */
+            awsProfile: string;
+            /**
+             * Awsregion
+             * @default
+             */
+            awsRegion: string;
+            /**
+             * Awssessiontoken
+             * @default
+             */
+            awsSessionToken: string;
+            /** Baseurl */
+            baseUrl: string;
+            /**
+             * Consensusruns
+             * @default 1
+             */
+            consensusRuns: number;
+            /** Existingconfigid */
+            existingConfigId?: number | null;
+            /**
+             * Maxtokens
+             * @default 8192
+             */
+            maxTokens: number;
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /**
+             * Provider
+             * @default
+             */
+            provider: string;
+        };
+        /** ScanConfigValidationResponse */
+        ScanConfigValidationResponse: {
+            /** Durationms */
+            durationMs?: number | null;
+            /** Errorcode */
+            errorCode?: string | null;
+            /** Message */
+            message: string;
+            /** Model */
+            model?: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Provider */
+            provider?: string | null;
+        };
+        /** ScanFindingResponse */
+        ScanFindingResponse: {
+            /** Analyzer */
+            analyzer?: string | null;
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Filepath */
+            filePath?: string | null;
+            /** Id */
+            id: string;
+            /** Linenumber */
+            lineNumber?: number | null;
+            /**
+             * Metadata
+             * @default {}
+             */
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Remediation */
+            remediation?: string | null;
+            /** Ruleid */
+            ruleId: string;
+            /** Severity */
+            severity: string;
+            /** Snippet */
+            snippet?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** ScanOptionsRequest */
+        ScanOptionsRequest: {
+            /** Awsprofile */
+            awsProfile?: string | null;
+            /** Awsregion */
+            awsRegion?: string | null;
+            /** Awssessiontoken */
+            awsSessionToken?: string | null;
+            /** Llmapikey */
+            llmApiKey?: string | null;
+            /** Llmapiversion */
+            llmApiVersion?: string | null;
+            /** Llmbaseurl */
+            llmBaseUrl?: string | null;
+            /**
+             * Llmconsensusruns
+             * @default 1
+             */
+            llmConsensusRuns: number;
+            /**
+             * Llmmaxtokens
+             * @default 8192
+             */
+            llmMaxTokens: number;
+            /** Llmmodel */
+            llmModel?: string | null;
+            /** Llmprovider */
+            llmProvider?: string | null;
+            /**
+             * Usellm
+             * @default true
+             */
+            useLlm: boolean;
+        };
+        /** ScanResultResponse */
+        ScanResultResponse: {
+            /** Analyzersused */
+            analyzersUsed: string[];
+            /** Durationseconds */
+            durationSeconds: number;
+            /** Findings */
+            findings: components["schemas"]["ScanFindingResponse"][];
+            /** Findingscount */
+            findingsCount: number;
+            /** Issafe */
+            isSafe: boolean;
+            /** Maxseverity */
+            maxSeverity: string;
+            /** Skillname */
+            skillName: string;
         };
         /** SetHarnessSupportRequest */
         SetHarnessSupportRequest: {
@@ -2419,6 +2824,295 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["McpUnmanagedByServerResponse"];
+                };
+            };
+        };
+    };
+    check_scan_availability_api_scan_availability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanAvailabilityResponse"];
+                };
+            };
+        };
+    };
+    list_scan_configs_api_scan_configs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanConfigListResponse"];
+                };
+            };
+        };
+    };
+    create_scan_config_api_scan_configs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanConfigSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanConfigItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_scan_config_api_scan_configs_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanConfigValidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanConfigValidationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_scan_config_api_scan_configs__config_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanConfigSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanConfigItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_scan_config_api_scan_configs__config_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_active_scan_config_api_scan_configs__config_id__active_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reveal_scan_config_secret_api_scan_configs__config_id__secret_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanConfigSecretResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detect_llm_api_scan_llm_detection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LLMDetectionResponse"];
+                };
+            };
+        };
+    };
+    scan_skill_api_scan_skills__skill_ref__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ScanOptionsRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

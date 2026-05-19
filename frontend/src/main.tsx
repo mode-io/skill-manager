@@ -16,6 +16,7 @@ import "./features/settings/styles/settings.css";
 import "./features/slash-commands/styles/slash-commands.css";
 import "./features/skills/styles/detail.css";
 import "./features/skills/styles/board.css";
+import "./features/skills/styles/scan.css";
 import "./components/matrix/matrix.css";
 import "./features/marketplace/styles/panes.css";
 import "./features/marketplace/styles/mcp-detail.css";

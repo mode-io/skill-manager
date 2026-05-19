@@ -22,5 +22,6 @@ export type {
 export const skillsRoutes = {
   inUse: "/skills/use",
   needsReview: "/skills/review",
+  scanConfig: "/scan-config",
   marketplace: "/marketplace/skills",
 } as const;
