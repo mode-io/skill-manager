@@ -4,6 +4,8 @@ import { ArrowRight, Cpu, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-react"
 
 import type { ScanConfigItem, ScanConfigValidationResponse } from "../../../../api/scan";
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
+import { useLocale } from "../../../../i18n";
+import { useSkillsCopy, type SkillsCopy } from "../../i18n";
 import type { LLMScanConfigInput } from "../../model/use-skill-scan";
 
 type ScanConfigEditorMode = "create" | "edit";
@@ -27,13 +29,9 @@ interface ConfigFormState {
 }
 
 type ConfigFormField = keyof ConfigFormState;
+type ScanConfigCopy = SkillsCopy["inUse"]["scan"]["config"];
 
-const REQUIRED_FIELDS: Array<{ key: ConfigFormField; label: string }> = [
-  { key: "name", label: "Configuration name" },
-  { key: "baseUrl", label: "API Base URL" },
-  { key: "apiKey", label: "API Key" },
-  { key: "model", label: "Model" },
-];
+const REQUIRED_FIELDS: ConfigFormField[] = ["name", "baseUrl", "apiKey", "model"];
 const HIDDEN_API_KEY_PLACEHOLDER = "x".repeat(64);
 
 function emptyForm(): ConfigFormState {
@@ -54,11 +52,11 @@ function formFromConfig(config: ScanConfigItem): ConfigFormState {
   };
 }
 
-function formatDateTime(value: string | null): string {
-  if (!value) return "Not validated";
+function formatDateTime(value: string | null, locale: string, fallback: string): string {
+  if (!value) return fallback;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not validated";
-  return new Intl.DateTimeFormat("en", {
+  if (Number.isNaN(date.getTime())) return fallback;
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
@@ -66,11 +64,15 @@ function formatDateTime(value: string | null): string {
   }).format(date);
 }
 
-function missingRequiredFields(form: ConfigFormState, mode: ScanConfigEditorMode): string[] {
+function missingRequiredFields(
+  form: ConfigFormState,
+  mode: ScanConfigEditorMode,
+  labels: ScanConfigCopy["fields"],
+): string[] {
   return REQUIRED_FIELDS
-    .filter(({ key }) => mode === "create" || key !== "apiKey")
-    .filter(({ key }) => form[key].trim() === "")
-    .map(({ label }) => label);
+    .filter((key) => mode === "create" || key !== "apiKey")
+    .filter((key) => form[key].trim() === "")
+    .map((key) => labels[key]);
 }
 
 function formChanged(form: ConfigFormState, config: ScanConfigItem | null, savedApiKey: string | null): boolean {
@@ -170,6 +172,8 @@ export function ScanConfigDetailModal({
   onRevealApiKey,
   onValidateConfig,
 }: ScanConfigDetailModalProps) {
+  const { locale } = useLocale();
+  const copy = useSkillsCopy().inUse.scan.config;
   const headingId = useId();
   const [form, setForm] = useState<ConfigFormState>(emptyForm);
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
@@ -214,19 +218,19 @@ export function ScanConfigDetailModal({
     };
   }, [config, mode, onRevealApiKey, open]);
 
-  const missingFields = useMemo(() => missingRequiredFields(form, mode), [form, mode]);
+  const missingFields = useMemo(() => missingRequiredFields(form, mode, copy.fields), [copy, form, mode]);
   const isFormValid = missingFields.length === 0;
   const isDirty = useMemo(
     () => (mode === "edit" ? formChanged(form, config, savedApiKey) : formChanged(form, null, null)),
     [config, form, mode, savedApiKey],
   );
-  const title = mode === "edit" ? "Update configuration" : "New configuration";
+  const title = mode === "edit" ? copy.editTitle : copy.createTitle;
   const apiKeyHint = mode === "edit"
-    ? `Leave blank to keep the saved API key${config?.apiKeyMasked ? ` (${config.apiKeyMasked})` : ""}`
-    : "Stored in local SQLite; lists only show a masked value";
+    ? copy.hints.apiKeyEdit(config?.apiKeyMasked ?? null)
+    : copy.hints.apiKeyCreate;
   const lastValidationLabel = config?.lastValidationError
-    ? "Failed"
-    : formatDateTime(config?.lastValidatedAt ?? null);
+    ? copy.validation.failed
+    : formatDateTime(config?.lastValidatedAt ?? null, locale, copy.validation.notValidated);
   const canSubmit = isFormValid && isDirty && !isSaving && !isTesting && !isRevealing;
 
   function resetFeedback() {
@@ -332,11 +336,11 @@ export function ScanConfigDetailModal({
           <Dialog.Title asChild>
             <span className="u-visually-hidden">{title}</span>
           </Dialog.Title>
-          <Dialog.Description className="u-visually-hidden">Configure LLM API key</Dialog.Description>
+          <Dialog.Description className="u-visually-hidden">{copy.description}</Dialog.Description>
           <DetailHeader
             title={<h2 id={headingId}>{title}</h2>}
-            meta={<p className="scan-config-detail-modal__description">Configure LLM API key</p>}
-            closeLabel="Close scan configuration"
+            meta={<p className="scan-config-detail-modal__description">{copy.description}</p>}
+            closeLabel={copy.close}
             onClose={onClose}
           />
           <form className="scan-config-detail-modal__form" onSubmit={handleSubmit}>
@@ -345,42 +349,42 @@ export function ScanConfigDetailModal({
                 <div className="scan-config-panel__form-grid">
                   <ConfigField
                     field="name"
-                    label="Configuration name"
+                    label={copy.fields.name}
                     value={form.name}
-                    placeholder="e.g. Volcano Engine, Anthropic"
-                    hint="Shown in the saved configuration list"
+                    placeholder={copy.placeholders.name}
+                    hint={copy.hints.name}
                     autoComplete="off"
                     onChange={updateField}
                   />
                   <ConfigField
                     field="model"
-                    label="Model"
+                    label={copy.fields.model}
                     icon={<Cpu size={14} />}
                     value={form.model}
-                    placeholder="claude-3-5-sonnet-20241022"
-                    hint="Model used for scan requests"
+                    placeholder={copy.placeholders.model}
+                    hint={copy.hints.model}
                     autoComplete="off"
                     onChange={updateField}
                   />
                   <ConfigField
                     field="baseUrl"
-                    label="API Base URL"
+                    label={copy.fields.baseUrl}
                     icon={<Link2 size={14} />}
                     type="url"
                     value={form.baseUrl}
-                    placeholder="https://api.anthropic.com"
-                    hint="The provider is inferred from this URL"
+                    placeholder={copy.placeholders.baseUrl}
+                    hint={copy.hints.baseUrl}
                     autoComplete="url"
                     wide
                     onChange={updateField}
                   />
                   <ConfigField
                     field="apiKey"
-                    label="API Key"
+                    label={copy.fields.apiKey}
                     icon={<Key size={14} />}
                     type={apiKeyVisible ? "text" : "password"}
                     value={form.apiKey}
-                    placeholder={mode === "edit" ? "Leave blank to keep existing key" : "sk-..."}
+                    placeholder={mode === "edit" ? copy.placeholders.apiKeyEdit : copy.placeholders.apiKeyCreate}
                     hint={apiKeyHint}
                     autoComplete="new-password"
                     required={mode === "create"}
@@ -391,7 +395,7 @@ export function ScanConfigDetailModal({
                         type="button"
                         className="scan-config-panel__input-action"
                         disabled={isRevealing}
-                        aria-label={apiKeyVisible ? "Hide API key" : "Show API key"}
+                        aria-label={apiKeyVisible ? copy.actions.hideApiKey : copy.actions.showApiKey}
                         onClick={handleApiKeyVisibility}
                       >
                         {apiKeyVisible ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
@@ -401,8 +405,8 @@ export function ScanConfigDetailModal({
                 </div>
 
                 {mode === "edit" && config ? (
-                  <section className="scan-config-detail-modal__validation" aria-label="Last validation">
-                    <span className="scan-config-detail-modal__validation-label">Last validation</span>
+                  <section className="scan-config-detail-modal__validation" aria-label={copy.validation.label}>
+                    <span className="scan-config-detail-modal__validation-label">{copy.validation.label}</span>
                     <span
                       className={
                         config.lastValidationError
@@ -420,17 +424,17 @@ export function ScanConfigDetailModal({
                 ) : null}
 
                 {!isFormValid && missingFields.length > 0 ? (
-                  <StatusMessage tone="neutral">Missing required fields: {missingFields.join(", ")}</StatusMessage>
+                  <StatusMessage tone="neutral">{copy.validation.missingFields(missingFields)}</StatusMessage>
                 ) : null}
                 {testResult ? (
                   <StatusMessage tone={testResult.ok ? "success" : "error"}>
-                    {testResult.ok ? "Connectivity test passed" : testResult.message}
+                    {testResult.ok ? copy.validation.connectivityPassed : testResult.message}
                   </StatusMessage>
                 ) : null}
                 {saveError ? <StatusMessage tone="error">{saveError}</StatusMessage> : null}
               </div>
             </div>
-            <footer className="scan-config-detail-modal__footer" aria-label="Scan config actions">
+            <footer className="scan-config-detail-modal__footer" aria-label={copy.footerLabel}>
               <button
                 type="button"
                 className="action-pill action-pill--md"
@@ -439,7 +443,7 @@ export function ScanConfigDetailModal({
                 onClick={handleTestConnection}
               >
                 {isTesting ? <Loader2 size={14} className="card-action-spinner" /> : <Link2 size={14} />}
-                {isTesting ? "Testing" : "Test connectivity"}
+                {isTesting ? copy.actions.testing : copy.actions.testConnectivity}
               </button>
               <button
                 type="submit"
@@ -447,11 +451,11 @@ export function ScanConfigDetailModal({
                 disabled={!canSubmit}
                 data-pending={isSaving ? "true" : undefined}
               >
-                {mode === "edit" ? "Update" : "Save"}
+                {mode === "edit" ? copy.actions.update : copy.actions.save}
                 {isSaving ? <Loader2 size={14} className="card-action-spinner" /> : <ArrowRight size={14} />}
               </button>
               <button type="button" className="action-pill action-pill--md" onClick={onClose}>
-                Cancel
+                {copy.actions.cancel}
               </button>
             </footer>
           </form>

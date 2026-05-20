@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LOCALE_STORAGE_KEY } from "../../../i18n";
 import { createRouteFetchMock, okJson } from "../../../test/fetch";
 import { renderWithAppProviders } from "../../../test/render";
 import ScanConfigPage from "./ScanConfigPage";
@@ -77,6 +78,7 @@ describe("ScanConfigPage", () => {
   afterEach(() => {
     fetchMock.mockReset();
     vi.unstubAllGlobals();
+    window.localStorage.clear();
   });
 
   it("orders the active config first and keeps row actions aligned", async () => {
@@ -158,5 +160,29 @@ describe("ScanConfigPage", () => {
     expect(apiKeyInput).toHaveAttribute("type", "text");
     fireEvent.click(screen.getByRole("button", { name: "Hide API key" }));
     expect(apiKeyInput).toHaveAttribute("type", "password");
+  });
+
+  it("localizes the scan configuration editor", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Default")).toBeInTheDocument());
+    fireEvent.click(within(screen.getAllByRole("row")[1]).getByRole("button", { name: "Edit" }));
+
+    expect(await screen.findByRole("heading", { name: "更新配置" })).toBeInTheDocument();
+    expect(screen.getAllByText("配置 LLM API Key").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("配置名称", { selector: "input" })).toBeInTheDocument();
+    expect(screen.getByLabelText("模型", { selector: "input" })).toBeInTheDocument();
+    expect(screen.getByText("显示在已保存配置列表中")).toBeInTheDocument();
+    expect(screen.getByText("用于扫描请求的模型")).toBeInTheDocument();
+    expect(screen.getByLabelText("上次验证")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "测试连接" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "更新" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
+
+    const apiKeyInput = screen.getByLabelText("API Key", { selector: "input" });
+    await waitFor(() => expect(apiKeyInput).toHaveValue("sk-default-full"));
+    fireEvent.click(screen.getByRole("button", { name: "显示 API Key" }));
+    expect(apiKeyInput).toHaveAttribute("type", "text");
   });
 });

@@ -1,10 +1,14 @@
 import { CardSelectCheckbox } from "../../../../components/cards/CardSelectCheckbox";
 import { OverflowTooltipText } from "../../../../components/ui/OverflowTooltipText";
+import type { SkillsCopy } from "../../i18n";
 import type { SkillListRow } from "../../model/types";
 import type { SkillScanState } from "../../model/use-skill-scan";
 
+type ScanCopy = SkillsCopy["inUse"]["scan"];
+
 interface ScanRowProps {
   row: SkillListRow;
+  copy: ScanCopy;
   hasConfig: boolean;
   checked: boolean;
   scanState: SkillScanState;
@@ -17,6 +21,7 @@ interface ScanRowProps {
 
 export function ScanRow({
   row,
+  copy,
   hasConfig,
   checked,
   scanState,
@@ -35,7 +40,7 @@ export function ScanRow({
       <td className="matrix-table__cell matrix-table__cell--checkbox">
         <CardSelectCheckbox
           checked={checked}
-          label={checked ? `Deselect ${row.name}` : `Select ${row.name}`}
+          label={checked ? copy.deselectSkill(row.name) : copy.selectSkill(row.name)}
           disabled={isScanning}
           onToggle={() => onToggleChecked(row.skillRef)}
         />
@@ -66,18 +71,18 @@ export function ScanRow({
               event.stopPropagation();
               onConfigure();
             }}
-            aria-label="Configure LLM scan"
+            aria-label={copy.configure}
           >
-            Configure
+            {copy.configure}
           </button>
         ) : isScanning ? (
           <button
             type="button"
             className="action-pill scan-table__action"
             disabled
-            aria-label={`Scanning ${row.name}`}
+            aria-label={copy.scanningSkill(row.name)}
           >
-            Scanning
+            {copy.scanning}
           </button>
         ) : isDone && scanState.result ? (
           <button
@@ -87,9 +92,9 @@ export function ScanRow({
               event.stopPropagation();
               onViewResult(row.skillRef);
             }}
-            aria-label={`View scan results for ${row.name}`}
+            aria-label={copy.viewResultsFor(row.name)}
           >
-            View Result
+            {copy.viewResult}
           </button>
         ) : isError ? (
           <button
@@ -99,9 +104,9 @@ export function ScanRow({
               event.stopPropagation();
               onScanSkill(row.skillRef);
             }}
-            aria-label={`Retry scan for ${row.name}`}
+            aria-label={copy.retryScanFor(row.name)}
           >
-            Retry
+            {copy.retry}
           </button>
         ) : (
           <button
@@ -111,9 +116,9 @@ export function ScanRow({
               event.stopPropagation();
               onScanSkill(row.skillRef);
             }}
-            aria-label={`Scan ${row.name}`}
+            aria-label={copy.scanSkill(row.name)}
           >
-            Scan
+            {copy.scan}
           </button>
         )}
       </td>

@@ -5,6 +5,7 @@ import { Shield, X } from "lucide-react";
 import { MatrixSortableHeader } from "../../../../components/matrix";
 import type { ScanConfigItem } from "../../../../api/scan";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
+import { useSkillsCopy } from "../../i18n";
 import { ScanRow } from "./ScanRow";
 import { ScanResultModal } from "./ScanResultModal";
 import { ScanConfigDetailModal } from "./ScanConfigDetailModal";
@@ -58,6 +59,7 @@ export function ScanView({
   onRevealApiKey,
   onValidateConfig,
 }: ScanViewProps) {
+  const copy = useSkillsCopy().inUse.scan;
   const [sort, setSort] = useState<SortState>(INITIAL_SORT);
   const [viewingSkillRef, setViewingSkillRef] = useState<string | null>(null);
   const [checkedRefs, setCheckedRefs] = useState<Set<string>>(() => new Set());
@@ -140,7 +142,7 @@ export function ScanView({
   return (
     <>
       <div className="matrix-table-wrapper scan-table-wrapper">
-        <table className="matrix-table scan-table" aria-label="Skills scan table">
+        <table className="matrix-table scan-table" aria-label={copy.tableLabel}>
           <colgroup>
             <col className="matrix-table__col-checkbox" />
             <col className="scan-table__col-identity" />
@@ -148,16 +150,16 @@ export function ScanView({
           </colgroup>
           <thead className="matrix-table__head">
             <tr>
-              <th className="matrix-table__th matrix-table__th--checkbox" aria-label="Select" />
+              <th className="matrix-table__th matrix-table__th--checkbox" aria-label={copy.selectColumn} />
               <MatrixSortableHeader
-                label="Name"
+                label={copy.nameColumn}
                 align="identity"
                 active={sortKeysEqual(sort.key, "name")}
                 direction={sort.direction}
                 onClick={() => requestSort("name")}
               />
-              <th className="matrix-table__th matrix-table__th--action" aria-label="Actions">
-                Action
+              <th className="matrix-table__th matrix-table__th--action" aria-label={copy.actionsColumn}>
+                {copy.actionColumn}
               </th>
             </tr>
           </thead>
@@ -166,6 +168,7 @@ export function ScanView({
               <ScanRow
                 key={row.skillRef}
                 row={row}
+                copy={copy}
                 hasConfig={hasConfig}
                 checked={checkedRefs.has(row.skillRef)}
                 scanState={getScanState(row.skillRef)}
@@ -202,17 +205,17 @@ export function ScanView({
       {checkedRefs.size > 0 ? (
         <div className="bulk-dock" aria-hidden={false}>
           <div className="bulk-dock__fade" />
-          <div className="bulk-bar" data-state="open" role="toolbar" aria-label="Scan bulk actions">
+          <div className="bulk-bar" data-state="open" role="toolbar" aria-label={copy.bulkActions}>
             <div className="bulk-bar__group">
               <span className="bulk-bar__count">
-                <strong>{checkedRefs.size}</strong> selected
+                <strong>{checkedRefs.size}</strong> {copy.selected}
               </span>
               <button
                 type="button"
                 className="bulk-bar__clear"
                 onClick={clearChecked}
                 disabled={anyScanning}
-                aria-label="Clear selection"
+                aria-label={copy.clearSelection}
               >
                 <X size={14} />
               </button>
@@ -226,8 +229,8 @@ export function ScanView({
               onClick={scanCheckedSkills}
               disabled={!canScanChecked}
             >
-              {anyScanning ? <LoadingSpinner size="sm" label="Scanning" /> : <Shield size={15} />}
-              {checkedRows.length === rows.length ? "Scan all" : "Scan selected"}
+              {anyScanning ? <LoadingSpinner size="sm" label={copy.scanning} /> : <Shield size={15} />}
+              {checkedRows.length === rows.length ? copy.scanAll : copy.scanSelected}
             </button>
           </div>
         </div>

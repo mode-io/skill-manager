@@ -14,15 +14,60 @@ export interface ScanPanelLlmConfig {
   baseUrl: string;
 }
 
-function SeverityBadge({ severity }: { severity: string }) {
+export interface ScanPanelCopy {
+  securityReportLabel: string;
+  seriousReportMessage: string;
+  nonSeriousReportMessage: string;
+  findingsCount: (count: number) => string;
+  remediation: string;
+  llmModel: string;
+  configuredModel: string;
+  activeConfiguration: string;
+  notConfigured: string;
+  unknown: string;
+  unnamed: string;
+  noBaseUrl: string;
+  llmModelDetection: string;
+  defaultModel: string;
+  notSpecified: string;
+  availableProviders: string;
+  none: string;
+  noAvailableProviders: string;
+  severityLabel: (severity: string) => string;
+}
+
+const DEFAULT_COPY: ScanPanelCopy = {
+  securityReportLabel: "Security report",
+  seriousReportMessage: SERIOUS_REPORT_MESSAGE,
+  nonSeriousReportMessage: NON_SERIOUS_REPORT_MESSAGE,
+  findingsCount: (count) => `${count} ${count === 1 ? "Finding" : "Findings"}`,
+  remediation: "Remediation",
+  llmModel: "LLM model",
+  configuredModel: "Configured model",
+  activeConfiguration: "Active configuration",
+  notConfigured: "Not configured",
+  unknown: "unknown",
+  unnamed: "Unnamed",
+  noBaseUrl: "No base URL",
+  llmModelDetection: "LLM model detection",
+  defaultModel: "Default model",
+  notSpecified: "Not specified",
+  availableProviders: "Available providers",
+  none: "None",
+  noAvailableProviders:
+    "No available LLM providers detected. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or another supported environment variable.",
+  severityLabel: (severity) => severity,
+};
+
+function SeverityBadge({ severity, copy }: { severity: string; copy: ScanPanelCopy }) {
   return (
     <span className="scan-report__severity" data-severity={severity}>
-      {severity}
+      {copy.severityLabel(severity)}
     </span>
   );
 }
 
-function FindingRow({ finding }: { finding: ScanFinding }) {
+function FindingRow({ finding, copy }: { finding: ScanFinding; copy: ScanPanelCopy }) {
   const [open, setOpen] = useState(false);
   const location = finding.filePath
     ? `${finding.filePath}${finding.lineNumber != null ? `:${finding.lineNumber}` : ""}`
@@ -38,7 +83,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
         <span className="scan-report-finding__chevron">
           {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </span>
-        <SeverityBadge severity={finding.severity} />
+        <SeverityBadge severity={finding.severity} copy={copy} />
         <span className="scan-report-finding__title">{finding.title}</span>
         {location ? (
           <span className="scan-report-finding__location">
@@ -54,7 +99,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
               <p className="scan-report-finding__description">{finding.description}</p>
               {finding.remediation && (
                 <p className="scan-report-finding__remediation">
-                  <strong>Remediation: </strong>{finding.remediation}
+                  <strong>{copy.remediation}: </strong>{finding.remediation}
                 </p>
               )}
               {finding.snippet && (
@@ -73,9 +118,11 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
 export default function ScanPanel({
   result,
   llmConfig,
+  copy = DEFAULT_COPY,
 }: {
   result: ScanResult;
   llmConfig?: ScanPanelLlmConfig | null;
+  copy?: ScanPanelCopy;
 }) {
   const [llmDetection, setLlmDetection] = useState<LLMDetection | null>(null);
 
@@ -99,16 +146,16 @@ export default function ScanPanel({
   );
   const criticalCount = grouped.CRITICAL.length;
   const hasCriticalFindings = criticalCount > 0;
-  const findingsLabel = formatFindingsCount(result.findingsCount);
+  const findingsLabel = copy.findingsCount(result.findingsCount);
 
   return (
-    <section className="scan-report" aria-label="Security report">
+    <section className="scan-report" aria-label={copy.securityReportLabel}>
       <header className="scan-report__hero" data-safe={hasCriticalFindings ? "false" : "true"}>
         <div className="scan-report__status-icon">
           {hasCriticalFindings ? <ShieldAlert size={26} aria-hidden="true" /> : <ShieldCheck size={26} aria-hidden="true" />}
         </div>
         <div className="scan-report__headline">
-          <h3>{hasCriticalFindings ? SERIOUS_REPORT_MESSAGE : NON_SERIOUS_REPORT_MESSAGE}</h3>
+          <h3>{hasCriticalFindings ? copy.seriousReportMessage : copy.nonSeriousReportMessage}</h3>
           <p>
             {result.skillName} - {result.durationSeconds.toFixed(1)}s - {findingsLabel}
           </p>
@@ -119,29 +166,31 @@ export default function ScanPanel({
         <div className="scan-report__llm">
           <div className="scan-report__llm-heading">
             <Cpu size={14} aria-hidden="true" />
-            <span>LLM model</span>
+            <span>{copy.llmModel}</span>
           </div>
           <div className="scan-report__llm-body">
-            <div>Configured model: <strong>{llmConfig.model || "Not configured"}</strong> ({llmConfig.provider || "unknown"})</div>
-            <div>Active configuration: {llmConfig.name || "Unnamed"} - {llmConfig.baseUrl || "No base URL"}</div>
+            <div>
+              {copy.configuredModel}: <strong>{llmConfig.model || copy.notConfigured}</strong> ({llmConfig.provider || copy.unknown})
+            </div>
+            <div>{copy.activeConfiguration}: {llmConfig.name || copy.unnamed} - {llmConfig.baseUrl || copy.noBaseUrl}</div>
           </div>
         </div>
       ) : llmDetection ? (
         <div className="scan-report__llm">
           <div className="scan-report__llm-heading">
             <Cpu size={14} aria-hidden="true" />
-            <span>LLM model detection</span>
+            <span>{copy.llmModelDetection}</span>
           </div>
           {llmDetection.hasAnyAvailable ? (
             <div className="scan-report__llm-body">
-              <div>Default model: <strong>{llmDetection.defaultModel || "Not specified"}</strong> ({llmDetection.defaultProvider || "unknown"})</div>
+              <div>{copy.defaultModel}: <strong>{llmDetection.defaultModel || copy.notSpecified}</strong> ({llmDetection.defaultProvider || copy.unknown})</div>
               <div>
-                Available providers: {llmDetection.providers.filter(p => p.isAvailable).map(p => `${p.provider}${p.model ? ` (${p.model})` : ""}`).join(", ") || "None"}
+                {copy.availableProviders}: {llmDetection.providers.filter(p => p.isAvailable).map(p => `${p.provider}${p.model ? ` (${p.model})` : ""}`).join(", ") || copy.none}
               </div>
             </div>
           ) : (
             <div className="scan-report__llm-body scan-report__llm-body--error">
-              No available LLM providers detected. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or another supported environment variable.
+              {copy.noAvailableProviders}
             </div>
           )}
         </div>
@@ -149,7 +198,7 @@ export default function ScanPanel({
 
       <div className="scan-report__findings">
         {sortedFindings.map((f) => (
-          <FindingRow key={f.id} finding={f} />
+          <FindingRow key={f.id} finding={f} copy={copy} />
         ))}
       </div>
     </section>
@@ -213,8 +262,4 @@ export function ScanStatusIcon({
 function severityRank(severity: string) {
   const rank = SEVERITY_ORDER.indexOf(severity);
   return rank === -1 ? SEVERITY_ORDER.length : rank;
-}
-
-function formatFindingsCount(count: number) {
-  return `${count} ${count === 1 ? "Finding" : "Findings"}`;
 }
