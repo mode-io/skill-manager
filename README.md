@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>A local-first control center for AI extensions.</strong><br />
-  Use, review, and discover Skills, MCP servers, slash commands, and CLI tools across agent harnesses.
+  Use, review, scan, and discover Skills, MCP servers, slash commands, and CLI tools across agent harnesses.
 </p>
 
 <p align="center">
@@ -30,12 +30,14 @@ AI extensions are scattered across harness-specific folders, MCP config files, s
 |---|---|
 | **In use** | Skill Manager controls the item and can enable or disable it across harnesses. |
 | **Needs review** | Skill Manager found local state, config differences, or inventory issues that need a decision. |
+| **Scan** | Run LLM-backed security checks against Skills before trusting them. |
 | **Discover** | Browse marketplaces and preview external tools. |
 
 ## What you can do
 
 - See what is in use, what needs review, and where extensions are active.
 - Adopt local Skills into one shared inventory, then enable or disable them per harness.
+- Scan Skills with a saved LLM provider configuration and review findings before use.
 - Install or adopt MCP server configs, resolve differences, and enable them where supported.
 - Manage reusable slash commands once, then sync them to supported harnesses.
 - Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
@@ -60,6 +62,23 @@ Typical flow:
 4. Update, remove, or delete it from one place.
 
 ![skill-market-skill-matrxi](./assets/skill-manager-skill-matrix.png)
+
+### Skill scanning
+
+Scan Skills with an LLM-backed security review before you rely on them.
+
+Typical flow:
+
+1. Add and validate an LLM scan configuration.
+2. Switch Skills in use to the Scan view.
+3. Run a scan for one Skill, selected Skills, or the full visible list.
+4. Review severity, findings, snippets, and remediation guidance.
+
+![skill-manager-scan-view](./assets/skill-manager-scan-view.svg)
+
+Scan configurations are managed separately so you can save multiple providers, choose one active configuration, and keep API keys masked in list views.
+
+![skill-manager-scan-config](./assets/skill-manager-scan-config.svg)
 
 ### MCP servers
 
@@ -166,6 +185,8 @@ Actions that can change local state include:
 - enabling or disabling a skill for a harness
 - updating a source-backed skill
 - removing or deleting a skill
+- creating, updating, validating, activating, or deleting an LLM scan configuration
+- running a Skill scan, which sends selected Skill context to the configured LLM provider
 - installing an MCP server into a source harness
 - adopting an existing MCP config
 - enabling, disabling, resolving, or uninstalling an MCP server
@@ -181,6 +202,14 @@ App-owned files live under `~/Library/Application Support/skill-manager` on macO
 Before adoption, each harness points at its own local skill folder. After adoption, Skill Manager keeps one canonical package in its shared local store and exposes it to selected harnesses with local links. Disabling a harness removes that harness binding without deleting the package.
 
 ![skill-market-overview](./assets/skill-manager-skill-unification.svg)
+
+### Skill scans
+
+Skill scans build a bounded prompt context from `SKILL.md`, manifest metadata, script and config files, and files referenced by the Skill instructions. Secret-bearing files such as `.env`, private keys, certificates, and credential files are excluded from the prompt context, and large files are skipped when they exceed scanner limits.
+
+The scanner uses the active saved LLM configuration first. If none is active, it can fall back to supported environment variables such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `AZURE_OPENAI_API_KEY`, `AWS_BEDROCK_MODEL`, or `OLLAMA_HOST`.
+
+Scan reports show whether the Skill is safe, the maximum severity, findings, locations, snippets, and remediation text. The frontend caches completed reports in browser local storage so recent results remain visible after navigation.
 
 ### MCP servers
 
@@ -222,6 +251,7 @@ Useful macOS paths:
 - slash command library: `~/Library/Application Support/skill-manager/slash-commands/commands`
 - slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
+- app database and LLM scan configs: `~/Library/Application Support/skill-manager/skill-manager.db`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
 
 Useful Linux paths:
@@ -231,6 +261,7 @@ Useful Linux paths:
 - slash command library: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/commands`
 - slash command sync state: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
+- app database and LLM scan configs: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - app settings: `${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
 
 Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual skill roots with environment variables.

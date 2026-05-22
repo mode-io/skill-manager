@@ -1,0 +1,71 @@
+<svg width="1680" height="630" viewBox="0 0 1680 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Skills in use scan view</title>
+  <desc id="desc">Dark Skill Manager screen showing the Scan view for skills in use, with selectable rows and View Result actions.</desc>
+  <rect width="1680" height="630" fill="#070A0A"/>
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="214" y="66" fill="#F1F0EC" font-size="34" font-weight="700">Skills in use</text>
+    <g transform="translate(1048 40)">
+      <rect width="291" height="36" rx="9" fill="#1C1D22"/>
+      <text x="16" y="24" fill="#8D8983" font-size="15">Grid</text>
+      <text x="81" y="24" fill="#8D8983" font-size="15">Board</text>
+      <text x="157" y="24" fill="#8D8983" font-size="15">Matrix</text>
+      <rect x="220" y="4" width="67" height="28" rx="7" fill="#25262C"/>
+      <text x="239" y="24" fill="#E9E6DF" font-size="15">Scan</text>
+    </g>
+    <g transform="translate(1350 40)">
+      <rect width="136" height="36" rx="18" stroke="#24282D"/>
+      <text x="33" y="24" fill="#8D8983" font-size="15" font-weight="600">Import folder</text>
+    </g>
+    <g transform="translate(214 102)">
+      <rect width="1272" height="40" rx="8" fill="#1B1C21"/>
+      <circle cx="17" cy="20" r="6" stroke="#8A8580" stroke-width="2"/>
+      <path d="M22 25L29 31" stroke="#8A8580" stroke-width="2" stroke-linecap="round"/>
+      <text x="40" y="26" fill="#5F5B57" font-size="17">Search by name, tag, description...</text>
+    </g>
+    <g transform="translate(214 214)">
+      <text x="64" y="24" fill="#D2CFC8" font-size="16" font-weight="700">Name</text>
+      <path d="M112 18L117 13L122 18" stroke="#D2CFC8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1197" y="24" fill="#8A8580" font-size="16" font-weight="700">Action</text>
+      <line x1="0" y1="50" x2="1272" y2="50" stroke="#2B2D31"/>
+      <g transform="translate(0 50)">
+        <rect x="8" y="18" width="14" height="14" rx="3" stroke="#24282D"/>
+        <text x="58" y="28" fill="#D7D4CE" font-size="17" font-weight="700">find-skills</text>
+        <text x="58" y="50" fill="#88837D" font-size="14" font-weight="600">Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X"...</text>
+        <rect x="1166" y="15" width="95" height="28" rx="14" stroke="#2A2D32"/>
+        <text x="1192" y="34" fill="#9B9791" font-size="13" font-weight="700">View Result</text>
+        <line x1="0" y1="70" x2="1272" y2="70" stroke="#24272B"/>
+      </g>
+      <g transform="translate(0 120)">
+        <rect x="8" y="18" width="14" height="14" rx="3" stroke="#24282D"/>
+        <text x="58" y="28" fill="#D7D4CE" font-size="17" font-weight="700">frontend-design</text>
+        <text x="58" y="50" fill="#88837D" font-size="14" font-weight="600">Create distinctive, production-grade frontend interfaces with high design quality.</text>
+        <rect x="1166" y="15" width="95" height="28" rx="14" stroke="#2A2D32"/>
+        <text x="1192" y="34" fill="#9B9791" font-size="13" font-weight="700">View Result</text>
+        <line x1="0" y1="70" x2="1272" y2="70" stroke="#24272B"/>
+      </g>
+      <g transform="translate(0 190)">
+        <rect x="8" y="18" width="14" height="14" rx="3" stroke="#24282D"/>
+        <text x="58" y="28" fill="#D7D4CE" font-size="17" font-weight="700">test2</text>
+        <text x="58" y="50" fill="#88837D" font-size="14" font-weight="600">Earn money by completing web scraping tasks when your computer is idle</text>
+        <rect x="1166" y="15" width="95" height="28" rx="14" stroke="#2A2D32"/>
+        <text x="1192" y="34" fill="#9B9791" font-size="13" font-weight="700">View Result</text>
+        <line x1="0" y1="70" x2="1272" y2="70" stroke="#24272B"/>
+      </g>
+      <g transform="translate(0 260)">
+        <rect x="8" y="18" width="14" height="14" rx="3" stroke="#24282D"/>
+        <text x="58" y="28" fill="#D7D4CE" font-size="17" font-weight="700">ui-ux-pro-max</text>
+        <text x="58" y="50" fill="#88837D" font-size="14" font-weight="600">UI/UX design intelligence for web and mobile. Includes styles, palettes, font pairings, product types, and guidelines.</text>
+        <rect x="1166" y="15" width="95" height="28" rx="14" stroke="#2A2D32"/>
+        <text x="1192" y="34" fill="#9B9791" font-size="13" font-weight="700">View Result</text>
+        <line x1="0" y1="70" x2="1272" y2="70" stroke="#24272B"/>
+      </g>
+      <g transform="translate(0 330)">
+        <rect x="8" y="18" width="14" height="14" rx="3" stroke="#24282D"/>
+        <text x="58" y="28" fill="#D7D4CE" font-size="17" font-weight="700">vulnerable-test-skill</text>
+        <text x="58" y="50" fill="#88837D" font-size="14" font-weight="600">A test skill with intentional security issues for scanner testing.</text>
+        <rect x="1166" y="15" width="95" height="28" rx="14" stroke="#2A2D32"/>
+        <text x="1192" y="34" fill="#9B9791" font-size="13" font-weight="700">View Result</text>
+      </g>
+    </g>
+  </g>
+</svg>

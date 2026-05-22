@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>面向 AI 扩展的本地优先控制中心。</strong><br />
-  在不同 agent harness 中统一使用、确认和发现 Skill、MCP 服务器、slash command 与 CLI 工具。
+  在不同 agent harness 中统一使用、确认、扫描和发现 Skill、MCP 服务器、slash command 与 CLI 工具。
 </p>
 
 <p align="center">
@@ -30,12 +30,14 @@ AI 扩展通常分散在各个 harness 自己的文件夹、MCP 配置文件、s
 |---|---|
 | **使用中** | Skill Manager 正在控制此项目，并可在不同 harness 中启用或停用。 |
 | **待确认** | Skill Manager 发现了本地状态、配置差异或库存问题，需要你先做决定。 |
+| **扫描** | 在信任某个 Skill 之前，使用 LLM 驱动的安全检查进行确认。 |
 | **发现** | 浏览商城，并预览外部工具。 |
 
 ## 你可以做什么
 
 - 查看哪些扩展正在使用、哪些需要确认，以及它们在哪些 harness 中启用。
 - 将本地 Skill 采用到共享库存，再按 harness 启用或停用。
+- 使用保存的 LLM provider 配置扫描 Skill，并在使用前查看发现项。
 - 安装或采用 MCP 服务器配置，解决配置差异，并写入支持的 harness。
 - 统一管理可复用的 slash command，并同步到支持的 harness。
 - 从商城来源发现 Skill、MCP 服务器，以及仅预览的 CLI 工具。
@@ -60,6 +62,23 @@ AI 扩展通常分散在各个 harness 自己的文件夹、MCP 配置文件、s
 4. 从一个地方更新、移除或删除。
 
 ![skill-market-skill-matrxi](./assets/skill-manager-skill-matrix.png)
+
+### Skill 扫描
+
+在依赖某个 Skill 之前，可以使用 LLM 驱动的安全确认流程先扫描它。
+
+典型流程：
+
+1. 添加并验证一个 LLM 扫描配置。
+2. 将使用中的 Skill 切换到扫描视图。
+3. 对单个 Skill、已选 Skill 或当前可见列表运行扫描。
+4. 查看严重程度、发现项、代码片段和修复建议。
+
+![skill-manager-scan-view](./assets/skill-manager-scan-view.svg)
+
+扫描配置单独管理，因此你可以保存多个 provider，选择一个当前配置，并且在列表中只显示隐藏后的 API Key。
+
+![skill-manager-scan-config](./assets/skill-manager-scan-config.svg)
 
 ### MCP 服务器
 
@@ -136,6 +155,8 @@ Skill Manager 是本地配置管理工具。它在你的机器上运行，并读
 - 为某个 harness 启用或停用 Skill
 - 更新带来源信息的 Skill
 - 移除或删除 Skill
+- 创建、更新、验证、激活或删除 LLM 扫描配置
+- 运行 Skill 扫描，这会将所选 Skill 上下文发送给已配置的 LLM provider
 - 将 MCP 服务器安装到来源 harness
 - 采用已有 MCP 配置
 - 启用、停用、解决差异或卸载 MCP 服务器
@@ -151,6 +172,14 @@ Skill Manager 是本地配置管理工具。它在你的机器上运行，并读
 采用之前，各 harness 指向各自的本地 Skill 文件夹。采用之后，Skill Manager 会在共享本地存储中保留一个规范包，并通过本地链接暴露给选定 harness。停用某个 harness 会移除该 harness 绑定，但不会删除包本身。
 
 ![skill-market-overview](./assets/skill-manager-skill-unification.svg)
+
+### Skill 扫描
+
+Skill 扫描会从 `SKILL.md`、manifest 元数据、脚本与配置文件，以及 Skill 指令引用的文件中构建受限 prompt 上下文。`.env`、私钥、证书和 credential 文件等可能包含 secret 的文件会从 prompt 上下文中排除；超过扫描器限制的大文件也会被跳过。
+
+扫描器优先使用当前激活的已保存 LLM 配置。如果没有激活配置，也可以回退到支持的环境变量，例如 `ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`OPENROUTER_API_KEY`、`GEMINI_API_KEY`、`GOOGLE_API_KEY`、`AZURE_OPENAI_API_KEY`、`AWS_BEDROCK_MODEL` 或 `OLLAMA_HOST`。
+
+扫描报告会展示 Skill 是否安全、最高严重程度、发现项、位置、片段和修复建议。前端会将已完成报告缓存在浏览器 localStorage 中，因此最近结果在页面切换后仍可查看。
 
 ### MCP 服务器
 
@@ -192,6 +221,7 @@ CLI marketplace 条目仅用于预览。
 - slash command 库：`~/Library/Application Support/skill-manager/slash-commands/commands`
 - slash command 同步状态：`~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
 - 商城缓存：`~/Library/Application Support/skill-manager/marketplace`
+- 应用数据库和 LLM 扫描配置：`~/Library/Application Support/skill-manager/skill-manager.db`
 - 应用设置：`~/Library/Application Support/skill-manager/settings.json`
 
 常用 Linux 路径：
@@ -201,6 +231,7 @@ CLI marketplace 条目仅用于预览。
 - slash command 库：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/commands`
 - slash command 同步状态：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/sync-state.json`
 - 商城缓存：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
+- 应用数据库和 LLM 扫描配置：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - 应用设置：`${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
 
 大多数用户不需要修改这些位置。如果你在自定义环境中管理 Skill，可以用环境变量覆盖单个 Skill 根目录。
