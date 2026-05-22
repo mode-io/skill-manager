@@ -7,7 +7,7 @@ import logging
 import time
 from pathlib import Path
 
-from ..loader import SkillLoader
+from ..context_builder import PromptContext, PromptContextBuilder
 from ..models import (
     AITECH_TO_CATEGORY,
     Finding,
@@ -17,7 +17,6 @@ from ..models import (
     ThreatCategory,
     VALID_AITECH_CODES,
 )
-from .prompt_builder import PromptBuilder
 from .provider import ProviderConfig
 from .request_handler import LLMRequestHandler
 from .response_parser import ResponseParser
@@ -86,9 +85,8 @@ class LLMAnalyzer:
             rate_limit_delay=rate_limit_delay,
             timeout=timeout,
         )
-        self.prompt_builder = PromptBuilder()
         self.response_parser = ResponseParser()
-        self.loader = SkillLoader()
+        self.context_builder = PromptContextBuilder()
         self.last_error: str | None = None
         self.last_overall_assessment: str = ""
         self.last_primary_threats: list[str] = []
@@ -128,70 +126,43 @@ class LLMAnalyzer:
         except RuntimeError:
             return asyncio.run(self._analyze_async(skill_path))
 
+    def analyze_context(self, context: PromptContext) -> ScanResult:
+        try:
+            asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                return pool.submit(asyncio.run, self._analyze_context_async(context)).result()
+        except RuntimeError:
+            return asyncio.run(self._analyze_context_async(context))
+
     async def _analyze_async(self, skill_path: Path) -> ScanResult:
+        context = self.context_builder.build(skill_path, enrichment_context=self.enrichment_context)
+        return await self._analyze_context_async(context, fallback_skill_name=skill_path.name)
+
+    async def _analyze_context_async(
+        self,
+        context: PromptContext,
+        *,
+        fallback_skill_name: str | None = None,
+    ) -> ScanResult:
         start = time.time()
         findings: list[Finding] = []
-        budget_skipped: list[dict] = []
 
         try:
-            skill = self.loader.load(skill_path)
-
-            # Budget gating for instruction body
-            max_instruction_chars = 50_000
-            instruction_body = skill.instruction_body
-            if len(instruction_body) > max_instruction_chars:
-                budget_skipped.append({
-                    "path": "SKILL.md (instruction body)",
-                    "size": len(instruction_body),
-                    "reason": f"instruction body ({len(instruction_body):,} chars) exceeds limit ({max_instruction_chars:,})",
-                    "threshold_name": "llm_analysis.max_instruction_body_chars",
-                })
-                instruction_body = ""
-
-            # Budget gating for code files
-            max_code_file_chars = 15_000
-            max_total_prompt_chars = 100_000
-            budget_used = len(instruction_body)
-
-            manifest_text = self.prompt_builder.format_manifest(skill.manifest)
-            budget_used += len(manifest_text)
-
-            code_text, code_skipped = self.prompt_builder.format_code_files(
-                skill,
-                max_file_chars=max_code_file_chars,
-                max_total_chars=max(0, max_total_prompt_chars - budget_used),
-            )
-            budget_skipped.extend(code_skipped)
-            budget_used += len(code_text)
-
-            ref_text, ref_skipped = self.prompt_builder.format_referenced_files(
-                skill,
-                max_file_chars=10_000,
-                remaining_budget=max(0, max_total_prompt_chars - budget_used),
-            )
-            budget_skipped.extend(ref_skipped)
-
-            # Emit INFO findings for skipped content
-            for item in budget_skipped:
+            skill = context.skill
+            for item in context.skipped_items:
                 findings.append(Finding(
-                    id=f"llm_budget_{item['path']}",
+                    id=f"llm_budget_{item.path}",
                     rule_id="LLM_CONTEXT_BUDGET_EXCEEDED",
                     category=ThreatCategory.POLICY_VIOLATION,
                     severity=Severity.INFO,
-                    title=f"'{item['path']}' excluded from LLM analysis ({item['size']:,} chars)",
-                    description=item["reason"],
-                    file_path=item["path"],
-                    remediation=f"Increase {item['threshold_name']} in your scan policy to include this content in LLM analysis.",
+                    title=f"'{item.path}' excluded from LLM analysis ({item.size:,} chars)",
+                    description=item.reason,
+                    file_path=item.path,
+                    remediation=f"Increase {item.threshold_name} in your scan policy to include this content in LLM analysis.",
                     analyzer="llm",
                 ))
 
-            # Build prompt with enrichment context
-            prompt, injection_detected = self.prompt_builder.build_analysis_prompt(
-                skill,
-                enrichment_context=self.enrichment_context,
-            )
-
-            if injection_detected:
+            if context.injection_detected:
                 findings.append(Finding(
                     id=f"prompt_injection_{skill.manifest.name}",
                     rule_id="LLM_PROMPT_INJECTION_DETECTED",
@@ -207,7 +178,7 @@ class LLMAnalyzer:
 
             messages = [
                 {"role": "system", "content": _SYSTEM_MESSAGE},
-                {"role": "user", "content": prompt},
+                {"role": "user", "content": context.prompt},
             ]
 
             # When structured output is unavailable (e.g. Anthropic proxy),
@@ -234,10 +205,11 @@ class LLMAnalyzer:
                 findings.extend(await self._consensus_analyze(messages, skill))
 
         except Exception as e:
-            logger.error("LLM analysis failed for %s: %s", skill_path, e)
+            skill_name = fallback_skill_name or context.skill.manifest.name
+            logger.error("LLM analysis failed for %s: %s", skill_name, e)
             self.last_error = str(e)
             findings.append(Finding(
-                id=f"llm_analysis_failed_{skill_path.name}",
+                id=f"llm_analysis_failed_{skill_name}",
                 rule_id="LLM_ANALYSIS_FAILED",
                 category=ThreatCategory.POLICY_VIOLATION,
                 severity=Severity.INFO,
@@ -247,7 +219,7 @@ class LLMAnalyzer:
                 analyzer="llm_analyzer",
                 metadata={"error": str(e), "llm_model": self.provider_config.model},
             ))
-            return ScanResult.from_findings(skill_path.name, findings, ["llm_analyzer"], time.time() - start)
+            return ScanResult.from_findings(skill_name, findings, ["llm_analyzer"], time.time() - start)
 
         self.last_error = None
         return ScanResult.from_findings(skill.manifest.name, findings, ["llm_analyzer"], time.time() - start)

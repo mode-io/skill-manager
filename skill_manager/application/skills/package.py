@@ -85,13 +85,17 @@ def parse_skill_package(root: Path, *, default_source: SourceDescriptor) -> Skil
 
 
 def parse_skill_manifest_text(document: str) -> SkillManifest:
-    metadata = _parse_frontmatter(document)
+    metadata = parse_skill_frontmatter_metadata(document)
     return SkillManifest(
         declared_name=_extract_declared_name(document, metadata),
         description=_normalize_metadata_scalar(metadata.get("description", "")),
         source_kind=_optional_metadata_value(metadata, "source_kind"),
         source_locator=_optional_metadata_value(metadata, "source_locator"),
     )
+
+
+def parse_skill_frontmatter_metadata(document: str) -> dict[str, str]:
+    return _parse_frontmatter(document)
 
 
 def _resolve_source(metadata: dict[str, str], *, default_source: SourceDescriptor) -> SourceDescriptor:

@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 
-import type { ScanConfigItem } from "../../../api/scan";
+import type { ScanConfigItem } from "../api/scan-types";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
 import { ScanConfigDetailModal } from "../components/scan/ScanConfigDetailModal";
+import { useSkillsCopy } from "../i18n";
 import { useSkillScan } from "../model/use-skill-scan";
 
 type EditorState =
@@ -18,6 +19,7 @@ function providerLabel(config: ScanConfigItem): string {
 }
 
 export default function ScanConfigPage() {
+  const copy = useSkillsCopy().scan;
   const {
     configs,
     activeConfigId,
@@ -66,7 +68,7 @@ export default function ScanConfigPage() {
   }
 
   async function deleteConfig(config: ScanConfigItem) {
-    if (!window.confirm(`Delete scan config "${config.name}"?`)) {
+    if (!window.confirm(copy.deleteConfigConfirm(config.name))) {
       return;
     }
     setPendingConfigId(config.id);
@@ -84,8 +86,8 @@ export default function ScanConfigPage() {
     <>
       <div className="page-chrome">
         <PageHeader
-          title="Scan Config"
-          subtitle="View and manage all saved LLM configurations for security scans."
+          title={copy.configTitle}
+          subtitle={copy.configSubtitle}
           actions={
             <button
               type="button"
@@ -93,7 +95,7 @@ export default function ScanConfigPage() {
               onClick={() => setEditor({ mode: "create", config: null })}
             >
               <Plus size={14} />
-              New configuration
+              {copy.newConfiguration}
             </button>
           }
         />
@@ -103,13 +105,13 @@ export default function ScanConfigPage() {
 
       {!configLoaded ? (
         <div className="panel-state">
-          <LoadingSpinner size="md" label="Loading scan configs" />
+          <LoadingSpinner size="md" label={copy.loadingConfigs} />
         </div>
       ) : configs.length === 0 ? (
         <div className="empty-panel">
-          <h3 className="empty-panel__title">No scan configs yet</h3>
+          <h3 className="empty-panel__title">{copy.noConfigsTitle}</h3>
           <p className="empty-panel__body">
-            Add an LLM configuration before running semantic security scans.
+            {copy.noConfigsBody}
           </p>
           <div className="empty-panel__actions">
             <button
@@ -118,14 +120,14 @@ export default function ScanConfigPage() {
               onClick={() => setEditor({ mode: "create", config: null })}
             >
               <Plus size={14} />
-              New configuration
+              {copy.newConfiguration}
             </button>
           </div>
         </div>
       ) : (
-        <section className="scan-config-list" aria-label="LLM scan configurations">
+        <section className="scan-config-list" aria-label={copy.configsAria}>
           <div className="scan-config-table-wrapper">
-            <table className="scan-config-table" aria-label="LLM scan configurations">
+            <table className="scan-config-table" aria-label={copy.configsAria}>
               <colgroup>
                 <col className="scan-config-table__col-name" />
                 <col className="scan-config-table__col-model" />
@@ -136,12 +138,12 @@ export default function ScanConfigPage() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Model</th>
-                  <th>Provider</th>
-                  <th>Base URL</th>
-                  <th>API Key</th>
-                  <th aria-label="Actions" />
+                  <th>{copy.table.name}</th>
+                  <th>{copy.table.model}</th>
+                  <th>{copy.table.provider}</th>
+                  <th>{copy.table.baseUrl}</th>
+                  <th>{copy.table.apiKey}</th>
+                  <th aria-label={copy.table.actions} />
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +160,7 @@ export default function ScanConfigPage() {
                       <td className="scan-config-table__mono">{config.model}</td>
                       <td>{providerLabel(config)}</td>
                       <td className="scan-config-table__mono" title={config.baseUrl}>{config.baseUrl}</td>
-                      <td className="scan-config-table__mono">{config.apiKeyMasked || "Masked"}</td>
+                      <td className="scan-config-table__mono">{config.apiKeyMasked || copy.table.masked}</td>
                       <td>
                         <div className="scan-config-table__actions">
                           {isActive ? (
@@ -167,7 +169,7 @@ export default function ScanConfigPage() {
                               className="action-pill scan-config-table__state-action scan-config-table__active-action"
                               disabled
                             >
-                              Active
+                              {copy.table.active}
                             </button>
                           ) : (
                             <button
@@ -177,7 +179,7 @@ export default function ScanConfigPage() {
                               onClick={() => void makeActive(config)}
                             >
                               <CheckCircle2 size={12} />
-                              Make active
+                              {copy.table.makeActive}
                             </button>
                           )}
                           <button
@@ -187,7 +189,7 @@ export default function ScanConfigPage() {
                             onClick={() => void editExisting(config)}
                           >
                             <Pencil size={12} />
-                            Edit
+                            {copy.table.edit}
                           </button>
                           <button
                             type="button"
@@ -196,7 +198,7 @@ export default function ScanConfigPage() {
                             onClick={() => void deleteConfig(config)}
                           >
                             <Trash2 size={12} />
-                            Delete
+                            {copy.table.delete}
                           </button>
                         </div>
                       </td>

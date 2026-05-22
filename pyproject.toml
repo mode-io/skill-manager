@@ -29,6 +29,11 @@ dependencies = [
 build = [
   "pyinstaller>=6.11,<7",
 ]
+scan = [
+  "azure-identity>=1.16,<2",
+  "google-genai>=1,<2",
+  "litellm>=1.40,<2",
+]
 
 [project.scripts]
 skill-manager = "skill_manager.cli:main"
@@ -48,4 +53,4 @@ version = { attr = "skill_manager.__version__" }
 include = ["skill_manager*"]
 
 [tool.setuptools.package-data]
-skill_manager = ["VERSION"]
+skill_manager = ["VERSION", "data/prompts/*"]

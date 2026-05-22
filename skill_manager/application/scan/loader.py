@@ -4,7 +4,11 @@ import logging
 import re
 from pathlib import Path
 
-import frontmatter
+from skill_manager.application.skills.document_utils import strip_frontmatter
+from skill_manager.application.skills.package import (
+    parse_skill_frontmatter_metadata,
+    parse_skill_manifest_text,
+)
 
 from .models import Skill, SkillFile, SkillManifest
 
@@ -57,20 +61,21 @@ class SkillLoader:
     def _parse_skill_md(self, path: Path) -> tuple[SkillManifest, str]:
         content = path.read_text(encoding="utf-8")
         try:
-            post = frontmatter.loads(content)
-            meta = post.metadata
-            body = post.content
+            parsed = parse_skill_manifest_text(content)
+            meta = parse_skill_frontmatter_metadata(content)
+            body = strip_frontmatter(content) or content
         except Exception:
             meta = {}
             body = content
+            parsed = None
 
         # Extract additional metadata beyond known fields
         known_keys = {"name", "description", "license", "compatibility", "allowed-tools", "allowed_tools"}
         extra_metadata = {k: v for k, v in meta.items() if k not in known_keys} if isinstance(meta, dict) else None
 
         return SkillManifest(
-            name=str(meta.get("name", path.parent.name)),
-            description=str(meta.get("description", "(no description)")),
+            name=str(parsed.declared_name if parsed else meta.get("name", path.parent.name)),
+            description=str(parsed.description if parsed and parsed.description else meta.get("description", "(no description)")),
             license=meta.get("license"),
             compatibility=meta.get("compatibility"),
             allowed_tools=meta.get("allowed-tools") or meta.get("allowed_tools"),

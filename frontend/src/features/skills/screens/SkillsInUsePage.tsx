@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Columns3, FolderPlus, LayoutGrid, Rows3, Settings2, Shield } from "lucide-react";
+import { Columns3, FolderPlus, LayoutGrid, Rows3, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { SkillActionConfirmDialog } from "../components/dialogs/SkillActionConfirmDialog";
@@ -13,15 +13,15 @@ import { useCommonCopy } from "../../../i18n";
 import { BoardView } from "../components/board/BoardView";
 import { SkillsInUseList } from "../components/cards/SkillsInUseList";
 import { MatrixView } from "../components/matrix/MatrixView";
-import { ScanView } from "../components/scan/ScanView";
 import { SkillsEmptyState } from "../components/pane/SkillsEmptyState";
+import { ScanView } from "../components/scan/ScanView";
 import { useSkillsCopy } from "../i18n";
+import { useSkillScan } from "../model/use-skill-scan";
 import { useSkillsInUseSession } from "../model/session";
 import {
   filterSkillsInUseRows,
   hasActiveSkillsInUseFilters,
 } from "../model/selectors";
-import { useSkillScan } from "../model/use-skill-scan";
 import { useInUseViewMode, type InUseViewMode } from "../model/useInUseViewMode";
 import { useSkillsWorkspace } from "../model/workspace-context";
 import type { SkillListRow } from "../model/types";
@@ -65,19 +65,7 @@ export default function SkillsInUsePage() {
   const [pill, setPill] = useState<InUsePillValue>("all");
   const [viewMode, setViewMode] = useInUseViewMode();
   const [showScanConfig, setShowScanConfig] = useState(false);
-  const {
-    scanState: scanStateMap,
-    getScanState,
-    scanSkill,
-    llmConfig,
-    configs,
-    activeConfigId,
-    addConfig,
-    editConfig,
-    selectConfig,
-    validateConfig,
-    revealConfigApiKey,
-  } = useSkillScan();
+  const scan = useSkillScan();
   const [pendingConfirm, setPendingConfirm] = useState<{
     action: "unmanage" | "delete";
     skillRef: string;
@@ -196,17 +184,7 @@ export default function SkillsInUsePage() {
           searchPlaceholder={copy.inUse.searchPlaceholder}
           searchLabel={copy.inUse.searchLabel}
           trailing={
-            viewMode === "scan" ? (
-              <button
-                type="button"
-                className="icon-button scan-settings-trigger"
-                aria-label={copy.inUse.configureLlmScan}
-                title={copy.inUse.configureLlmScan}
-                onClick={() => setShowScanConfig(true)}
-              >
-                <Settings2 size={15} aria-hidden="true" />
-              </button>
-            ) : viewMode === "grid" ? (
+            viewMode === "grid" ? (
               <SelectionMenu
                 value={pill}
                 options={pillOptions}
@@ -228,7 +206,26 @@ export default function SkillsInUsePage() {
       ) : isReady && data ? (
         <>
           {rows.length > 0 ? (
-            viewMode === "board" ? (
+            viewMode === "scan" ? (
+              <ScanView
+                rows={rows}
+                scanStateMap={scan.scanState}
+                getScanState={scan.getScanState}
+                llmConfig={scan.llmConfig}
+                configs={scan.configs}
+                activeConfigId={scan.activeConfigId}
+                showConfig={showScanConfig}
+                onOpenSkill={onOpenSkill}
+                onScanSkill={(skillRef) => void scan.scanSkill(skillRef)}
+                onOpenConfig={() => setShowScanConfig(true)}
+                onCloseConfig={() => setShowScanConfig(false)}
+                onSelectConfig={scan.selectConfig}
+                onAddConfig={scan.addConfig}
+                onEditConfig={scan.editConfig}
+                onRevealApiKey={scan.revealConfigApiKey}
+                onValidateConfig={scan.validateConfig}
+              />
+            ) : viewMode === "board" ? (
               <BoardView
                 rows={rows}
                 checkedRefs={multiSelectedRefs}
@@ -249,25 +246,6 @@ export default function SkillsInUsePage() {
                 onOpenSkill={onOpenSkill}
                 onToggleChecked={onToggleMultiSelect}
                 onToggleCell={onToggleCell}
-              />
-            ) : viewMode === "scan" ? (
-              <ScanView
-                rows={rows}
-                scanStateMap={scanStateMap}
-                getScanState={getScanState}
-                llmConfig={llmConfig}
-                configs={configs}
-                activeConfigId={activeConfigId}
-                showConfig={showScanConfig}
-                onOpenSkill={onOpenSkill}
-                onScanSkill={scanSkill}
-                onOpenConfig={() => setShowScanConfig(true)}
-                onCloseConfig={() => setShowScanConfig(false)}
-                onSelectConfig={selectConfig}
-                onAddConfig={addConfig}
-                onEditConfig={editConfig}
-                onRevealApiKey={revealConfigApiKey}
-                onValidateConfig={validateConfig}
               />
             ) : (
               <SkillsInUseList

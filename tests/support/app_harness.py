@@ -65,6 +65,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.server.stop()
+        self.container.db.close()
         self._tempdir.cleanup()
 
     def get_json(self, path: str, *, expected_status: int = 200) -> object:

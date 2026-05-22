@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import ScanPanel from "./ScanPanel";
-import type { ScanFinding, ScanResult } from "../api/scan";
+import type { ScanFinding, ScanResult } from "../../api/scan-types";
 
 function finding(overrides: Partial<ScanFinding>): ScanFinding {
   return {
@@ -14,6 +14,7 @@ function finding(overrides: Partial<ScanFinding>): ScanFinding {
     description: "The skill has a non-critical concern.",
     filePath: "SKILL.md",
     lineNumber: null,
+    metadata: {},
     snippet: null,
     remediation: null,
     analyzer: "llm_analyzer",

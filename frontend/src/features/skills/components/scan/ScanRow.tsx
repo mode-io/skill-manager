@@ -1,17 +1,15 @@
 import { CardSelectCheckbox } from "../../../../components/cards/CardSelectCheckbox";
 import { OverflowTooltipText } from "../../../../components/ui/OverflowTooltipText";
-import type { SkillsCopy } from "../../i18n";
 import type { SkillListRow } from "../../model/types";
 import type { SkillScanState } from "../../model/use-skill-scan";
-
-type ScanCopy = SkillsCopy["inUse"]["scan"];
+import type { SkillsCopy } from "../../i18n";
 
 interface ScanRowProps {
   row: SkillListRow;
-  copy: ScanCopy;
   hasConfig: boolean;
   checked: boolean;
   scanState: SkillScanState;
+  copy: SkillsCopy["scan"]["view"];
   onOpenSkill: (skillRef: string) => void;
   onToggleChecked: (skillRef: string) => void;
   onScanSkill: (skillRef: string) => void;
@@ -21,10 +19,10 @@ interface ScanRowProps {
 
 export function ScanRow({
   row,
-  copy,
   hasConfig,
   checked,
   scanState,
+  copy,
   onOpenSkill,
   onToggleChecked,
   onScanSkill,
@@ -71,7 +69,7 @@ export function ScanRow({
               event.stopPropagation();
               onConfigure();
             }}
-            aria-label={copy.configure}
+            aria-label={copy.configureAria}
           >
             {copy.configure}
           </button>
@@ -92,7 +90,7 @@ export function ScanRow({
               event.stopPropagation();
               onViewResult(row.skillRef);
             }}
-            aria-label={copy.viewResultsFor(row.name)}
+            aria-label={copy.viewResultFor(row.name)}
           >
             {copy.viewResult}
           </button>

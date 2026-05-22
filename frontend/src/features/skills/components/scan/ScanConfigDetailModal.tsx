@@ -2,10 +2,10 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Cpu, Eye, EyeOff, Key, Link2, Loader2 } from "lucide-react";
 
-import type { ScanConfigItem, ScanConfigValidationResponse } from "../../../../api/scan";
+import type { ScanConfigItem, ScanConfigValidationResponse } from "../../api/scan-types";
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
-import { useLocale } from "../../../../i18n";
-import { useSkillsCopy, type SkillsCopy } from "../../i18n";
+import { useCommonCopy, useLocale } from "../../../../i18n";
+import { useSkillsCopy } from "../../i18n";
 import type { LLMScanConfigInput } from "../../model/use-skill-scan";
 
 type ScanConfigEditorMode = "create" | "edit";
@@ -29,9 +29,7 @@ interface ConfigFormState {
 }
 
 type ConfigFormField = keyof ConfigFormState;
-type ScanConfigCopy = SkillsCopy["inUse"]["scan"]["config"];
 
-const REQUIRED_FIELDS: ConfigFormField[] = ["name", "baseUrl", "apiKey", "model"];
 const HIDDEN_API_KEY_PLACEHOLDER = "x".repeat(64);
 
 function emptyForm(): ConfigFormState {
@@ -67,12 +65,12 @@ function formatDateTime(value: string | null, locale: string, fallback: string):
 function missingRequiredFields(
   form: ConfigFormState,
   mode: ScanConfigEditorMode,
-  labels: ScanConfigCopy["fields"],
+  requiredFields: Array<{ key: ConfigFormField; label: string }>,
 ): string[] {
-  return REQUIRED_FIELDS
-    .filter((key) => mode === "create" || key !== "apiKey")
-    .filter((key) => form[key].trim() === "")
-    .map((key) => labels[key]);
+  return requiredFields
+    .filter(({ key }) => mode === "create" || key !== "apiKey")
+    .filter(({ key }) => form[key].trim() === "")
+    .map(({ label }) => label);
 }
 
 function formChanged(form: ConfigFormState, config: ScanConfigItem | null, savedApiKey: string | null): boolean {
@@ -172,9 +170,10 @@ export function ScanConfigDetailModal({
   onRevealApiKey,
   onValidateConfig,
 }: ScanConfigDetailModalProps) {
-  const { locale } = useLocale();
-  const copy = useSkillsCopy().inUse.scan.config;
   const headingId = useId();
+  const copy = useSkillsCopy().scan.detail;
+  const common = useCommonCopy();
+  const { locale } = useLocale();
   const [form, setForm] = useState<ConfigFormState>(emptyForm);
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -218,19 +217,28 @@ export function ScanConfigDetailModal({
     };
   }, [config, mode, onRevealApiKey, open]);
 
-  const missingFields = useMemo(() => missingRequiredFields(form, mode, copy.fields), [copy, form, mode]);
+  const requiredFields = useMemo<Array<{ key: ConfigFormField; label: string }>>(
+    () => [
+      { key: "name", label: copy.nameLabel },
+      { key: "baseUrl", label: copy.baseUrlLabel },
+      { key: "apiKey", label: copy.apiKeyLabel },
+      { key: "model", label: copy.modelLabel },
+    ],
+    [copy],
+  );
+  const missingFields = useMemo(() => missingRequiredFields(form, mode, requiredFields), [form, mode, requiredFields]);
   const isFormValid = missingFields.length === 0;
   const isDirty = useMemo(
     () => (mode === "edit" ? formChanged(form, config, savedApiKey) : formChanged(form, null, null)),
     [config, form, mode, savedApiKey],
   );
-  const title = mode === "edit" ? copy.editTitle : copy.createTitle;
+  const title = mode === "edit" ? copy.updateTitle : copy.createTitle;
   const apiKeyHint = mode === "edit"
-    ? copy.hints.apiKeyEdit(config?.apiKeyMasked ?? null)
-    : copy.hints.apiKeyCreate;
+    ? copy.apiKeyHintEdit(config?.apiKeyMasked ?? "")
+    : copy.apiKeyHintCreate;
   const lastValidationLabel = config?.lastValidationError
-    ? copy.validation.failed
-    : formatDateTime(config?.lastValidatedAt ?? null, locale, copy.validation.notValidated);
+    ? copy.failed
+    : formatDateTime(config?.lastValidatedAt ?? null, locale, copy.notValidated);
   const canSubmit = isFormValid && isDirty && !isSaving && !isTesting && !isRevealing;
 
   function resetFeedback() {
@@ -349,42 +357,42 @@ export function ScanConfigDetailModal({
                 <div className="scan-config-panel__form-grid">
                   <ConfigField
                     field="name"
-                    label={copy.fields.name}
+                    label={copy.nameLabel}
                     value={form.name}
-                    placeholder={copy.placeholders.name}
-                    hint={copy.hints.name}
+                    placeholder={copy.namePlaceholder}
+                    hint={copy.nameHint}
                     autoComplete="off"
                     onChange={updateField}
                   />
                   <ConfigField
                     field="model"
-                    label={copy.fields.model}
+                    label={copy.modelLabel}
                     icon={<Cpu size={14} />}
                     value={form.model}
-                    placeholder={copy.placeholders.model}
-                    hint={copy.hints.model}
+                    placeholder={copy.modelPlaceholder}
+                    hint={copy.modelHint}
                     autoComplete="off"
                     onChange={updateField}
                   />
                   <ConfigField
                     field="baseUrl"
-                    label={copy.fields.baseUrl}
+                    label={copy.baseUrlLabel}
                     icon={<Link2 size={14} />}
                     type="url"
                     value={form.baseUrl}
-                    placeholder={copy.placeholders.baseUrl}
-                    hint={copy.hints.baseUrl}
+                    placeholder={copy.baseUrlPlaceholder}
+                    hint={copy.baseUrlHint}
                     autoComplete="url"
                     wide
                     onChange={updateField}
                   />
                   <ConfigField
                     field="apiKey"
-                    label={copy.fields.apiKey}
+                    label={copy.apiKeyLabel}
                     icon={<Key size={14} />}
                     type={apiKeyVisible ? "text" : "password"}
                     value={form.apiKey}
-                    placeholder={mode === "edit" ? copy.placeholders.apiKeyEdit : copy.placeholders.apiKeyCreate}
+                    placeholder={mode === "edit" ? copy.apiKeyPlaceholderEdit : copy.apiKeyPlaceholderCreate}
                     hint={apiKeyHint}
                     autoComplete="new-password"
                     required={mode === "create"}
@@ -395,7 +403,7 @@ export function ScanConfigDetailModal({
                         type="button"
                         className="scan-config-panel__input-action"
                         disabled={isRevealing}
-                        aria-label={apiKeyVisible ? copy.actions.hideApiKey : copy.actions.showApiKey}
+                        aria-label={apiKeyVisible ? copy.hideApiKey : copy.showApiKey}
                         onClick={handleApiKeyVisibility}
                       >
                         {apiKeyVisible ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
@@ -405,8 +413,8 @@ export function ScanConfigDetailModal({
                 </div>
 
                 {mode === "edit" && config ? (
-                  <section className="scan-config-detail-modal__validation" aria-label={copy.validation.label}>
-                    <span className="scan-config-detail-modal__validation-label">{copy.validation.label}</span>
+                  <section className="scan-config-detail-modal__validation" aria-label={copy.lastValidation}>
+                    <span className="scan-config-detail-modal__validation-label">{copy.lastValidation}</span>
                     <span
                       className={
                         config.lastValidationError
@@ -424,17 +432,17 @@ export function ScanConfigDetailModal({
                 ) : null}
 
                 {!isFormValid && missingFields.length > 0 ? (
-                  <StatusMessage tone="neutral">{copy.validation.missingFields(missingFields)}</StatusMessage>
+                  <StatusMessage tone="neutral">{copy.missingFields(missingFields.join(", "))}</StatusMessage>
                 ) : null}
                 {testResult ? (
                   <StatusMessage tone={testResult.ok ? "success" : "error"}>
-                    {testResult.ok ? copy.validation.connectivityPassed : testResult.message}
+                    {testResult.ok ? copy.testPassed : testResult.message}
                   </StatusMessage>
                 ) : null}
                 {saveError ? <StatusMessage tone="error">{saveError}</StatusMessage> : null}
               </div>
             </div>
-            <footer className="scan-config-detail-modal__footer" aria-label={copy.footerLabel}>
+            <footer className="scan-config-detail-modal__footer" aria-label={copy.actionsAria}>
               <button
                 type="button"
                 className="action-pill action-pill--md"
@@ -443,7 +451,7 @@ export function ScanConfigDetailModal({
                 onClick={handleTestConnection}
               >
                 {isTesting ? <Loader2 size={14} className="card-action-spinner" /> : <Link2 size={14} />}
-                {isTesting ? copy.actions.testing : copy.actions.testConnectivity}
+                {isTesting ? copy.testing : copy.testConnectivity}
               </button>
               <button
                 type="submit"
@@ -451,11 +459,11 @@ export function ScanConfigDetailModal({
                 disabled={!canSubmit}
                 data-pending={isSaving ? "true" : undefined}
               >
-                {mode === "edit" ? copy.actions.update : copy.actions.save}
+                {mode === "edit" ? copy.update : copy.save}
                 {isSaving ? <Loader2 size={14} className="card-action-spinner" /> : <ArrowRight size={14} />}
               </button>
               <button type="button" className="action-pill action-pill--md" onClick={onClose}>
-                {copy.actions.cancel}
+                {common.actions.cancel}
               </button>
             </footer>
           </form>

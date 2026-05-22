@@ -18,7 +18,7 @@ from skill_manager.api.schemas.scan import (
 )
 from skill_manager.application import BackendContainer
 from skill_manager.application.scan.presenters import present_scan_result
-from skill_manager.db.dao.scan_config import LLMScanConfigRow
+from skill_manager.db.repositories import LLMScanConfigRow
 
 router = APIRouter(prefix="/api/scan")
 
@@ -101,7 +101,7 @@ def detect_llm(container: BackendContainer = Depends(get_container)):
 
 @router.get("/configs", response_model=ScanConfigListResponse)
 def list_scan_configs(container: BackendContainer = Depends(get_container)):
-    configs = container.scan_service.list_configs()
+    configs = container.scan_config_service.list_configs()
     active_id = None
     for c in configs:
         if c.is_active:
@@ -118,7 +118,7 @@ def reveal_scan_config_secret(
     config_id: int,
     container: BackendContainer = Depends(get_container),
 ):
-    existing = container.scan_service.get_config_by_id(config_id)
+    existing = container.scan_config_service.get_config_by_id(config_id)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"Config {config_id} not found")
     return ScanConfigSecretResponse(apiKey=existing.api_key)
@@ -130,9 +130,9 @@ def create_scan_config(
     container: BackendContainer = Depends(get_container),
 ):
     config = _body_to_config(body)
-    config_id = container.scan_service.save_config_validated(config)
+    config_id = container.scan_config_service.save_config_validated(config)
     config.id = config_id
-    saved = container.scan_service.get_config_by_id(config_id)
+    saved = container.scan_config_service.get_config_by_id(config_id)
     return _config_to_item(saved or config)
 
 
@@ -143,7 +143,7 @@ def validate_scan_config(
 ):
     api_key = body.apiKey.strip()
     if body.existingConfigId is not None and not api_key:
-        existing = container.scan_service.get_config_by_id(body.existingConfigId)
+        existing = container.scan_config_service.get_config_by_id(body.existingConfigId)
         if existing is None:
             return ScanConfigValidationResponse(
                 ok=False,
@@ -152,7 +152,7 @@ def validate_scan_config(
             )
         api_key = existing.api_key
     config = _body_to_config(body, config_id=body.existingConfigId, api_key=api_key)
-    result = container.scan_service.validate_config(config)
+    result = container.scan_config_service.validate_config(config)
     return ScanConfigValidationResponse(
         ok=result.ok,
         message=result.message,
@@ -169,13 +169,13 @@ def update_scan_config(
     body: ScanConfigSaveRequest,
     container: BackendContainer = Depends(get_container),
 ):
-    existing = container.scan_service.get_config_by_id(config_id)
+    existing = container.scan_config_service.get_config_by_id(config_id)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"Config {config_id} not found")
     api_key = body.apiKey.strip() or existing.api_key
     config = _body_to_config(body, config_id=config_id, is_active=existing.is_active, api_key=api_key)
-    container.scan_service.save_config_validated(config)
-    saved = container.scan_service.get_config_by_id(config_id)
+    container.scan_config_service.save_config_validated(config)
+    saved = container.scan_config_service.get_config_by_id(config_id)
     return _config_to_item(saved or config)
 
 
@@ -184,7 +184,7 @@ def delete_scan_config(
     config_id: int,
     container: BackendContainer = Depends(get_container),
 ):
-    container.scan_service.delete_config(config_id)
+    container.scan_config_service.delete_config(config_id)
     return {"ok": True}
 
 
@@ -193,10 +193,10 @@ def set_active_scan_config(
     config_id: int,
     container: BackendContainer = Depends(get_container),
 ):
-    existing = container.scan_service.get_config_by_id(config_id)
+    existing = container.scan_config_service.get_config_by_id(config_id)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"Config {config_id} not found")
-    container.scan_service.set_active_config(config_id)
+    container.scan_config_service.set_active_config(config_id)
     return {"ok": True}
 
 
@@ -212,13 +212,9 @@ def scan_skill(
             detail="Scan service not available. Check LLM configuration.",
         )
 
-    skill_path = container.skills_queries.get_skill_path(skill_ref)
-    if skill_path is None:
-        raise HTTPException(status_code=404, detail=f"unknown skill ref: {skill_ref}")
-
     options = body or ScanOptionsRequest()
-    result = container.scan_service.scan_skill_with_options(
-        skill_path,
+    result = container.scan_service.scan_skill_ref(
+        skill_ref,
         use_llm=options.useLlm,
         llm_api_key=options.llmApiKey,
         llm_model=options.llmModel,
@@ -231,4 +227,6 @@ def scan_skill(
         aws_profile=options.awsProfile,
         aws_session_token=options.awsSessionToken,
     )
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"unknown skill ref: {skill_ref}")
     return present_scan_result(result)

@@ -1,8 +1,8 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
-import ScanPanel from "../../../../components/ScanPanel";
-import type { ScanResult } from "../../../../api/scan";
+import ScanPanel from "./ScanPanel";
+import type { ScanResult } from "../../api/scan-types";
 import { useLocale } from "../../../../i18n";
 import { useSkillsCopy } from "../../i18n";
 import type { LLMScanConfig } from "../../model/use-skill-scan";
@@ -16,8 +16,8 @@ interface ScanResultModalProps {
 }
 
 export function ScanResultModal({ open, result, completedAt, llmConfig, onClose }: ScanResultModalProps) {
+  const copy = useSkillsCopy().scan.result;
   const { locale } = useLocale();
-  const copy = useSkillsCopy().inUse.scan.result;
 
   return (
     <Dialog.Root open={open && result !== null} onOpenChange={(next) => (next ? null : onClose())}>
@@ -41,7 +41,7 @@ export function ScanResultModal({ open, result, completedAt, llmConfig, onClose 
               </button>
             </Dialog.Close>
           </div>
-          {result ? <ScanPanel result={result} llmConfig={llmConfig} copy={copy} /> : null}
+          {result ? <ScanPanel result={result} llmConfig={llmConfig} /> : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -49,7 +49,7 @@ export function ScanResultModal({ open, result, completedAt, llmConfig, onClose 
 }
 
 function formatScanCompletedAt(value: number, locale: string): string {
-  return new Date(value).toLocaleString(locale, {
+  return new Date(value).toLocaleString(locale === "zh-CN" ? "zh-CN" : "en-US", {
     month: "short",
     day: "numeric",
     hour: "2-digit",

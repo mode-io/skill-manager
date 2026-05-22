@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Shield, X } from "lucide-react";
 
 import { MatrixSortableHeader } from "../../../../components/matrix";
-import type { ScanConfigItem } from "../../../../api/scan";
+import type { ScanConfigItem, ScanConfigValidationResponse } from "../../api/scan-types";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
-import { useSkillsCopy } from "../../i18n";
 import { ScanRow } from "./ScanRow";
 import { ScanResultModal } from "./ScanResultModal";
 import { ScanConfigDetailModal } from "./ScanConfigDetailModal";
+import { useSkillsCopy } from "../../i18n";
 import { sortRows, sortKeysEqual, type SortKey, type SortState } from "../../model/sortRows";
 import type { SkillScanState, ScanStateMap, LLMScanConfig, LLMScanConfigInput } from "../../model/use-skill-scan";
 import type { SkillListRow } from "../../model/types";
@@ -29,14 +29,7 @@ interface ScanViewProps {
   onAddConfig: (config: LLMScanConfigInput) => Promise<unknown>;
   onEditConfig: (id: number, config: LLMScanConfigInput) => Promise<void>;
   onRevealApiKey: (id: number) => Promise<string>;
-  onValidateConfig: (config: LLMScanConfigInput & { existingConfigId?: number }) => Promise<{
-    ok: boolean;
-    message: string;
-    provider: string | null;
-    model: string | null;
-    durationMs: number | null;
-    errorCode: string | null;
-  }>;
+  onValidateConfig: (config: LLMScanConfigInput & { existingConfigId?: number }) => Promise<ScanConfigValidationResponse>;
 }
 
 const INITIAL_SORT: SortState = { key: "name", direction: "asc" };
@@ -59,10 +52,10 @@ export function ScanView({
   onRevealApiKey,
   onValidateConfig,
 }: ScanViewProps) {
-  const copy = useSkillsCopy().inUse.scan;
   const [sort, setSort] = useState<SortState>(INITIAL_SORT);
   const [viewingSkillRef, setViewingSkillRef] = useState<string | null>(null);
   const [checkedRefs, setCheckedRefs] = useState<Set<string>>(() => new Set());
+  const copy = useSkillsCopy().scan;
 
   const sortedRows = useMemo(() => sortRows(rows, sort), [rows, sort]);
   const visibleRefs = useMemo(() => new Set(rows.map((row) => row.skillRef)), [rows]);
@@ -142,7 +135,7 @@ export function ScanView({
   return (
     <>
       <div className="matrix-table-wrapper scan-table-wrapper">
-        <table className="matrix-table scan-table" aria-label={copy.tableLabel}>
+        <table className="matrix-table scan-table" aria-label={copy.view.tableAria}>
           <colgroup>
             <col className="matrix-table__col-checkbox" />
             <col className="scan-table__col-identity" />
@@ -150,16 +143,16 @@ export function ScanView({
           </colgroup>
           <thead className="matrix-table__head">
             <tr>
-              <th className="matrix-table__th matrix-table__th--checkbox" aria-label={copy.selectColumn} />
+              <th className="matrix-table__th matrix-table__th--checkbox" aria-label={copy.view.select} />
               <MatrixSortableHeader
-                label={copy.nameColumn}
+                label={copy.table.name}
                 align="identity"
                 active={sortKeysEqual(sort.key, "name")}
                 direction={sort.direction}
                 onClick={() => requestSort("name")}
               />
-              <th className="matrix-table__th matrix-table__th--action" aria-label={copy.actionsColumn}>
-                {copy.actionColumn}
+              <th className="matrix-table__th matrix-table__th--action" aria-label={copy.table.actions}>
+                {copy.view.action}
               </th>
             </tr>
           </thead>
@@ -168,10 +161,10 @@ export function ScanView({
               <ScanRow
                 key={row.skillRef}
                 row={row}
-                copy={copy}
                 hasConfig={hasConfig}
                 checked={checkedRefs.has(row.skillRef)}
                 scanState={getScanState(row.skillRef)}
+                copy={copy.view}
                 onOpenSkill={onOpenSkill}
                 onToggleChecked={toggleChecked}
                 onScanSkill={onScanSkill}
@@ -205,17 +198,15 @@ export function ScanView({
       {checkedRefs.size > 0 ? (
         <div className="bulk-dock" aria-hidden={false}>
           <div className="bulk-dock__fade" />
-          <div className="bulk-bar" data-state="open" role="toolbar" aria-label={copy.bulkActions}>
+          <div className="bulk-bar" data-state="open" role="toolbar" aria-label={copy.view.bulkAria}>
             <div className="bulk-bar__group">
-              <span className="bulk-bar__count">
-                <strong>{checkedRefs.size}</strong> {copy.selected}
-              </span>
+              <span className="bulk-bar__count">{copy.view.selected(checkedRefs.size)}</span>
               <button
                 type="button"
                 className="bulk-bar__clear"
                 onClick={clearChecked}
                 disabled={anyScanning}
-                aria-label={copy.clearSelection}
+                aria-label={copy.view.clearSelection}
               >
                 <X size={14} />
               </button>
@@ -229,8 +220,8 @@ export function ScanView({
               onClick={scanCheckedSkills}
               disabled={!canScanChecked}
             >
-              {anyScanning ? <LoadingSpinner size="sm" label={copy.scanning} /> : <Shield size={15} />}
-              {checkedRows.length === rows.length ? copy.scanAll : copy.scanSelected}
+              {anyScanning ? <LoadingSpinner size="sm" label={copy.view.scanning} /> : <Shield size={15} />}
+              {checkedRows.length === rows.length ? copy.view.scanAll : copy.view.scanSelected}
             </button>
           </div>
         </div>

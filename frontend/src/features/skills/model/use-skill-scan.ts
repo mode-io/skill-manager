@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 
-import type { ScanResult, ScanConfigItem } from "../../../api/scan";
+import type { ScanResult, ScanConfigItem } from "../api/scan-types";
 import {
   scanSkill as scanSkillApi,
   getScanConfigs,
@@ -10,7 +10,7 @@ import {
   setActiveScanConfig,
   validateScanConfig,
   revealScanConfigApiKey,
-} from "../../../api/scan";
+} from "../api/scan-client";
 
 export type ScanStatus = "idle" | "scanning" | "done" | "error";
 

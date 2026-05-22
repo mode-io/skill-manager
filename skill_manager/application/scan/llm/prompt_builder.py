@@ -30,14 +30,31 @@ class PromptBuilder:
         *,
         enrichment_context: str | None = None,
     ) -> tuple[str, bool]:
-        random_id = secrets.token_hex(16)
-        start_tag = f"<!---UNTRUSTED_INPUT_START_{random_id}--->"
-        end_tag = f"<!---UNTRUSTED_INPUT_END_{random_id}--->"
-
         manifest_text = self.format_manifest(skill.manifest)
         code_text, _ = self.format_code_files(skill)
         ref_text, _ = self.format_referenced_files(skill)
+        return self.build_analysis_prompt_from_parts(
+            skill,
+            manifest_text=manifest_text,
+            instruction_body=skill.instruction_body,
+            code_text=code_text,
+            referenced_text=ref_text,
+            enrichment_context=enrichment_context,
+        )
 
+    def build_analysis_prompt_from_parts(
+        self,
+        skill: Skill,
+        *,
+        manifest_text: str,
+        instruction_body: str,
+        code_text: str,
+        referenced_text: str,
+        enrichment_context: str | None = None,
+    ) -> tuple[str, bool]:
+        random_id = secrets.token_hex(16)
+        start_tag = f"<!---UNTRUSTED_INPUT_START_{random_id}--->"
+        end_tag = f"<!---UNTRUSTED_INPUT_END_{random_id}--->"
         analysis_content = f"""Skill Name: {skill.manifest.name}
 Description: {skill.manifest.description}
 
@@ -45,13 +62,13 @@ YAML Manifest Details:
 {manifest_text}
 
 Instruction Body (SKILL.md markdown):
-{skill.instruction_body}
+{instruction_body}
 
 Script Files (Python/Bash):
 {code_text}
 
 Referenced Files:
-{ref_text}
+{referenced_text}
 """
         if enrichment_context:
             analysis_content += f"\nPre-Scan Context (from static analyzers — use this to focus your analysis):\n{enrichment_context}\n"
@@ -98,11 +115,19 @@ Referenced Files:
         max_file_chars: int = 15_000,
         max_total_chars: int = 100_000,
     ) -> tuple[str, list[dict]]:
-        code_types = {"python", "bash", "javascript", "typescript", "yaml", "json", "toml", "config", "env"}
+        code_types = {"python", "bash", "javascript", "typescript", "yaml", "json", "toml", "config"}
         parts: list[str] = []
         skipped: list[dict] = []
         total = 0
         for sf in skill.files:
+            if _is_sensitive_file(sf.relative_path):
+                skipped.append({
+                    "path": sf.relative_path,
+                    "size": sf.size_bytes,
+                    "reason": "secret-bearing file is excluded from LLM prompt context",
+                    "threshold_name": "llm_analysis.secret_file_redaction",
+                })
+                continue
             if sf.file_type not in code_types or not sf.content:
                 continue
             file_size = len(sf.content)
@@ -141,7 +166,6 @@ Referenced Files:
         if not skill.referenced_files:
             return "No referenced files.", []
 
-        ref_types = {"markdown", "text"}
         parts: list[str] = []
         skipped: list[dict] = []
         total = 0
@@ -231,3 +255,14 @@ Referenced Files:
             return resolved_path.is_relative_to(resolved_directory)
         except (ValueError, OSError):
             return False
+
+
+def _is_sensitive_file(relative_path: str) -> bool:
+    name = Path(relative_path).name.lower()
+    suffix = Path(relative_path).suffix.lower()
+    return (
+        name == ".env"
+        or name.startswith(".env.")
+        or name in {"id_rsa", "id_ed25519", "credentials", "credentials.json"}
+        or suffix in {".pem", ".key", ".p12", ".pfx"}
+    )

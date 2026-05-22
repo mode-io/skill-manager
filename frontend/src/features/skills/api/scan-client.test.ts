@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { okJson } from "../test/fetch";
-import { revealScanConfigApiKey, scanSkill, validateScanConfig } from "./scan";
+import { okJson } from "../../../test/fetch";
+import { revealScanConfigApiKey, scanSkill, validateScanConfig } from "./scan-client";
 
 const fetchMock = vi.fn();
 

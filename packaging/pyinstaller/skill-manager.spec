@@ -7,6 +7,7 @@ REPO_ROOT = Path(SPECPATH).resolve().parents[1]
 datas = [
     (str(REPO_ROOT / "frontend" / "dist"), "frontend_dist"),
     (str(REPO_ROOT / "skill_manager" / "VERSION"), "skill_manager"),
+    (str(REPO_ROOT / "skill_manager" / "data" / "prompts"), "skill_manager/data/prompts"),
 ] + collect_data_files("certifi")
 hiddenimports = sorted(set(
     collect_submodules("uvicorn")
