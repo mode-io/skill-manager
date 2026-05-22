@@ -185,4 +185,31 @@ describe("ScanConfigPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "显示 API Key" }));
     expect(apiKeyInput).toHaveAttribute("type", "text");
   });
+
+  it("localizes the scan configuration page chrome and table", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "扫描配置" })).toBeInTheDocument();
+    expect(screen.getByText("查看和管理用于安全扫描的所有已保存 LLM 配置。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "新建配置" })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "LLM 扫描配置" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "名称" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "模型" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "提供方" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Base URL" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "API Key" })).toBeInTheDocument();
+
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(within(rows[0]).getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "当前",
+      "编辑",
+      "删除",
+    ]);
+    expect(within(rows[1]).getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "设为当前",
+      "编辑",
+      "删除",
+    ]);
+  });
 });
