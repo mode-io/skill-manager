@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Cpu, FileText, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronRight, Cpu, FileText, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { ScanResult, ScanFinding, LLMDetection } from "../../api/scan-types";
 import { detectLLM } from "../../api/scan-client";
 import { useSkillsCopy } from "../../i18n";
@@ -159,60 +159,6 @@ export default function ScanPanel({
         ))}
       </div>
     </section>
-  );
-}
-
-export function ScanStatusIcon({
-  result,
-  onClick,
-}: {
-  result: ScanResult | null;
-  onClick?: () => void;
-}) {
-  if (!result) {
-    return (
-      <button type="button" onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-        <Shield size={18} color="#9ca3af" />
-      </button>
-    );
-  }
-  if (result.isSafe) {
-    return (
-      <button type="button" onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-        <ShieldCheck size={18} color="#16a34a" />
-      </button>
-    );
-  }
-  const criticalCount = result.findings.filter((finding) => finding.severity === "CRITICAL").length;
-  if (criticalCount === 0) {
-    return (
-      <button type="button" onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
-        <ShieldCheck size={18} color="#16a34a" />
-      </button>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, position: "relative" }}>
-      <ShieldAlert size={18} color="#dc2626" />
-      <span
-        style={{
-          position: "absolute",
-          top: -2,
-          right: -2,
-          background: "#dc2626",
-          color: "#fff",
-          borderRadius: "50%",
-          fontSize: 10,
-          width: 14,
-          height: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {criticalCount}
-      </span>
-    </button>
   );
 }
 

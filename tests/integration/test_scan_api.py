@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from skill_manager.db import LLMScanConfigRow
+from skill_manager.db.repositories import LLMScanConfigRow
 from tests.support.app_harness import AppTestHarness
 
 

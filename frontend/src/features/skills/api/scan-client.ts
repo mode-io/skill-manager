@@ -1,7 +1,6 @@
 import { postJson, putJson, fetchJson, deleteJson } from "../../../api/http";
 import type {
   LLMDetection,
-  ScanAvailability,
   ScanConfigItem,
   ScanConfigListResponse,
   ScanConfigSavePayload,
@@ -10,10 +9,6 @@ import type {
   ScanConfigValidationResponse,
   ScanResult,
 } from "./scan-types";
-
-export async function checkScanAvailability(): Promise<ScanAvailability> {
-  return fetchJson<ScanAvailability>("/scan/availability");
-}
 
 export async function detectLLM(): Promise<LLMDetection> {
   return fetchJson<LLMDetection>("/scan/llm/detection");
@@ -30,7 +25,6 @@ export async function scanSkill(
 }
 
 export interface ScanSkillOptions {
-  useBehavioral?: boolean;
   useLlm?: boolean;
   llmBaseUrl?: string;
   llmApiKey?: string;

@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from skill_manager.db import Database, ScanConfigRepository
+from skill_manager.db import Database
+from skill_manager.db.repositories import ScanConfigRepository
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
 from skill_manager.paths import AppPaths, resolve_app_paths
 

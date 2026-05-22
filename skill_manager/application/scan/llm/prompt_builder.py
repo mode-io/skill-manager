@@ -24,24 +24,6 @@ class PromptBuilder:
         logger.warning("Prompt file not found: %s", path)
         return ""
 
-    def build_analysis_prompt(
-        self,
-        skill: Skill,
-        *,
-        enrichment_context: str | None = None,
-    ) -> tuple[str, bool]:
-        manifest_text = self.format_manifest(skill.manifest)
-        code_text, _ = self.format_code_files(skill)
-        ref_text, _ = self.format_referenced_files(skill)
-        return self.build_analysis_prompt_from_parts(
-            skill,
-            manifest_text=manifest_text,
-            instruction_body=skill.instruction_body,
-            code_text=code_text,
-            referenced_text=ref_text,
-            enrichment_context=enrichment_context,
-        )
-
     def build_analysis_prompt_from_parts(
         self,
         skill: Skill,

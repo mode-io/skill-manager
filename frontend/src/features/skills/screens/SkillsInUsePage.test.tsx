@@ -82,7 +82,6 @@ vi.mock("../model/use-skill-scan", () => ({
     scanState: {},
     getScanState: () => ({ status: "idle", result: null, error: null, completedAt: null }),
     scanSkill: hooks.scanSkill,
-    clearScan: vi.fn(),
     llmConfig: null,
     configs: [],
     activeConfigId: null,

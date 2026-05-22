@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from skill_manager.db import Database, LLMScanConfigRow, ScanConfigRepository
+from skill_manager.db import Database
+from skill_manager.db.repositories import LLMScanConfigRow, ScanConfigRepository
 
 
 def config_row(
@@ -63,6 +64,10 @@ class ScanConfigRepositoryTests(unittest.TestCase):
             version = db.execute_fetchone("PRAGMA user_version")
             self.assertIsNotNone(version)
             self.assertEqual(version[0], 3)
+            legacy = db.execute_fetchone(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'llm_scan_config'"
+            )
+            self.assertIsNone(legacy)
             db.execute_commit(
                 "INSERT INTO llm_scan_configs (name, base_url, api_key, model) VALUES (?1, ?2, ?3, ?4)",
                 ("Smoke", "https://api.example.com/v1", "sk-secret", "model-a"),

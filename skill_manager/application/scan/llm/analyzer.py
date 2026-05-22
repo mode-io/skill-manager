@@ -7,7 +7,7 @@ import logging
 import time
 from pathlib import Path
 
-from ..context_builder import PromptContext, PromptContextBuilder
+from ..context_builder import PromptContext
 from ..models import (
     AITECH_TO_CATEGORY,
     Finding,
@@ -86,45 +86,12 @@ class LLMAnalyzer:
             timeout=timeout,
         )
         self.response_parser = ResponseParser()
-        self.context_builder = PromptContextBuilder()
         self.last_error: str | None = None
         self.last_overall_assessment: str = ""
         self.last_primary_threats: list[str] = []
 
-        # Enriched context from other analyzers
-        self.enrichment_context: str | None = None
-
         # Consensus judging
         self.consensus_runs = consensus_runs
-
-    def set_enrichment_context(
-        self,
-        *,
-        file_inventory: dict | None = None,
-        magic_mismatches: list[str] | None = None,
-        static_findings_summary: list[str] | None = None,
-        analyzability_score: float | None = None,
-    ) -> None:
-        parts: list[str] = []
-        if file_inventory:
-            parts.append(f"File inventory: {file_inventory}")
-        if magic_mismatches:
-            parts.append(f"File type mismatches (extension != content): {', '.join(magic_mismatches)}")
-        if static_findings_summary:
-            parts.append("Key static findings:")
-            for f in static_findings_summary[:10]:
-                parts.append(f"  - {f}")
-        if analyzability_score is not None:
-            parts.append(f"Analyzability score: {analyzability_score:.0f}%")
-        self.enrichment_context = "\n".join(parts) if parts else None
-
-    def analyze(self, skill_path: Path) -> ScanResult:
-        try:
-            asyncio.get_running_loop()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self._analyze_async(skill_path)).result()
-        except RuntimeError:
-            return asyncio.run(self._analyze_async(skill_path))
 
     def analyze_context(self, context: PromptContext) -> ScanResult:
         try:
@@ -133,10 +100,6 @@ class LLMAnalyzer:
                 return pool.submit(asyncio.run, self._analyze_context_async(context)).result()
         except RuntimeError:
             return asyncio.run(self._analyze_context_async(context))
-
-    async def _analyze_async(self, skill_path: Path) -> ScanResult:
-        context = self.context_builder.build(skill_path, enrichment_context=self.enrichment_context)
-        return await self._analyze_context_async(context, fallback_skill_name=skill_path.name)
 
     async def _analyze_context_async(
         self,

@@ -2,8 +2,6 @@ import type { components } from "../../../api/generated";
 
 export type ScanFinding = components["schemas"]["ScanFindingResponse"];
 export type ScanResult = components["schemas"]["ScanResultResponse"];
-export type ScanAvailability = components["schemas"]["ScanAvailabilityResponse"];
-export type DetectedProvider = components["schemas"]["DetectedProviderResponse"];
 export type LLMDetection = components["schemas"]["LLMDetectionResponse"];
 export type ScanConfigItem = components["schemas"]["ScanConfigItem"];
 export type ScanConfigListResponse = components["schemas"]["ScanConfigListResponse"];

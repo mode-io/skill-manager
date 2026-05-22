@@ -4,8 +4,6 @@ import logging
 import os
 from pathlib import Path
 
-from skill_manager.db.repositories import LLMScanConfigRow
-
 from .config_service import ScanConfigService
 from .context_builder import PromptContextBuilder
 from .llm.analyzer import LLMAnalyzer
@@ -66,7 +64,7 @@ class ScanService:
         skill_path = self.target_resolver.resolve_skill_path(skill_ref)
         if skill_path is None:
             return None
-        return self.scan_skill_with_options(
+        return self._scan_resolved_skill(
             skill_path,
             use_llm=use_llm,
             llm_api_key=llm_api_key,
@@ -81,10 +79,7 @@ class ScanService:
             aws_session_token=aws_session_token,
         )
 
-    def scan_skill(self, skill_path: Path) -> ScanResult:
-        return self.scan_skill_with_options(skill_path)
-
-    def scan_skill_with_options(
+    def _scan_resolved_skill(
         self,
         skill_path: Path,
         *,
@@ -178,27 +173,6 @@ class ScanService:
                     analyzer="llm_analyzer",
                 )],
             )
-
-    def list_configs(self) -> list[LLMScanConfigRow]:
-        return self.config_service.list_configs()
-
-    def get_active_config(self) -> LLMScanConfigRow | None:
-        return self.config_service.get_active_config()
-
-    def get_config_by_id(self, config_id: int) -> LLMScanConfigRow | None:
-        return self.config_service.get_config_by_id(config_id)
-
-    def save_config_validated(self, config: LLMScanConfigRow) -> int:
-        return self.config_service.save_config_validated(config)
-
-    def delete_config(self, config_id: int) -> None:
-        self.config_service.delete_config(config_id)
-
-    def set_active_config(self, config_id: int) -> None:
-        self.config_service.set_active_config(config_id)
-
-    def validate_config(self, config: LLMScanConfigRow):
-        return self.config_service.validate_config(config)
 
     @staticmethod
     def _env_api_key() -> str | None:

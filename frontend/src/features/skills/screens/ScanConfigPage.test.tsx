@@ -167,7 +167,7 @@ describe("ScanConfigPage", () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText("Default")).toBeInTheDocument());
-    fireEvent.click(within(screen.getAllByRole("row")[1]).getByRole("button", { name: "Edit" }));
+    fireEvent.click(within(screen.getAllByRole("row")[1]).getByRole("button", { name: "编辑" }));
 
     expect(await screen.findByRole("heading", { name: "更新配置" })).toBeInTheDocument();
     expect(screen.getAllByText("配置 LLM API Key").length).toBeGreaterThan(0);

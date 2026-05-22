@@ -70,31 +70,6 @@ def _migrate_v0_to_v1(conn: sqlite3.Connection) -> None:
 
 def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
     logger.info("Schema migration: v1 -> v2 (multi-config support)")
-    old_exists = conn.execute(
-        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='llm_scan_config'"
-    ).fetchone()[0]
-    if old_exists:
-        rows = conn.execute(
-            "SELECT base_url, api_key, model, provider, max_tokens, consensus_runs FROM llm_scan_config WHERE id = 1"
-        ).fetchall()
-        for row in rows:
-            if row["base_url"] or row["api_key"] or row["model"]:
-                conn.execute(
-                    """INSERT INTO llm_scan_configs (
-                           name, base_url, api_key, model, provider,
-                           max_tokens, consensus_runs, is_active
-                       )
-                       VALUES ('Default', ?1, ?2, ?3, ?4, ?5, ?6, 1)""",
-                    (
-                        row["base_url"],
-                        row["api_key"],
-                        row["model"],
-                        row["provider"],
-                        row["max_tokens"],
-                        row["consensus_runs"],
-                    ),
-                )
-        conn.execute("DROP TABLE llm_scan_config")
     conn.execute("PRAGMA user_version = 2")
     conn.commit()
 

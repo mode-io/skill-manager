@@ -29,7 +29,6 @@ export interface LLMScanConfig {
   id: number;
   name: string;
   baseUrl: string;
-  apiKey: string;
   model: string;
   provider: string;
   apiVersion: string;
@@ -37,7 +36,6 @@ export interface LLMScanConfig {
   consensusRuns: number;
   awsRegion: string;
   awsProfile: string;
-  awsSessionToken: string;
 }
 
 const IDLE_STATE: SkillScanState = { status: "idle", result: null, error: null, completedAt: null };
@@ -106,7 +104,6 @@ function buildConfigFromItem(item: ScanConfigItem): LLMScanConfig {
     id: item.id,
     name: item.name,
     baseUrl: item.baseUrl,
-    apiKey: "",
     model: item.model,
     provider: item.provider,
     apiVersion: item.apiVersion,
@@ -114,7 +111,6 @@ function buildConfigFromItem(item: ScanConfigItem): LLMScanConfig {
     consensusRuns: item.consensusRuns,
     awsRegion: item.awsRegion,
     awsProfile: item.awsProfile,
-    awsSessionToken: "",
   };
 }
 
@@ -259,17 +255,6 @@ export function useSkillScan() {
     [llmConfig],
   );
 
-  const clearScan = useCallback((skillRef: string) => {
-    setScanState((prev) => {
-      const next = { ...prev };
-      delete next[skillRef];
-      const cache = readCachedScanReportEntries();
-      delete cache[skillRef];
-      writeCachedScanReportEntries(cache);
-      return next;
-    });
-  }, []);
-
   const validateConfig = useCallback(
     async (config: LLMScanConfigInput & { existingConfigId?: number }) => validateScanConfig(config),
     [],
@@ -287,7 +272,6 @@ export function useSkillScan() {
     scanState,
     getScanState,
     scanSkill,
-    clearScan,
     llmConfig,
     configs,
     activeConfigId,
