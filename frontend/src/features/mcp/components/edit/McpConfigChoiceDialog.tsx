@@ -9,6 +9,7 @@ import type {
   McpServerSpecDto,
 } from "../../api/management-types";
 import { useMcpCopy } from "../../i18n";
+import { maskMcpPayloadPreview } from "../../model/display-secrets";
 import {
   envChipLabel,
   formatEnvKeyPreview,
@@ -19,7 +20,7 @@ import {
 export interface McpConfigChoiceOption {
   id: string;
   sourceKind: "managed" | "harness";
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   label: string;
   logoKey?: string | null;
   configPath?: string | null;
@@ -184,7 +185,7 @@ export function McpConfigChoiceDialog({
                     </button>
                     {isExpanded ? (
                       <pre className="mcp-choose-version__payload ui-scrollbar">
-                        {JSON.stringify(option.payloadPreview, null, 2)}
+                        {JSON.stringify(maskMcpPayloadPreview(option.payloadPreview), null, 2)}
                       </pre>
                     ) : null}
                   </div>
@@ -227,7 +228,7 @@ export function McpConfigChoiceDialog({
 function toConfigChoiceDto(option: McpConfigChoiceOption): McpConfigChoiceDto {
   return {
     sourceKind: option.sourceKind,
-    sourceHarness: option.sourceHarness ?? null,
+    observedHarness: option.observedHarness ?? null,
     label: option.label,
     logoKey: option.logoKey ?? null,
     configPath: option.configPath ?? null,

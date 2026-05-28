@@ -11,10 +11,10 @@ from skill_manager.paths import AppPaths, resolve_app_paths
 from .cli_marketplace import CliMarketplaceCatalog
 from .invalidation import InvalidationFanout
 from .mcp.enrichment import McpEnrichmentService
-from .mcp.installers import McpInstallProvider, SmitheryCliInstallProvider
 from .mcp.marketplace import McpMarketplaceCatalog
 from .mcp.mutations import McpMutationService
 from .mcp.planner import McpAdoptionPlanner
+from .mcp.availability import McpAvailabilityProbe
 from .mcp.query import McpQueryService
 from .mcp.read_models import McpReadModelService
 from .mcp.store import McpServerStore
@@ -86,7 +86,7 @@ def build_backend_container(
     mcp_marketplace_catalog: McpMarketplaceCatalog | None = None,
     cli_marketplace_catalog: CliMarketplaceCatalog | None = None,
     source_fetcher: SourceFetchService | None = None,
-    mcp_install_provider: McpInstallProvider | None = None,
+    mcp_availability_probe: McpAvailabilityProbe | None = None,
 ) -> BackendContainer:
     active_env = dict(os.environ)
     if env is not None:
@@ -162,18 +162,24 @@ def build_backend_container(
     )
     mcp_enrichment = McpEnrichmentService(mcp_catalog)
     mcp_planner = McpAdoptionPlanner(mcp_read_models)
+    mcp_availability_probe = mcp_availability_probe or McpAvailabilityProbe()
+    mcp_availability_cache = {}
     mcp_queries = McpQueryService(
         mcp_read_models,
         planner=mcp_planner,
         enrichment=mcp_enrichment,
+        marketplace_catalog=mcp_catalog,
+        availability_probe=mcp_availability_probe,
+        availability_cache=mcp_availability_cache,
     )
     mcp_mutations = McpMutationService(
         store=mcp_store,
         read_models=mcp_read_models,
         planner=mcp_planner,
         marketplace_catalog=mcp_catalog,
-        install_provider=mcp_install_provider or SmitheryCliInstallProvider(env=active_env),
         enrichment=mcp_enrichment,
+        availability_probe=mcp_availability_probe,
+        availability_cache=mcp_availability_cache,
     )
 
     db = Database(paths.db_path)

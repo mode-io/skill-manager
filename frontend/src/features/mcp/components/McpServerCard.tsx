@@ -6,8 +6,10 @@ import { CardSelectCheckbox } from "../../../components/cards/CardSelectCheckbox
 import { OverflowTooltipText } from "../../../components/ui/OverflowTooltipText";
 import type { McpInventoryColumnDto, McpInventoryEntryDto } from "../api/management-types";
 import { useMcpCopy } from "../i18n";
+import type { McpInstallConfigValues } from "../model/install-config";
 import { isMcpHarnessAddressable } from "../model/selectors";
 import { McpHarnessLogoStack } from "./McpHarnessLogoStack";
+import { McpStatusChip } from "./McpStatusChip";
 
 interface McpServerCardProps {
   entry: McpInventoryEntryDto;
@@ -16,7 +18,7 @@ interface McpServerCardProps {
   checked: boolean;
   onOpenDetail: (name: string) => void;
   onToggleChecked: (name: string) => void;
-  onSetHarnesses: (name: string, target: "enabled" | "disabled") => void;
+  onSetHarnesses: (name: string, target: "enabled" | "disabled", config?: McpInstallConfigValues) => void;
   onRequestUninstall: (name: string) => void;
 }
 
@@ -94,22 +96,24 @@ export function McpServerCard({
       }}
       aria-label={copy.detail.openDetail(entry.displayName)}
     >
-      <div className="skill-card__head">
+      <div className="skill-card__head mcp-server-card__head">
         <OverflowTooltipText as="h3" className="skill-card__name">
           {entry.displayName}
         </OverflowTooltipText>
-        <span aria-hidden="true" />
-        <CardMenu
-          label={copy.detail.moreActions(entry.displayName)}
-          items={menuItems}
-          disabled={pending}
-        />
-        <CardSelectCheckbox
-          checked={checked}
-          onToggle={() => onToggleChecked(entry.name)}
-          label={checked ? copy.detail.deselect(entry.displayName) : copy.detail.select(entry.displayName)}
-          disabled={pending}
-        />
+        <McpStatusChip status={entry.mcpStatus} />
+        <div className="mcp-server-card__actions">
+          <CardMenu
+            label={copy.detail.moreActions(entry.displayName)}
+            items={menuItems}
+            disabled={pending}
+          />
+          <CardSelectCheckbox
+            checked={checked}
+            onToggle={() => onToggleChecked(entry.name)}
+            label={checked ? copy.detail.deselect(entry.displayName) : copy.detail.select(entry.displayName)}
+            disabled={pending}
+          />
+        </div>
       </div>
 
       <p className="mcp-server-card__transport">

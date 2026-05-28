@@ -10,12 +10,37 @@ from urllib.request import Request, urlopen
 
 from skill_manager.application import build_backend_container
 from skill_manager.application.cli_marketplace import CliMarketplaceCatalog
-from skill_manager.application.mcp.installers import McpInstallProvider
+from skill_manager.application.mcp.availability import McpAvailabilityResult
+from skill_manager.application.mcp.marketplace import McpMarketplaceCatalog
 from skill_manager.application.skills.marketplace import MarketplaceCatalog
 from skill_manager.application.skills.source_fetch import SourceFetchService
 from skill_manager.runtime.server import serve_in_thread
 
 from .fake_home import FakeHomeSpec, create_fake_home_spec, seed_mixed_fixture
+
+
+class EmptyMcpMarketplaceCatalog:
+    def popular_page(self, *, limit: int | None = None, offset: int = 0) -> dict[str, object]:
+        return {"items": [], "nextOffset": None, "hasMore": False}
+
+    def search_page(
+        self,
+        query: str,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        remote: bool | None = None,
+        verified: bool | None = None,
+    ) -> dict[str, object]:
+        return {"items": [], "nextOffset": None, "hasMore": False}
+
+    def detail(self, qualified_name: str) -> dict[str, object] | None:
+        return None
+
+
+class StaticMcpAvailabilityProbe:
+    def probe(self, _spec) -> McpAvailabilityResult:
+        return McpAvailabilityResult("unavailable", "not checked in tests")
 
 
 class AppTestHarness(AbstractContextManager["AppTestHarness"]):
@@ -27,10 +52,10 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         seed_openclaw: bool = True,
         fixture_factory: Callable[[FakeHomeSpec], None] | None = None,
         marketplace: MarketplaceCatalog | None = None,
+        mcp_marketplace: McpMarketplaceCatalog | None = None,
         cli_marketplace: CliMarketplaceCatalog | None = None,
         env_overrides: dict[str, str] | None = None,
         source_fetcher: SourceFetchService | None = None,
-        mcp_install_provider: McpInstallProvider | None = None,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name), seed_openclaw_state=seed_openclaw)
@@ -46,17 +71,19 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             self.container = build_backend_container(
                 active_env,
                 marketplace_catalog=MarketplaceCatalog.from_environment(active_env, warm_on_init=False),
+                mcp_marketplace_catalog=mcp_marketplace or EmptyMcpMarketplaceCatalog(),  # type: ignore[arg-type]
                 cli_marketplace_catalog=cli_marketplace,
                 source_fetcher=source_fetcher,
-                mcp_install_provider=mcp_install_provider,
+                mcp_availability_probe=StaticMcpAvailabilityProbe(),  # type: ignore[arg-type]
             )
         else:
             self.container = build_backend_container(
                 active_env,
                 marketplace_catalog=marketplace,
+                mcp_marketplace_catalog=mcp_marketplace or EmptyMcpMarketplaceCatalog(),  # type: ignore[arg-type]
                 cli_marketplace_catalog=cli_marketplace,
                 source_fetcher=source_fetcher,
-                mcp_install_provider=mcp_install_provider,
+                mcp_availability_probe=StaticMcpAvailabilityProbe(),  # type: ignore[arg-type]
             )
             # Ensure tests exercising a custom catalog use the same read-model root.
             self.container.skills_read_models.invalidate()

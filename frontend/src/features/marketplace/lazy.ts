@@ -8,6 +8,14 @@ import { fetchMcpMarketplacePopular } from "./api/mcp-client";
 import { mcpMarketplaceKeys } from "./api/mcp-queries";
 import { marketplaceKeys } from "./api/queries";
 
+type MarketplacePage = {
+  hasMore: boolean;
+  nextOffset?: number | null;
+};
+
+const getNextMarketplacePageParam = (lastPage: MarketplacePage) =>
+  lastPage.hasMore ? lastPage.nextOffset ?? undefined : undefined;
+
 const marketplacePageImport = () => import("./screens/MarketplacePage");
 const marketplaceMcpPageImport = () => import("./screens/MarketplaceMcpPage");
 const marketplaceCliPageImport = () => import("./screens/MarketplaceCliPage");
@@ -33,14 +41,16 @@ export function prefetchMarketplacePopularFeed(queryClient: QueryClient): void {
     queryKey: marketplaceKeys.feed("__popular__"),
     queryFn: ({ pageParam }) => fetchMarketplacePopular({ limit: 20, offset: pageParam }),
     initialPageParam: 0,
+    getNextPageParam: getNextMarketplacePageParam,
   });
 }
 
 export function prefetchMarketplaceMcpFeed(queryClient: QueryClient): void {
   void queryClient.prefetchInfiniteQuery({
-    queryKey: mcpMarketplaceKeys.feed("__popular__", "all"),
-    queryFn: ({ pageParam }) => fetchMcpMarketplacePopular({ limit: 30, offset: pageParam }),
+    queryKey: mcpMarketplaceKeys.feed("__popular__"),
+    queryFn: ({ pageParam }) => fetchMcpMarketplacePopular({ limit: 20, offset: pageParam }),
     initialPageParam: 0,
+    getNextPageParam: getNextMarketplacePageParam,
   });
 }
 
@@ -49,5 +59,6 @@ export function prefetchMarketplaceCliFeed(queryClient: QueryClient): void {
     queryKey: cliMarketplaceKeys.feed("__popular__"),
     queryFn: ({ pageParam }) => fetchCliMarketplacePopular({ limit: 30, offset: pageParam }),
     initialPageParam: 0,
+    getNextPageParam: getNextMarketplacePageParam,
   });
 }

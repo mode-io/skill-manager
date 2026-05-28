@@ -16,7 +16,7 @@ _JS_STRING_RE = re.compile(_JS_STRING_PATTERN)
 
 
 def parse_static_stdio_function(value: object) -> StaticStdioCommand | None:
-    """Extract a static command recipe from Smithery's stdioFunction string.
+    """Extract a static command recipe from a marketplace stdioFunction string.
 
     The marketplace field is JavaScript source. We intentionally parse only the
     simple object-literal subset and never evaluate code.

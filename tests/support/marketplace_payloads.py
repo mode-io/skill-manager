@@ -41,7 +41,7 @@ FIXTURE_FOLDER_URLS = {
 }
 
 UNSUPPORTED_SOURCE_SKILL = {
-    "repo": "smithery.ai",
+    "repo": "unsupported-source.example",
     "skillId": "ui-ux-pro-max",
     "name": "ui-ux-pro-max",
     "installs": 2048,

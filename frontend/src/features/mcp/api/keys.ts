@@ -1,5 +1,6 @@
 export const MCP_STALE_TIME_MS = 30_000;
 export const MCP_GC_TIME_MS = 5 * 60_000;
+export const MCP_INVENTORY_REFETCH_INTERVAL_MS = 5_000;
 
 export const mcpManagementKeys = {
   all: ["mcp"] as const,

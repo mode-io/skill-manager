@@ -59,6 +59,7 @@ const englishMcpCopy = {
     loadingServer: "Loading MCP server",
     loading: "Loading…",
     unableTitle: "Unable to load MCP server",
+    unableToLoadInstallConfig: "Unable to load MCP configuration fields.",
     about: "About",
     differentConfigsTitle: "Different configs found",
     differentConfigsBody: "Choose which config Skill Manager should manage, then apply it to current bindings.",
@@ -67,6 +68,14 @@ const englishMcpCopy = {
     bindings: "Bindings",
     environment: "Environment",
     uninstall: "Uninstall",
+    sourceLinksAria: (name: string) => `Source links for ${name}`,
+    viewInRegistry: "View in MCP Registry",
+    github: "GitHub",
+    website: "Website",
+    unavailableLink: (label: string) => `${label} unavailable`,
+    noRegistryLink: "This MCP server is not linked to an MCP Registry entry.",
+    noGithubLink: "No GitHub repository is listed for this MCP server.",
+    noWebsiteLink: "No website is listed for this MCP server.",
     skillManagerConfig: "Skill Manager config",
     noConnectionData: "No connection data.",
     command: "Command",
@@ -79,9 +88,55 @@ const englishMcpCopy = {
     select: (name: string) => `Select ${name}`,
     deselect: (name: string) => `Deselect ${name}`,
     installedViaSkillManager: "Installed via skill-manager",
+    enabledStatus: {
+      enabled: "Enabled",
+      disabled: "Disabled",
+    },
+    enabledStatusAria: (label: string) => `Status: ${label}`,
+    mcpStatus: {
+      available: "Available",
+      needs_config: "Needs config",
+      connection_issue: "Connection issue",
+      unchecked: "Unchecked",
+    },
+    mcpStatusReason: {
+      available: "MCP endpoint is reachable.",
+      needs_config: "Required configuration is missing. Add it when enabling this MCP.",
+      connection_issue: "Connection failed. Check this MCP's config.",
+      unchecked: "Availability has not been checked yet.",
+      httpUnauthorized: () =>
+        "Authentication required, but no auth link is listed.",
+      httpUnauthorizedWithDocs: () =>
+        "Authentication required. Check the website or GitHub docs.",
+      httpUnauthorizedNoDocs: () =>
+        "Authentication required, but no auth link or docs are listed.",
+      httpForbidden: () =>
+        "Access refused. Check credentials, permissions, or quota.",
+      httpNotFound: () =>
+        "Endpoint not found. Check the server URL.",
+      httpRateLimited: () =>
+        "Rate limited. Try again later or check quota.",
+      httpServerError: () =>
+        "Provider error. Try again later.",
+    },
+    mcpStatusAria: (label: string) => `MCP status: ${label}`,
     enableOnAll: "Enable on all",
     enableOnAllAria: "Enable on all harnesses",
     disableEverywhere: "Disable everywhere",
+    installConfig: {
+      allHarnesses: "all harnesses",
+      title: (name: string) => `Configure ${name}`,
+      description: (harness: string) => `Configure for ${harness}. These values will be written to your local Agent MCP config.`,
+      bulkRequiresSingle: (name: string) =>
+        `${name} requires credentials. Enable it by itself so Skill Manager can collect the required configuration.`,
+      requiredHint: "Complete the required fields before saving.",
+      optionalHint: "Optional configuration",
+      missingRequired: (fields: string) => `Missing required fields: ${fields}`,
+      install: "Save",
+      cancel: "Cancel",
+      showSecret: "Show secret",
+      hideSecret: "Hide secret",
+    },
     review: {
       loadingServer: "Loading server",
       identicalAcross: (count: number) => `Identical across ${count} harnesses`,
@@ -211,6 +266,7 @@ export const mcpCopy = {
       loadingServer: "正在加载 MCP 服务器",
       loading: "加载中...",
       unableTitle: "无法加载 MCP 服务器",
+      unableToLoadInstallConfig: "无法加载 MCP 配置字段。",
       about: "简介",
       differentConfigsTitle: "发现不同配置",
       differentConfigsBody: "选择 Skill Manager 应管理哪份配置，然后应用到当前绑定。",
@@ -219,6 +275,14 @@ export const mcpCopy = {
       bindings: "绑定",
       environment: "环境",
       uninstall: "卸载",
+      sourceLinksAria: (name: string) => `${name} 的来源链接`,
+      viewInRegistry: "在 MCP Registry 查看",
+      github: "GitHub",
+      website: "Website",
+      unavailableLink: (label: string) => `${label} 不可用`,
+      noRegistryLink: "此 MCP 服务器未关联 MCP Registry 条目。",
+      noGithubLink: "此 MCP 服务器未提供 GitHub 仓库。",
+      noWebsiteLink: "此 MCP 服务器未提供官网链接。",
       skillManagerConfig: "Skill Manager 配置",
       noConnectionData: "没有连接数据。",
       command: "Command",
@@ -231,9 +295,55 @@ export const mcpCopy = {
       select: (name: string) => `选择 ${name}`,
       deselect: (name: string) => `取消选择 ${name}`,
       installedViaSkillManager: "通过 skill-manager 安装",
+      enabledStatus: {
+        enabled: "已启用",
+        disabled: "未启用",
+      },
+      enabledStatusAria: (label: string) => `状态：${label}`,
+      mcpStatus: {
+        available: "可用",
+        needs_config: "需要配置",
+        connection_issue: "连接异常",
+        unchecked: "未检查",
+      },
+      mcpStatusReason: {
+        available: "MCP 端点可连接。",
+        needs_config: "缺少必填配置。启用此 MCP 时请补充这些配置。",
+        connection_issue: "Skill Manager 无法通过当前配置连接到此 MCP。",
+        unchecked: "尚未检查可用性。",
+        httpUnauthorized: () =>
+          "远程 MCP 服务器需要认证，但 Registry 未提供认证入口。请打开 MCP 详情查看是否有服务商文档。",
+        httpUnauthorizedWithDocs: () =>
+          "远程 MCP 服务器需要认证，但 Registry 未提供认证入口。请查看官网或 GitHub 文档了解服务商的授权方式。",
+        httpUnauthorizedNoDocs: () =>
+          "远程 MCP 服务器需要认证，但 Registry 未提供认证入口或文档链接，Skill Manager 当前无法完成此 MCP 的认证。",
+        httpForbidden: () =>
+          "远程 MCP 服务器拒绝访问。请检查 API key、账号权限、额度，或服务商是否限制了请求来源。",
+        httpNotFound: () =>
+          "远程 MCP 地址不存在。请检查服务器 URL 是否仍然正确。",
+        httpRateLimited: () =>
+          "远程 MCP 服务器正在限制请求频率。请稍后重试，或检查服务商额度限制。",
+        httpServerError: () =>
+          "远程 MCP 服务器返回服务端错误。服务商可能暂时不可用。",
+      },
+      mcpStatusAria: (label: string) => `MCP 状态：${label}`,
       enableOnAll: "全部启用",
       enableOnAllAria: "在所有 harness 上启用",
       disableEverywhere: "全部停用",
+      installConfig: {
+        allHarnesses: "所有 harness",
+        title: (name: string) => `配置 ${name}`,
+        description: (harness: string) => `配置到 ${harness}。这些值会写入本机 Agent MCP 配置。`,
+        bulkRequiresSingle: (name: string) =>
+          `${name} 需要认证配置。请单独启用这个 MCP，以便 Skill Manager 收集必填配置。`,
+        requiredHint: "保存前请填写必填字段。",
+        optionalHint: "可选配置",
+        missingRequired: (fields: string) => `缺少必填字段：${fields}`,
+        install: "保存",
+        cancel: "取消",
+        showSecret: "显示密钥",
+        hideSecret: "隐藏密钥",
+      },
       review: {
         loadingServer: "正在加载服务器",
         identicalAcross: (count: number) => `${count} 个 harness 中配置相同`,

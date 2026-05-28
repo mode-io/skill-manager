@@ -87,7 +87,7 @@ class SkillsMarketplaceApiTests(unittest.TestCase):
         self.assertEqual(first["description"], "Switch between supported skill execution modes.")
         self.assertEqual(first["repoUrl"], "https://github.com/mode-io/skills")
         self.assertEqual(first["skillsDetailUrl"], f"{fixture.base_url}/mode-io/skills/mode-switch")
-        self.assertTrue(all(item["repoLabel"] != "smithery.ai" for item in payload["items"]))
+        self.assertTrue(all(item["repoLabel"] != "unsupported-source.example" for item in payload["items"]))
 
     def test_marketplace_search_uses_https_fixture_when_trusted(self) -> None:
         with MarketplaceFixtureServer() as fixture:
@@ -105,7 +105,7 @@ class SkillsMarketplaceApiTests(unittest.TestCase):
         self.assertEqual(payload["items"][0]["name"], "ui-ux-pro-max")
         self.assertEqual(payload["items"][0]["repoLabel"], "broken-org/ui-ux-pro-max-skill")
         self.assertEqual(payload["items"][0]["description"], MarketplaceCatalog.DETAIL_MISSING_FALLBACK)
-        self.assertTrue(all(item["repoLabel"] != "smithery.ai" for item in payload["items"]))
+        self.assertTrue(all(item["repoLabel"] != "unsupported-source.example" for item in payload["items"]))
 
     def test_marketplace_popular_returns_503_when_fixture_is_untrusted(self) -> None:
         with MarketplaceFixtureServer() as fixture:
@@ -159,7 +159,7 @@ class SkillsMarketplaceApiTests(unittest.TestCase):
     def test_marketplace_detail_returns_404_for_filtered_unsupported_source(self) -> None:
         with MarketplaceFixtureServer() as fixture:
             with AppTestHarness(marketplace=_fixture_catalog(fixture.env())) as harness:
-                payload = harness.get_json("/api/marketplace/items/skillssh%3Asmithery.ai%3Aui-ux-pro-max", expected_status=404)
+                payload = harness.get_json("/api/marketplace/items/skillssh%3Aunsupported-source.example%3Aui-ux-pro-max", expected_status=404)
 
         self.assertIn("unknown marketplace item", payload["error"])
 

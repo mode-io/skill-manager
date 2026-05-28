@@ -1,4 +1,4 @@
 from .catalog import McpMarketplaceCatalog
-from .client import SmitheryClient
+from .client import McpRegistryClient
 
-__all__ = ["McpMarketplaceCatalog", "SmitheryClient"]
+__all__ = ["McpMarketplaceCatalog", "McpRegistryClient"]

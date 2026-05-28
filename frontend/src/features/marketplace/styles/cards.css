@@ -46,6 +46,10 @@
   align-items: start;
 }
 
+.market-card__identity {
+  min-width: 0;
+}
+
 .market-card__avatar {
   display: inline-flex;
   align-items: center;
@@ -72,6 +76,9 @@
   font-weight: 600;
   color: var(--color-text);
   letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .market-card__repo {
@@ -79,6 +86,9 @@
   font-family: var(--font-mono);
   font-size: 0.76rem;
   color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .market-card__stars {

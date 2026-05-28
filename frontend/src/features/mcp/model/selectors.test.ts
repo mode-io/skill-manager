@@ -21,11 +21,20 @@ function makeEntry(
   states: ("managed" | "drifted" | "missing")[],
   options: { transport?: "stdio" | "http" | "sse" } = {},
 ): McpInventoryEntryDto {
+  const enabled = states.some((state) => state === "managed");
   return {
     name,
     displayName: name,
     kind: "managed",
     canEnable: true,
+    enabledStatus: enabled ? "enabled" : "disabled",
+    availabilityStatus: "unavailable",
+    availabilityReason: null,
+    mcpStatus: {
+      kind: "unchecked",
+      reason: null,
+    },
+    installConfigStatus: { hasFields: false, missingRequired: [], configured: true },
     spec: options.transport
       ? {
           name,

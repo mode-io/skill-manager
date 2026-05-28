@@ -14,6 +14,18 @@
   opacity: 0.7;
 }
 
+.mcp-server-card__head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.mcp-server-card__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 .mcp-server-card__transport {
   margin: 0;
   font-size: var(--font-size-xs);
@@ -39,6 +51,48 @@
   border-color: color-mix(in srgb, var(--color-warning, #f59e0b) 36%, transparent);
   background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
   color: var(--color-warning, #f59e0b);
+}
+
+.mcp-status-chip {
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border);
+  max-width: 128px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-status-chip[data-kind="available"] {
+  border-color: color-mix(in srgb, var(--color-success) 36%, transparent);
+  background: color-mix(in srgb, var(--color-success-soft) 78%, transparent);
+  color: var(--color-success);
+}
+
+.mcp-status-chip[data-kind="connection_issue"] {
+  border-color: color-mix(in srgb, var(--color-danger) 32%, transparent);
+  background: color-mix(in srgb, var(--color-danger-soft) 82%, transparent);
+  color: var(--color-danger);
+}
+
+.mcp-status-chip[data-kind="needs_config"] {
+  border-color: color-mix(in srgb, var(--color-warning) 36%, transparent);
+  background: color-mix(in srgb, var(--color-warning-soft) 78%, transparent);
+  color: var(--color-warning);
+}
+
+.mcp-status-chip[data-kind="unchecked"] {
+  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-text-muted);
+}
+
+.mcp-status-chip__dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .mcp-server-card__detail {

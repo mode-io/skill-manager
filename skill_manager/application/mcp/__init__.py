@@ -10,7 +10,6 @@ from .contracts import (
     McpObservedEntry,
 )
 from .identity import AdoptionIssue, AdoptionPlan, HarnessSighting, ServerIdentityGroup, build_identity_plan
-from .installers import McpInstallProvider, McpInstallResult, SmitheryCliInstallProvider
 from .names import canonical_server_name
 from .inventory import build_inventory
 from .mappers import (
@@ -40,8 +39,6 @@ __all__ = [
     "McpHarnessAdapter",
     "McpHarnessScan",
     "McpHarnessStatus",
-    "McpInstallProvider",
-    "McpInstallResult",
     "McpInventory",
     "McpInventoryEntry",
     "McpManagedManifest",
@@ -52,7 +49,6 @@ __all__ = [
     "OpenClawMapper",
     "OpenCodeMapper",
     "ServerIdentityGroup",
-    "SmitheryCliInstallProvider",
     "TransportMapper",
     "build_identity_plan",
     "build_inventory",

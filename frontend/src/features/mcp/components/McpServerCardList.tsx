@@ -1,5 +1,6 @@
 import type { McpInventoryColumnDto, McpInventoryEntryDto } from "../api/management-types";
 import { useMcpCopy } from "../i18n";
+import type { McpInstallConfigValues } from "../model/install-config";
 import { McpServerCard } from "./McpServerCard";
 
 interface McpServerCardListProps {
@@ -9,7 +10,7 @@ interface McpServerCardListProps {
   checkedNames: ReadonlySet<string>;
   onOpenDetail: (name: string) => void;
   onToggleChecked: (name: string) => void;
-  onSetHarnesses: (name: string, target: "enabled" | "disabled") => void;
+  onSetHarnesses: (name: string, target: "enabled" | "disabled", config?: McpInstallConfigValues) => void;
   onRequestUninstall: (name: string) => void;
   ariaLabel?: string;
 }

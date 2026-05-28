@@ -6,7 +6,6 @@ import { invalidateMcpQueries } from "../../mcp/public";
 import { useMarketplaceCopy } from "../i18n";
 import { useInstallingState } from "../model/installing-context";
 import {
-  fetchMcpInstallTargets,
   fetchMcpMarketplaceDetail,
   fetchMcpMarketplacePopular,
   addMcpServer,
@@ -14,37 +13,34 @@ import {
 } from "./mcp-client";
 import type {
   AddMcpServerResponseDto,
-  McpMarketplaceFilter,
   McpMarketplaceItemDto,
   McpMarketplacePageResultDto,
 } from "./mcp-types";
 
 const MCP_MARKETPLACE_STALE_TIME_MS = 60_000;
 const MCP_MARKETPLACE_GC_TIME_MS = 15 * 60_000;
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 20;
 
 export const mcpMarketplaceKeys = {
   all: ["marketplace", "mcp"] as const,
-  feed: (query: string, filter: McpMarketplaceFilter) =>
-    ["marketplace", "mcp", "feed", query, filter] as const,
+  feed: (query: string) =>
+    ["marketplace", "mcp", "feed", query] as const,
   detail: (qualifiedName: string) =>
     ["marketplace", "mcp", "detail", qualifiedName] as const,
-  installTargets: () => ["marketplace", "mcp", "install-targets"] as const,
 };
 
-export function useMcpMarketplaceFeedQuery(query: string, filter: McpMarketplaceFilter) {
+export function useMcpMarketplaceFeedQuery(query: string) {
   const trimmed = query.trim();
-  const usePopular = !trimmed && filter === "all";
+  const usePopular = !trimmed;
 
   return useInfiniteQuery({
-    queryKey: mcpMarketplaceKeys.feed(trimmed || "__popular__", filter),
+    queryKey: mcpMarketplaceKeys.feed(trimmed || "__popular__"),
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       usePopular
         ? fetchMcpMarketplacePopular({ limit: PAGE_SIZE, offset: pageParam })
         : searchMcpMarketplace({
             query: trimmed,
-            filter,
             limit: PAGE_SIZE,
             offset: pageParam,
           }),
@@ -63,14 +59,6 @@ export function useMcpMarketplaceDetailQuery(qualifiedName: string | null) {
   });
 }
 
-export function useMcpInstallTargetsQuery() {
-  return useQuery({
-    queryKey: mcpMarketplaceKeys.installTargets(),
-    queryFn: fetchMcpInstallTargets,
-    ...queryPolicy(MCP_MARKETPLACE_GC_TIME_MS, MCP_MARKETPLACE_GC_TIME_MS),
-  });
-}
-
 /**
  * Shared marketplace install mutation used by the detail view.
  * Handles: pending-state publication, inventory invalidation, and success/error toasts.
@@ -84,9 +72,13 @@ export function useAddMcpServerMutation() {
   return useMutation<
     AddMcpServerResponseDto,
     Error,
-    { qualifiedName: string; sourceHarness: string; displayName?: string }
+    {
+      qualifiedName: string;
+      displayName?: string;
+    }
   >({
-    mutationFn: ({ qualifiedName, sourceHarness }) => addMcpServer({ qualifiedName, sourceHarness }),
+    mutationFn: ({ qualifiedName }) =>
+      addMcpServer({ qualifiedName }),
     onMutate: ({ qualifiedName }) => {
       begin(qualifiedName);
     },

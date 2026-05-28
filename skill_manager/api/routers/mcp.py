@@ -9,6 +9,7 @@ from skill_manager.api.schemas import (
     DisableMcpServerRequest,
     EnableMcpServerRequest,
     McpApplyConfigResponse,
+    McpAvailabilityCheckResponse,
     McpInventoryResponse,
     McpServerDetailResponse,
     McpServerMutationResponse,
@@ -36,15 +37,20 @@ def get_mcp_server(
     return container.mcp_queries.get_server(name)
 
 
+@router.post("/servers/{name}/availability/check", response_model=McpAvailabilityCheckResponse)
+def check_mcp_server_availability(
+    name: str,
+    container: BackendContainer = Depends(get_container),
+) -> dict[str, object]:
+    return container.mcp_queries.check_availability(name)
+
+
 @router.post("/servers", response_model=McpServerMutationResponse)
 def install_mcp_server(
     body: AddMcpServerRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, object]:
-    return container.mcp_mutations.install_from_marketplace(
-        body.qualified_name,
-        source_harness=body.source_harness,
-    )
+    return container.mcp_mutations.install_from_marketplace(body.qualified_name)
 
 
 @router.delete("/servers/{name}", response_model=McpSetHarnessesResultResponse)
@@ -61,7 +67,7 @@ def enable_mcp_server(
     body: EnableMcpServerRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, bool]:
-    return container.mcp_mutations.enable_server(name, body.harness)
+    return container.mcp_mutations.enable_server(name, body.harness, config=body.config)
 
 
 @router.post("/servers/{name}/disable", response_model=OkResponse)
@@ -82,7 +88,7 @@ def reconcile_mcp_server(
     return container.mcp_mutations.reconcile_server(
         name,
         source_kind=body.source_kind,
-        source_harness=body.source_harness,
+        observed_harness=body.observed_harness,
         harnesses=body.harnesses,
     )
 
@@ -93,7 +99,7 @@ def set_mcp_server_harnesses(
     body: SetMcpServerHarnessesRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, object]:
-    return container.mcp_mutations.set_server_all_harnesses(name, body.target)
+    return container.mcp_mutations.set_server_all_harnesses(name, body.target, config=body.config)
 
 
 @router.get("/unmanaged/by-server", response_model=McpUnmanagedByServerResponse)
@@ -110,6 +116,6 @@ def adopt_mcp_server(
 ) -> dict[str, object]:
     return container.mcp_mutations.adopt(
         body.name,
-        source_harness=body.source_harness,
+        observed_harness=body.observed_harness,
         harnesses=body.harnesses,
     )

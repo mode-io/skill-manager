@@ -2,6 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 
 import type { McpInventoryColumnDto } from "../../api/management-types";
 import { useMcpCopy } from "../../i18n";
+import type { McpInstallConfigValues } from "../../model/install-config";
 import { McpServerDetailView } from "./McpServerDetailView";
 
 interface McpServerDetailSheetProps {
@@ -11,12 +12,12 @@ interface McpServerDetailSheetProps {
   isServerPending: boolean;
   isUninstalling: boolean;
   onClose: () => void;
-  onEnableHarness: (harness: string) => void;
+  onEnableHarness: (harness: string, config?: McpInstallConfigValues) => void;
   onDisableHarness: (harness: string) => void;
   onResolveConfig: (
     args: {
       sourceKind: "managed" | "harness";
-      sourceHarness?: string | null;
+      observedHarness?: string | null;
       harnesses?: string[];
     },
   ) => Promise<void>;

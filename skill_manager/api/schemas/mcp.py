@@ -8,14 +8,13 @@ from .common import HarnessTarget
 
 
 class AddMcpServerRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     qualified_name: str = Field(..., alias="qualifiedName", min_length=1)
-    source_harness: str = Field(..., alias="sourceHarness", min_length=1)
 
 
 class EnableMcpServerRequest(HarnessTarget):
-    pass
+    config: dict[str, object] | None = None
 
 
 class DisableMcpServerRequest(HarnessTarget):
@@ -24,13 +23,18 @@ class DisableMcpServerRequest(HarnessTarget):
 
 class SetMcpServerHarnessesRequest(BaseModel):
     target: Literal["enabled", "disabled"]
+    config: dict[str, object] | None = None
 
 
 class AdoptMcpRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     name: str = Field(..., min_length=1)
-    source_harness: str | None = Field(default=None, alias="sourceHarness")
+    observed_harness: str | None = Field(
+        default=None,
+        alias="observedHarness",
+        title="Observed harness",
+    )
     harnesses: list[str] | None = None
 
 
@@ -38,7 +42,11 @@ class ReconcileMcpServerRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     source_kind: Literal["managed", "harness"] = Field(..., alias="sourceKind")
-    source_harness: str | None = Field(default=None, alias="sourceHarness")
+    observed_harness: str | None = Field(
+        default=None,
+        alias="observedHarness",
+        title="Observed harness",
+    )
     harnesses: list[str] | None = None
 
 
@@ -82,12 +90,33 @@ class McpBindingResponse(BaseModel):
     driftDetail: str | None = None
 
 
+class McpStatusResponse(BaseModel):
+    kind: Literal[
+        "available",
+        "needs_config",
+        "connection_issue",
+        "unchecked",
+    ]
+    reason: str | None = None
+
+
+class McpInstallConfigStatusResponse(BaseModel):
+    hasFields: bool
+    missingRequired: list[str]
+    configured: bool
+
+
 class McpInventoryEntryResponse(BaseModel):
     name: str
     displayName: str
     kind: Literal["managed", "unmanaged"]
     spec: McpServerSpecResponse | None = None
     canEnable: bool
+    enabledStatus: Literal["enabled", "disabled"]
+    availabilityStatus: Literal["available", "unavailable"]
+    availabilityReason: str | None = None
+    mcpStatus: McpStatusResponse
+    installConfigStatus: McpInstallConfigStatusResponse
     sightings: list[McpBindingResponse]
 
 
@@ -113,6 +142,13 @@ class McpServerMutationResponse(BaseModel):
     server: McpServerSpecResponse
 
 
+class McpAvailabilityCheckResponse(BaseModel):
+    ok: bool
+    name: str
+    availabilityStatus: Literal["available", "unavailable"]
+    availabilityReason: str | None = None
+
+
 class McpApplyConfigResponse(BaseModel):
     ok: bool
     server: McpServerSpecResponse
@@ -128,7 +164,7 @@ class McpEnvEntryResponse(BaseModel):
 
 class McpConfigChoiceResponse(BaseModel):
     sourceKind: Literal["managed", "harness"]
-    sourceHarness: str | None = None
+    observedHarness: str | None = Field(default=None, title="Observed harness")
     label: str
     logoKey: str | None = None
     configPath: str | None = None
@@ -142,6 +178,8 @@ class McpMarketplaceLinkResponse(BaseModel):
     displayName: str
     iconUrl: str | None = None
     externalUrl: str
+    githubUrl: str | None = None
+    websiteUrl: str | None = None
     description: str
     isRemote: bool
     isVerified: bool
@@ -210,6 +248,8 @@ class McpMarketplaceItemResponse(BaseModel):
     useCount: int
     createdAt: str | None = None
     homepage: str | None = None
+    websiteUrl: str | None = None
+    githubUrl: str | None = None
     externalUrl: str
 
 
@@ -217,19 +257,6 @@ class McpMarketplacePageResponse(BaseModel):
     items: list[McpMarketplaceItemResponse]
     nextOffset: int | None = None
     hasMore: bool
-
-
-class McpInstallTargetResponse(BaseModel):
-    harness: str
-    label: str
-    logoKey: str | None = None
-    smitheryClient: str | None = None
-    supported: bool
-    reason: str | None = None
-
-
-class McpInstallTargetsResponse(BaseModel):
-    targets: list[McpInstallTargetResponse]
 
 
 class McpMarketplaceConnectionResponse(BaseModel):
@@ -241,6 +268,24 @@ class McpMarketplaceConnectionResponse(BaseModel):
     runtime: str | None = None
     stdioCommand: str | None = None
     stdioArgs: list[str] | None = None
+
+
+class McpInstallConfigFieldResponse(BaseModel):
+    name: str
+    label: str
+    description: str
+    format: Literal["string", "number", "boolean", "filepath"]
+    required: bool
+    secret: bool
+    default: str | None = None
+    placeholder: str | None = None
+    choices: list[str] = Field(default_factory=list)
+    target: Literal["env", "header", "urlVariable", "packageArgument", "runtimeArgument"]
+
+
+class McpInstallConfigResponse(BaseModel):
+    required: bool
+    fields: list[McpInstallConfigFieldResponse] = Field(default_factory=list)
 
 
 class McpMarketplaceParameterResponse(BaseModel):
@@ -302,7 +347,10 @@ class McpMarketplaceDetailResponse(BaseModel):
     resources: list[McpMarketplaceResourceResponse]
     prompts: list[McpMarketplacePromptResponse]
     capabilityCounts: McpMarketplaceCapabilityCountsResponse
+    websiteUrl: str | None = None
+    githubUrl: str | None = None
     externalUrl: str
+    installConfig: McpInstallConfigResponse = Field(default_factory=lambda: McpInstallConfigResponse(required=False))
 
 
 __all__ = [
@@ -312,6 +360,7 @@ __all__ = [
     "AddMcpServerRequest",
     "McpServerMutationResponse",
     "McpApplyConfigResponse",
+    "McpAvailabilityCheckResponse",
     "McpAdoptionIssueResponse",
     "McpBindingResponse",
     "McpConfigChoiceResponse",
@@ -322,8 +371,9 @@ __all__ = [
     "McpInventoryIssueResponse",
     "McpInventoryEntryResponse",
     "McpInventoryResponse",
-    "McpInstallTargetResponse",
-    "McpInstallTargetsResponse",
+    "McpInstallConfigFieldResponse",
+    "McpInstallConfigResponse",
+    "McpInstallConfigStatusResponse",
     "McpMarketplaceCapabilityCountsResponse",
     "McpMarketplaceConnectionResponse",
     "McpMarketplaceDetailResponse",
@@ -340,6 +390,7 @@ __all__ = [
     "McpServerSpecResponse",
     "McpSetHarnessesResultResponse",
     "McpSourceResponse",
+    "McpStatusResponse",
     "McpUnmanagedByServerResponse",
     "McpUnmanagedHarnessResponse",
     "ReconcileMcpServerRequest",

@@ -2,12 +2,14 @@ import { deleteJson, fetchJson, postJson } from "../../../api/http";
 
 import type {
   McpApplyConfigResponseDto,
+  McpAvailabilityCheckResponseDto,
   McpInventoryDto,
   McpServerDetailDto,
   McpNeedsReviewByServerDto,
   SetMcpHarnessesResponseDto,
   UninstallMcpResponseDto,
 } from "./management-types";
+import type { McpInstallConfigValues } from "../model/install-config";
 
 export async function fetchMcpInventory(): Promise<McpInventoryDto> {
   return fetchJson<McpInventoryDto>("/mcp/servers");
@@ -16,9 +18,11 @@ export async function fetchMcpInventory(): Promise<McpInventoryDto> {
 export async function enableMcpServer(args: {
   name: string;
   harness: string;
+  config?: McpInstallConfigValues;
 }): Promise<{ ok: boolean }> {
   return postJson<{ ok: boolean }>(`/mcp/servers/${encodeURIComponent(args.name)}/enable`, {
     harness: args.harness,
+    config: args.config,
   });
 }
 
@@ -34,10 +38,11 @@ export async function disableMcpServer(args: {
 export async function setMcpServerHarnesses(args: {
   name: string;
   target: "enabled" | "disabled";
+  config?: McpInstallConfigValues;
 }): Promise<SetMcpHarnessesResponseDto> {
   return postJson<SetMcpHarnessesResponseDto>(
     `/mcp/servers/${encodeURIComponent(args.name)}/set-harnesses`,
-    { target: args.target },
+    { target: args.target, config: args.config },
   );
 }
 
@@ -49,17 +54,23 @@ export async function fetchMcpServerDetail(name: string): Promise<McpServerDetai
   return fetchJson<McpServerDetailDto>(`/mcp/servers/${encodeURIComponent(name)}`);
 }
 
+export async function checkMcpServerAvailability(name: string): Promise<McpAvailabilityCheckResponseDto> {
+  return postJson<McpAvailabilityCheckResponseDto>(
+    `/mcp/servers/${encodeURIComponent(name)}/availability/check`,
+  );
+}
+
 export async function reconcileMcpServer(args: {
   name: string;
   sourceKind: "managed" | "harness";
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   harnesses?: string[];
 }): Promise<McpApplyConfigResponseDto> {
   return postJson<McpApplyConfigResponseDto>(
     `/mcp/servers/${encodeURIComponent(args.name)}/reconcile`,
     {
       sourceKind: args.sourceKind,
-      sourceHarness: args.sourceHarness ?? null,
+      observedHarness: args.observedHarness ?? null,
       harnesses: args.harnesses,
     },
   );
@@ -71,7 +82,7 @@ export async function fetchMcpNeedsReviewByServer(): Promise<McpNeedsReviewBySer
 
 export async function adoptMcpServer(body: {
   name: string;
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   harnesses?: string[];
 }): Promise<McpApplyConfigResponseDto> {
   return postJson<McpApplyConfigResponseDto>("/mcp/unmanaged/adopt", body);

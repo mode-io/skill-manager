@@ -2,21 +2,16 @@
   "components": {
     "schemas": {
       "AddMcpServerRequest": {
+        "additionalProperties": false,
         "properties": {
           "qualifiedName": {
             "minLength": 1,
             "title": "Qualifiedname",
             "type": "string"
-          },
-          "sourceHarness": {
-            "minLength": 1,
-            "title": "Sourceharness",
-            "type": "string"
           }
         },
         "required": [
-          "qualifiedName",
-          "sourceHarness"
+          "qualifiedName"
         ],
         "title": "AddMcpServerRequest",
         "type": "object"
@@ -43,7 +38,7 @@
             "title": "Name",
             "type": "string"
           },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -52,7 +47,7 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
           }
         },
         "required": [
@@ -528,6 +523,18 @@
       },
       "EnableMcpServerRequest": {
         "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          },
           "harness": {
             "description": "Harness identifier",
             "minLength": 1,
@@ -800,6 +807,44 @@
         "title": "McpApplyConfigResponse",
         "type": "object"
       },
+      "McpAvailabilityCheckResponse": {
+        "properties": {
+          "availabilityReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availabilityreason"
+          },
+          "availabilityStatus": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Availabilitystatus",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "name",
+          "availabilityStatus"
+        ],
+        "title": "McpAvailabilityCheckResponse",
+        "type": "object"
+      },
       "McpBindingResponse": {
         "properties": {
           "driftDetail": {
@@ -870,12 +915,7 @@
             ],
             "title": "Logokey"
           },
-          "payloadPreview": {
-            "additionalProperties": true,
-            "title": "Payloadpreview",
-            "type": "object"
-          },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -884,7 +924,12 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
+          },
+          "payloadPreview": {
+            "additionalProperties": true,
+            "title": "Payloadpreview",
+            "type": "object"
           },
           "sourceKind": {
             "enum": [
@@ -1039,17 +1084,49 @@
         "title": "McpIdentitySightingResponse",
         "type": "object"
       },
-      "McpInstallTargetResponse": {
+      "McpInstallConfigFieldResponse": {
         "properties": {
-          "harness": {
-            "title": "Harness",
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "filepath"
+            ],
+            "title": "Format",
             "type": "string"
           },
           "label": {
             "title": "Label",
             "type": "string"
           },
-          "logoKey": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "placeholder": {
             "anyOf": [
               {
                 "type": "string"
@@ -1058,57 +1135,84 @@
                 "type": "null"
               }
             ],
-            "title": "Logokey"
+            "title": "Placeholder"
           },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "boolean"
+          },
+          "target": {
+            "enum": [
+              "env",
+              "header",
+              "urlVariable",
+              "packageArgument",
+              "runtimeArgument"
             ],
-            "title": "Reason"
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "description",
+          "format",
+          "required",
+          "secret",
+          "target"
+        ],
+        "title": "McpInstallConfigFieldResponse",
+        "type": "object"
+      },
+      "McpInstallConfigResponse": {
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/McpInstallConfigFieldResponse"
+            },
+            "title": "Fields",
+            "type": "array"
           },
-          "smitheryClient": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Smitheryclient"
-          },
-          "supported": {
-            "title": "Supported",
+          "required": {
+            "title": "Required",
             "type": "boolean"
           }
         },
         "required": [
-          "harness",
-          "label",
-          "supported"
+          "required"
         ],
-        "title": "McpInstallTargetResponse",
+        "title": "McpInstallConfigResponse",
         "type": "object"
       },
-      "McpInstallTargetsResponse": {
+      "McpInstallConfigStatusResponse": {
         "properties": {
-          "targets": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "hasFields": {
+            "title": "Hasfields",
+            "type": "boolean"
+          },
+          "missingRequired": {
             "items": {
-              "$ref": "#/components/schemas/McpInstallTargetResponse"
+              "type": "string"
             },
-            "title": "Targets",
+            "title": "Missingrequired",
             "type": "array"
           }
         },
         "required": [
-          "targets"
+          "hasFields",
+          "missingRequired",
+          "configured"
         ],
-        "title": "McpInstallTargetsResponse",
+        "title": "McpInstallConfigStatusResponse",
         "type": "object"
       },
       "McpInventoryColumnResponse": {
@@ -1168,6 +1272,25 @@
       },
       "McpInventoryEntryResponse": {
         "properties": {
+          "availabilityReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availabilityreason"
+          },
+          "availabilityStatus": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Availabilitystatus",
+            "type": "string"
+          },
           "canEnable": {
             "title": "Canenable",
             "type": "boolean"
@@ -1176,6 +1299,17 @@
             "title": "Displayname",
             "type": "string"
           },
+          "enabledStatus": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Enabledstatus",
+            "type": "string"
+          },
+          "installConfigStatus": {
+            "$ref": "#/components/schemas/McpInstallConfigStatusResponse"
+          },
           "kind": {
             "enum": [
               "managed",
@@ -1183,6 +1317,9 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "mcpStatus": {
+            "$ref": "#/components/schemas/McpStatusResponse"
           },
           "name": {
             "title": "Name",
@@ -1211,6 +1348,10 @@
           "displayName",
           "kind",
           "canEnable",
+          "enabledStatus",
+          "availabilityStatus",
+          "mcpStatus",
+          "installConfigStatus",
           "sightings"
         ],
         "title": "McpInventoryEntryResponse",
@@ -1417,6 +1558,17 @@
             "title": "Externalurl",
             "type": "string"
           },
+          "githubUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Githuburl"
+          },
           "iconUrl": {
             "anyOf": [
               {
@@ -1427,6 +1579,9 @@
               }
             ],
             "title": "Iconurl"
+          },
+          "installConfig": {
+            "$ref": "#/components/schemas/McpInstallConfigResponse"
           },
           "isRemote": {
             "title": "Isremote",
@@ -1460,6 +1615,17 @@
             },
             "title": "Tools",
             "type": "array"
+          },
+          "websiteUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Websiteurl"
           }
         },
         "required": [
@@ -1502,6 +1668,17 @@
           "externalUrl": {
             "title": "Externalurl",
             "type": "string"
+          },
+          "githubUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Githuburl"
           },
           "homepage": {
             "anyOf": [
@@ -1548,6 +1725,17 @@
           "useCount": {
             "title": "Usecount",
             "type": "integer"
+          },
+          "websiteUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Websiteurl"
           }
         },
         "required": [
@@ -1578,6 +1766,17 @@
             "title": "Externalurl",
             "type": "string"
           },
+          "githubUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Githuburl"
+          },
           "iconUrl": {
             "anyOf": [
               {
@@ -1600,6 +1799,17 @@
           "qualifiedName": {
             "title": "Qualifiedname",
             "type": "string"
+          },
+          "websiteUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Websiteurl"
           }
         },
         "required": [
@@ -1895,6 +2105,25 @@
       },
       "McpServerDetailResponse": {
         "properties": {
+          "availabilityReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availabilityreason"
+          },
+          "availabilityStatus": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Availabilitystatus",
+            "type": "string"
+          },
           "canEnable": {
             "title": "Canenable",
             "type": "boolean"
@@ -1910,12 +2139,23 @@
             "title": "Displayname",
             "type": "string"
           },
+          "enabledStatus": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Enabledstatus",
+            "type": "string"
+          },
           "env": {
             "items": {
               "$ref": "#/components/schemas/McpEnvEntryResponse"
             },
             "title": "Env",
             "type": "array"
+          },
+          "installConfigStatus": {
+            "$ref": "#/components/schemas/McpInstallConfigStatusResponse"
           },
           "kind": {
             "enum": [
@@ -1934,6 +2174,9 @@
                 "type": "null"
               }
             ]
+          },
+          "mcpStatus": {
+            "$ref": "#/components/schemas/McpStatusResponse"
           },
           "name": {
             "title": "Name",
@@ -1962,6 +2205,10 @@
           "displayName",
           "kind",
           "canEnable",
+          "enabledStatus",
+          "availabilityStatus",
+          "mcpStatus",
+          "installConfigStatus",
           "sightings"
         ],
         "title": "McpServerDetailResponse",
@@ -2142,6 +2389,36 @@
         "title": "McpSourceResponse",
         "type": "object"
       },
+      "McpStatusResponse": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "available",
+              "needs_config",
+              "connection_issue",
+              "unchecked"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "McpStatusResponse",
+        "type": "object"
+      },
       "McpUnmanagedByServerResponse": {
         "properties": {
           "harnesses": {
@@ -2269,7 +2546,7 @@
             ],
             "title": "Harnesses"
           },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -2278,7 +2555,7 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
           },
           "sourceKind": {
             "enum": [
@@ -2904,6 +3181,18 @@
       },
       "SetMcpServerHarnessesRequest": {
         "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          },
           "target": {
             "enum": [
               "enabled",
@@ -4407,24 +4696,6 @@
         "summary": "Get Marketplace Document"
       }
     },
-    "/api/marketplace/mcp/install-targets": {
-      "get": {
-        "operationId": "get_mcp_install_targets_api_marketplace_mcp_install_targets_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/McpInstallTargetsResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Get Mcp Install Targets"
-      }
-    },
     "/api/marketplace/mcp/items/{qualified_name}": {
       "get": {
         "operationId": "get_mcp_marketplace_detail_api_marketplace_mcp_items__qualified_name__get",
@@ -4871,6 +5142,45 @@
           }
         },
         "summary": "Get Mcp Server"
+      }
+    },
+    "/api/mcp/servers/{name}/availability/check": {
+      "post": {
+        "operationId": "check_mcp_server_availability_api_mcp_servers__name__availability_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpAvailabilityCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Mcp Server Availability"
       }
     },
     "/api/mcp/servers/{name}/disable": {

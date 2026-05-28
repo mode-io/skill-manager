@@ -1,13 +1,14 @@
 import { fetchJson, postJson } from "../../../api/http";
 
 import type {
-  AddMcpServerRequestDto,
   AddMcpServerResponseDto,
-  McpInstallTargetsDto,
   McpMarketplaceDetailDto,
-  McpMarketplaceFilter,
   McpMarketplacePageResultDto,
 } from "./mcp-types";
+
+interface AddMcpServerRequestBody {
+  qualifiedName: string;
+}
 
 interface McpPageParams {
   limit?: number;
@@ -16,7 +17,6 @@ interface McpPageParams {
 
 export interface McpSearchParams extends McpPageParams {
   query?: string;
-  filter?: McpMarketplaceFilter;
 }
 
 export async function fetchMcpMarketplacePopular(
@@ -30,15 +30,12 @@ export async function fetchMcpMarketplacePopular(
 export async function searchMcpMarketplace(
   params: McpSearchParams = {},
 ): Promise<McpMarketplacePageResultDto> {
-  const filter = params.filter ?? "all";
   const query = (params.query ?? "").trim();
   return fetchJson<McpMarketplacePageResultDto>(
     withQuery("/marketplace/mcp/search", {
       q: query || undefined,
       limit: params.limit,
       offset: params.offset,
-      remote: filter === "remote" ? "true" : filter === "local" ? "false" : undefined,
-      verified: filter === "verified" ? "true" : undefined,
     }),
   );
 }
@@ -50,12 +47,8 @@ export async function fetchMcpMarketplaceDetail(
   return fetchJson<McpMarketplaceDetailDto>(`/marketplace/mcp/items/${encoded}`);
 }
 
-export async function fetchMcpInstallTargets(): Promise<McpInstallTargetsDto> {
-  return fetchJson<McpInstallTargetsDto>("/marketplace/mcp/install-targets");
-}
-
 export async function addMcpServer(
-  body: AddMcpServerRequestDto,
+  body: AddMcpServerRequestBody,
 ): Promise<AddMcpServerResponseDto> {
   return postJson<AddMcpServerResponseDto>("/mcp/servers", body);
 }

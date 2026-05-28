@@ -296,7 +296,7 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
             adapter.enable_server(_spec())
             self.assertTrue(adapter.has_binding("exa"))
 
-    def test_claude_scans_smithery_project_scoped_servers(self) -> None:
+    def test_claude_scans_unsupported_source_project_scoped_servers(self) -> None:
         with TemporaryDirectory() as tmp:
             home = Path(tmp)
             store = McpServerStore(home / "manifest.json")
@@ -306,7 +306,7 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
                     display_name="Exa",
                     source=McpSource.marketplace("exa"),
                     transport="http",
-                    url="https://server.smithery.ai/exa/mcp",
+                    url="https://mcp.unsupported-source.example/exa/mcp",
                 )
             )
             adapter = _adapter("claude", home=home)
@@ -316,7 +316,7 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
                         "projects": {
                             str(home.resolve()): {
                                 "mcpServers": {
-                                    "exa": {"type": "http", "url": "https://server.smithery.ai/exa/mcp"}
+                                    "exa": {"type": "http", "url": "https://mcp.unsupported-source.example/exa/mcp"}
                                 }
                             }
                         }
@@ -340,7 +340,7 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
                         "projects": {
                             str(home.resolve()): {
                                 "mcpServers": {
-                                    "exa": {"type": "http", "url": "https://server.smithery.ai/exa/mcp"}
+                                    "exa": {"type": "http", "url": "https://mcp.unsupported-source.example/exa/mcp"}
                                 }
                             }
                         }

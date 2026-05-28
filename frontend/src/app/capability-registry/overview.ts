@@ -321,7 +321,7 @@ function buildMarketplaceEntries(copy: OverviewCopy): OverviewMarketplaceEntry[]
       key: "mcp",
       label: copy.marketplace.mcp,
       iconKey: "mcp",
-      sourceLabel: "smithery.ai",
+      sourceLabel: "MCP Registry",
       action: { label: copy.marketplace.browse, to: marketplaceRoutes.mcp, primary: true },
     },
     {

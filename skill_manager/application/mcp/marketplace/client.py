@@ -8,40 +8,41 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
-from skill_manager.errors import MarketplaceUpstreamError
 from skill_manager.application.marketplace_http import (
     configured_marketplace_ca_file,
     marketplace_ssl_context,
 )
+from skill_manager.errors import MarketplaceUpstreamError
 
-DEFAULT_SMITHERY_BASE_URL = "https://api.smithery.ai"
-SMITHERY_BASE_URL_ENV = "SKILL_MANAGER_MCP_MARKETPLACE_BASE_URL"
+
+DEFAULT_MCP_REGISTRY_BASE_URL = "https://registry.modelcontextprotocol.io"
+MCP_REGISTRY_BASE_URL_ENV = "SKILL_MANAGER_MCP_REGISTRY_BASE_URL"
 _TIMEOUT_SECONDS = 15
 _USER_AGENT = "skill-manager/0.1"
 
 
-def configured_smithery_base_url(env: dict[str, str] | None = None) -> str:
+def configured_mcp_registry_base_url(env: dict[str, str] | None = None) -> str:
     active_env = os.environ if env is None else env
-    configured = active_env.get(SMITHERY_BASE_URL_ENV, DEFAULT_SMITHERY_BASE_URL).strip()
-    return (configured or DEFAULT_SMITHERY_BASE_URL).rstrip("/")
+    configured = active_env.get(MCP_REGISTRY_BASE_URL_ENV, DEFAULT_MCP_REGISTRY_BASE_URL).strip()
+    return (configured or DEFAULT_MCP_REGISTRY_BASE_URL).rstrip("/")
 
 
-class SmitheryClient:
+class McpRegistryClient:
     def __init__(
         self,
         *,
-        base_url: str = DEFAULT_SMITHERY_BASE_URL,
+        base_url: str = DEFAULT_MCP_REGISTRY_BASE_URL,
         timeout_seconds: float = _TIMEOUT_SECONDS,
         ssl_context: ssl.SSLContext | None = None,
     ) -> None:
-        self.base_url = (base_url or DEFAULT_SMITHERY_BASE_URL).rstrip("/")
+        self.base_url = (base_url or DEFAULT_MCP_REGISTRY_BASE_URL).rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.ssl_context = ssl_context
 
     @classmethod
-    def from_environment(cls, env: dict[str, str] | None = None) -> "SmitheryClient":
+    def from_environment(cls, env: dict[str, str] | None = None) -> "McpRegistryClient":
         return cls(
-            base_url=configured_smithery_base_url(env),
+            base_url=configured_mcp_registry_base_url(env),
             ssl_context=marketplace_ssl_context(env),
         )
 
@@ -98,9 +99,9 @@ class SmitheryClient:
 
 
 __all__ = [
-    "DEFAULT_SMITHERY_BASE_URL",
-    "SMITHERY_BASE_URL_ENV",
-    "SmitheryClient",
-    "configured_smithery_base_url",
+    "DEFAULT_MCP_REGISTRY_BASE_URL",
+    "MCP_REGISTRY_BASE_URL_ENV",
+    "McpRegistryClient",
     "configured_marketplace_ca_file",
+    "configured_mcp_registry_base_url",
 ]

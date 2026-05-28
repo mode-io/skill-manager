@@ -1,20 +1,18 @@
 import { type ReactNode, useId, useState } from "react";
-import { Activity, CheckCircle2, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 
 import { DetailHeader } from "../../../components/detail/DetailHeader";
-import { DetailSourceLinks } from "../../../components/detail/DetailSourceLinks";
+import {
+  DetailSourceLinks,
+  type DetailSourceLink,
+} from "../../../components/detail/DetailSourceLinks";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { useToast } from "../../../components/Toast";
-import { UiTooltip } from "../../../components/ui/UiTooltip";
 import { useMcpMarketplaceDetailQuery } from "../api/mcp-queries";
 import type { McpMarketplaceItemDto } from "../api/mcp-types";
 import { useMarketplaceCopy, type MarketplaceCopy } from "../i18n";
-import { formatMcpUseCount } from "../model/formatters";
-import {
-  detailInstallAvailability,
-  useMcpInstallActionState,
-} from "../model/mcp-install-action";
+import { useMcpInstallActionState } from "../model/mcp-install-action";
 import { McpInstallButton } from "./McpInstallButton";
 import { McpToolEntry } from "./McpToolEntry";
 
@@ -25,6 +23,10 @@ interface McpMarketplaceDetailViewProps {
 }
 
 const TOOL_INITIAL_COUNT = 5;
+
+function registrySearchUrl(qualifiedName: string): string {
+  return `https://registry.modelcontextprotocol.io/?${new URLSearchParams({ q: qualifiedName }).toString()}`;
+}
 
 export function McpMarketplaceDetailView({
   qualifiedName,
@@ -40,13 +42,15 @@ export function McpMarketplaceDetailView({
   const { toast } = useToast();
   const [showAllTools, setShowAllTools] = useState(false);
 
-  const fallbackUseCount = initialItem?.useCount ?? 0;
-  const fallbackVerified = initialItem?.isVerified ?? false;
   const headerDisplayName = detail?.displayName ?? initialItem?.displayName ?? qualifiedName;
-  const headerIsRemote = detail?.isRemote ?? initialItem?.isRemote ?? false;
   const headerIcon = detail?.iconUrl ?? initialItem?.iconUrl ?? null;
   const headerExternalUrl =
-    detail?.externalUrl ?? initialItem?.externalUrl ?? `https://smithery.ai/server/${qualifiedName}`;
+    detail?.externalUrl ??
+    initialItem?.externalUrl ??
+    registrySearchUrl(qualifiedName);
+  const headerGithubUrl = detail?.githubUrl ?? initialItem?.githubUrl ?? null;
+  const headerWebsiteUrl =
+    detail?.websiteUrl ?? initialItem?.websiteUrl ?? initialItem?.homepage ?? null;
   const installAction = useMcpInstallActionState({
     qualifiedName,
     displayName: headerDisplayName,
@@ -98,8 +102,6 @@ export function McpMarketplaceDetailView({
   const localConnection = detail.connections.find(
     (connection) => connection.kind === "stdio",
   );
-  const installAvailability = detailInstallAvailability(detail);
-
   function handleCopy(value: string, label: string): void {
     if (!navigator.clipboard?.writeText) {
       toast(copy.detail.mcp.copied(label));
@@ -112,12 +114,10 @@ export function McpMarketplaceDetailView({
   }
 
   const installButton = (
-    <McpInstallButton
-      displayName={headerDisplayName}
-      availability={installAvailability}
-      installedState={installAction.installedState}
-      installTargetState={installAction.installTargetState}
-      installing={installAction.installing}
+      <McpInstallButton
+        displayName={headerDisplayName}
+        installedState={installAction.installedState}
+        installing={installAction.installing}
       onInstall={installAction.onInstall}
     />
   );
@@ -142,34 +142,15 @@ export function McpMarketplaceDetailView({
                   />
                 ) : null}
                 <code className="mcp-detail__qualified-name">{qualifiedName}</code>
-                <span className="detail-sheet__divider" aria-hidden="true">·</span>
-                <div className="chip-cluster">
-                  <span className={`chip chip--${headerIsRemote ? "remote" : "local"}`}>
-                    {headerIsRemote ? copy.detail.mcp.remote : copy.detail.mcp.local}
-                  </span>
-                  {fallbackVerified ? (
-                    <span className="chip chip--verified">
-                      <CheckCircle2 size={12} aria-hidden="true" />
-                      {copy.detail.mcp.verified}
-                    </span>
-                  ) : null}
-                  <UiTooltip content={copy.detail.mcp.calls(fallbackUseCount.toLocaleString())}>
-                    <span className="mcp-detail__stat">
-                      <Activity size={12} aria-hidden="true" />
-                      {formatMcpUseCount(fallbackUseCount)}
-                    </span>
-                  </UiTooltip>
-                </div>
               </div>
               <DetailSourceLinks
                 ariaLabel={copy.detail.mcp.sourceLinksAria(headerDisplayName)}
-                links={[
-                  {
-                    href: headerExternalUrl,
-                    label: copy.detail.mcp.viewOnSmithery,
-                    kind: "marketplace",
-                  },
-                ]}
+                links={mcpSourceLinks({
+                  registryUrl: headerExternalUrl,
+                  githubUrl: headerGithubUrl,
+                  websiteUrl: headerWebsiteUrl,
+                  copy,
+                })}
               />
             </div>
           }
@@ -249,7 +230,7 @@ export function McpMarketplaceDetailView({
             </div>
           ) : (
             <p className="muted-text">
-              {copy.detail.mcp.sourceInstallerWillWrite}
+              {copy.detail.mcp.connectionMetadataUnavailable}
             </p>
           )}
         </Section>
@@ -327,6 +308,40 @@ export function McpMarketplaceDetailView({
       </div>
     </>
   );
+}
+
+function mcpSourceLinks({
+  registryUrl,
+  githubUrl,
+  websiteUrl,
+  copy,
+}: {
+  registryUrl: string;
+  githubUrl: string | null;
+  websiteUrl: string | null;
+  copy: MarketplaceCopy;
+}): DetailSourceLink[] {
+  return [
+    {
+      href: registryUrl,
+      label: copy.detail.mcp.viewInRegistry,
+      kind: "marketplace",
+    },
+    {
+      href: githubUrl,
+      label: copy.detail.mcp.github,
+      kind: "repo",
+      disabledReason: copy.detail.mcp.noGithubLink,
+      disabledAriaLabel: copy.detail.mcp.unavailableLink(copy.detail.mcp.github),
+    },
+    {
+      href: websiteUrl,
+      label: copy.detail.mcp.website,
+      kind: "website",
+      disabledReason: copy.detail.mcp.noWebsiteLink,
+      disabledAriaLabel: copy.detail.mcp.unavailableLink(copy.detail.mcp.website),
+    },
+  ];
 }
 
 function Section({ heading, children }: { heading: string; children: ReactNode }) {

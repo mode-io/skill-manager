@@ -44,6 +44,23 @@
   line-height: 1.4;
 }
 
+.scan-config-panel__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 38px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.scan-config-panel__checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
 .scan-config-panel__input {
   width: 100%;
   min-width: 0;
@@ -122,6 +139,16 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   line-height: 1.4;
+}
+
+.scan-config-panel__hint-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.scan-config-panel__hint-link:hover,
+.scan-config-panel__hint-link:focus-visible {
+  text-decoration: underline;
 }
 
 .scan-config-panel__form-grid {

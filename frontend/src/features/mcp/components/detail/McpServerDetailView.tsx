@@ -3,6 +3,7 @@ import { Loader2, Trash2 } from "lucide-react";
 
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { DetailSection } from "../../../../components/detail/DetailSection";
+import { DetailSourceLinks } from "../../../../components/detail/DetailSourceLinks";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import type {
@@ -12,14 +13,20 @@ import type {
 } from "../../api/management-types";
 import { useMcpServerDetailQuery } from "../../api/management-queries";
 import { useMcpCopy, type McpCopy } from "../../i18n";
+import { formatDisplayHeaders } from "../../model/display-secrets";
+import type { McpInstallConfigValues } from "../../model/install-config";
+import { mcpStatusReason } from "../../model/mcp-status";
+import { mcpServerSourceLinks, resolveMcpRegistryName } from "../../model/mcp-source-links";
+import { useMcpEnableConfigGate } from "../../model/use-mcp-enable-config-gate";
+import { McpInstallConfigDialog } from "../config/McpInstallConfigDialog";
 import {
   McpConfigChoiceDialog,
   type McpConfigChoiceOption,
 } from "../edit/McpConfigChoiceDialog";
+import { McpStatusChip } from "../McpStatusChip";
 import { McpBindingMatrix } from "./McpBindingMatrix";
 import { McpDetailShell } from "./McpDetailShell";
 import { McpEnvTable } from "./McpEnvTable";
-import { McpMarketplaceLinkChip } from "./McpMarketplaceLinkChip";
 
 interface McpServerDetailViewProps {
   name: string;
@@ -28,12 +35,12 @@ interface McpServerDetailViewProps {
   isServerPending: boolean;
   isUninstalling: boolean;
   onClose: () => void;
-  onEnableHarness: (harness: string) => void;
+  onEnableHarness: (harness: string, config?: McpInstallConfigValues) => void;
   onDisableHarness: (harness: string) => void;
   onResolveConfig: (
     args: {
       sourceKind: "managed" | "harness";
-      sourceHarness?: string | null;
+      observedHarness?: string | null;
       harnesses?: string[];
     },
   ) => Promise<void>;
@@ -58,7 +65,18 @@ export function McpServerDetailView({
   const detailQuery = useMcpServerDetailQuery(name);
 
   const detail = detailQuery.data ?? null;
+  const spec = detail?.spec ?? null;
+  const displayName = detail?.displayName ?? name;
   const errorMessage = detailQuery.error instanceof Error ? detailQuery.error.message : "";
+  const {
+    requestEnable,
+    pendingConfig: pendingEnableConfig,
+    cancelConfig: cancelEnableConfig,
+    submitConfig: submitEnableConfig,
+    configError: enableConfigError,
+  } = useMcpEnableConfigGate({
+    loadErrorMessage: copy.detail.unableToLoadInstallConfig,
+  });
 
   if (!detail && detailQuery.isPending) {
     return (
@@ -99,17 +117,25 @@ export function McpServerDetailView({
     );
   }
 
-  const spec = detail.spec ?? null;
   const envEntries = detail.env ?? [];
-  const transport = spec?.transport ?? "—";
-  const displayName = detail.displayName;
-  const sourceKind = spec?.source.kind ?? "manual";
   const link = detail.marketplaceLink;
+  const hasMarketplaceSource = spec?.source.kind === "marketplace";
+  const hasLinkedQualifiedName = Boolean(link?.qualifiedName?.trim());
+  const registryName = resolveMcpRegistryName({
+    fallbackName: detail.name,
+    sourceKind: spec?.source.kind,
+    sourceLocator: spec?.source.locator,
+    linkedQualifiedName: link?.qualifiedName,
+  });
   const iconUrl = link?.iconUrl ?? null;
   const description = link?.description ?? "";
   const configChoices = (detail.configChoices ?? []).map((choice) => configChoiceToOption(choice, copy));
   const hasDifferentConfig = detail.sightings.some((binding) => binding.state === "drifted");
   const canResolveConfig = configChoices.length > 0;
+  const hasProviderDocs = Boolean(link?.websiteUrl || link?.githubUrl);
+  const statusReason = mcpStatusReason(detail.mcpStatus, copy, {
+    documentationLinks: hasProviderDocs ? "available" : "missing",
+  });
 
   return (
     <>
@@ -118,26 +144,31 @@ export function McpServerDetailView({
           <DetailHeader
             title={<h2 id={headingId}>{displayName}</h2>}
             meta={
-              <div className="detail-sheet__meta">
-                {iconUrl ? (
-                  <img
-                    className="mcp-detail__icon"
-                    src={iconUrl}
-                    alt=""
-                    onError={(event) => {
-                      (event.currentTarget as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                ) : null}
-                <code className="mcp-detail__qualified-name">{detail.name}</code>
-                <span className="detail-sheet__divider" aria-hidden="true">·</span>
-                <div className="chip-cluster">
-                  <span className={`chip chip--${transport === "stdio" ? "local" : "remote"}`}>
-                    {transport}
-                  </span>
-                  <span className="chip">{sourceKind}</span>
-                  {link ? <McpMarketplaceLinkChip link={link} /> : null}
+              <div className="mcp-detail__meta-stack">
+                <div className="detail-sheet__meta">
+                  {iconUrl ? (
+                    <img
+                      className="mcp-detail__icon"
+                      src={iconUrl}
+                      alt=""
+                      onError={(event) => {
+                        (event.currentTarget as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : null}
+                  <code className="mcp-detail__qualified-name">{registryName}</code>
                 </div>
+                <DetailSourceLinks
+                  ariaLabel={copy.detail.sourceLinksAria(displayName)}
+                  links={mcpServerSourceLinks({
+                    registryExternalUrl: link?.externalUrl,
+                    githubUrl: link?.githubUrl ?? null,
+                    websiteUrl: link?.websiteUrl ?? null,
+                    registryName,
+                    hasRegistryIdentity: hasLinkedQualifiedName || hasMarketplaceSource,
+                    copy: copy.detail,
+                  })}
+                />
               </div>
             }
             closeLabel={copy.detail.close}
@@ -146,6 +177,16 @@ export function McpServerDetailView({
         )}
         body={(
           <>
+            {enableConfigError ? <ErrorBanner message={enableConfigError} /> : null}
+
+            <div
+              className="mcp-detail__status-summary"
+              data-kind={detail.mcpStatus.kind}
+            >
+              <McpStatusChip status={detail.mcpStatus} />
+              {detail.mcpStatus.kind !== "available" && statusReason ? <p>{statusReason}</p> : null}
+            </div>
+
             {description ? (
               <DetailSection heading={copy.detail.about}>
                 <p className="mcp-detail__about">{description}</p>
@@ -180,7 +221,20 @@ export function McpServerDetailView({
                 canEnable={detail.canEnable}
                 serverPending={isServerPending}
                 pendingPerHarness={pendingPerHarness}
-                onEnable={onEnableHarness}
+                onEnable={(harness) =>
+                  requestEnable({
+                    spec,
+                    displayName,
+                    targetLabel: harness,
+                    installConfigStatus: detail.installConfigStatus,
+                    onProceed: (config) => {
+                      if (config === undefined) {
+                        onEnableHarness(harness);
+                        return;
+                      }
+                      onEnableHarness(harness, config);
+                    },
+                  })}
                 onDisable={onDisableHarness}
                 onResolveConfigClick={() => setResolveDialogOpen(true)}
                 canResolveConfig={canResolveConfig}
@@ -224,21 +278,27 @@ export function McpServerDetailView({
           onConfirm={async (option) => {
             await onResolveConfig({
               sourceKind: option.sourceKind,
-              sourceHarness: option.sourceHarness,
+              observedHarness: option.observedHarness,
             });
             setResolveDialogOpen(false);
           }}
         />
       ) : null}
+      <McpInstallConfigDialog
+        pending={pendingEnableConfig}
+        installing={isServerPending}
+        onClose={cancelEnableConfig}
+        onSubmit={submitEnableConfig}
+      />
     </>
   );
 }
 
 function configChoiceToOption(choice: McpConfigChoiceDto, copy: McpCopy): McpConfigChoiceOption {
   return {
-    id: choice.sourceKind === "managed" ? "managed" : (choice.sourceHarness ?? choice.label),
+    id: choice.sourceKind === "managed" ? "managed" : (choice.observedHarness ?? choice.label),
     sourceKind: choice.sourceKind,
-    sourceHarness: choice.sourceHarness,
+    observedHarness: choice.observedHarness,
     label: choice.sourceKind === "managed" ? copy.detail.skillManagerConfig : choice.label,
     logoKey: choice.logoKey,
     configPath: choice.configPath,
@@ -274,7 +334,7 @@ function ConnectionBlock({ spec, copy }: { spec: McpServerSpecDto | null; copy: 
         <code>{spec.transport}</code>
       </Field>
       <Field label={copy.detail.headers}>
-        <code>{spec.headers ? JSON.stringify(spec.headers) : "—"}</code>
+        <code>{formatDisplayHeaders(spec.headers)}</code>
       </Field>
     </div>
   );

@@ -19,7 +19,9 @@ class McpEnrichmentServiceTests(unittest.TestCase):
                     "qualifiedName": "@exa/exa-mcp",
                     "displayName": "Exa",
                     "iconUrl": "https://icon.example/exa.png",
-                    "externalUrl": "https://smithery.ai/server/@exa/exa-mcp",
+                    "externalUrl": "https://registry.modelcontextprotocol.io/?q=%40exa%2Fexa-mcp",
+                    "githubUrl": "https://github.com/exa-labs/exa-mcp-server",
+                    "websiteUrl": "https://exa.ai",
                     "description": "Web search",
                     "isRemote": True,
                     "isVerified": True,
@@ -32,6 +34,10 @@ class McpEnrichmentServiceTests(unittest.TestCase):
         assert link is not None
         self.assertEqual(link.qualified_name, "@exa/exa-mcp")
         self.assertEqual(link.display_name, "Exa")
+        self.assertEqual(link.github_url, "https://github.com/exa-labs/exa-mcp-server")
+        self.assertEqual(link.website_url, "https://exa.ai")
+        self.assertEqual(link.to_dict()["githubUrl"], "https://github.com/exa-labs/exa-mcp-server")
+        self.assertEqual(link.to_dict()["websiteUrl"], "https://exa.ai")
         catalog.popular_page.assert_called_once()
 
     def test_cold_miss_triggers_search(self) -> None:
@@ -43,7 +49,9 @@ class McpEnrichmentServiceTests(unittest.TestCase):
                     "qualifiedName": "@other/context7",
                     "displayName": "Context7",
                     "iconUrl": None,
-                    "externalUrl": "https://smithery.ai/server/@other/context7",
+                    "externalUrl": "https://registry.modelcontextprotocol.io/?q=%40other%2Fcontext7",
+                    "githubUrl": "https://github.com/upstash/context7",
+                    "websiteUrl": "https://context7.com",
                     "description": "",
                     "isRemote": False,
                     "isVerified": True,
@@ -55,6 +63,8 @@ class McpEnrichmentServiceTests(unittest.TestCase):
         self.assertIsNotNone(link)
         assert link is not None
         self.assertEqual(link.qualified_name, "@other/context7")
+        self.assertEqual(link.github_url, "https://github.com/upstash/context7")
+        self.assertEqual(link.website_url, "https://context7.com")
         catalog.search_page.assert_called_once_with("context7", limit=10, offset=0, verified=True)
 
     def test_cache_prevents_double_search(self) -> None:

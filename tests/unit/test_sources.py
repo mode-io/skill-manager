@@ -153,7 +153,7 @@ class SkillsShParsingTests(unittest.TestCase):
         <html>
           <body>
             <script>
-              self.__next_f.push([1,"{\\"initialSkills\\":[{\\"source\\":\\"smithery.ai\\",\\"skillId\\":\\"ui-ux-pro-max\\",\\"name\\":\\"ui-ux-pro-max\\",\\"installs\\":128},{\\"source\\":\\"mode-io/skills\\",\\"skillId\\":\\"mode-switch\\",\\"name\\":\\"Mode Switch\\",\\"installs\\":64}]}"])
+              self.__next_f.push([1,"{\\"initialSkills\\":[{\\"source\\":\\"unsupported-source.example\\",\\"skillId\\":\\"ui-ux-pro-max\\",\\"name\\":\\"ui-ux-pro-max\\",\\"installs\\":128},{\\"source\\":\\"mode-io/skills\\",\\"skillId\\":\\"mode-switch\\",\\"name\\":\\"Mode Switch\\",\\"installs\\":64}]}"])
             </script>
           </body>
         </html>
@@ -165,7 +165,7 @@ class SkillsShParsingTests(unittest.TestCase):
 
     def test_normalize_skill_rejects_unsupported_source(self) -> None:
         raw = raw_skill_from_payload({
-            "source": "smithery.ai",
+            "source": "unsupported-source.example",
             "skillId": "ui-ux-pro-max",
             "name": "ui-ux-pro-max",
             "installs": 128,
@@ -175,12 +175,12 @@ class SkillsShParsingTests(unittest.TestCase):
 
     def test_github_repo_helpers_validate_and_derive_owner_avatar(self) -> None:
         self.assertTrue(is_valid_github_repo("mode-io/skills"))
-        self.assertFalse(is_valid_github_repo("smithery.ai"))
+        self.assertFalse(is_valid_github_repo("unsupported-source.example"))
         self.assertEqual(
             github_owner_avatar_url("mode-io/skills"),
             "https://github.com/mode-io.png?size=96",
         )
-        self.assertIsNone(github_owner_avatar_url("smithery.ai"))
+        self.assertIsNone(github_owner_avatar_url("unsupported-source.example"))
 
     def test_extract_detail_description_prefers_summary_then_skill_body_then_hint(self) -> None:
         summary_html = """

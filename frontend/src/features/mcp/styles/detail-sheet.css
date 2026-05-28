@@ -43,6 +43,12 @@
   gap: 12px;
 }
 
+.mcp-detail__meta-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
 .mcp-detail__qualified-name {
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
@@ -54,6 +60,25 @@
   color: var(--color-text);
   font-size: var(--font-size-sm);
   line-height: 1.5;
+}
+
+.mcp-detail__status-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.mcp-detail__status-summary p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mcp-detail__drift-banner {

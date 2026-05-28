@@ -8,7 +8,7 @@ import MarketplaceMcpPage from "./MarketplaceMcpPage";
 
 const fetchMock = vi.fn();
 
-function deferred<T>() {
+function controlledPromise<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
     resolve = done;
@@ -29,7 +29,7 @@ function pageItem() {
     useCount: 59087,
     createdAt: null,
     homepage: "https://exa.ai",
-    externalUrl: "https://smithery.ai/server/exa",
+    externalUrl: "https://registry.modelcontextprotocol.io/?q=exa",
   };
 }
 
@@ -47,7 +47,7 @@ function detailPayload() {
     resources: [],
     prompts: [],
     capabilityCounts: { tools: 0, resources: 0, prompts: 0 },
-    externalUrl: "https://smithery.ai/server/exa",
+    externalUrl: "https://registry.modelcontextprotocol.io/?q=exa",
   };
 }
 
@@ -75,16 +75,12 @@ describe("MarketplaceMcpPage", () => {
     fetchMock.mockReset();
   });
 
-  it("opens the detail modal while install targets are still loading", async () => {
-    const installTargets = deferred<ReturnType<typeof okJson>>();
-    const detail = deferred<ReturnType<typeof okJson>>();
+  it("opens the detail modal while detail data is still loading", async () => {
+    const detail = controlledPromise<ReturnType<typeof okJson>>();
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/marketplace/mcp/popular?limit=30&offset=0")) {
+      if (url.includes("/api/marketplace/mcp/popular?limit=20&offset=0")) {
         return okJson({ items: [pageItem()], nextOffset: null, hasMore: false });
-      }
-      if (url.includes("/api/marketplace/mcp/install-targets")) {
-        return installTargets.promise;
       }
       if (url.includes("/api/marketplace/mcp/items/exa")) {
         return detail.promise;
@@ -109,11 +105,6 @@ describe("MarketplaceMcpPage", () => {
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Exa Search" })).toBeInTheDocument(),
     );
-    expect(screen.getByRole("button", { name: /add exa search to mcps \(unavailable\)/i }))
-      .toBeDisabled();
-
-    await act(async () => {
-      installTargets.resolve(okJson({ targets: [] }));
-    });
+    expect(screen.getByRole("button", { name: /install exa search/i })).toBeEnabled();
   });
 });

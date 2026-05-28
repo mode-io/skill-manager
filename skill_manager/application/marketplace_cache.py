@@ -44,8 +44,17 @@ class MarketplaceCache:
         path = self._path_for(namespace, key)
         if path is None or not path.is_file():
             return None
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        fetched_at = float(payload.get("fetchedAt", 0))
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("cache payload must be a JSON object")
+            fetched_at = float(payload.get("fetchedAt", 0))
+        except (OSError, ValueError):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+            return None
         age = max(0.0, time.time() - fetched_at)
         return StoredPayload(payload=payload.get("payload"), fetched_at=fetched_at, age_seconds=age)
 
@@ -54,10 +63,10 @@ class MarketplaceCache:
         if path is None:
             return
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps({"fetchedAt": time.time(), "payload": payload}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        encoded = json.dumps({"fetchedAt": time.time(), "payload": payload}, ensure_ascii=False, indent=2)
+        temp_path = path.with_suffix(f"{path.suffix}.tmp")
+        temp_path.write_text(encoded, encoding="utf-8")
+        temp_path.replace(path)
 
     def _path_for(self, namespace: str, key: str) -> Path | None:
         if self.root is None:

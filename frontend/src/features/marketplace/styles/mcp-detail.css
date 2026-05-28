@@ -51,7 +51,7 @@
 }
 
 .mcp-card__body {
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .mcp-card__footer {
@@ -91,58 +91,6 @@
 
 .cli-card__footer {
   align-items: flex-end;
-}
-
-/* Filter group lives in the shared marketplace layout — a single DOM node that
-   animates smoothly in both directions when the user toggles between Skills and MCP.
-   We transition max-width + opacity + transform + negative margin to collapse the
-   flex gap when hidden so the neighbouring tab pill doesn't jump. */
-
-.mcp-filter-group {
-  display: inline-flex;
-  align-items: center;
-  overflow: hidden;
-  clip-path: inset(0);
-  visibility: visible;
-  transition:
-    max-width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    margin-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s linear 0s;
-}
-
-.mcp-filter-group[data-state="visible"] {
-  /* Match the natural content width (~217px) so the transition uses its full
-     duration instead of stopping early when max-width exceeds content. */
-  max-width: 240px;
-  opacity: 1;
-  transform: translateX(0);
-  visibility: visible;
-}
-
-.mcp-filter-group[data-state="hidden"] {
-  max-width: 0;
-  margin-left: calc(-1 * var(--space-3));
-  opacity: 0;
-  transform: translateX(4px);
-  pointer-events: none;
-  /* visibility flips to hidden AFTER the fade/slide finishes so the transition
-     still plays — but once fully hidden the subtree is removed from painting,
-     so flex children that overflow the clipped container can't ghost through. */
-  visibility: hidden;
-  transition:
-    max-width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    margin-left 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    visibility 0s linear 240ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mcp-filter-group {
-    transition: none;
-  }
 }
 
 /* MCP detail modal */

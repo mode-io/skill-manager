@@ -302,12 +302,12 @@ export function pickRecommendedConfigChoice(
   if (harnessChoices.length === 0) return choices[0]?.sourceKind === "managed" ? "managed" : null;
   const hasEnvRef = (choice: McpConfigChoiceDto) => (choice.env ?? []).some((e) => e.isEnvRef);
   const tier1 = harnessChoices.find((choice) => choice.spec.transport === "stdio" && hasEnvRef(choice));
-  if (tier1?.sourceHarness) return tier1.sourceHarness;
+  if (tier1?.observedHarness) return tier1.observedHarness;
   const tier2 = harnessChoices.find((choice) => choice.spec.transport === "stdio");
-  if (tier2?.sourceHarness) return tier2.sourceHarness;
+  if (tier2?.observedHarness) return tier2.observedHarness;
   const tier3 = harnessChoices.find(
     (choice) => choice.spec.transport !== "stdio" && !urlHasEmbeddedCredential(choice.spec.url),
   );
-  if (tier3?.sourceHarness) return tier3.sourceHarness;
-  return choices[0]?.sourceKind === "managed" ? "managed" : (harnessChoices[0]?.sourceHarness ?? null);
+  if (tier3?.observedHarness) return tier3.observedHarness;
+  return choices[0]?.sourceKind === "managed" ? "managed" : (harnessChoices[0]?.observedHarness ?? null);
 }

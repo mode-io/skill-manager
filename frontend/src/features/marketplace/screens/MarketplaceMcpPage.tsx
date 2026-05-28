@@ -37,7 +37,7 @@ export default function MarketplaceMcpPage({
       ? feedQuery.error.message
       : copy.errors.mcp;
 
-  // Skills and CLIs have explicit marketplace namespaces; MCP owns Smithery ids.
+  // Skills and CLIs have explicit marketplace namespaces; MCP owns MCP Registry qualified names.
   const ownsItemId = Boolean(
     selectedName &&
       !selectedName.startsWith("skillssh:") &&

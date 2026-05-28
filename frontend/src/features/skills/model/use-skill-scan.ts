@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 import type { ScanResult, ScanConfigItem } from "../api/scan-types";
 import {
@@ -128,46 +128,95 @@ export interface LLMScanConfigInput {
   awsSessionToken?: string;
 }
 
+interface SkillScanStoreSnapshot {
+  scanState: ScanStateMap;
+  configs: ScanConfigItem[];
+  activeConfigId: number | null;
+  llmConfig: LLMScanConfig | null;
+  configLoaded: boolean;
+}
+
+let scanStoreSnapshot: SkillScanStoreSnapshot = {
+  scanState: {},
+  configs: [],
+  activeConfigId: null,
+  llmConfig: null,
+  configLoaded: false,
+};
+let hydratedCachedReports = false;
+
+const scanStoreListeners = new Set<() => void>();
+
+function subscribeToScanStore(listener: () => void): () => void {
+  scanStoreListeners.add(listener);
+  return () => {
+    scanStoreListeners.delete(listener);
+  };
+}
+
+function getScanStoreSnapshot(): SkillScanStoreSnapshot {
+  return scanStoreSnapshot;
+}
+
+function updateScanStore(
+  updater: (current: SkillScanStoreSnapshot) => SkillScanStoreSnapshot,
+): void {
+  scanStoreSnapshot = updater(scanStoreSnapshot);
+  for (const listener of scanStoreListeners) {
+    listener();
+  }
+}
+
+function hydrateCachedScanReports(): void {
+  if (hydratedCachedReports) {
+    return;
+  }
+  hydratedCachedReports = true;
+  updateScanStore((current) => ({
+    ...current,
+    scanState: {
+      ...readCachedScanReports(),
+      ...current.scanState,
+    },
+  }));
+}
+
 export function useSkillScan() {
-  const [scanState, setScanState] = useState<ScanStateMap>({});
-  const [configs, setConfigs] = useState<ScanConfigItem[]>([]);
-  const [activeConfigId, setActiveConfigIdState] = useState<number | null>(null);
-  const [llmConfig, setLlmConfigState] = useState<LLMScanConfig | null>(null);
-  const [configLoaded, setConfigLoaded] = useState(false);
+  const snapshot = useSyncExternalStore(
+    subscribeToScanStore,
+    getScanStoreSnapshot,
+    getScanStoreSnapshot,
+  );
 
   const refreshConfigs = useCallback(async () => {
     try {
       const resp = await getScanConfigs();
-      setConfigs(resp.configs);
-      setActiveConfigIdState(resp.activeId);
-
-      if (resp.activeId !== null) {
-        const active = resp.configs.find((c) => c.id === resp.activeId);
-        if (active) {
-          setLlmConfigState(buildConfigFromItem(active));
-        }
-      } else {
-        setLlmConfigState(null);
-      }
+      const active = resp.activeId !== null
+        ? resp.configs.find((c) => c.id === resp.activeId)
+        : null;
+      updateScanStore((current) => ({
+        ...current,
+        configs: resp.configs,
+        activeConfigId: resp.activeId,
+        llmConfig: active ? buildConfigFromItem(active) : null,
+        configLoaded: true,
+      }));
     } catch {
-      /* ignore */
+      updateScanStore((current) => ({ ...current, configLoaded: true }));
     }
   }, []);
 
   useEffect(() => {
-    refreshConfigs().finally(() => setConfigLoaded(true));
+    void refreshConfigs();
   }, [refreshConfigs]);
 
   useEffect(() => {
-    setScanState((current) => ({
-      ...readCachedScanReports(),
-      ...current,
-    }));
+    hydrateCachedScanReports();
   }, []);
 
   const getScanState = useCallback(
-    (skillRef: string): SkillScanState => scanState[skillRef] ?? IDLE_STATE,
-    [scanState],
+    (skillRef: string): SkillScanState => snapshot.scanState[skillRef] ?? IDLE_STATE,
+    [snapshot.scanState],
   );
 
   const addConfig = useCallback(
@@ -232,27 +281,41 @@ export function useSkillScan() {
 
   const scanSkill = useCallback(
     async (skillRef: string) => {
-      if (!llmConfig) return;
-      setScanState((prev) => ({
-        ...prev,
-        [skillRef]: { status: "scanning", result: null, error: null, completedAt: null },
+      if (!snapshot.llmConfig) return;
+      updateScanStore((current) => ({
+        ...current,
+        scanState: {
+          ...current.scanState,
+          [skillRef]: { status: "scanning", result: null, error: null, completedAt: null },
+        },
       }));
       try {
         const result = await scanSkillApi(skillRef, { useLlm: true });
         const completedAt = Date.now();
         cacheScanResult(skillRef, result, completedAt);
-        setScanState((prev) => ({
-          ...prev,
-          [skillRef]: { status: "done", result, error: null, completedAt },
+        updateScanStore((current) => ({
+          ...current,
+          scanState: {
+            ...current.scanState,
+            [skillRef]: { status: "done", result, error: null, completedAt },
+          },
         }));
       } catch (e) {
-        setScanState((prev) => ({
-          ...prev,
-          [skillRef]: { status: "error", result: null, error: e instanceof Error ? e.message : String(e), completedAt: null },
+        updateScanStore((current) => ({
+          ...current,
+          scanState: {
+            ...current.scanState,
+            [skillRef]: {
+              status: "error",
+              result: null,
+              error: e instanceof Error ? e.message : String(e),
+              completedAt: null,
+            },
+          },
         }));
       }
     },
-    [llmConfig],
+    [snapshot.llmConfig],
   );
 
   const validateConfig = useCallback(
@@ -269,18 +332,18 @@ export function useSkillScan() {
   );
 
   return {
-    scanState,
+    scanState: snapshot.scanState,
     getScanState,
     scanSkill,
-    llmConfig,
-    configs,
-    activeConfigId,
+    llmConfig: snapshot.llmConfig,
+    configs: snapshot.configs,
+    activeConfigId: snapshot.activeConfigId,
     addConfig,
     editConfig,
     removeConfig,
     selectConfig,
     validateConfig,
     revealConfigApiKey,
-    configLoaded,
+    configLoaded: snapshot.configLoaded,
   };
 }

@@ -7,6 +7,7 @@ import {
 import { queryPolicy } from "../../../lib/query";
 import {
   adoptMcpServer,
+  checkMcpServerAvailability,
   disableMcpServer,
   enableMcpServer,
   fetchMcpInventory,
@@ -17,7 +18,7 @@ import {
   uninstallMcpServer,
 } from "./management-client";
 import { invalidateMcpQueries } from "./invalidation";
-import { MCP_GC_TIME_MS, MCP_STALE_TIME_MS, mcpManagementKeys } from "./keys";
+import { MCP_GC_TIME_MS, MCP_INVENTORY_REFETCH_INTERVAL_MS, MCP_STALE_TIME_MS, mcpManagementKeys } from "./keys";
 
 export { invalidateMcpQueries } from "./invalidation";
 export { mcpManagementKeys } from "./keys";
@@ -26,6 +27,7 @@ export function useMcpInventoryQuery() {
   return useQuery({
     queryKey: mcpManagementKeys.inventory(),
     queryFn: fetchMcpInventory,
+    refetchInterval: MCP_INVENTORY_REFETCH_INTERVAL_MS,
     ...queryPolicy(MCP_STALE_TIME_MS, MCP_GC_TIME_MS),
   });
 }
@@ -68,6 +70,16 @@ export function useMcpServerDetailQuery(name: string | null) {
     queryFn: () => fetchMcpServerDetail(name!),
     enabled: Boolean(name),
     ...queryPolicy(MCP_STALE_TIME_MS, MCP_GC_TIME_MS),
+  });
+}
+
+export function useCheckMcpServerAvailabilityMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: checkMcpServerAvailability,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    onSettled: () => invalidateMcpQueries(queryClient),
   });
 }
 

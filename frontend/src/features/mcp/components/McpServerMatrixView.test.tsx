@@ -27,6 +27,11 @@ function entries(): McpInventoryEntryDto[] {
       displayName: "Exa Search",
       kind: "managed",
       canEnable: true,
+      enabledStatus: "enabled",
+      availabilityStatus: "available",
+      availabilityReason: null,
+      mcpStatus: { kind: "available", reason: null },
+      installConfigStatus: { hasFields: false, missingRequired: [], configured: true },
       spec: {
         name: "exa",
         displayName: "Exa Search",
@@ -47,6 +52,14 @@ function entries(): McpInventoryEntryDto[] {
       displayName: "Drift Server",
       kind: "managed",
       canEnable: true,
+      enabledStatus: "disabled",
+      availabilityStatus: "unavailable",
+      availabilityReason: null,
+      mcpStatus: {
+        kind: "unchecked",
+        reason: null,
+      },
+      installConfigStatus: { hasFields: false, missingRequired: [], configured: true },
       spec: {
         name: "drift",
         displayName: "Drift Server",

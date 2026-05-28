@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from skill_manager.api.deps import get_container
 from skill_manager.api.schemas import (
-    McpInstallTargetsResponse,
     McpMarketplaceDetailResponse,
     McpMarketplacePageResponse,
 )
@@ -41,13 +40,6 @@ def search_mcp_marketplace(
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-
-
-@router.get("/install-targets", response_model=McpInstallTargetsResponse)
-def get_mcp_install_targets(
-    container: BackendContainer = Depends(get_container),
-) -> dict[str, object]:
-    return container.mcp_mutations.install_targets()
 
 
 @router.get("/items/{qualified_name:path}", response_model=McpMarketplaceDetailResponse)

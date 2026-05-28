@@ -9,6 +9,7 @@ export {
   useSetMcpServerHarnessesMutation,
   useUninstallMcpServerMutation,
 } from "./api/management-queries";
+export { checkMcpServerAvailability } from "./api/management-client";
 export { invalidateMcpQueries } from "./api/invalidation";
 export { mcpManagementKeys } from "./api/keys";
 export type {

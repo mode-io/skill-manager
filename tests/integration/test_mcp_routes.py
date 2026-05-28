@@ -4,12 +4,10 @@ import json
 import unittest
 from pathlib import Path
 
-from skill_manager.application.mcp.installers import McpInstallResult
-from skill_manager.application.mcp.installers import SmitheryClientTarget
-from skill_manager.application.mcp.mappers import get_mapper
-from skill_manager.application.mcp.names import canonical_server_name
+from skill_manager.application.mcp.availability import McpAvailabilityResult
 from skill_manager.application.mcp.stdio import parse_static_stdio_function
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
+from skill_manager.errors import MutationError
 
 from tests.support.app_harness import AppTestHarness
 
@@ -25,9 +23,14 @@ class FakeMcpMarketplace:
         is_remote: bool = True,
         deployment_url: str | None = "https://mcp.exa.ai",
         connections: list[dict[str, object]] | None = None,
-        source_name: str | None = None,
+        registry_server: dict[str, object] | None = None,
     ) -> None:
         self.qualified_name = qualified_name
+        registry_server = registry_server or _registry_server_from_connections(
+            qualified_name,
+            deployment_url=deployment_url,
+            connections=connections,
+        )
         self._payload = {
             "qualifiedName": qualified_name,
             "displayName": "Exa Search" if qualified_name == "exa" else qualified_name.title(),
@@ -43,11 +46,21 @@ class FakeMcpMarketplace:
             "tools": [],
             "resources": [],
             "prompts": [],
+            "registryServer": registry_server,
         }
 
     def detail(self, qualified_name: str):
         if qualified_name == self.qualified_name:
-            return self._payload
+            return {key: value for key, value in self._payload.items() if key != "registryServer"}
+        return None
+
+    def install_detail(self, qualified_name: str):
+        if qualified_name == self.qualified_name:
+            return {
+                "qualifiedName": self._payload["qualifiedName"],
+                "displayName": self._payload["displayName"],
+                "registryServer": self._payload["registryServer"],
+            }
         return None
 
 
@@ -63,130 +76,69 @@ class _Container:
         is_remote: bool = True,
         deployment_url: str | None = "https://mcp.exa.ai",
         connections: list[dict[str, object]] | None = None,
-        source_name: str | None = None,
+        registry_server: dict[str, object] | None = None,
     ) -> None:
         self.harness = harness
-        # Patch the in-memory mutation service to use the fake marketplace.
         marketplace = FakeMcpMarketplace(
             qualified_name,
             config_schema,
             is_remote=is_remote,
             deployment_url=deployment_url,
             connections=connections,
+            registry_server=registry_server,
         )
         harness.container.mcp_mutations.marketplace = marketplace
-        harness.container.mcp_mutations.install_provider = FakeMcpInstallProvider(
-            harness,
-            {
-                qualified_name: _source_spec_from_marketplace_payload(
-                    marketplace._payload,  # noqa: SLF001 - test stub data
-                    qualified_name=qualified_name,
-                    source_name=source_name,
-                )
-            },
-        )
+        harness.container.mcp_queries.marketplace = marketplace
 
 
-class FakeMcpInstallProvider:
-    def __init__(self, harness: AppTestHarness, specs: dict[str, McpServerSpec]) -> None:
-        self.harness = harness
-        self.specs = specs
+class FakeMcpAvailabilityProbe:
+    def __init__(self, status: str = "available", reason: str | None = None) -> None:
+        self.status = status
+        self.reason = reason
+        self.probed: list[str] = []
 
-    def install_targets(self) -> tuple[SmitheryClientTarget, ...]:
-        return (
-            SmitheryClientTarget(harness="codex", smithery_client="codex", supported=True),
-            SmitheryClientTarget(harness="claude", smithery_client="claude-code", supported=True),
-            SmitheryClientTarget(harness="cursor", smithery_client="cursor", supported=True),
-            SmitheryClientTarget(harness="opencode", smithery_client="opencode", supported=True),
-            SmitheryClientTarget(
-                harness="openclaw",
-                smithery_client=None,
-                supported=False,
-                reason="Smithery does not provide an OpenClaw MCP installer target",
-            ),
-        )
-
-    def install(self, *, qualified_name: str, source_harness: str) -> McpInstallResult:
-        spec = self.specs[qualified_name]
-        if source_harness == "claude":
-            self._write_claude_code_project_scope(spec)
-            return McpInstallResult(
-                qualified_name=qualified_name,
-                source_harness=source_harness,
-                installer="fake",
-                stdout="",
-                stderr="",
-            )
-        adapter = self.harness.container.mcp_read_models.find_adapter(source_harness)
-        if adapter is None:
-            raise AssertionError(f"missing test adapter for {source_harness}")
-        adapter.enable_server(spec)
-        return McpInstallResult(
-            qualified_name=qualified_name,
-            source_harness=source_harness,
-            installer="fake",
-            stdout="",
-            stderr="",
-        )
-
-    def _write_claude_code_project_scope(self, spec: McpServerSpec) -> None:
-        path = self.harness.spec.home / ".claude.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-        projects = payload.setdefault("projects", {})
-        if not isinstance(projects, dict):
-            projects = {}
-            payload["projects"] = projects
-        project_key = str(self.harness.spec.home.resolve())
-        project = projects.setdefault(project_key, {})
-        if not isinstance(project, dict):
-            project = {}
-            projects[project_key] = project
-        servers = project.setdefault("mcpServers", {})
-        if not isinstance(servers, dict):
-            servers = {}
-            project["mcpServers"] = servers
-        servers[spec.name] = get_mapper("claude-code").spec_to_dict(spec)
-        path.write_text(json.dumps(payload), encoding="utf-8")
+    def probe(self, spec: McpServerSpec) -> McpAvailabilityResult:
+        self.probed.append(spec.name)
+        return McpAvailabilityResult(status=self.status, reason=self.reason)
 
 
-def _source_spec_from_marketplace_payload(
-    payload: dict[str, object],
-    *,
+def _registry_server_from_connections(
     qualified_name: str,
-    source_name: str | None = None,
-) -> McpServerSpec:
-    name = source_name or canonical_server_name(qualified_name)
-    connections = payload.get("connections")
-    first = connections[0] if isinstance(connections, list) and connections else {}
-    first = first if isinstance(first, dict) else {}
-    kind = str(first.get("kind") or first.get("type") or "http").lower()
-    display_name = str(payload.get("displayName") or name)
-    if kind == "stdio":
+    *,
+    deployment_url: str | None,
+    connections: list[dict[str, object]] | None,
+) -> dict[str, object]:
+    server: dict[str, object] = {
+        "name": qualified_name,
+        "title": "Exa Search" if qualified_name == "exa" else qualified_name.title(),
+        "version": "1.0.0",
+        "description": "Search the web",
+    }
+    first = connections[0] if connections else None
+    if isinstance(first, dict) and str(first.get("kind") or first.get("type")).lower() == "stdio":
         stdio = parse_static_stdio_function(first.get("stdioFunction"))
         if stdio is None:
             raise AssertionError("test stdio fixture must include a static stdioFunction")
-        return McpServerSpec(
-            name=name,
-            display_name=display_name,
-            source=McpSource.marketplace(qualified_name),
-            transport="stdio",
-            command=stdio.command,
-            args=stdio.args,
-        )
-    transport = "sse" if kind == "sse" else "http"
-    url = str(first.get("deploymentUrl") or payload.get("deploymentUrl") or "https://mcp.example")
-    return McpServerSpec(
-        name=name,
-        display_name=display_name,
-        source=McpSource.marketplace(qualified_name),
-        transport=transport,  # type: ignore[arg-type]
-        url=url,
-    )
+        package_ref = next((arg for arg in reversed(stdio.args) if not arg.startswith("-")), stdio.command)
+        server["packages"] = [
+            {
+                "registryType": "npm",
+                "identifier": package_ref,
+                "version": "1.0.0",
+                "transport": {"type": "stdio"},
+            }
+        ]
+        return server
+    kind = "streamable-http"
+    if isinstance(first, dict) and str(first.get("kind") or first.get("type")).lower() == "sse":
+        kind = "sse"
+    url = deployment_url or "https://mcp.example"
+    server["remotes"] = [{"type": kind, "url": url}]
+    return server
 
 
 def _install(harness: AppTestHarness, name: str = "exa") -> None:
-    harness.post_json("/api/mcp/servers", {"qualifiedName": name, "sourceHarness": "cursor"})
+    harness.post_json("/api/mcp/servers", {"qualifiedName": name})
 
 
 def _seed_manual_remote(harness: AppTestHarness, name: str = "remote") -> None:
@@ -213,30 +165,10 @@ class McpRoutesTests(unittest.TestCase):
             self.assertIn("codex", cols)
             self.assertIn("claude", cols)
 
-    def test_marketplace_install_targets_are_backend_owned(self) -> None:
+    def test_install_resolves_registry_config_without_writing_harness(self) -> None:
         with AppTestHarness() as harness:
             _Container(harness, "exa")
-            payload = harness.get_json("/api/marketplace/mcp/install-targets")
-            assert isinstance(payload, dict)
-            targets = {target["harness"]: target for target in payload["targets"]}
-
-            self.assertEqual(targets["codex"]["smitheryClient"], "codex")
-            self.assertEqual(targets["claude"]["smitheryClient"], "claude-code")
-            self.assertEqual(targets["cursor"]["smitheryClient"], "cursor")
-            self.assertEqual(targets["opencode"]["smitheryClient"], "opencode")
-            self.assertTrue(targets["claude"]["supported"])
-            self.assertFalse(targets["openclaw"]["supported"])
-            self.assertEqual(
-                targets["openclaw"]["reason"],
-                "Smithery does not provide an OpenClaw MCP installer target",
-            )
-
-    def test_install_delegates_to_source_harness_then_imports_raw_spec(self) -> None:
-        with AppTestHarness() as harness:
-            _Container(harness, "exa")
-            response = harness.post_json(
-                "/api/mcp/servers", {"qualifiedName": "exa", "sourceHarness": "cursor"}
-            )
+            response = harness.post_json("/api/mcp/servers", {"qualifiedName": "exa"})
             self.assertTrue(response["ok"])
             self.assertEqual(response["server"]["name"], "exa")
             self.assertEqual(response["server"]["transport"], "http")
@@ -247,26 +179,179 @@ class McpRoutesTests(unittest.TestCase):
             assert isinstance(servers, dict)
             names = [entry["name"] for entry in servers["entries"]]
             self.assertIn("exa", names)
+            entry = next(item for item in servers["entries"] if item["name"] == "exa")
+            self.assertEqual(entry["enabledStatus"], "disabled")
 
-            # The source harness was written by the native installer; others are untouched.
-            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
-            self.assertEqual(cursor_cfg["mcpServers"]["exa"]["url"], "https://mcp.exa.ai")
+            detail = harness.get_json("/api/mcp/servers/exa")
+            self.assertEqual(detail["enabledStatus"], "disabled")
+
+            # Installing from the marketplace only updates Skill Manager's manifest.
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
             self.assertFalse((harness.spec.home / ".claude.json").exists())
             self.assertFalse((harness.spec.home / ".codex" / "config.toml").exists())
 
-    def test_install_can_import_claude_code_project_scoped_config(self) -> None:
+    def test_install_without_target_harness_only_updates_manifest(self) -> None:
         with AppTestHarness() as harness:
             _Container(harness, "exa")
-            response = harness.post_json(
-                "/api/mcp/servers", {"qualifiedName": "exa", "sourceHarness": "claude"}
+
+            response = harness.post_json("/api/mcp/servers", {"qualifiedName": "exa"})
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["server"]["name"], "exa")
+            servers = harness.get_json("/api/mcp/servers")
+            entry = next(item for item in servers["entries"] if item["name"] == "exa")
+            self.assertEqual(entry["enabledStatus"], "disabled")
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
+            self.assertFalse((harness.spec.home / ".claude.json").exists())
+
+    def test_install_checks_availability_immediately(self) -> None:
+        with AppTestHarness() as harness:
+            _Container(harness, "exa")
+            probe = FakeMcpAvailabilityProbe(status="available")
+            harness.container.mcp_mutations.availability_probe = probe
+
+            response = harness.post_json("/api/mcp/servers", {"qualifiedName": "exa"})
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(probe.probed, ["exa"])
+            detail = harness.get_json("/api/mcp/servers/exa")
+            self.assertEqual(detail["availabilityStatus"], "available")
+            self.assertEqual(detail["mcpStatus"]["kind"], "available")
+
+    def test_list_servers_marks_mcp_disabled_when_no_addressable_harness_is_managed(self) -> None:
+        with AppTestHarness() as harness:
+            harness.container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.manual("remote"),
+                    transport="http",
+                    url="https://mcp.example.com",
+                )
             )
+            harness.container.mcp_read_models.invalidate()
+
+            servers = harness.get_json("/api/mcp/servers")
+            entry = next(item for item in servers["entries"] if item["name"] == "remote")
+            self.assertEqual(entry["enabledStatus"], "disabled")
+            self.assertEqual(entry["mcpStatus"]["kind"], "unchecked")
+
+    def test_list_servers_ignores_managed_bindings_on_non_addressable_harnesses_for_enabled_status(self) -> None:
+        with AppTestHarness() as harness:
+            harness.container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.manual("remote"),
+                    transport="http",
+                    url="https://mcp.example.com",
+                )
+            )
+            openclaw_cfg = harness.spec.home / ".openclaw" / "openclaw.json"
+            openclaw_cfg.parent.mkdir(parents=True, exist_ok=True)
+            openclaw_cfg.write_text(
+                json.dumps({"mcp": {"remote": {"type": "remote", "url": "https://mcp.example.com"}}}),
+                encoding="utf-8",
+            )
+            harness.container.mcp_read_models.invalidate()
+
+            servers = harness.get_json("/api/mcp/servers")
+            entry = next(item for item in servers["entries"] if item["name"] == "remote")
+            self.assertEqual(entry["enabledStatus"], "disabled")
+            self.assertEqual(entry["mcpStatus"]["kind"], "unchecked")
+
+    def test_availability_check_updates_runtime_status(self) -> None:
+        with AppTestHarness() as harness:
+            probe = FakeMcpAvailabilityProbe(status="available")
+            harness.container.mcp_queries.availability_probe = probe
+            _seed_manual_remote(harness, name="remote")
+            harness.post_json("/api/mcp/servers/remote/enable", {"harness": "cursor"})
+
+            detail_before = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail_before["availabilityStatus"], "unavailable")
+            self.assertEqual(detail_before["mcpStatus"]["kind"], "unchecked")
+            self.assertIsNone(detail_before["mcpStatus"]["reason"])
+
+            result = harness.post_json("/api/mcp/servers/remote/availability/check")
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["availabilityStatus"], "available")
+            self.assertEqual(probe.probed, ["remote"])
+
+            detail_after = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail_after["availabilityStatus"], "available")
+            self.assertEqual(detail_after["mcpStatus"]["kind"], "available")
+            self.assertIsNone(detail_after["mcpStatus"]["reason"])
+
+    def test_availability_cache_is_scoped_to_spec_revision(self) -> None:
+        with AppTestHarness() as harness:
+            probe = FakeMcpAvailabilityProbe(status="available")
+            harness.container.mcp_queries.availability_probe = probe
+            _seed_manual_remote(harness, name="remote")
+            harness.post_json("/api/mcp/servers/remote/enable", {"harness": "cursor"})
+
+            first = harness.post_json("/api/mcp/servers/remote/availability/check")
+            self.assertEqual(first["availabilityStatus"], "available")
+
+            harness.container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.manual("remote"),
+                    transport="http",
+                    url="https://changed.example.com",
+                )
+            )
+            harness.container.mcp_read_models.invalidate()
+            harness.post_json(
+                "/api/mcp/servers/remote/reconcile",
+                {"sourceKind": "managed", "harnesses": ["cursor"]},
+            )
+            probe.status = "unavailable"
+            probe.reason = "changed config failed"
+
+            detail = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail["availabilityStatus"], "unavailable")
+            self.assertIsNone(detail["availabilityReason"])
+            self.assertEqual(detail["mcpStatus"]["kind"], "unchecked")
+            self.assertIsNone(detail["mcpStatus"]["reason"])
+            second = harness.post_json("/api/mcp/servers/remote/availability/check")
+            self.assertEqual(second["availabilityStatus"], "unavailable")
+            self.assertEqual(second["availabilityReason"], "changed config failed")
+            self.assertEqual(probe.probed, ["remote", "remote"])
+            detail_after_failure = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail_after_failure["mcpStatus"]["kind"], "connection_issue")
+            self.assertEqual(detail_after_failure["mcpStatus"]["reason"], "changed config failed")
+
+    def test_availability_check_runs_before_agent_enablement(self) -> None:
+        with AppTestHarness() as harness:
+            probe = FakeMcpAvailabilityProbe(status="available")
+            harness.container.mcp_queries.availability_probe = probe
+            _seed_manual_remote(harness, name="remote")
+
+            result = harness.post_json("/api/mcp/servers/remote/availability/check")
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["availabilityStatus"], "available")
+            self.assertIsNone(result["availabilityReason"])
+            self.assertEqual(probe.probed, ["remote"])
+
+            detail_after = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail_after["enabledStatus"], "disabled")
+            self.assertEqual(detail_after["availabilityStatus"], "available")
+            self.assertIsNone(detail_after["availabilityReason"])
+            self.assertEqual(detail_after["mcpStatus"]["kind"], "available")
+            self.assertIsNone(detail_after["mcpStatus"]["reason"])
+
+    def test_enable_writes_claude_code_config(self) -> None:
+        with AppTestHarness() as harness:
+            _Container(harness, "exa")
+            response = harness.post_json("/api/mcp/servers", {"qualifiedName": "exa"})
+            harness.post_json("/api/mcp/servers/exa/enable", {"harness": "claude"})
             self.assertTrue(response["ok"])
             self.assertEqual(response["server"]["name"], "exa")
             self.assertEqual(response["server"]["url"], "https://mcp.exa.ai")
 
             claude_cfg = json.loads((harness.spec.home / ".claude.json").read_text())
-            self.assertNotIn("mcpServers", claude_cfg)
-            project = claude_cfg["projects"][str(harness.spec.home.resolve())]
+            project = claude_cfg
             self.assertEqual(
                 project["mcpServers"]["exa"]["url"],
                 "https://mcp.exa.ai",
@@ -319,8 +404,7 @@ class McpRoutesTests(unittest.TestCase):
                 "/api/mcp/servers/exa/set-harnesses", {"target": "enabled"}
             )
             self.assertTrue(response["ok"])
-            # All five harnesses should have written
-            self.assertEqual(set(response["succeeded"]), {"codex", "claude", "opencode", "openclaw"})
+            self.assertEqual(set(response["succeeded"]), {"codex", "claude", "cursor", "opencode", "openclaw"})
 
             # Verify each config file
             self.assertTrue((harness.spec.home / ".cursor" / "mcp.json").is_file())
@@ -356,9 +440,32 @@ class McpRoutesTests(unittest.TestCase):
             _Container(harness, "exa")
             harness.post_json(
                 "/api/mcp/servers",
-                {"qualifiedName": "nonexistent", "sourceHarness": "cursor"},
+                {"qualifiedName": "nonexistent"},
                 expected_status=404,
             )
+
+    def test_enable_does_not_update_manifest_when_target_harness_write_fails(self) -> None:
+        with AppTestHarness() as harness:
+            _Container(harness, "exa")
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "exa"})
+            adapter = harness.container.mcp_read_models.find_adapter("cursor")
+            assert adapter is not None
+
+            def fail_enable(_spec: McpServerSpec) -> None:
+                raise MutationError("cursor write failed", status=400)
+
+            adapter.enable_server = fail_enable  # type: ignore[method-assign]
+
+            harness.post_json(
+                "/api/mcp/servers/exa/enable",
+                {"harness": "cursor"},
+                expected_status=400,
+            )
+
+            self.assertIsNotNone(harness.container.mcp_store.get_managed("exa"))
+            cursor_config_path = harness.spec.home / ".cursor" / "mcp.json"
+            cursor_cfg = json.loads(cursor_config_path.read_text()) if cursor_config_path.exists() else {}
+            self.assertNotIn("exa", cursor_cfg.get("mcpServers", {}))
 
     def test_marketplace_schema_metadata_does_not_change_observed_install(self) -> None:
         schema = {
@@ -374,35 +481,405 @@ class McpRoutesTests(unittest.TestCase):
         }
         with AppTestHarness() as harness:
             _Container(harness, "browserbase", schema)
-            install = harness.post_json(
-                "/api/mcp/servers",
-                {"qualifiedName": "browserbase", "sourceHarness": "cursor"},
-            )
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "browserbase"})
 
             self.assertTrue(install["ok"])
             self.assertEqual(install["server"]["name"], "browserbase")
             self.assertEqual(install["server"]["url"], "https://mcp.exa.ai")
-            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
-            self.assertEqual(
-                cursor_cfg["mcpServers"]["browserbase"]["url"],
-                "https://mcp.exa.ai",
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
+
+    def test_install_defers_required_registry_environment_config(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+            probe = FakeMcpAvailabilityProbe(status="unavailable", reason="missing CUEAPI_API_KEY")
+            harness.container.mcp_mutations.availability_probe = probe
+
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+
+            self.assertTrue(install["ok"])
+            self.assertEqual(probe.probed, ["ai-cueapi-mcp"])
+            self.assertIsNotNone(harness.container.mcp_store.get_managed("ai-cueapi-mcp"))
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
+            detail = harness.get_json("/api/mcp/servers/ai-cueapi-mcp")
+            self.assertEqual(detail["installConfigStatus"]["hasFields"], True)
+            self.assertEqual(detail["installConfigStatus"]["missingRequired"], ["CUEAPI_API_KEY"])
+            self.assertEqual(detail["installConfigStatus"]["configured"], False)
+            self.assertEqual(detail["mcpStatus"]["kind"], "needs_config")
+            servers = harness.get_json("/api/mcp/servers")
+            entry = next(item for item in servers["entries"] if item["name"] == "ai-cueapi-mcp")
+            self.assertEqual(entry["installConfigStatus"]["missingRequired"], ["CUEAPI_API_KEY"])
+            self.assertEqual(entry["mcpStatus"]["kind"], "needs_config")
+
+    def test_enable_writes_registry_environment_config_to_target_harness(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True},
+                        {"name": "CUEAPI_BASE_URL", "default": "https://api.cueapi.ai"},
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/enable",
+                {"harness": "cursor", "config": {"CUEAPI_API_KEY": "cue-key"}},
             )
 
-    def test_install_stores_the_observed_source_harness_key(self) -> None:
+            self.assertNotIn("CUEAPI_API_KEY", install["server"].get("env", {}))
+            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
+            self.assertEqual(
+                cursor_cfg["mcpServers"]["ai-cueapi-mcp"]["env"],
+                {
+                    "CUEAPI_API_KEY": "cue-key",
+                    "CUEAPI_BASE_URL": "https://api.cueapi.ai",
+                },
+            )
+            detail = harness.get_json("/api/mcp/servers/ai-cueapi-mcp")
+            self.assertEqual(detail["installConfigStatus"]["missingRequired"], [])
+            self.assertEqual(detail["installConfigStatus"]["configured"], True)
+
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/enable",
+                {"harness": "claude"},
+            )
+            claude_cfg = json.loads((harness.spec.home / ".claude.json").read_text())
+            self.assertEqual(
+                claude_cfg["mcpServers"]["ai-cueapi-mcp"]["env"],
+                {
+                    "CUEAPI_API_KEY": "cue-key",
+                    "CUEAPI_BASE_URL": "https://api.cueapi.ai",
+                },
+            )
+
+    def test_registry_install_accepts_required_config_when_enabling_harness(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True},
+                        {"name": "CUEAPI_BASE_URL", "default": "https://api.cueapi.ai"},
+                    ],
+                }
+            ],
+        }
         with AppTestHarness() as harness:
-            _Container(harness, "@vendor/pkg", source_name="vendor-package")
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
 
             install = harness.post_json(
                 "/api/mcp/servers",
-                {"qualifiedName": "@vendor/pkg", "sourceHarness": "cursor"},
+                {"qualifiedName": "ai.cueapi/mcp"},
             )
 
-            self.assertEqual(install["server"]["name"], "vendor-package")
+            self.assertTrue(install["ok"])
+            self.assertNotIn("CUEAPI_API_KEY", install["server"].get("env", {}))
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
+
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/enable",
+                {"harness": "cursor", "config": {"CUEAPI_API_KEY": "cue-key"}},
+            )
+
+            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
+            self.assertEqual(
+                cursor_cfg["mcpServers"]["ai-cueapi-mcp"]["env"],
+                {
+                    "CUEAPI_API_KEY": "cue-key",
+                    "CUEAPI_BASE_URL": "https://api.cueapi.ai",
+                },
+            )
+
+    def test_registry_install_rejects_enabling_required_config_without_values(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/enable",
+                {"harness": "cursor"},
+                expected_status=400,
+            )
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/set-harnesses",
+                {"target": "enabled"},
+                expected_status=400,
+            )
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
+
+    def test_enable_with_config_does_not_update_manifest_when_harness_write_fails(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+            adapter = harness.container.mcp_read_models.find_adapter("cursor")
+            assert adapter is not None
+
+            def fail_enable(_spec: McpServerSpec) -> None:
+                raise MutationError("cursor write failed", status=400)
+
+            adapter.enable_server = fail_enable  # type: ignore[method-assign]
+
+            harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/enable",
+                {"harness": "cursor", "config": {"CUEAPI_API_KEY": "cue-key"}},
+                expected_status=400,
+            )
+
+            managed = harness.container.mcp_store.get_managed("ai-cueapi-mcp")
+            self.assertIsNotNone(managed)
+            assert managed is not None
+            self.assertNotIn("CUEAPI_API_KEY", managed.env_dict())
+
+    def test_enable_all_with_config_updates_manifest_after_partial_success(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+            adapter = harness.container.mcp_read_models.find_adapter("cursor")
+            assert adapter is not None
+
+            def fail_enable(_spec: McpServerSpec) -> None:
+                raise MutationError("cursor write failed", status=400)
+
+            adapter.enable_server = fail_enable  # type: ignore[method-assign]
+
+            response = harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/set-harnesses",
+                {"target": "enabled", "config": {"CUEAPI_API_KEY": "cue-key"}},
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertGreater(len(response["succeeded"]), 0)
+            managed = harness.container.mcp_store.get_managed("ai-cueapi-mcp")
+            self.assertIsNotNone(managed)
+            assert managed is not None
+            self.assertEqual(managed.env_dict()["CUEAPI_API_KEY"], "cue-key")
+
+    def test_enable_all_with_config_leaves_manifest_when_every_write_fails(self) -> None:
+        registry_server = {
+            "name": "ai.cueapi/mcp",
+            "title": "CueAPI",
+            "version": "0.1.3",
+            "description": "Schedule agent work",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@cueapi/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.cueapi/mcp", is_remote=False, registry_server=registry_server)
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.cueapi/mcp"})
+
+            def fail_enable(_spec: McpServerSpec) -> None:
+                raise MutationError("write failed", status=400)
+
+            for adapter in harness.container.mcp_read_models.enabled_writable_adapters():
+                adapter.enable_server = fail_enable  # type: ignore[method-assign]
+
+            response = harness.post_json(
+                "/api/mcp/servers/ai-cueapi-mcp/set-harnesses",
+                {"target": "enabled", "config": {"CUEAPI_API_KEY": "cue-key"}},
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["succeeded"], [])
+            managed = harness.container.mcp_store.get_managed("ai-cueapi-mcp")
+            self.assertIsNotNone(managed)
+            assert managed is not None
+            self.assertNotIn("CUEAPI_API_KEY", managed.env_dict())
+
+    def test_optional_config_is_preserved_when_enabling_another_harness(self) -> None:
+        registry_server = {
+            "name": "ai.optional/mcp",
+            "title": "Optional MCP",
+            "version": "0.1.3",
+            "description": "Optional env",
+            "packages": [
+                {
+                    "registryType": "npm",
+                    "identifier": "@optional/mcp",
+                    "version": "0.1.3",
+                    "transport": {"type": "stdio"},
+                    "environmentVariables": [
+                        {"name": "OPTIONAL_TOKEN", "isSecret": True}
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.optional/mcp", is_remote=False, registry_server=registry_server)
+            harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.optional/mcp"})
+
+            detail_before = harness.get_json("/api/mcp/servers/ai-optional-mcp")
+            self.assertEqual(detail_before["installConfigStatus"]["hasFields"], True)
+            self.assertEqual(detail_before["installConfigStatus"]["missingRequired"], [])
+            self.assertEqual(detail_before["installConfigStatus"]["configured"], True)
+
+            harness.post_json(
+                "/api/mcp/servers/ai-optional-mcp/enable",
+                {"harness": "cursor", "config": {"OPTIONAL_TOKEN": "opt-token"}},
+            )
+            managed = harness.container.mcp_store.get_managed("ai-optional-mcp")
+            self.assertIsNotNone(managed)
+            assert managed is not None
+            self.assertEqual(managed.env_dict()["OPTIONAL_TOKEN"], "opt-token")
+
+            harness.post_json(
+                "/api/mcp/servers/ai-optional-mcp/enable",
+                {"harness": "claude"},
+            )
+
+            managed_after = harness.container.mcp_store.get_managed("ai-optional-mcp")
+            self.assertIsNotNone(managed_after)
+            assert managed_after is not None
+            self.assertEqual(managed_after.env_dict()["OPTIONAL_TOKEN"], "opt-token")
+            claude_cfg = json.loads((harness.spec.home / ".claude.json").read_text())
+            self.assertEqual(
+                claude_cfg["mcpServers"]["ai-optional-mcp"]["env"],
+                {"OPTIONAL_TOKEN": "opt-token"},
+            )
+
+    def test_install_writes_registry_remote_headers_and_url_variables(self) -> None:
+        registry_server = {
+            "name": "ai.example/remote",
+            "title": "Remote",
+            "version": "1.0.0",
+            "description": "Remote MCP",
+            "remotes": [
+                {
+                    "type": "streamable-http",
+                    "url": "https://api.example.com/{workspace}/mcp",
+                    "variables": {"workspace": {"isRequired": True}},
+                    "headers": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {API_TOKEN}",
+                            "variables": {"API_TOKEN": {"isRequired": True, "isSecret": True}},
+                        }
+                    ],
+                }
+            ],
+        }
+        with AppTestHarness() as harness:
+            _Container(harness, "ai.example/remote", registry_server=registry_server)
+
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "ai.example/remote"})
+            harness.post_json(
+                "/api/mcp/servers/ai-example-remote/enable",
+                {"harness": "cursor", "config": {"workspace": "acme", "API_TOKEN": "token-123"}},
+            )
+
+            self.assertEqual(install["server"]["url"], "https://api.example.com/{workspace}/mcp")
+            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
+            self.assertEqual(
+                cursor_cfg["mcpServers"]["ai-example-remote"]["headers"],
+                {"Authorization": "Bearer token-123"},
+            )
+
+    def test_install_stores_the_registry_managed_key(self) -> None:
+        with AppTestHarness() as harness:
+            _Container(harness, "@vendor/pkg")
+
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "@vendor/pkg"})
+
+            self.assertEqual(install["server"]["name"], "vendor-pkg")
             servers = harness.get_json("/api/mcp/servers")
             assert isinstance(servers, dict)
-            self.assertIn("vendor-package", [entry["name"] for entry in servers["entries"]])
-            cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
-            self.assertIn("vendor-package", cursor_cfg["mcpServers"])
+            self.assertIn("vendor-pkg", [entry["name"] for entry in servers["entries"]])
+            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
 
     def test_static_stdio_marketplace_install_can_enable(self) -> None:
         with AppTestHarness() as harness:
@@ -419,16 +896,14 @@ class McpRoutesTests(unittest.TestCase):
                     }
                 ],
             )
-            install = harness.post_json(
-                "/api/mcp/servers",
-                {"qualifiedName": "desktop", "sourceHarness": "cursor"},
-            )
+            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "desktop"})
+            harness.post_json("/api/mcp/servers/desktop/enable", {"harness": "cursor"})
             self.assertEqual(install["server"]["transport"], "stdio")
 
             cursor_cfg = json.loads((harness.spec.home / ".cursor" / "mcp.json").read_text())
             payload = cursor_cfg["mcpServers"]["desktop"]
             self.assertEqual(payload["command"], "npx")
-            self.assertEqual(payload["args"], ["-y", "@acme/desktop"])
+            self.assertEqual(payload["args"], ["-y", "@acme/desktop@1.0.0"])
 
     def test_get_unknown_server_returns_404(self) -> None:
         with AppTestHarness() as harness:
@@ -478,7 +953,7 @@ class McpRoutesTests(unittest.TestCase):
             self.assertFalse(response["servers"][0]["identical"])
             self.assertIsNone(response["servers"][0]["canonicalSpec"])
 
-    def test_unmanaged_by_server_returns_raw_preview_fields(self) -> None:
+    def test_unmanaged_by_server_masks_secret_preview_fields(self) -> None:
         with AppTestHarness() as harness:
             cursor_cfg = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg.parent.mkdir(parents=True, exist_ok=True)
@@ -503,17 +978,17 @@ class McpRoutesTests(unittest.TestCase):
             response = harness.get_json("/api/mcp/unmanaged/by-server")
             assert isinstance(response, dict)
             encoded = json.dumps(response)
-            self.assertIn("live_secret_value", encoded)
+            self.assertNotIn("live_secret_value", encoded)
             servers = {server["name"]: server for server in response["servers"]}
             remote = servers["secreted"]
-            self.assertIn("api_key=live_secret_value", remote["canonicalSpec"]["url"])
+            self.assertIn("api_key=%5Bredacted%5D", remote["canonicalSpec"]["url"])
             self.assertEqual(
                 remote["sightings"][0]["spec"]["headers"]["Authorization"],
-                "Bearer live_secret_value",
+                "[redacted]",
             )
             stdio = servers["secretenv"]
-            self.assertEqual(stdio["canonicalSpec"]["env"]["EXA_API_KEY"], "live_secret_value")
-            self.assertEqual(stdio["sightings"][0]["env"][0]["value"], "live_secret_value")
+            self.assertEqual(stdio["canonicalSpec"]["env"]["EXA_API_KEY"], "[redacted]")
+            self.assertEqual(stdio["sightings"][0]["env"][0]["value"], "[redacted]")
 
     def test_adopt_identical_promotes_all_harnesses_in_one_call(self) -> None:
         with AppTestHarness() as harness:
@@ -534,7 +1009,7 @@ class McpRoutesTests(unittest.TestCase):
             assert isinstance(servers, dict)
             self.assertIn("context7", [e["name"] for e in servers["entries"]])
 
-    def test_adopt_differing_without_source_harness_returns_409(self) -> None:
+    def test_adopt_differing_without_observed_harness_returns_409(self) -> None:
         with AppTestHarness() as harness:
             cursor_cfg = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg.parent.mkdir(parents=True, exist_ok=True)
@@ -551,7 +1026,7 @@ class McpRoutesTests(unittest.TestCase):
                 expected_status=409,
             )
 
-    def test_adopt_differing_uses_selected_source_harness(self) -> None:
+    def test_adopt_differing_uses_selected_observed_harness(self) -> None:
         with AppTestHarness() as harness:
             cursor_cfg = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg.parent.mkdir(parents=True, exist_ok=True)
@@ -565,7 +1040,7 @@ class McpRoutesTests(unittest.TestCase):
 
             result = harness.post_json(
                 "/api/mcp/unmanaged/adopt",
-                {"name": "foo", "sourceHarness": "claude"},
+                {"name": "foo", "observedHarness": "claude"},
             )
             assert isinstance(result, dict)
             self.assertTrue(result["ok"])
@@ -587,7 +1062,7 @@ class McpRoutesTests(unittest.TestCase):
                 qualified_name="@upstash/context7",
                 display_name="Context7",
                 icon_url="https://icon.example/ctx7.png",
-                external_url="https://smithery.ai/server/@upstash/context7",
+                external_url="https://registry.modelcontextprotocol.io/?q=%40upstash%2Fcontext7",
                 description="Docs MCP",
                 is_remote=False,
                 is_verified=True,
@@ -695,6 +1170,11 @@ class McpRoutesTests(unittest.TestCase):
             cursor_cfg.write_text(
                 json.dumps({"mcpServers": {"remote": {"url": "https://hand-edited.example"}}})
             )
+            harness.container.mcp_read_models.invalidate()
+            detail_before = harness.get_json("/api/mcp/servers/remote")
+            self.assertEqual(detail_before["mcpStatus"]["kind"], "unchecked")
+            self.assertIsNone(detail_before["mcpStatus"]["reason"])
+
             result = harness.post_json(
                 "/api/mcp/servers/remote/reconcile",
                 {"sourceKind": "managed", "harnesses": ["cursor"]},
@@ -717,7 +1197,7 @@ class McpRoutesTests(unittest.TestCase):
             )
             result = harness.post_json(
                 "/api/mcp/servers/remote/reconcile",
-                {"sourceKind": "harness", "sourceHarness": "cursor"},
+                {"sourceKind": "harness", "observedHarness": "cursor"},
             )
             assert isinstance(result, dict)
             self.assertTrue(result["ok"])
@@ -746,7 +1226,7 @@ class McpRoutesTests(unittest.TestCase):
             detail = harness.get_json("/api/mcp/servers/exa")
             assert isinstance(detail, dict)
             env_rows = {row["key"]: row for row in detail["env"]}
-            self.assertEqual(env_rows["EXA_API_KEY"]["value"], "long-secret-value-xxxx")
+            self.assertEqual(env_rows["EXA_API_KEY"]["value"], "[redacted]")
             self.assertFalse(env_rows["EXA_API_KEY"]["isEnvRef"])
 
 

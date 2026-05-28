@@ -6,25 +6,12 @@ import {
   useMcpMarketplaceFeedQuery,
 } from "../api/mcp-queries";
 import type {
-  McpMarketplaceFilter,
   McpMarketplaceItemDto,
 } from "../api/mcp-types";
-
-const FILTER_VALUES: readonly McpMarketplaceFilter[] = [
-  "all",
-  "remote",
-  "local",
-  "verified",
-];
-
-function isFilterValue(value: string): value is McpMarketplaceFilter {
-  return (FILTER_VALUES as readonly string[]).includes(value);
-}
 
 export interface McpMarketplaceController {
   query: string;
   submittedQuery: string;
-  filter: McpMarketplaceFilter;
   items: McpMarketplaceItemDto[];
   feedQuery: ReturnType<typeof useMcpMarketplaceFeedQuery>;
   status: "loading" | "ready" | "error";
@@ -34,7 +21,6 @@ export interface McpMarketplaceController {
   selectedName: string | null;
   selectedItem: McpMarketplaceItemDto | null;
   setQuery: (value: string) => void;
-  setFilter: (value: McpMarketplaceFilter) => void;
   openItem: (qualifiedName: string) => void;
   closeItem: () => void;
 }
@@ -54,10 +40,7 @@ export function useMcpMarketplaceController(
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const filterParam = searchParams.get("filter") ?? "all";
-  const filter: McpMarketplaceFilter = isFilterValue(filterParam) ? filterParam : "all";
-
-  const feedQuery = useMcpMarketplaceFeedQuery(submittedQuery, filter);
+  const feedQuery = useMcpMarketplaceFeedQuery(submittedQuery);
   const items = useMemo(() => flattenMcpMarketplaceItems(feedQuery.data), [feedQuery.data]);
 
   const status: "loading" | "ready" | "error" = feedQuery.isPending
@@ -101,21 +84,9 @@ export function useMcpMarketplaceController(
     setSearchParams(next, { replace: false });
   }
 
-  function setFilter(value: McpMarketplaceFilter): void {
-    if (value === filter) {
-      return;
-    }
-    if (value === "all") {
-      updateParams({ filter: null });
-    } else {
-      updateParams({ filter: value });
-    }
-  }
-
   return {
     query,
     submittedQuery,
-    filter,
     items,
     feedQuery,
     status,
@@ -125,7 +96,6 @@ export function useMcpMarketplaceController(
     selectedName,
     selectedItem,
     setQuery,
-    setFilter,
     openItem: (qualifiedName) => updateParams({ item: qualifiedName }),
     closeItem: () => updateParams({ item: null }),
   };
