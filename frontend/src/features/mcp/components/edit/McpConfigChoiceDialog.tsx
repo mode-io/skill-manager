@@ -20,7 +20,7 @@ import {
 export interface McpConfigChoiceOption {
   id: string;
   sourceKind: "managed" | "harness";
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   label: string;
   logoKey?: string | null;
   configPath?: string | null;
@@ -228,7 +228,7 @@ export function McpConfigChoiceDialog({
 function toConfigChoiceDto(option: McpConfigChoiceOption): McpConfigChoiceDto {
   return {
     sourceKind: option.sourceKind,
-    sourceHarness: option.sourceHarness ?? null,
+    observedHarness: option.observedHarness ?? null,
     label: option.label,
     logoKey: option.logoKey ?? null,
     configPath: option.configPath ?? null,

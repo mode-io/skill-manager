@@ -62,7 +62,7 @@ class MarketplaceProviderErrorTests(unittest.TestCase):
         client.fetch_json.return_value = {
             "skills": [
                 {
-                    "source": "smithery.ai",
+                    "source": "unsupported-source.example",
                     "skillId": "ui-ux-pro-max",
                     "name": "ui-ux-pro-max",
                     "installs": 128,

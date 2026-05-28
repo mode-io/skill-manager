@@ -63,14 +63,14 @@ export async function checkMcpServerAvailability(name: string): Promise<McpAvail
 export async function reconcileMcpServer(args: {
   name: string;
   sourceKind: "managed" | "harness";
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   harnesses?: string[];
 }): Promise<McpApplyConfigResponseDto> {
   return postJson<McpApplyConfigResponseDto>(
     `/mcp/servers/${encodeURIComponent(args.name)}/reconcile`,
     {
       sourceKind: args.sourceKind,
-      sourceHarness: args.sourceHarness ?? null,
+      observedHarness: args.observedHarness ?? null,
       harnesses: args.harnesses,
     },
   );
@@ -82,7 +82,7 @@ export async function fetchMcpNeedsReviewByServer(): Promise<McpNeedsReviewBySer
 
 export async function adoptMcpServer(body: {
   name: string;
-  sourceHarness?: string | null;
+  observedHarness?: string | null;
   harnesses?: string[];
 }): Promise<McpApplyConfigResponseDto> {
   return postJson<McpApplyConfigResponseDto>("/mcp/unmanaged/adopt", body);

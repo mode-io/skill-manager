@@ -30,7 +30,7 @@ export function useMcpManagementController() {
   const autoAvailabilityChecks = useRef<Set<string>>(new Set());
 
   const pendingServerRegistry = usePendingRegistry<string>();
-  const pendingAdoptRegistry = usePendingRegistry<string>(); // key: name or name:sourceHarness
+  const pendingAdoptRegistry = usePendingRegistry<string>(); // key: name or name:observedHarness
   const pendingPerHarnessRegistry = usePendingRegistry<string>(); // key: name:harness
 
   const [actionErrorMessage, setActionErrorMessage] = useState("");
@@ -154,7 +154,7 @@ export function useMcpManagementController() {
       name: string,
       args: {
         sourceKind: "managed" | "harness";
-        sourceHarness?: string | null;
+        observedHarness?: string | null;
         harnesses?: string[];
       },
     ): Promise<void> => {
@@ -175,9 +175,9 @@ export function useMcpManagementController() {
   const handleAdoptConfig = useCallback(
     async (
       name: string,
-      args: { sourceHarness?: string | null; harnesses?: string[] } = {},
+      args: { observedHarness?: string | null; harnesses?: string[] } = {},
     ): Promise<void> => {
-      const key = args.sourceHarness ? `${name}:${args.sourceHarness}` : name;
+      const key = args.observedHarness ? `${name}:${args.observedHarness}` : name;
       try {
         await pendingAdoptRegistry.run(key, async () => {
           await adoptMutation.mutateAsync({ name, ...args });

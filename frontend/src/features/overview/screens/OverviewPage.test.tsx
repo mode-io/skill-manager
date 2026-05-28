@@ -270,7 +270,7 @@ describe("OverviewPage", () => {
     expect(within(skillsRow).getByRole("link", { name: "Browse" })).toHaveAttribute("href", "/marketplace/skills");
 
     const mcpRow = within(marketplaceSection).getByRole("heading", { name: "MCP Marketplace" }).closest("article") as HTMLElement;
-    expect(within(mcpRow).getByText("smithery.ai")).toBeInTheDocument();
+    expect(within(mcpRow).getByText("MCP Registry")).toBeInTheDocument();
     expect(within(mcpRow).getByRole("link", { name: "Browse" })).toHaveAttribute("href", "/marketplace/mcp");
 
     const cliRow = within(marketplaceSection).getByRole("heading", { name: "CLI Marketplace" }).closest("article") as HTMLElement;

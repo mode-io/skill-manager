@@ -45,7 +45,7 @@ class GitHubRepoMetadataClientTests(unittest.TestCase):
 
         client = GitHubRepoMetadataClient(metadata_fetcher=metadata_fetcher)
 
-        self.assertIsNone(client.metadata_for_repo("smithery.ai"))
+        self.assertIsNone(client.metadata_for_repo("unsupported-source.example"))
         self.assertEqual(calls, [])
 
     def test_transient_errors_are_propagated(self) -> None:

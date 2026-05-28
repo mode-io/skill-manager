@@ -92,7 +92,7 @@ const englishMarketplaceCopy = {
       command: "Command",
       copy: "Copy",
       connectionMetadataUnavailable:
-        "Connection metadata is unavailable for this registry entry. Add it to MCPs to save the registry record and check availability.",
+        "Connection metadata is unavailable for this registry entry. Add it to MCPs to save the managed MCP record and check availability.",
       showMore: (count: number) => `Show ${count} more`,
       collapseTools: "Collapse tools",
       noDescription: "No description provided.",

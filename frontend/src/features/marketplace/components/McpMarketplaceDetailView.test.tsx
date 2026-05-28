@@ -18,7 +18,7 @@ function okJson(payload: object) {
   };
 }
 
-function deferred<T>() {
+function controlledPromise<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
     resolve = done;
@@ -103,7 +103,7 @@ describe("McpMarketplaceDetailView", () => {
   });
 
   it("transitions from loading to loaded without changing hook order", async () => {
-    const detail = deferred<ReturnType<typeof okJson>>();
+    const detail = controlledPromise<ReturnType<typeof okJson>>();
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/mcp/items/exa")) {
@@ -147,7 +147,7 @@ describe("McpMarketplaceDetailView", () => {
   });
 
   it("shows disabled source buttons when GitHub and Website are unavailable", async () => {
-    const detail = deferred<ReturnType<typeof okJson>>();
+    const detail = controlledPromise<ReturnType<typeof okJson>>();
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/mcp/items/exa")) {

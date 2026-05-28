@@ -26,7 +26,6 @@ from .install_config import (
 from .store import McpServerSpec, McpSource
 
 
-_BLOCKED_PROVIDER = "smithery"
 _SAFE_NAME_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -164,8 +163,6 @@ def _package_options(server: Mapping[str, object]) -> list[RegistryInstallOption
 def _package_install_input(package: object, server: Mapping[str, object]) -> _PackageInstallInput | None:
     if not isinstance(package, Mapping):
         return None
-    if _contains_blocked_provider(package) or _contains_blocked_provider(server.get("repository")):
-        return None
     transport = package.get("transport")
     transport_type = _str(transport.get("type")) if isinstance(transport, Mapping) else ""
     if transport_type != "stdio":
@@ -212,8 +209,6 @@ def _remote_options(server: Mapping[str, object]) -> list[RegistryInstallOption]
     options: list[RegistryInstallOption] = []
     for remote in remotes:
         if not isinstance(remote, Mapping):
-            continue
-        if _contains_blocked_provider(remote) or _contains_blocked_provider(server.get("repository")):
             continue
         remote_type = _str(remote.get("type")).lower()
         transport = _REMOTE_TRANSPORTS.get(remote_type)
@@ -300,16 +295,6 @@ def _merge_stdio_args(args: tuple[str, ...], runtime_args: tuple[str, ...], pack
     if not args:
         return runtime_args + package_args
     return args[:-1] + runtime_args + args[-1:] + package_args
-
-
-def _contains_blocked_provider(value: object) -> bool:
-    if isinstance(value, str):
-        return _BLOCKED_PROVIDER in value.lower()
-    if isinstance(value, Mapping):
-        return any(_contains_blocked_provider(item) for item in value.values())
-    if isinstance(value, list):
-        return any(_contains_blocked_provider(item) for item in value)
-    return False
 
 
 def _str(value: object) -> str:

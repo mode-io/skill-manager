@@ -346,7 +346,7 @@ def _config_choices_payload(
     choices: list[dict[str, object]] = [
         {
             "sourceKind": "managed",
-            "sourceHarness": None,
+            "observedHarness": None,
             "label": "Managed config",
             "logoKey": None,
             "configPath": None,
@@ -364,7 +364,7 @@ def _config_choices_payload(
             choices.append(
                 {
                     "sourceKind": "harness",
-                    "sourceHarness": scan.harness,
+                    "observedHarness": scan.harness,
                     "label": f"{scan.label} config",
                     "logoKey": scan.logo_key,
                     "configPath": str(scan.config_path) if scan.config_present else None,

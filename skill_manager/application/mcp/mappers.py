@@ -33,7 +33,7 @@ class _TypedMcpServersMapper:
     repair configs written by older versions.
     """
 
-    source_harness: str
+    observed_harness: str
 
     def spec_to_dict(self, spec: McpServerSpec) -> dict[str, object]:
         if spec.transport == "stdio":
@@ -61,7 +61,7 @@ class _TypedMcpServersMapper:
             return McpServerSpec(
                 name=name,
                 display_name=name,
-                source=source or McpSource.adopted(self.source_harness, name),
+                source=source or McpSource.adopted(self.observed_harness, name),
                 transport="stdio",
                 command=_str_or_none(raw.get("command")),
                 args=_str_tuple(raw.get("args")),
@@ -72,23 +72,23 @@ class _TypedMcpServersMapper:
             return McpServerSpec(
                 name=name,
                 display_name=name,
-                source=source or McpSource.adopted(self.source_harness, name),
+                source=source or McpSource.adopted(self.observed_harness, name),
                 transport=transport,
                 url=_str_or_none(raw.get("url")),
                 headers=_str_pairs(raw.get("headers")),
             )
         raise MutationError(
-            f"unsupported {self.source_harness} mcp entry '{name}': missing 'command' and 'url'",
+            f"unsupported {self.observed_harness} mcp entry '{name}': missing 'command' and 'url'",
             status=400,
         )
 
 
 class ClaudeCodeMapper(_TypedMcpServersMapper):
-    source_harness = "claude"
+    observed_harness = "claude"
 
 
 class CursorMapper(_TypedMcpServersMapper):
-    source_harness = "cursor"
+    observed_harness = "cursor"
 
 
 # OpenCode -----------------------------------------------------------------

@@ -17,7 +17,7 @@ interface McpServerDetailSheetProps {
   onResolveConfig: (
     args: {
       sourceKind: "managed" | "harness";
-      sourceHarness?: string | null;
+      observedHarness?: string | null;
       harnesses?: string[];
     },
   ) => Promise<void>;

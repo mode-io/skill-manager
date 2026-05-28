@@ -88,7 +88,7 @@ def reconcile_mcp_server(
     return container.mcp_mutations.reconcile_server(
         name,
         source_kind=body.source_kind,
-        source_harness=body.source_harness,
+        observed_harness=body.observed_harness,
         harnesses=body.harnesses,
     )
 
@@ -116,6 +116,6 @@ def adopt_mcp_server(
 ) -> dict[str, object]:
     return container.mcp_mutations.adopt(
         body.name,
-        source_harness=body.source_harness,
+        observed_harness=body.observed_harness,
         harnesses=body.harnesses,
     )

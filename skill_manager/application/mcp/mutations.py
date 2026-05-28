@@ -203,7 +203,7 @@ class McpMutationService:
         name: str,
         *,
         source_kind: str,
-        source_harness: str | None = None,
+        observed_harness: str | None = None,
         harnesses: list[str] | None = None,
     ) -> dict[str, object]:
         if self.store.get_managed(name) is None:
@@ -217,9 +217,9 @@ class McpMutationService:
         if source_kind == "managed":
             source_spec = current
         elif source_kind == "harness":
-            if not source_harness:
-                raise MutationError("sourceHarness is required when sourceKind is 'harness'", status=400)
-            observed_spec = self._observed_spec(name, source_harness)
+            if not observed_harness:
+                raise MutationError("observedHarness is required when sourceKind is 'harness'", status=400)
+            observed_spec = self._observed_spec(name, observed_harness)
             source_spec = replace(
                 observed_spec,
                 name=current.name,
@@ -262,7 +262,7 @@ class McpMutationService:
         self,
         name: str,
         *,
-        source_harness: str | None = None,
+        observed_harness: str | None = None,
         harnesses: list[str] | None = None,
     ) -> dict[str, object]:
         if self.store.get_managed(name) is not None:
@@ -270,21 +270,21 @@ class McpMutationService:
                 f"a managed server named '{name}' already exists", status=409
             )
         group = self.planner.require_group(name)
-        if source_harness:
+        if observed_harness:
             target_spec = next(
-                (sighting.spec for sighting in group.sightings if sighting.harness == source_harness),
+                (sighting.spec for sighting in group.sightings if sighting.harness == observed_harness),
                 None,
             )
             if target_spec is None:
                 raise MutationError(
-                    f"server '{name}' was not observed in harness '{source_harness}'",
+                    f"server '{name}' was not observed in harness '{observed_harness}'",
                     status=400,
                 )
         else:
             target_spec = group.canonical_spec
         if target_spec is None:
             raise MutationError(
-                f"server '{name}' has different configs across harnesses; choose a sourceHarness to adopt",
+                f"server '{name}' has different configs across harnesses; choose an observedHarness to adopt",
                 status=409,
             )
         if target_spec.name != name:

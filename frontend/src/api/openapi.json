@@ -38,7 +38,7 @@
             "title": "Name",
             "type": "string"
           },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -47,7 +47,7 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
           }
         },
         "required": [
@@ -915,12 +915,7 @@
             ],
             "title": "Logokey"
           },
-          "payloadPreview": {
-            "additionalProperties": true,
-            "title": "Payloadpreview",
-            "type": "object"
-          },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -929,7 +924,12 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
+          },
+          "payloadPreview": {
+            "additionalProperties": true,
+            "title": "Payloadpreview",
+            "type": "object"
           },
           "sourceKind": {
             "enum": [
@@ -2546,7 +2546,7 @@
             ],
             "title": "Harnesses"
           },
-          "sourceHarness": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -2555,7 +2555,7 @@
                 "type": "null"
               }
             ],
-            "title": "Sourceharness"
+            "title": "Observed harness"
           },
           "sourceKind": {
             "enum": [

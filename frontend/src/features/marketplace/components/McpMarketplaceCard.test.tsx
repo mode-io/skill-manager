@@ -32,7 +32,7 @@ function createItem(overrides: Partial<McpMarketplaceItemDto> = {}): McpMarketpl
     useCount: overrides.useCount ?? 1200,
     createdAt: overrides.createdAt ?? null,
     homepage: overrides.homepage ?? null,
-    externalUrl: overrides.externalUrl ?? "https://smithery.ai/server/exa",
+    externalUrl: overrides.externalUrl ?? "https://registry.modelcontextprotocol.io/?q=exa",
   };
 }
 
@@ -240,7 +240,7 @@ describe("McpMarketplaceCard", () => {
     expect(screen.queryByLabelText(/CUEAPI_API_KEY/i, { selector: "input" })).not.toBeInTheDocument();
   });
 
-  it("keeps undeployed remote items installable as deferred MCP installs", async () => {
+  it("keeps undeployed remote items installable as registry MCP installs", async () => {
     renderCard(createItem({ isRemote: true, isDeployed: false }));
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /install exa search/i })).toBeEnabled(),

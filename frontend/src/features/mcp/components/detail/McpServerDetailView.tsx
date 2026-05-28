@@ -40,7 +40,7 @@ interface McpServerDetailViewProps {
   onResolveConfig: (
     args: {
       sourceKind: "managed" | "harness";
-      sourceHarness?: string | null;
+      observedHarness?: string | null;
       harnesses?: string[];
     },
   ) => Promise<void>;
@@ -278,7 +278,7 @@ export function McpServerDetailView({
           onConfirm={async (option) => {
             await onResolveConfig({
               sourceKind: option.sourceKind,
-              sourceHarness: option.sourceHarness,
+              observedHarness: option.observedHarness,
             });
             setResolveDialogOpen(false);
           }}
@@ -296,9 +296,9 @@ export function McpServerDetailView({
 
 function configChoiceToOption(choice: McpConfigChoiceDto, copy: McpCopy): McpConfigChoiceOption {
   return {
-    id: choice.sourceKind === "managed" ? "managed" : (choice.sourceHarness ?? choice.label),
+    id: choice.sourceKind === "managed" ? "managed" : (choice.observedHarness ?? choice.label),
     sourceKind: choice.sourceKind,
-    sourceHarness: choice.sourceHarness,
+    observedHarness: choice.observedHarness,
     label: choice.sourceKind === "managed" ? copy.detail.skillManagerConfig : choice.label,
     logoKey: choice.logoKey,
     configPath: choice.configPath,

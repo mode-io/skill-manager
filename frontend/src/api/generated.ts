@@ -825,8 +825,8 @@ export interface components {
             harnesses?: string[] | null;
             /** Name */
             name: string;
-            /** Sourceharness */
-            sourceHarness?: string | null;
+            /** Observed harness */
+            observedHarness?: string | null;
         };
         /** BulkManageFailureResponse */
         BulkManageFailureResponse: {
@@ -1097,12 +1097,12 @@ export interface components {
             label: string;
             /** Logokey */
             logoKey?: string | null;
+            /** Observed harness */
+            observedHarness?: string | null;
             /** Payloadpreview */
             payloadPreview: {
                 [key: string]: unknown;
             };
-            /** Sourceharness */
-            sourceHarness?: string | null;
             /**
              * Sourcekind
              * @enum {string}
@@ -1598,8 +1598,8 @@ export interface components {
         ReconcileMcpServerRequest: {
             /** Harnesses */
             harnesses?: string[] | null;
-            /** Sourceharness */
-            sourceHarness?: string | null;
+            /** Observed harness */
+            observedHarness?: string | null;
             /**
              * Sourcekind
              * @enum {string}

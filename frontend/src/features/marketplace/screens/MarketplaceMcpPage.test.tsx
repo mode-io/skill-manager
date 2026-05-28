@@ -8,7 +8,7 @@ import MarketplaceMcpPage from "./MarketplaceMcpPage";
 
 const fetchMock = vi.fn();
 
-function deferred<T>() {
+function controlledPromise<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
     resolve = done;
@@ -29,7 +29,7 @@ function pageItem() {
     useCount: 59087,
     createdAt: null,
     homepage: "https://exa.ai",
-    externalUrl: "https://smithery.ai/server/exa",
+    externalUrl: "https://registry.modelcontextprotocol.io/?q=exa",
   };
 }
 
@@ -47,7 +47,7 @@ function detailPayload() {
     resources: [],
     prompts: [],
     capabilityCounts: { tools: 0, resources: 0, prompts: 0 },
-    externalUrl: "https://smithery.ai/server/exa",
+    externalUrl: "https://registry.modelcontextprotocol.io/?q=exa",
   };
 }
 
@@ -76,7 +76,7 @@ describe("MarketplaceMcpPage", () => {
   });
 
   it("opens the detail modal while detail data is still loading", async () => {
-    const detail = deferred<ReturnType<typeof okJson>>();
+    const detail = controlledPromise<ReturnType<typeof okJson>>();
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/marketplace/mcp/popular?limit=20&offset=0")) {

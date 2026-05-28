@@ -13,7 +13,7 @@ function options(): McpConfigChoiceOption[] {
     {
       id: "cursor",
       sourceKind: "harness",
-      sourceHarness: "cursor",
+      observedHarness: "cursor",
       label: "Cursor",
       logoKey: "cursor",
       configPath: "/c/.cursor/mcp.json",
@@ -33,7 +33,7 @@ function options(): McpConfigChoiceOption[] {
     {
       id: "claude",
       sourceKind: "harness",
-      sourceHarness: "claude",
+      observedHarness: "claude",
       label: "Claude",
       logoKey: "claude",
       configPath: "/c/.claude.json",
@@ -93,7 +93,7 @@ describe("McpConfigChoiceDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
     await waitFor(() => expect(onConfirm).toHaveBeenCalled());
-    expect(onConfirm.mock.calls[0][0].sourceHarness).toBe("claude");
+    expect(onConfirm.mock.calls[0][0].observedHarness).toBe("claude");
   });
 
   it("uses resolve wording and apply label", async () => {

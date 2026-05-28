@@ -264,24 +264,5 @@ class RegistryInstallResolverTests(unittest.TestCase):
         self.assertEqual(spec.transport, "stdio")
         self.assertEqual(spec.command, "npx")
 
-    def test_smithery_options_are_filtered(self) -> None:
-        with self.assertRaises(MutationError) as captured:
-            resolve_registry_server_spec(
-                _detail(
-                    packages=[
-                        {
-                            "registryType": "npm",
-                            "identifier": "@smithery/example",
-                            "version": "1.0.0",
-                            "transport": {"type": "stdio"},
-                        }
-                    ],
-                    remotes=[{"type": "streamable-http", "url": "https://server.smithery.ai/example/mcp"}],
-                )
-            )
-
-        self.assertIn("no supported install configuration", str(captured.exception))
-
-
 if __name__ == "__main__":
     unittest.main()

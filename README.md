@@ -187,7 +187,7 @@ Actions that can change local state include:
 - removing or deleting a skill
 - creating, updating, validating, activating, or deleting an LLM scan configuration
 - running a Skill scan, which sends selected Skill context to the configured LLM provider
-- installing an MCP server into a source harness
+- installing an MCP server into a selected harness config
 - adopting an existing MCP config
 - enabling, disabling, resolving, or uninstalling an MCP server
 - creating, updating, syncing, importing, or deleting a slash command

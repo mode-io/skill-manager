@@ -30,7 +30,11 @@ class AdoptMcpRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     name: str = Field(..., min_length=1)
-    source_harness: str | None = Field(default=None, alias="sourceHarness")
+    observed_harness: str | None = Field(
+        default=None,
+        alias="observedHarness",
+        title="Observed harness",
+    )
     harnesses: list[str] | None = None
 
 
@@ -38,7 +42,11 @@ class ReconcileMcpServerRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     source_kind: Literal["managed", "harness"] = Field(..., alias="sourceKind")
-    source_harness: str | None = Field(default=None, alias="sourceHarness")
+    observed_harness: str | None = Field(
+        default=None,
+        alias="observedHarness",
+        title="Observed harness",
+    )
     harnesses: list[str] | None = None
 
 
@@ -156,7 +164,7 @@ class McpEnvEntryResponse(BaseModel):
 
 class McpConfigChoiceResponse(BaseModel):
     sourceKind: Literal["managed", "harness"]
-    sourceHarness: str | None = None
+    observedHarness: str | None = Field(default=None, title="Observed harness")
     label: str
     logoKey: str | None = None
     configPath: str | None = None

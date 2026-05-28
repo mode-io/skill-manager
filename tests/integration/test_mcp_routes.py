@@ -581,7 +581,7 @@ class McpRoutesTests(unittest.TestCase):
                 },
             )
 
-    def test_deferred_install_accepts_required_config_when_enabling_harness(self) -> None:
+    def test_registry_install_accepts_required_config_when_enabling_harness(self) -> None:
         registry_server = {
             "name": "ai.cueapi/mcp",
             "title": "CueAPI",
@@ -626,7 +626,7 @@ class McpRoutesTests(unittest.TestCase):
                 },
             )
 
-    def test_deferred_install_rejects_enabling_required_config_without_values(self) -> None:
+    def test_registry_install_rejects_enabling_required_config_without_values(self) -> None:
         registry_server = {
             "name": "ai.cueapi/mcp",
             "title": "CueAPI",
@@ -1009,7 +1009,7 @@ class McpRoutesTests(unittest.TestCase):
             assert isinstance(servers, dict)
             self.assertIn("context7", [e["name"] for e in servers["entries"]])
 
-    def test_adopt_differing_without_source_harness_returns_409(self) -> None:
+    def test_adopt_differing_without_observed_harness_returns_409(self) -> None:
         with AppTestHarness() as harness:
             cursor_cfg = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg.parent.mkdir(parents=True, exist_ok=True)
@@ -1026,7 +1026,7 @@ class McpRoutesTests(unittest.TestCase):
                 expected_status=409,
             )
 
-    def test_adopt_differing_uses_selected_source_harness(self) -> None:
+    def test_adopt_differing_uses_selected_observed_harness(self) -> None:
         with AppTestHarness() as harness:
             cursor_cfg = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg.parent.mkdir(parents=True, exist_ok=True)
@@ -1040,7 +1040,7 @@ class McpRoutesTests(unittest.TestCase):
 
             result = harness.post_json(
                 "/api/mcp/unmanaged/adopt",
-                {"name": "foo", "sourceHarness": "claude"},
+                {"name": "foo", "observedHarness": "claude"},
             )
             assert isinstance(result, dict)
             self.assertTrue(result["ok"])
@@ -1197,7 +1197,7 @@ class McpRoutesTests(unittest.TestCase):
             )
             result = harness.post_json(
                 "/api/mcp/servers/remote/reconcile",
-                {"sourceKind": "harness", "sourceHarness": "cursor"},
+                {"sourceKind": "harness", "observedHarness": "cursor"},
             )
             assert isinstance(result, dict)
             self.assertTrue(result["ok"])

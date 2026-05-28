@@ -185,7 +185,7 @@ export default function McpNeedsReviewPage() {
           onClose={() => setChooseConfigName(null)}
           onConfirm={async (option) => {
             await handleAdoptConfig(chooseConfigGroup.name, {
-              sourceHarness: option.sourceHarness,
+              observedHarness: option.observedHarness,
               harnesses: chooseConfigGroup.sightings.map((sighting) => sighting.harness),
             });
             setChooseConfigName(null);
@@ -200,7 +200,7 @@ function optionsForGroup(group: McpIdentityGroupDto): McpConfigChoiceOption[] {
   return group.sightings.map((sighting) => ({
     id: sighting.harness,
     sourceKind: "harness",
-    sourceHarness: sighting.harness,
+    observedHarness: sighting.harness,
     label: sighting.label,
     logoKey: sighting.logoKey,
     configPath: sighting.configPath,

@@ -100,7 +100,7 @@ class FlattenInputSchemaTests(unittest.TestCase):
 
 
 class McpRegistryCatalogTests(unittest.TestCase):
-    def test_popular_page_returns_latest_active_non_smithery_items(self) -> None:
+    def test_popular_page_returns_latest_active_supported_items(self) -> None:
         response = {
             "servers": [
                 _entry("ai.adeu/adeu", "1.5.2", latest=False, packages=[_PYPI_PACKAGE]),
@@ -116,7 +116,7 @@ class McpRegistryCatalogTests(unittest.TestCase):
                 _entry(
                     "bad.example/mcp",
                     "1.0.0",
-                    remotes=[{"type": "streamable-http", "url": "https://server.smithery.ai/bad/mcp"}],
+                    remotes=[{"type": "websocket", "url": "https://unsupported.example/bad/mcp"}],
                 ),
                 _entry("remote.example/mcp", "1.0.0", remotes=[_HTTP_REMOTE]),
             ],
@@ -137,7 +137,6 @@ class McpRegistryCatalogTests(unittest.TestCase):
         self.assertEqual(page["items"][0]["githubUrl"], "https://github.com/adeu/adeu-mcp")
         self.assertEqual(page["items"][0]["websiteUrl"], "https://adeu.ai")
         self.assertTrue(page["items"][1]["isRemote"])
-        self.assertNotIn("smithery", page["items"][0]["externalUrl"])
 
     def test_popular_page_reports_more_items_from_same_registry_page(self) -> None:
         response = {
@@ -353,7 +352,6 @@ class McpRegistryCatalogTests(unittest.TestCase):
         )
         self.assertEqual(detail["githubUrl"], "https://github.com/acme/inference-mcp")
         self.assertEqual(detail["websiteUrl"], "https://inference.sh")
-        self.assertNotIn("smithery", detail["externalUrl"])
         self.assertNotIn("registryServer", detail)
 
         install_detail = catalog.install_detail("ac.inference.sh/mcp")
