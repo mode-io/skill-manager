@@ -68,6 +68,10 @@ export function McpConfigChoiceDialog({
     ? copy.detail.configChoice.adoptDescription
     : copy.detail.configChoice.resolveDescription;
   const confirmLabel = mode === "adopt" ? copy.detail.configChoice.adoptConfirm : copy.detail.configChoice.applyConfig;
+  const sourceLabel = (option: McpConfigChoiceOption) =>
+    option.sourceKind === "managed"
+      ? copy.detail.configChoice.managedConfig
+      : copy.detail.configChoice.observedHarness(option.label);
 
   async function handleCommit(): Promise<void> {
     if (!chosen) return;
@@ -135,6 +139,7 @@ export function McpConfigChoiceDialog({
                   <div className="mcp-choose-version__option-body">
                     <div className="mcp-choose-version__option-head">
                       <strong className="mcp-choose-version__option-label">{option.label}</strong>
+                      <span className="chip">{sourceLabel(option)}</span>
                       {isRecommended ? (
                         <span className="chip chip--verified">{copy.detail.configChoice.recommended}</span>
                       ) : null}

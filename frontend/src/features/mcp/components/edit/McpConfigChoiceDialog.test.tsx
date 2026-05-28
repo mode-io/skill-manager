@@ -54,7 +54,10 @@ function options(): McpConfigChoiceOption[] {
   ];
 }
 
-function renderDialog(mode: "adopt" | "resolve" = "adopt") {
+function renderDialog(
+  mode: "adopt" | "resolve" = "adopt",
+  dialogOptions: McpConfigChoiceOption[] = options(),
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -66,7 +69,7 @@ function renderDialog(mode: "adopt" | "resolve" = "adopt") {
           open
           mode={mode}
           serverName="context7"
-          options={options()}
+          options={dialogOptions}
           pending={false}
           onClose={vi.fn()}
           onConfirm={onConfirm}
@@ -91,6 +94,9 @@ describe("McpConfigChoiceDialog", () => {
     renderDialog();
 
     expect(screen.getByRole("heading", { name: "Choose config to adopt" })).toBeInTheDocument();
+    expect(screen.getByText("Observed harness: Cursor")).toBeInTheDocument();
+    expect(screen.getByText("Observed harness: Claude")).toBeInTheDocument();
+    expect(screen.getByText("Recommended")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Claude"));
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
@@ -105,5 +111,21 @@ describe("McpConfigChoiceDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply config" }));
 
     await waitFor(() => expect(onConfirm).toHaveBeenCalled());
+  });
+
+  it("labels managed config options", () => {
+    const [managed] = options();
+    renderDialog("resolve", [
+      {
+        ...managed,
+        id: "managed",
+        sourceKind: "managed",
+        observedHarness: null,
+        label: "Skill Manager Config",
+        recommended: false,
+      },
+    ]);
+
+    expect(screen.getByText("Managed MCP config")).toBeInTheDocument();
   });
 });
