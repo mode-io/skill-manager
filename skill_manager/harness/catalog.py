@@ -215,6 +215,43 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
             ),
         },
     ),
+    HarnessDefinition(
+        harness="agy",
+        label="Antigravity",
+        logo_key="agy",
+        install_probe="agy",
+        bindings={
+            "skills": FileTreeBindingProfile(
+                managed_env="SKILL_MANAGER_AGY_ROOT",
+                managed_default=lambda context: context.home / ".gemini" / "antigravity-cli" / "skills",
+                discovery_roots=(
+                    FileTreeDiscoveryRoot(
+                        kind="compat-root",
+                        scope="agents-compat",
+                        label="Agents compatibility root",
+                        path_resolver=lambda context: context.home / ".agents" / "skills",
+                    ),
+                    FileTreeDiscoveryRoot(
+                        kind="legacy-root",
+                        scope="legacy",
+                        label="Legacy import root",
+                        path_resolver=lambda context: context.home / ".gemini" / "skills",
+                    ),
+                ),
+            ),
+            "mcp": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".gemini" / "config" / "mcp_config.json",
+                discovery_config_path_resolvers=(
+                    lambda context: context.home / ".gemini" / "antigravity-cli" / "mcp_config.json",
+                    lambda context: context.home / ".gemini" / "antigravity" / "mcp_config.json",
+                    lambda context: context.home / ".gemini" / "antigravity-ide" / "mcp_config.json",
+                ),
+                file_format="json",
+                subtree_path=("mcpServers",),
+                codec="antigravity-cli",
+            ),
+        },
+    ),
 )
 
 
