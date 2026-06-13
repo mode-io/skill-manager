@@ -275,6 +275,8 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         if not config_path.is_file():
             return {}
         text = config_path.read_text(encoding="utf-8")
+        if not text.strip():
+            return {}
         if self._file_format in {"json", "jsonc"}:
             try:
                 payload = json.loads(_strip_jsonc(text) if self._file_format == "jsonc" else text)

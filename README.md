@@ -193,7 +193,7 @@ Actions that can change local state include:
 - creating, updating, syncing, importing, or deleting a slash command
 - changing harness support settings
 
-App-owned files live under `~/Library/Application Support/skill-manager` on macOS and XDG base directories on Linux.
+App-owned files live under `~/.skill-manager` on macOS (with a legacy fallback to `~/Library/Application Support/skill-manager` if it already exists) and XDG base directories on Linux.
 
 ## How it works
 
@@ -242,17 +242,17 @@ CLI marketplace entries are preview-only.
 
 ## Configuration
 
-On macOS, app-owned files live under `~/Library/Application Support/skill-manager`. On Linux, app-owned files use XDG base directories.
+On macOS, app-owned files live under `~/.skill-manager` (with a legacy fallback to `~/Library/Application Support/skill-manager` if it already exists). On Linux, app-owned files use XDG base directories.
 
 Useful macOS paths:
 
-- shared skills store: `~/Library/Application Support/skill-manager/shared`
-- MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
-- slash command library: `~/Library/Application Support/skill-manager/slash-commands/commands`
-- slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
-- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
-- app database and LLM scan configs: `~/Library/Application Support/skill-manager/skill-manager.db`
-- app settings: `~/Library/Application Support/skill-manager/settings.json`
+- shared skills store: `~/.skill-manager/shared`
+- MCP manifest: `~/.skill-manager/mcp/manifest.json`
+- slash command library: `~/.skill-manager/slash-commands/commands`
+- slash command sync state: `~/.skill-manager/slash-commands/sync-state.json`
+- marketplace cache: `~/.skill-manager/marketplace`
+- app database and LLM scan configs: `~/.skill-manager/skill-manager.db`
+- app settings: `~/.skill-manager/settings.json`
 
 Useful Linux paths:
 

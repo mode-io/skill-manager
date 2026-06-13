@@ -14,6 +14,8 @@ import ScanConfigPage from "./features/skills/screens/ScanConfigPage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
 import { LocaleProvider, useCommonCopy } from "./i18n";
 
+import { ThemeProvider } from "./lib/theme";
+
 const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
 const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
 const SettingsPage = lazy(() => import("./features/settings/screens/SettingsPage"));
@@ -36,13 +38,15 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LocaleProvider>
-        <ToastProvider>
-          <UiTooltipProvider>
-            <AppContent />
-          </UiTooltipProvider>
-        </ToastProvider>
-      </LocaleProvider>
+      <ThemeProvider>
+        <LocaleProvider>
+          <ToastProvider>
+            <UiTooltipProvider>
+              <AppContent />
+            </UiTooltipProvider>
+          </ToastProvider>
+        </LocaleProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

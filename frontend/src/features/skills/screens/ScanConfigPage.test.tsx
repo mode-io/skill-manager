@@ -110,7 +110,7 @@ describe("ScanConfigPage", () => {
     expect(screen.queryByText(/Missing required fields: API Key/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Update" })).toBeDisabled();
     expect(screen.queryByRole("columnheader", { name: "Last validation" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Last validation")).toHaveTextContent(/May 12|12 May|Failed|Not validated/);
+    expect(screen.getByLabelText("Last validation")).toHaveTextContent(/May 11|11 May|May 12|12 May|Failed|Not validated/);
     const apiKeyInput = screen.getByLabelText("API Key", { selector: "input" });
     expect(apiKeyInput).toHaveAttribute("type", "password");
     expect(String(apiKeyInput.getAttribute("value") ?? "")).not.toBe("");

@@ -28,7 +28,7 @@ class HttpApiTests(unittest.TestCase):
                 settings["storage"]["settingsPath"],
                 str(harness.spec.xdg_config_home / "skill-manager" / "settings.json"),
             )
-            self.assertEqual(len(settings["harnesses"]), 5)
+            self.assertEqual(len(settings["harnesses"]), 6)
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
             self.assertTrue(openclaw["installed"])
             self.assertTrue(openclaw["supportEnabled"])
@@ -84,7 +84,7 @@ class HttpApiTests(unittest.TestCase):
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertEqual(
                 [cell["label"] for cell in detail["harnessCells"]],
-                ["Codex", "Claude", "Cursor", "OpenCode", "OpenClaw"],
+                ["Codex", "Claude", "Cursor", "OpenCode", "OpenClaw", "Antigravity"],
             )
             self.assertNotIn("updateStatus", detail["actions"])
             self.assertEqual(source_status["updateStatus"], "no_update_available")
@@ -108,7 +108,7 @@ class HttpApiTests(unittest.TestCase):
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
 
-            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex", "OpenClaw", "OpenCode"])
+            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Antigravity", "Codex", "OpenClaw", "OpenCode"])
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
             self.assertEqual(detail["actions"]["deleteHarnessLabels"], ["Codex"])

@@ -163,7 +163,7 @@ class SkillsMutationTests(unittest.TestCase):
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
             # Simulate missing non-core CLIs by removing their stubs from the
             # fake PATH. Cursor may still be available through its app probe.
-            for cli in ("cursor-agent", "opencode", "openclaw"):
+            for cli in ("cursor-agent", "opencode", "openclaw", "agy"):
                 stub = harness.spec.bin_dir / cli
                 if stub.exists():
                     stub.unlink()
@@ -179,6 +179,7 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertTrue(installed_by_harness["claude"])
             self.assertFalse(installed_by_harness["opencode"])
             self.assertFalse(installed_by_harness["openclaw"])
+            self.assertFalse(installed_by_harness["agy"])
 
             result = harness.post_json(
                 f"/api/skills/{shared_entry['skillRef']}/set-harnesses",
@@ -198,6 +199,7 @@ class SkillsMutationTests(unittest.TestCase):
                 self.assertTrue((harness.spec.cursor_root / "shared-audit").is_symlink())
             else:
                 self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
+            self.assertFalse((harness.spec.agy_root / "shared-audit").exists())
             # Unavailable harness folders remain untouched.
             self.assertFalse((harness.spec.opencode_root / "shared-audit").exists())
             self.assertFalse((harness.spec.openclaw_managed_root / "shared-audit").exists())

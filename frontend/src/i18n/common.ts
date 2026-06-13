@@ -27,6 +27,7 @@ const englishCommonCopy = {
     clis: "CLIs",
     settings: "Settings",
     light: "Light",
+    dark: "Dark",
     lightComingSoon: "Light theme — coming soon",
   },
   language: {
@@ -95,6 +96,7 @@ export const commonCopy = {
       clis: "CLI",
       settings: "设置",
       light: "浅色",
+      dark: "深色",
       lightComingSoon: "浅色主题即将推出",
     },
     language: {

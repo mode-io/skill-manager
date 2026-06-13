@@ -163,7 +163,7 @@ Skill Manager 是本地配置管理工具。它在你的机器上运行，并读
 - 创建、更新、同步、导入或删除 slash command
 - 修改 harness 支持设置
 
-在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories。
+在 macOS 上，应用拥有的文件位于 `~/.skill-manager`（如果已存在，则回退到 `~/Library/Application Support/skill-manager`）；在 Linux 上使用 XDG base directories。
 
 ## 工作方式
 
@@ -212,17 +212,17 @@ CLI marketplace 条目仅用于预览。
 
 ## 配置
 
-在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories。
+在 macOS 上，应用拥有的文件位于 `~/.skill-manager`（如果已存在，则回退到 `~/Library/Application Support/skill-manager`）；在 Linux 上使用 XDG base directories。
 
 常用 macOS 路径：
 
-- 共享 Skill 存储：`~/Library/Application Support/skill-manager/shared`
-- MCP manifest：`~/Library/Application Support/skill-manager/mcp/manifest.json`
-- slash command 库：`~/Library/Application Support/skill-manager/slash-commands/commands`
-- slash command 同步状态：`~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
-- 商城缓存：`~/Library/Application Support/skill-manager/marketplace`
-- 应用数据库和 LLM 扫描配置：`~/Library/Application Support/skill-manager/skill-manager.db`
-- 应用设置：`~/Library/Application Support/skill-manager/settings.json`
+- 共享 Skill 存储：`~/.skill-manager/shared`
+- MCP manifest：`~/.skill-manager/mcp/manifest.json`
+- slash command 库：`~/.skill-manager/slash-commands/commands`
+- slash command 同步状态：`~/.skill-manager/slash-commands/sync-state.json`
+- 商城缓存：`~/.skill-manager/marketplace`
+- 应用数据库和 LLM 扫描配置：`~/.skill-manager/skill-manager.db`
+- 应用设置：`~/.skill-manager/settings.json`
 
 常用 Linux 路径：
 

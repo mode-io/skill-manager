@@ -143,7 +143,7 @@ class BackendContainerServiceTests(unittest.TestCase):
                 settings["storage"]["marketplaceCachePath"],
                 str(spec.xdg_data_home / "skill-manager" / "marketplace"),
             )
-            self.assertEqual(len(settings["harnesses"]), 5)
+            self.assertEqual(len(settings["harnesses"]), 6)
             codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
             self.assertIn("managedLocation", codex)
             self.assertIn("installed", codex)
@@ -189,7 +189,7 @@ class BackendContainerServiceTests(unittest.TestCase):
 
             assert detail is not None
 
-            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex", "OpenClaw", "OpenCode"])
+            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Antigravity", "Codex", "OpenClaw", "OpenCode"])
             self.assertEqual(detail["locations"][0]["path"], str(spec.skills_store_root / "shared-audit"))
             self.assertEqual(detail["locations"][1]["path"], str(spec.codex_root / "shared-audit"))
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
