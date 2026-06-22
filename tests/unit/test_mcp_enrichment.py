@@ -78,6 +78,15 @@ class McpEnrichmentServiceTests(unittest.TestCase):
         self.assertEqual(catalog.popular_page.call_count, 1)
         self.assertEqual(catalog.search_page.call_count, 1)
 
+    def test_cached_lookup_does_not_warm_or_search(self) -> None:
+        catalog = MagicMock()
+        service = McpEnrichmentService(catalog)
+
+        self.assertIsNone(service.cached_lookup("context7"))
+
+        catalog.popular_page.assert_not_called()
+        catalog.search_page.assert_not_called()
+
     def test_invalidate_clears_cache(self) -> None:
         catalog = MagicMock()
         catalog.popular_page.return_value = _popular([])

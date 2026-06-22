@@ -16,10 +16,18 @@ import {
 import type { McpInstallConfigValues } from "./install-config";
 
 export type McpStatus = "loading" | "ready" | "error";
+type McpControllerQueries = "both" | "inventory" | "needs-review";
 
-export function useMcpManagementController() {
-  const inventoryQuery = useMcpInventoryQuery();
-  const needsReviewByServerQuery = useMcpNeedsReviewByServerQuery();
+interface McpManagementControllerOptions {
+  queries?: McpControllerQueries;
+}
+
+export function useMcpManagementController(options: McpManagementControllerOptions = {}) {
+  const queries = options.queries ?? "both";
+  const inventoryEnabled = queries === "both" || queries === "inventory";
+  const needsReviewEnabled = queries === "both" || queries === "needs-review";
+  const inventoryQuery = useMcpInventoryQuery({ enabled: inventoryEnabled });
+  const needsReviewByServerQuery = useMcpNeedsReviewByServerQuery({ enabled: needsReviewEnabled });
   const setHarnessesMutation = useSetMcpServerHarnessesMutation();
   const uninstallMutation = useUninstallMcpServerMutation();
   const adoptMutation = useAdoptMcpServerMutation();
@@ -27,7 +35,7 @@ export function useMcpManagementController() {
   const enableMutation = useEnableMcpServerMutation();
   const disableMutation = useDisableMcpServerMutation();
   const availabilityMutation = useCheckMcpServerAvailabilityMutation();
-  const autoAvailabilityChecks = useRef<Set<string>>(new Set());
+  const attemptedAvailabilityKeysRef = useRef<Set<string>>(new Set());
 
   const pendingServerRegistry = usePendingRegistry<string>();
   const pendingAdoptRegistry = usePendingRegistry<string>(); // key: name or name:observedHarness
@@ -43,7 +51,7 @@ export function useMcpManagementController() {
   const needsReviewByServer = needsReviewByServerQuery.data ?? null;
   const isInitialLoading = inventoryQuery.isPending && !inventory;
   const isNeedsReviewByServerLoading =
-    needsReviewByServerQuery.isPending && !needsReviewByServer;
+    needsReviewEnabled && needsReviewByServerQuery.isPending && !needsReviewByServer;
   const queryErrorMessage =
     inventoryQuery.error instanceof Error ? inventoryQuery.error.message : "";
   const status: McpStatus = isInitialLoading
@@ -55,22 +63,20 @@ export function useMcpManagementController() {
         : "loading";
 
   useEffect(() => {
-    if (!inventory) return;
+    if (!inventory) {
+      return;
+    }
     for (const entry of inventory.entries) {
-      if (
-        entry.kind !== "managed" ||
-        entry.mcpStatus.kind !== "unchecked" ||
-        !entry.spec
-      ) {
+      if (entry.kind !== "managed" || entry.mcpStatus.kind !== "unchecked" || !entry.spec) {
         continue;
       }
       const key = `${entry.name}:${entry.spec.revision}`;
-      if (autoAvailabilityChecks.current.has(key)) {
+      if (attemptedAvailabilityKeysRef.current.has(key)) {
         continue;
       }
-      autoAvailabilityChecks.current.add(key);
+      attemptedAvailabilityKeysRef.current.add(key);
       void availabilityMutation.mutateAsync(entry.name).catch(() => {
-        autoAvailabilityChecks.current.delete(key);
+        attemptedAvailabilityKeysRef.current.delete(key);
       });
     }
   }, [availabilityMutation, inventory]);

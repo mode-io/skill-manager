@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tomllib
 import unittest
+from unittest import mock
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -285,6 +286,27 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
             self.assertIn("OpenClaw", status.mcp_unavailable_reason or "")
             with self.assertRaises(MutationError):
                 adapter.enable_server(_spec())
+
+    def test_openclaw_capability_probe_is_cached_between_status_reads(self) -> None:
+        with TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            adapter = _adapter("openclaw", home=home)
+
+            with (
+                mock.patch("skill_manager.application.mcp.adapters.shutil.which", return_value="/bin/openclaw"),
+                mock.patch("skill_manager.application.mcp.adapters.subprocess.run") as run,
+            ):
+                run.return_value = mock.Mock(returncode=0)
+
+                first = adapter.status()
+                second = adapter.status()
+                adapter.invalidate()
+                third = adapter.status()
+
+            self.assertTrue(first.mcp_writable)
+            self.assertTrue(second.mcp_writable)
+            self.assertTrue(third.mcp_writable)
+            self.assertEqual(run.call_count, 1)
 
     def test_has_binding_after_enable(self) -> None:
         with TemporaryDirectory() as tmp:

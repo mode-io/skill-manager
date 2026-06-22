@@ -46,7 +46,7 @@ class McpQueryService:
             self.read_models.visible_scans(snapshot),
             records=self._records_by_name(),
             availability_cache=self._availability_cache,
-            install_detail_lookup=self._marketplace_install_detail,
+            install_detail_lookup=self._marketplace_cached_install_detail,
         )
 
     def get_server(self, name: str) -> dict[str, object]:
@@ -60,11 +60,11 @@ class McpQueryService:
                     visible_scans,
                     records=self._records_by_name(),
                     availability=self._availability_cache.get(_availability_cache_key(entry)),
-                    install_detail_lookup=self._marketplace_install_detail,
+                    install_detail_lookup=self._marketplace_cached_install_detail,
                 )
                 if entry.spec is not None:
                     payload.update(detail_extras_payload(name=name, spec=entry.spec, scans=visible_scans))
-                    link = self.enrichment.lookup(name) if self.enrichment else None
+                    link = self.enrichment.cached_lookup(name) if self.enrichment else None
                     if link is not None:
                         payload["marketplaceLink"] = link.to_dict()
                 return payload
@@ -154,7 +154,7 @@ class McpQueryService:
                 }
                 for s in sightings
             ]
-            link = self.enrichment.lookup(group.name) if self.enrichment else None
+            link = self.enrichment.cached_lookup(group.name) if self.enrichment else None
             servers_payload.append(
                 {
                     "name": group.name,
@@ -202,6 +202,21 @@ class McpQueryService:
                     to_resolver_detail = getattr(detail, "to_resolver_detail", None)
                     return to_resolver_detail() if callable(to_resolver_detail) else detail
             return self.marketplace.detail(qualified_name)
+        except Exception:
+            return None
+
+    def _marketplace_cached_install_detail(self, qualified_name: str):
+        if self.marketplace is None:
+            return None
+        cached_install_detail = getattr(self.marketplace, "cached_install_detail", None)
+        if not callable(cached_install_detail):
+            return None
+        try:
+            detail = cached_install_detail(qualified_name)
+            if detail is None:
+                return None
+            to_resolver_detail = getattr(detail, "to_resolver_detail", None)
+            return to_resolver_detail() if callable(to_resolver_detail) else detail
         except Exception:
             return None
 

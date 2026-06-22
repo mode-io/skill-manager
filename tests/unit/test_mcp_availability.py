@@ -18,6 +18,17 @@ def _http_spec() -> McpServerSpec:
     )
 
 
+def _stdio_spec(command: str = "npx") -> McpServerSpec:
+    return McpServerSpec(
+        name="stdio",
+        display_name="Stdio",
+        source=McpSource.marketplace("stdio"),
+        transport="stdio",
+        command=command,
+        args=("-y", "stdio-server"),
+    )
+
+
 class McpAvailabilityProbeTests(unittest.TestCase):
     def test_http_probe_marks_server_available_when_tools_list_succeeds(self) -> None:
         calls: list[str] = []
@@ -40,6 +51,24 @@ class McpAvailabilityProbeTests(unittest.TestCase):
         self.assertEqual(result.status, "available")
         self.assertIsNone(result.reason)
         self.assertEqual(calls, ["initialize", "notifications/initialized", "tools/list"])
+
+    def test_stdio_probe_uses_fast_command_resolution_without_starting_server(self) -> None:
+        with patch("skill_manager.application.mcp.availability.shutil.which", return_value="/opt/homebrew/bin/npx") as which:
+            result = McpAvailabilityProbe().probe(_stdio_spec())
+
+        self.assertEqual(result.status, "available")
+        self.assertIsNone(result.reason)
+        which.assert_called_once()
+        self.assertEqual(which.call_args.args[0], "npx")
+
+    def test_stdio_probe_reports_missing_command_without_retrying_process_start(self) -> None:
+        with patch("skill_manager.application.mcp.availability.shutil.which", return_value=None) as which:
+            result = McpAvailabilityProbe().probe(_stdio_spec("npx"))
+
+        self.assertEqual(result.status, "unavailable")
+        self.assertIn("npx", result.reason or "")
+        which.assert_called_once()
+        self.assertEqual(which.call_args.args[0], "npx")
 
     def test_http_probe_sends_configured_headers_with_each_request(self) -> None:
         seen_headers: list[dict[str, str]] = []

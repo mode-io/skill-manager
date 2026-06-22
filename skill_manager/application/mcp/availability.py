@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import queue
-import subprocess
-import threading
+import shutil
 import time
 from dataclasses import dataclass
 from typing import Callable, Literal
@@ -98,47 +96,16 @@ class McpAvailabilityProbe:
     def _probe_stdio(self, spec: McpServerSpec) -> McpAvailabilityResult:
         if not spec.command:
             return McpAvailabilityResult("unavailable", "missing MCP command")
-        argv = [spec.command, *(spec.args or ())]
+        if _command_is_pathlike(spec.command):
+            if os.path.isfile(spec.command) and os.access(spec.command, os.X_OK):
+                return McpAvailabilityResult("available")
+            return McpAvailabilityResult("unavailable", f"No such file or executable: '{spec.command}'")
         env = os.environ.copy()
         if spec.env:
             env.update(dict(spec.env))
-        try:
-            process = subprocess.Popen(
-                argv,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=env,
-            )
-        except OSError as error:
-            return McpAvailabilityResult("unavailable", str(error) or error.__class__.__name__)
-
-        assert process.stdin is not None
-        assert process.stdout is not None
-        lines: queue.Queue[str] = queue.Queue()
-        reader = threading.Thread(target=_read_stdout_lines, args=(process.stdout, lines), daemon=True)
-        reader.start()
-        try:
-            for payload in (
-                _initialize_request(1),
-                _initialized_notification(),
-                _tools_list_request(2),
-            ):
-                process.stdin.write(json.dumps(payload) + "\n")
-                process.stdin.flush()
-            result = _wait_for_json_rpc_result(lines, request_id=2, timeout_seconds=self.timeout_seconds)
-        except (OSError, TimeoutError, ValueError) as error:
-            return McpAvailabilityResult("unavailable", str(error) or error.__class__.__name__)
-        finally:
-            _terminate_process(process)
-
-        error = _json_rpc_error(result)
-        if error:
-            return McpAvailabilityResult("unavailable", error)
-        if isinstance(result.get("result"), dict):
-            return McpAvailabilityResult("available")
-        return McpAvailabilityResult("unavailable", "MCP tools/list did not return a result")
+        if shutil.which(spec.command, path=env.get("PATH")) is None:
+            return McpAvailabilityResult("unavailable", f"No such file or directory: '{spec.command}'")
+        return McpAvailabilityResult("available")
 
     def _default_http_post(
         self,
@@ -271,45 +238,13 @@ def _is_retryable_reason(reason: str | None) -> bool:
         return False
     if "missing mcp" in lower or "unsupported mcp" in lower:
         return False
+    if "no such file" in lower or "not found" in lower:
+        return False
     return True
 
 
-def _read_stdout_lines(stream, lines: queue.Queue[str]) -> None:
-    for line in stream:
-        lines.put(line)
-
-
-def _wait_for_json_rpc_result(
-    lines: queue.Queue[str],
-    *,
-    request_id: int,
-    timeout_seconds: float,
-) -> dict[str, object]:
-    deadline = threading.Event()
-    timer = threading.Timer(timeout_seconds, deadline.set)
-    timer.start()
-    try:
-        while not deadline.is_set():
-            try:
-                line = lines.get(timeout=0.05)
-            except queue.Empty:
-                continue
-            payload = json.loads(line)
-            if isinstance(payload, dict) and payload.get("id") == request_id:
-                return payload
-    finally:
-        timer.cancel()
-    raise TimeoutError("MCP probe timed out")
-
-
-def _terminate_process(process: subprocess.Popen[str]) -> None:
-    if process.poll() is not None:
-        return
-    process.terminate()
-    try:
-        process.wait(timeout=1.0)
-    except subprocess.TimeoutExpired:
-        process.kill()
+def _command_is_pathlike(command: str) -> bool:
+    return os.sep in command or (os.altsep is not None and os.altsep in command)
 
 
 __all__ = ["AvailabilityStatus", "McpAvailabilityProbe", "McpAvailabilityResult"]

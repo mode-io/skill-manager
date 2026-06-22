@@ -15,9 +15,12 @@ interface McpServerCardProps {
   entry: McpInventoryEntryDto;
   columns: McpInventoryColumnDto[];
   pending: boolean;
+  pendingPerHarnessKeys: ReadonlySet<string>;
   checked: boolean;
   onOpenDetail: (name: string) => void;
   onToggleChecked: (name: string) => void;
+  onEnableHarness: (name: string, harness: string) => void;
+  onDisableHarness: (name: string, harness: string) => void;
   onSetHarnesses: (name: string, target: "enabled" | "disabled", config?: McpInstallConfigValues) => void;
   onRequestUninstall: (name: string) => void;
 }
@@ -44,9 +47,12 @@ export function McpServerCard({
   entry,
   columns,
   pending,
+  pendingPerHarnessKeys,
   checked,
   onOpenDetail,
   onToggleChecked,
+  onEnableHarness,
+  onDisableHarness,
   onSetHarnesses,
   onRequestUninstall,
 }: McpServerCardProps) {
@@ -130,7 +136,18 @@ export function McpServerCard({
       ) : null}
 
       <div className="skill-card__footer">
-        <McpHarnessLogoStack bindings={entry.sightings} columns={columns} showAllWritable />
+        <McpHarnessLogoStack
+          bindings={entry.sightings}
+          columns={columns}
+          showAllWritable
+          serverName={entry.name}
+          serverDisplayName={entry.displayName}
+          disabled={pending}
+          pendingPerHarnessKeys={pendingPerHarnessKeys}
+          onEnableHarness={(harness) => onEnableHarness(entry.name, harness)}
+          onDisableHarness={(harness) => onDisableHarness(entry.name, harness)}
+          onResolveConfig={() => onOpenDetail(entry.name)}
+        />
         <button
           type="button"
           className="action-pill"

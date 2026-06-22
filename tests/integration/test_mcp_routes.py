@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from skill_manager.application import build_backend_container
 from skill_manager.application.mcp.availability import McpAvailabilityResult
+from skill_manager.application.mcp.install_intent import ManagedMcpRecord, RegistryInstallIntent
 from skill_manager.application.mcp.stdio import parse_static_stdio_function
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
 from skill_manager.errors import MutationError
 
 from tests.support.app_harness import AppTestHarness
+from tests.support.fake_home import create_fake_home_spec
 
 
 class FakeMcpMarketplace:
@@ -63,6 +67,9 @@ class FakeMcpMarketplace:
             }
         return None
 
+    def cached_install_detail(self, qualified_name: str):
+        return self.install_detail(qualified_name)
+
 
 class _Container:
     """Wraps AppTestHarness and replaces the mcp marketplace catalog with a stub."""
@@ -100,6 +107,64 @@ class FakeMcpAvailabilityProbe:
     def probe(self, spec: McpServerSpec) -> McpAvailabilityResult:
         self.probed.append(spec.name)
         return McpAvailabilityResult(status=self.status, reason=self.reason)
+
+
+class CountingMcpMarketplace:
+    def __init__(self) -> None:
+        self.install_detail_calls: list[str] = []
+
+    def install_detail(self, qualified_name: str):
+        self.install_detail_calls.append(qualified_name)
+        return None
+
+    def detail(self, qualified_name: str):
+        return None
+
+
+class CachedOnlyMcpMarketplace(CountingMcpMarketplace):
+    def __init__(self, qualified_name: str = "vendor/remote") -> None:
+        super().__init__()
+        self.qualified_name = qualified_name
+
+    def cached_install_detail(self, qualified_name: str):
+        if qualified_name != self.qualified_name:
+            return None
+        return {
+            "qualifiedName": qualified_name,
+            "displayName": "Remote",
+            "registryServer": {
+                "name": qualified_name,
+                "title": "Remote",
+                "version": "1.0.0",
+                "description": "Remote MCP",
+                "remotes": [{"type": "streamable-http", "url": "https://mcp.example.com"}],
+            },
+        }
+
+
+class NetworkOnlyMcpMarketplace(CountingMcpMarketplace):
+    def install_detail(self, qualified_name: str):
+        self.install_detail_calls.append(qualified_name)
+        if qualified_name != "vendor/remote":
+            return None
+        return {
+            "qualifiedName": qualified_name,
+            "displayName": "Remote",
+            "registryServer": {
+                "name": qualified_name,
+                "title": "Remote",
+                "version": "1.0.0",
+                "description": "Remote MCP",
+                "packages": [
+                    {
+                        "registryType": "npm",
+                        "identifier": "@vendor/remote",
+                        "version": "1.0.0",
+                        "transport": {"type": "stdio"},
+                    }
+                ],
+            },
+        }
 
 
 def _registry_server_from_connections(
@@ -164,6 +229,125 @@ class McpRoutesTests(unittest.TestCase):
             cols = [col["harness"] for col in payload["columns"]]
             self.assertIn("codex", cols)
             self.assertIn("claude", cols)
+
+    def test_list_servers_does_not_fetch_marketplace_install_detail(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-tests-") as tmp:
+            spec = create_fake_home_spec(Path(tmp), seed_openclaw_state=True)
+            marketplace = CountingMcpMarketplace()
+            container = build_backend_container(
+                spec.env(),
+                mcp_marketplace_catalog=marketplace,  # type: ignore[arg-type]
+                mcp_availability_probe=FakeMcpAvailabilityProbe(),  # type: ignore[arg-type]
+            )
+            container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.marketplace("vendor/remote"),
+                    transport="http",
+                    url="https://mcp.example.com",
+                )
+            )
+            container.mcp_read_models.invalidate()
+
+            payload = container.mcp_queries.list_servers()
+            container.db.close()
+
+            self.assertEqual([entry["name"] for entry in payload["entries"]], ["remote"])
+            self.assertEqual(marketplace.install_detail_calls, [])
+
+    def test_enable_existing_marketplace_server_uses_cached_install_detail(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-tests-") as tmp:
+            spec = create_fake_home_spec(Path(tmp), seed_openclaw_state=True)
+            marketplace = CachedOnlyMcpMarketplace()
+            container = build_backend_container(
+                spec.env(),
+                mcp_marketplace_catalog=marketplace,  # type: ignore[arg-type]
+                mcp_availability_probe=FakeMcpAvailabilityProbe(),  # type: ignore[arg-type]
+            )
+            container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.marketplace("vendor/remote"),
+                    transport="http",
+                    url="https://mcp.example.com",
+                )
+            )
+            container.mcp_read_models.invalidate()
+
+            response = container.mcp_mutations.enable_server("remote", "cursor")
+            payload = container.mcp_queries.list_servers()
+            container.db.close()
+
+            self.assertTrue(response["ok"])
+            entry = next(item for item in payload["entries"] if item["name"] == "remote")
+            self.assertEqual(entry["enabledStatus"], "enabled")
+            self.assertEqual(marketplace.install_detail_calls, [])
+
+    def test_enable_marketplace_server_with_install_intent_fetches_install_detail_when_cache_is_cold(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-tests-") as tmp:
+            spec = create_fake_home_spec(Path(tmp), seed_openclaw_state=True)
+            marketplace = NetworkOnlyMcpMarketplace()
+            container = build_backend_container(
+                spec.env(),
+                mcp_marketplace_catalog=marketplace,  # type: ignore[arg-type]
+                mcp_availability_probe=FakeMcpAvailabilityProbe(),  # type: ignore[arg-type]
+            )
+            container.mcp_store.upsert_record(
+                ManagedMcpRecord(
+                    spec=McpServerSpec(
+                        name="remote",
+                        display_name="Remote",
+                        source=McpSource.marketplace("vendor/remote"),
+                        transport="stdio",
+                        command="npx",
+                        args=("-y", "@vendor/remote"),
+                    ),
+                    install_intent=RegistryInstallIntent.create(
+                        qualified_name="vendor/remote",
+                        option_key="package:npm:@vendor/remote:1.0.0",
+                    ),
+                )
+            )
+            container.mcp_read_models.invalidate()
+
+            response = container.mcp_mutations.enable_server("remote", "cursor")
+            cursor_cfg = json.loads((spec.home / ".cursor" / "mcp.json").read_text())
+            container.db.close()
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(
+                cursor_cfg["mcpServers"]["remote"]["args"],
+                ["-y", "@vendor/remote@1.0.0"],
+            )
+            self.assertEqual(marketplace.install_detail_calls, ["vendor/remote"])
+
+    def test_get_server_uses_cached_install_detail(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-tests-") as tmp:
+            spec = create_fake_home_spec(Path(tmp), seed_openclaw_state=True)
+            marketplace = CachedOnlyMcpMarketplace()
+            container = build_backend_container(
+                spec.env(),
+                mcp_marketplace_catalog=marketplace,  # type: ignore[arg-type]
+                mcp_availability_probe=FakeMcpAvailabilityProbe(),  # type: ignore[arg-type]
+            )
+            container.mcp_store.upsert_from_spec(
+                McpServerSpec(
+                    name="remote",
+                    display_name="Remote",
+                    source=McpSource.marketplace("vendor/remote"),
+                    transport="http",
+                    url="https://mcp.example.com",
+                )
+            )
+            container.mcp_read_models.invalidate()
+
+            detail = container.mcp_queries.get_server("remote")
+            container.db.close()
+
+            self.assertEqual(detail["name"], "remote")
+            self.assertEqual(marketplace.install_detail_calls, [])
 
     def test_install_resolves_registry_config_without_writing_harness(self) -> None:
         with AppTestHarness() as harness:

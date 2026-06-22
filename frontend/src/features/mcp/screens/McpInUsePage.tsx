@@ -51,7 +51,7 @@ export default function McpInUsePage() {
     handleMultiSelectEnableAll,
     handleMultiSelectDisableAll,
     handleMultiSelectUninstall,
-  } = useMcpManagementController();
+  } = useMcpManagementController({ queries: "inventory" });
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedName = searchParams.get(DETAIL_PARAM);
@@ -282,9 +282,14 @@ export default function McpInUsePage() {
               entries={entries}
               columns={inventory.columns}
               pendingServerKeys={pendingServerKeys}
+              pendingPerHarnessKeys={pendingPerHarnessKeys}
               checkedNames={multiSelectedNames}
               onOpenDetail={setDetailName}
               onToggleChecked={handleToggleMultiSelect}
+              onEnableHarness={handleMatrixEnableHarness}
+              onDisableHarness={(name, harness) => {
+                void handleDisableInHarness(name, harness);
+              }}
               onSetHarnesses={handleCardSetHarnesses}
               onRequestUninstall={confirmUninstall}
             />

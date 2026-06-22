@@ -55,6 +55,7 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         self._mapper: TransportMapper = get_mapper(profile.codec)
         self._capability_probe = profile.capability_probe
         self._capability_unavailable_reason = profile.capability_unavailable_reason
+        self._capability_cache: tuple[bool, tuple[bool, str | None]] | None = None
 
     def status(self) -> McpHarnessStatus:
         installed = self._is_installed()
@@ -219,11 +220,15 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
     def _mcp_write_capability(self, *, installed: bool) -> tuple[bool, str | None]:
         if self._capability_probe is None:
             return True, None
+        if self._capability_cache is not None and self._capability_cache[0] == installed:
+            return self._capability_cache[1]
         if self._capability_probe == "openclaw-mcp-command":
             executable = shutil.which(self._install_probe, path=self._path_env)
             reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
             if executable is None:
-                return False, reason
+                result = (False, reason)
+                self._capability_cache = (installed, result)
+                return result
             try:
                 result = subprocess.run(
                     [executable, "mcp", "--help"],
@@ -233,10 +238,16 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
                     check=False,
                 )
             except (OSError, subprocess.TimeoutExpired):
-                return False, reason
-            return (result.returncode == 0, None if result.returncode == 0 else reason)
+                capability = (False, reason)
+                self._capability_cache = (installed, capability)
+                return capability
+            capability = (result.returncode == 0, None if result.returncode == 0 else reason)
+            self._capability_cache = (installed, capability)
+            return capability
         reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
-        return (installed, None if installed else reason)
+        result = (installed, None if installed else reason)
+        self._capability_cache = (installed, result)
+        return result
 
     @staticmethod
     def _lock_path(config_path: Path) -> Path:

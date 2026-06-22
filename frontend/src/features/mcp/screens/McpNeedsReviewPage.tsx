@@ -26,7 +26,7 @@ export default function McpNeedsReviewPage() {
     actionErrorMessage,
     dismissActionError,
     handleAdoptConfig,
-  } = useMcpManagementController();
+  } = useMcpManagementController({ queries: "needs-review" });
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedName = searchParams.get(DETAIL_PARAM);

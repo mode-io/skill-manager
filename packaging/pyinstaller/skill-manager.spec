@@ -8,12 +8,13 @@ datas = [
     (str(REPO_ROOT / "frontend" / "dist"), "frontend_dist"),
     (str(REPO_ROOT / "skill_manager" / "VERSION"), "skill_manager"),
     (str(REPO_ROOT / "skill_manager" / "data" / "prompts"), "skill_manager/data/prompts"),
-] + collect_data_files("certifi")
+] + collect_data_files("certifi") + collect_data_files("litellm")
 hiddenimports = sorted(set(
     collect_submodules("uvicorn")
     + collect_submodules("fastapi")
     + collect_submodules("starlette")
     + collect_submodules("certifi")
+    + collect_submodules("tiktoken_ext")
 ))
 
 a = Analysis(

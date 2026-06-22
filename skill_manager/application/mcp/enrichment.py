@@ -106,6 +106,12 @@ class McpEnrichmentService:
             self._cache[key] = link
         return link
 
+    def cached_lookup(self, name: str) -> MarketplaceLink | None:
+        if not name:
+            return None
+        with self._lock:
+            return self._cache.get(name.lower())
+
     def invalidate(self) -> None:
         with self._lock:
             self._cache.clear()

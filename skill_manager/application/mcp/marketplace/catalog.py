@@ -12,6 +12,7 @@ from skill_manager.errors import MarketplaceUpstreamError
 from ..install_resolver import (
     McpInstallConfig,
     RegistryInstallOption,
+    registry_install_options,
     registry_managed_name,
 )
 from .client import McpRegistryClient
@@ -148,12 +149,17 @@ class McpMarketplaceCatalog:
         raw, options = resolved
         payload = _map_detail(raw, qualified_name=name, options=options)
         self._cache.write(_DETAIL_NAMESPACE, cache_key, payload)
-        return payload
+        public_payload = dict(payload)
+        public_payload.pop("registryServer", None)
+        return public_payload
 
     def install_detail(self, qualified_name: str) -> McpRegistryInstallDetail | None:
         name = (qualified_name or "").strip()
         if not name:
             return None
+        cached = self.cached_install_detail(name)
+        if cached is not None:
+            return cached
         resolved = self._latest_supported_detail(name)
         if resolved is None:
             return None
@@ -161,9 +167,30 @@ class McpMarketplaceCatalog:
         server = _entry_server(raw)
         if server is None:
             return None
+        self._cache.write(_DETAIL_NAMESPACE, name, _map_detail(raw, qualified_name=name, options=options))
         return McpRegistryInstallDetail(
             qualified_name=name,
             display_name=_coerce_str(server.get("title"), default=name),
+            registry_server=server,
+            options=options,
+        )
+
+    def cached_install_detail(self, qualified_name: str) -> McpRegistryInstallDetail | None:
+        name = (qualified_name or "").strip()
+        if not name:
+            return None
+        cached = self._cache.read(_DETAIL_NAMESPACE, name, ttl_seconds=_DETAIL_TTL_SECONDS)
+        if cached is None or not isinstance(cached.payload, Mapping):
+            return None
+        server = cached.payload.get("registryServer")
+        if not isinstance(server, Mapping):
+            return None
+        options = registry_install_options(server)
+        if not options:
+            return None
+        return McpRegistryInstallDetail(
+            qualified_name=name,
+            display_name=_coerce_str(cached.payload.get("displayName"), default=name),
             registry_server=server,
             options=options,
         )
@@ -436,6 +463,7 @@ def _map_detail(
         "githubUrl": _github_repository_url(server),
         "externalUrl": _external_url(qualified_name),
         "installConfig": McpInstallConfig(options[0].fields).to_dict() if options else McpInstallConfig().to_dict(),
+        "registryServer": server,
     }
 
 

@@ -1,4 +1,7 @@
 .venv/
+/.venv312/
+.DS_Store
+.idea/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -13,3 +16,14 @@ packaging/npm/vendor/
 task_plan.md
 findings.md
 progress.md
+/skills/skill-manager-project/agents/openai.yaml
+/skills/skill-manager-project/references/project-conventions.md
+/skills/skill-manager-project/SKILL.md
+/skills/vulnerable-test-skill/agents/agent.yaml
+/skills/vulnerable-test-skill/references/insecure-config.md
+/skills/vulnerable-test-skill/scripts/run.sh
+/skills/vulnerable-test-skill/SKILL.md
+/calculator.py
+/MCP报错原因.md
+/全局_Slash_Command_管理器_融合细化版_含OpenClaw原生TUI补丁.md
+/.codegraph/

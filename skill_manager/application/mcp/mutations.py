@@ -161,6 +161,19 @@ class McpMutationService:
     ) -> ManagedMcpRecord:
         if record.spec.source.kind != "marketplace":
             return record
+        if config is None:
+            detail = self._marketplace_cached_install_detail(record.spec.source.locator)
+            if detail is None:
+                if record.install_intent is not None:
+                    detail = self._marketplace_install_detail(record.spec.source.locator)
+                    if detail is None:
+                        raise MutationError(
+                            f"server not found in marketplace: {record.spec.source.locator}",
+                            status=404,
+                        )
+                    return resolve_enable_managed_spec(detail, record, config=config)
+                return record
+            return resolve_enable_managed_spec(detail, record, config=config)
         detail = self._marketplace_install_detail(record.spec.source.locator)
         if detail is None:
             raise MutationError(f"server not found in marketplace: {record.spec.source.locator}", status=404)
@@ -280,6 +293,9 @@ class McpMutationService:
     # Internal helpers -----------------------------------------------------
 
     def _marketplace_install_detail(self, qualified_name: str):
+        cached_detail = self._marketplace_cached_install_detail(qualified_name)
+        if cached_detail is not None:
+            return cached_detail
         install_detail = getattr(self.marketplace, "install_detail", None)
         if callable(install_detail):
             detail = install_detail(qualified_name)
@@ -287,6 +303,19 @@ class McpMutationService:
                 to_resolver_detail = getattr(detail, "to_resolver_detail", None)
                 return to_resolver_detail() if callable(to_resolver_detail) else detail
         return self.marketplace.detail(qualified_name)
+
+    def _marketplace_cached_install_detail(self, qualified_name: str):
+        cached_install_detail = getattr(self.marketplace, "cached_install_detail", None)
+        if not callable(cached_install_detail):
+            return None
+        try:
+            detail = cached_install_detail(qualified_name)
+        except Exception:
+            return None
+        if detail is None:
+            return None
+        to_resolver_detail = getattr(detail, "to_resolver_detail", None)
+        return to_resolver_detail() if callable(to_resolver_detail) else detail
 
     def _harnesses_in_states(
         self,

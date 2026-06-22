@@ -7,9 +7,12 @@ interface McpServerCardListProps {
   entries: McpInventoryEntryDto[];
   columns: McpInventoryColumnDto[];
   pendingServerKeys: ReadonlySet<string>;
+  pendingPerHarnessKeys: ReadonlySet<string>;
   checkedNames: ReadonlySet<string>;
   onOpenDetail: (name: string) => void;
   onToggleChecked: (name: string) => void;
+  onEnableHarness: (name: string, harness: string) => void;
+  onDisableHarness: (name: string, harness: string) => void;
   onSetHarnesses: (name: string, target: "enabled" | "disabled", config?: McpInstallConfigValues) => void;
   onRequestUninstall: (name: string) => void;
   ariaLabel?: string;
@@ -19,9 +22,12 @@ export function McpServerCardList({
   entries,
   columns,
   pendingServerKeys,
+  pendingPerHarnessKeys,
   checkedNames,
   onOpenDetail,
   onToggleChecked,
+  onEnableHarness,
+  onDisableHarness,
   onSetHarnesses,
   onRequestUninstall,
   ariaLabel,
@@ -35,9 +41,12 @@ export function McpServerCardList({
           entry={entry}
           columns={columns}
           pending={pendingServerKeys.has(entry.name)}
+          pendingPerHarnessKeys={pendingPerHarnessKeys}
           checked={checkedNames.has(entry.name)}
           onOpenDetail={onOpenDetail}
           onToggleChecked={onToggleChecked}
+          onEnableHarness={onEnableHarness}
+          onDisableHarness={onDisableHarness}
           onSetHarnesses={onSetHarnesses}
           onRequestUninstall={onRequestUninstall}
         />

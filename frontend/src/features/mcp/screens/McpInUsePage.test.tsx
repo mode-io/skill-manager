@@ -392,6 +392,46 @@ describe("McpInUsePage", () => {
     );
   });
 
+  it("enables a single harness when a disabled card harness icon is pressed", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/mcp/servers/exa/enable")) {
+        expect(init?.method).toBe("POST");
+        expect(JSON.parse(String(init?.body))).toEqual({ harness: "claude" });
+        return okJson({ ok: true });
+      }
+      if (url.includes("/api/mcp/servers/exa/availability/check")) {
+        expect(init?.method).toBe("POST");
+        return okJson({
+          ok: true,
+          name: "exa",
+          availabilityStatus: "available",
+          availabilityReason: null,
+        });
+      }
+      if (url.includes("/api/marketplace/mcp/items/exa")) {
+        return okJson(marketplaceDetailFixture());
+      }
+      if (url.includes("/api/mcp/servers/exa")) {
+        throw new Error("card harness icon should not open the detail sheet");
+      }
+      if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
+      throw new Error(`Unhandled URL ${url}`);
+    });
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /enable exa search on claude/i }));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some((call) =>
+          String(call[0]).includes("/api/mcp/servers/exa/enable"),
+        ),
+      ).toBe(true),
+    );
+  });
+
   it("checks availability automatically for managed servers with no cached result", async () => {
     const inventory = inventoryFixture();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -435,6 +475,7 @@ describe("McpInUsePage", () => {
         ),
       ).toBe(true),
     );
+    await waitFor(() => expect(screen.getAllByText("Available").length).toBeGreaterThan(0));
   });
 
   it("does not check availability automatically when a connection failure is cached", async () => {
@@ -481,6 +522,18 @@ describe("McpInUsePage", () => {
   });
 
   it("refreshes availability after enabling from the detail binding row", async () => {
+    const uncheckedInventory = {
+      ...inventoryFixture(),
+      entries: [
+        {
+          ...inventoryFixture().entries[0],
+          availabilityStatus: "unavailable" as const,
+          availabilityReason: null,
+          mcpStatus: { kind: "unchecked" as const, reason: null },
+        },
+        inventoryFixture().entries[1],
+      ],
+    };
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/mcp/servers/exa/enable")) {
@@ -515,13 +568,13 @@ describe("McpInUsePage", () => {
       }
       if (url.includes("/api/mcp/servers/exa")) {
         return okJson({
-          ...inventoryFixture().entries[0],
+          ...uncheckedInventory.entries[0],
           env: [],
           configChoices: [],
           marketplaceLink: null,
         });
       }
-      if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
+      if (url.includes("/api/mcp/servers")) return okJson(uncheckedInventory);
       throw new Error(`Unhandled URL ${url}`);
     });
 
@@ -543,6 +596,7 @@ describe("McpInUsePage", () => {
         ),
       ).toBe(true),
     );
+    await waitFor(() => expect(screen.getAllByText("Available").length).toBeGreaterThan(0));
   });
 
   it("uses set-harnesses when no install config is required", async () => {
