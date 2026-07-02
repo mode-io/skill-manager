@@ -21,6 +21,8 @@ const SlashCommandsPage = lazy(() => import("./features/slash-commands/screens/S
 const SlashCommandsReviewPage = lazy(() => import("./features/slash-commands/screens/SlashCommandsReviewPage"));
 const McpNeedsReviewPage = lazy(() => import("./features/mcp/screens/McpNeedsReviewPage"));
 const McpInUsePage = lazy(() => import("./features/mcp/screens/McpInUsePage"));
+const HooksInUsePage = lazy(() => import("./features/hooks/screens/HooksInUsePage"));
+const HooksNeedsReviewPage = lazy(() => import("./features/hooks/screens/HooksNeedsReviewPage"));
 
 export function App() {
   const [queryClient] = useState(
@@ -104,6 +106,24 @@ function AppContent() {
           />
           <Route path="mcp/managed" element={<Navigate to="/mcp/use" replace />} />
           <Route path="mcp/unmanaged" element={<Navigate to="/mcp/review" replace />} />
+
+          <Route path="hooks" element={<Navigate to="/hooks/use" replace />} />
+          <Route
+            path="hooks/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading hooks..." />}>
+                <HooksInUsePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="hooks/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading hooks..." />}>
+                <HooksNeedsReviewPage />
+              </Suspense>
+            }
+          />
 
           <Route
             path="marketplace"

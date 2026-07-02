@@ -5,9 +5,10 @@ import { useSkillsCopy } from "../../features/skills/i18n";
 import { skillsRoutes, useSkillsListQuery } from "../../features/skills/public";
 import { slashCommandRoutes, useSlashCommandsQuery } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
+import { hooksRoutes, useHooksInventoryQuery } from "../../features/hooks/public";
 import { useCommonCopy } from "../../i18n";
 
-export type SidebarIconKey = "overview" | "skills" | "slash-commands" | "mcp" | "marketplace";
+export type SidebarIconKey = "overview" | "skills" | "slash-commands" | "mcp" | "marketplace" | "hooks";
 
 export interface SidebarLinkModel {
   key: string;
@@ -41,6 +42,8 @@ export function useSidebarModel(): SidebarModel {
   const slashCommandCount = slashCommandsQuery.data?.commands.length ?? null;
   const slashCommandReviewCount = slashCommandsQuery.data?.reviewCommands.length ?? null;
   const mcpCounts = mcpSidebarCounts(mcpQuery.data);
+  const hooksQuery = useHooksInventoryQuery();
+  const hooksCounts = hooksSidebarCounts(hooksQuery.data);
 
   return useMemo(
     () => ({
@@ -104,6 +107,21 @@ export function useSidebarModel(): SidebarModel {
           ],
         },
         {
+          key: "hooks",
+          label: "Hooks",
+          iconKey: "mcp",
+          count: hooksCounts.total,
+          links: [
+            { key: "hooks-use", to: hooksRoutes.inUse, label: common.productLanguage.inUse, count: hooksCounts.inUse },
+            {
+              key: "hooks-review",
+              to: hooksRoutes.needsReview,
+              label: common.productLanguage.needsReview,
+              count: hooksCounts.needsReview,
+            },
+          ],
+        },
+        {
           key: "marketplace",
           label: common.nav.marketplace,
           iconKey: "marketplace",
@@ -120,6 +138,9 @@ export function useSidebarModel(): SidebarModel {
       mcpCounts.inUse,
       mcpCounts.needsReview,
       mcpCounts.total,
+      hooksCounts.inUse,
+      hooksCounts.needsReview,
+      hooksCounts.total,
       needsReviewSkills,
       slashCommandCount,
       slashCommandReviewCount,
@@ -145,7 +166,24 @@ function mcpSidebarCounts(inventory: ReturnType<typeof useMcpInventoryQuery>["da
   needsReview: number | null;
   total: number | null;
 } {
-  if (!inventory) {
+  if (!inventory || !inventory.entries) {
+    return { inUse: null, needsReview: null, total: null };
+  }
+  const inUse = inventory.entries.filter((entry) => entry.kind === "managed").length;
+  const needsReview = inventory.entries.filter((entry) => entry.kind === "unmanaged").length;
+  return {
+    inUse,
+    needsReview,
+    total: sumLoadedCounts(inUse, needsReview),
+  };
+}
+
+function hooksSidebarCounts(inventory: ReturnType<typeof useHooksInventoryQuery>["data"]): {
+  inUse: number | null;
+  needsReview: number | null;
+  total: number | null;
+} {
+  if (!inventory || !inventory.entries) {
     return { inUse: null, needsReview: null, total: null };
   }
   const inUse = inventory.entries.filter((entry) => entry.kind === "managed").length;

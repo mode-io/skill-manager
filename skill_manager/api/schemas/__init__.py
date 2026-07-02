@@ -86,6 +86,23 @@ from .slash_commands import (
     SlashSyncRequest,
     SlashTargetResponse,
 )
+from .hooks import (
+    AddHookRequest,
+    DisableHookRequest,
+    EnableHookRequest,
+    HookApplyConfigResponse,
+    HookBindingResponse,
+    HookInventoryColumnResponse,
+    HookInventoryEntryResponse,
+    HookInventoryIssueResponse,
+    HookInventoryResponse,
+    HookMutationFailureResponse,
+    HookMutationResponse,
+    HookSetHarnessesResultResponse,
+    HookSpecResponse,
+    ReconcileHookRequest,
+    SetHookHarnessesRequest,
+)
 
 __all__ = [
     "AdoptMcpRequest",
@@ -172,4 +189,19 @@ __all__ = [
     "SlashSyncEntryResponse",
     "SlashSyncRequest",
     "SlashTargetResponse",
+    "AddHookRequest",
+    "DisableHookRequest",
+    "EnableHookRequest",
+    "HookApplyConfigResponse",
+    "HookBindingResponse",
+    "HookInventoryColumnResponse",
+    "HookInventoryEntryResponse",
+    "HookInventoryIssueResponse",
+    "HookInventoryResponse",
+    "HookMutationFailureResponse",
+    "HookMutationResponse",
+    "HookSetHarnessesResultResponse",
+    "HookSpecResponse",
+    "ReconcileHookRequest",
+    "SetHookHarnessesRequest",
 ]

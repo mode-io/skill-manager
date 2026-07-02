@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>A local-first control center for AI extensions.</strong><br />
-  Use, review, scan, and discover Skills, MCP servers, slash commands, and CLI tools across agent harnesses.
+  Use, review, scan, and discover Skills, MCP servers, slash commands, hooks, and CLI tools across agent harnesses.
 </p>
 
 <p align="center">
@@ -40,6 +40,7 @@ AI extensions are scattered across harness-specific folders, MCP config files, s
 - Scan Skills with a saved LLM provider configuration and review findings before use.
 - Install or adopt MCP server configs, resolve differences, and enable them where supported.
 - Manage reusable slash commands once, then sync them to supported harnesses.
+- Manage hooks as normalized records, then sync them into supported harness settings with drift detection and review for unmanaged entries.
 - Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
 
 ## Product tour
@@ -165,16 +166,22 @@ Native release artifacts are published on GitHub Releases for macOS ARM64/x64 an
       <strong>OpenClaw</strong><br />
       <a href="https://docs.openclaw.ai/start/getting-started">Docs</a>
     </td>
+    <td align="center" valign="middle">
+      <img src="assets/harness-logos/agy-logo.svg" alt="Antigravity CLI" height="56" /><br />
+      <strong>Antigravity (agy)</strong><br />
+      <a href="https://antigravity.google">Docs</a>
+    </td>
   </tr>
 </table>
 
-| Harness | Skills | MCP servers | Slash commands |
-|---|---:|---:|---:|
-| Codex CLI | Yes | Yes | Yes |
-| Claude Code | Yes | Yes | Yes |
-| Cursor | Yes | Yes | Yes |
-| OpenCode | Yes | Yes | Yes |
-| OpenClaw | Yes | Not Yet | Not Yet |
+| Harness | Skills | MCP servers | Slash commands | Hooks |
+|---|---:|---:|---:|---:|
+| Codex CLI | Yes | Yes | Yes | Yes |
+| Claude Code | Yes | Yes | Yes | Yes |
+| Cursor | Yes | Yes | Yes | Yes |
+| OpenCode | Yes | Yes | Yes | Partial |
+| OpenClaw | Yes | Not Yet | Not Yet | Not Yet |
+| Antigravity (agy) | Yes | Yes | Not Yet | Partial |
 
 ## Local-first safety
 
@@ -192,6 +199,7 @@ Actions that can change local state include:
 - adopting an existing MCP config
 - enabling, disabling, resolving, or uninstalling an MCP server
 - creating, updating, syncing, importing, or deleting a slash command
+- creating, enabling, disabling, resolving, or deleting a hook binding
 - changing harness support settings
 
 App-owned files live under `~/Library/Application Support/skill-manager` on macOS and XDG base directories on Linux.
@@ -219,6 +227,7 @@ MCP servers are stored as normalized Skill Manager records, then translated into
 - Codex uses TOML under `mcp_servers`.
 - Claude Code and Cursor use `mcpServers` JSON entries.
 - OpenCode uses typed local/remote MCP entries.
+- Antigravity (agy) uses `mcpServers` JSON entries with `serverUrl` for HTTP transports and `command`/`args`/`env` for stdio.
 - OpenClaw MCP writes are not yet supported.
 
 When Skill Manager finds different configs for the same MCP server, it asks you to resolve the source of truth first.
@@ -233,9 +242,23 @@ Slash commands are stored as TOML records under Skill Manager app storage, then 
 - Claude Code writes Markdown command files under `~/.claude/commands` and invokes them with `/`.
 - Cursor writes plain text command files under `~/.cursor/commands` and invokes them with `/`.
 - Codex writes prompt files under `~/.codex/prompts` and invokes them with `/prompts:`.
-- OpenClaw slash command writes are not yet supported.
+- OpenClaw and Antigravity (agy) slash command writes are not yet supported.
 
 Skill Manager tracks target ownership with sync state and content hashes. It will not overwrite an untracked command file automatically, and it reports managed files as changed or missing when the target no longer matches the last synced hash. Review actions let you adopt unmanaged commands, restore managed content, adopt a changed harness command as the new source, or remove a broken binding while leaving the harness file untouched.
+
+### Hooks
+
+Hooks are stored as normalized Skill Manager records using **canonical events** (`pre_tool_use`, `post_tool_use`, `user_prompt_submit`, `session_start`, `stop`, `pre_compact`) and **canonical tool categories** (`shell`, `file_read`, `file_write`, `mcp`, `web`, `any`). Each harness codec translates a canonical record into that harness's native event names and config shape, and merges it into the harness's hook config:
+
+- Claude Code writes hook entries into `~/.claude/settings.json` under the `hooks` key.
+- Codex writes inline `[hooks]` tables into `~/.codex/config.toml` (same event schema as Claude).
+- Cursor writes `~/.cursor/hooks.json`, expressing each tool category as its dedicated event (`beforeShellExecution`, `afterFileEdit`, `beforeMCPExecution`, and so on).
+- OpenCode writes `experimental.hook` entries in `opencode.json` — limited to `file_edited` (post-edit on write) and `session_completed` (stop), so coverage is partial.
+- Antigravity (agy) writes a name-keyed `~/.gemini/config/hooks.json`, matching against its own tool names (`run_command`, `view_file`, …); it covers tool, stop, and (via `PreInvocation`) prompt-submit hooks, so coverage is partial.
+
+Because harnesses differ, not every canonical event maps to every harness. Skill Manager exposes a **representability matrix** showing where each hook can sync and where it cannot, including caveats — for example, an Antigravity `user_prompt_submit` hook maps to `PreInvocation`, which fires before every model invocation rather than only on prompt submit.
+
+Skill Manager owns only the specific hook entries it writes. It merges into each harness's config without disturbing hooks or other keys it does not manage, and it tracks ownership with content hashes. When a managed hook is edited outside Skill Manager it is reported as drifted, and hooks found in a harness that Skill Manager does not manage are reported as unmanaged for review.
 
 ### CLIs
 
@@ -249,6 +272,7 @@ Useful macOS paths:
 
 - shared skills store: `~/Library/Application Support/skill-manager/shared`
 - MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
+- hooks manifest: `~/Library/Application Support/skill-manager/hooks/manifest.json`
 - slash command library: `~/Library/Application Support/skill-manager/slash-commands/commands`
 - slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
@@ -259,6 +283,7 @@ Useful Linux paths:
 
 - shared skills store: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/shared`
 - MCP manifest: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/mcp/manifest.json`
+- hooks manifest: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/hooks/manifest.json`
 - slash command library: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/commands`
 - slash command sync state: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
@@ -274,6 +299,7 @@ Most users do not need to change these locations. If you manage skills in a cust
 | Cursor | `SKILL_MANAGER_CURSOR_ROOT` | `~/.cursor/skills` |
 | OpenCode | `SKILL_MANAGER_OPENCODE_ROOT` | `~/.config/opencode/skills` |
 | OpenClaw | `n/a` | `~/.openclaw/skills` |
+| Antigravity (agy) | `SKILL_MANAGER_AGY_ROOT` | `~/.gemini/antigravity-cli/skills` |
 
 MCP config locations are harness-owned. Skill Manager writes only to verified config paths and skips unsupported harness writes.
 
@@ -338,7 +364,7 @@ npm run build
 
 ### Extension families
 
-- [ ] Hook support
+- [x] Hook support
 - [x] Slash command support
 - [ ] Plugin support
 

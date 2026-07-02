@@ -1,6 +1,60 @@
 {
   "components": {
     "schemas": {
+      "AddHookRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "minLength": 1,
+            "title": "Command",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "event": {
+            "minLength": 1,
+            "title": "Event",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match"
+          },
+          "timeout": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "command"
+        ],
+        "title": "AddHookRequest",
+        "type": "object"
+      },
       "AddMcpServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -491,6 +545,21 @@
         "title": "DetectedProviderResponse",
         "type": "object"
       },
+      "DisableHookRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "DisableHookRequest",
+        "type": "object"
+      },
       "DisableMcpServerRequest": {
         "properties": {
           "harness": {
@@ -519,6 +588,21 @@
           "harness"
         ],
         "title": "DisableSkillRequest",
+        "type": "object"
+      },
+      "EnableHookRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "EnableHookRequest",
         "type": "object"
       },
       "EnableMcpServerRequest": {
@@ -653,6 +737,373 @@
           "installed"
         ],
         "title": "HarnessColumnResponse",
+        "type": "object"
+      },
+      "HookApplyConfigResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/HookMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "hook": {
+            "$ref": "#/components/schemas/HookSpecResponse"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "hook",
+          "succeeded",
+          "failed"
+        ],
+        "title": "HookApplyConfigResponse",
+        "type": "object"
+      },
+      "HookBindingResponse": {
+        "properties": {
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caveat"
+          },
+          "driftDetail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driftdetail"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "managed",
+              "drifted",
+              "unmanaged",
+              "missing",
+              "unsupported"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "state"
+        ],
+        "title": "HookBindingResponse",
+        "type": "object"
+      },
+      "HookInventoryColumnResponse": {
+        "properties": {
+          "configPresent": {
+            "title": "Configpresent",
+            "type": "boolean"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "hooksUnavailableReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hooksunavailablereason"
+          },
+          "hooksWritable": {
+            "default": true,
+            "title": "Hookswritable",
+            "type": "boolean"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "installed",
+          "configPresent"
+        ],
+        "title": "HookInventoryColumnResponse",
+        "type": "object"
+      },
+      "HookInventoryEntryResponse": {
+        "properties": {
+          "canEnable": {
+            "title": "Canenable",
+            "type": "boolean"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "enabledStatus": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Enabledstatus",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "managed",
+              "unmanaged"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "sightings": {
+            "items": {
+              "$ref": "#/components/schemas/HookBindingResponse"
+            },
+            "title": "Sightings",
+            "type": "array"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HookSpecResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "kind",
+          "canEnable",
+          "enabledStatus",
+          "sightings"
+        ],
+        "title": "HookInventoryEntryResponse",
+        "type": "object"
+      },
+      "HookInventoryIssueResponse": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "reason"
+        ],
+        "title": "HookInventoryIssueResponse",
+        "type": "object"
+      },
+      "HookInventoryResponse": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryColumnResponse"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryIssueResponse"
+            },
+            "title": "Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns",
+          "entries"
+        ],
+        "title": "HookInventoryResponse",
+        "type": "object"
+      },
+      "HookMutationFailureResponse": {
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "error"
+        ],
+        "title": "HookMutationFailureResponse",
+        "type": "object"
+      },
+      "HookMutationResponse": {
+        "properties": {
+          "hook": {
+            "$ref": "#/components/schemas/HookSpecResponse"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "hook"
+        ],
+        "title": "HookMutationResponse",
+        "type": "object"
+      },
+      "HookSetHarnessesResultResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/HookMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "succeeded",
+          "failed"
+        ],
+        "title": "HookSetHarnessesResultResponse",
+        "type": "object"
+      },
+      "HookSpecResponse": {
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installedAt": {
+            "title": "Installedat",
+            "type": "string"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          },
+          "timeout": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "command",
+          "description",
+          "installedAt",
+          "revision"
+        ],
+        "title": "HookSpecResponse",
         "type": "object"
       },
       "InstallMarketplaceSkillRequest": {
@@ -2548,6 +2999,49 @@
         "title": "OkResponse",
         "type": "object"
       },
+      "ReconcileHookRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "harnesses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Harnesses"
+          },
+          "observedHarness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed harness"
+          },
+          "sourceKind": {
+            "enum": [
+              "managed",
+              "harness"
+            ],
+            "title": "Sourcekind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceKind"
+        ],
+        "title": "ReconcileHookRequest",
+        "type": "object"
+      },
       "ReconcileMcpServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3196,6 +3690,23 @@
           "enabled"
         ],
         "title": "SetHarnessSupportRequest",
+        "type": "object"
+      },
+      "SetHookHarnessesRequest": {
+        "properties": {
+          "target": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "title": "SetHookHarnessesRequest",
         "type": "object"
       },
       "SetMcpServerHarnessesRequest": {
@@ -4428,6 +4939,332 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/hooks": {
+      "get": {
+        "operationId": "list_hooks_api_hooks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookInventoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Hooks"
+      },
+      "post": {
+        "operationId": "create_hook_api_hooks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Hook"
+      }
+    },
+    "/api/hooks/{id}": {
+      "delete": {
+        "operationId": "delete_hook_api_hooks__id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookSetHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Hook"
+      },
+      "get": {
+        "operationId": "get_hook_api_hooks__id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookInventoryEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Hook"
+      }
+    },
+    "/api/hooks/{id}/disable": {
+      "post": {
+        "operationId": "disable_hook_api_hooks__id__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disable Hook"
+      }
+    },
+    "/api/hooks/{id}/enable": {
+      "post": {
+        "operationId": "enable_hook_api_hooks__id__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnableHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enable Hook"
+      }
+    },
+    "/api/hooks/{id}/reconcile": {
+      "post": {
+        "operationId": "reconcile_hook_api_hooks__id__reconcile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookApplyConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reconcile Hook"
+      }
+    },
+    "/api/hooks/{id}/set-harnesses": {
+      "post": {
+        "operationId": "set_hook_harnesses_api_hooks__id__set_harnesses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHookHarnessesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookSetHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Hook Harnesses"
       }
     },
     "/api/marketplace/clis/items/{slug}": {

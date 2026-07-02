@@ -57,6 +57,12 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                 subtree_path=("mcp_servers",),
                 codec="codex",
             ),
+            "hooks": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".codex" / "config.toml",
+                file_format="toml",
+                subtree_path=("hooks",),
+                codec="codex-hooks",
+            ),
             "slash_commands": CommandFileBindingProfile(
                 root_path_resolver=lambda context: context.home / ".codex",
                 output_dir_resolver=lambda context: context.home / ".codex" / "prompts",
@@ -89,6 +95,12 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                     lambda context: ("projects", str(context.home.resolve()), "mcpServers"),
                 ),
                 codec="claude-code",
+            ),
+            "hooks": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".claude" / "settings.json",
+                file_format="json",
+                subtree_path=("hooks",),
+                codec="claude-code-hooks",
             ),
             "slash_commands": CommandFileBindingProfile(
                 root_path_resolver=lambda context: context.home / ".claude",
@@ -123,6 +135,12 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                 file_format="json",
                 subtree_path=("mcpServers",),
                 codec="cursor",
+            ),
+            "hooks": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".cursor" / "hooks.json",
+                file_format="json",
+                subtree_path=("hooks",),
+                codec="cursor-hooks",
             ),
             "slash_commands": CommandFileBindingProfile(
                 root_path_resolver=lambda context: context.home / ".cursor",
@@ -174,6 +192,15 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                 subtree_path=("mcp",),
                 codec="opencode",
             ),
+            "hooks": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".opencode" / "opencode.jsonc",
+                discovery_config_path_resolvers=(
+                    lambda context: context.xdg_config_home / "opencode" / "opencode.json",
+                ),
+                file_format="jsonc",
+                subtree_path=("experimental", "hook"),
+                codec="opencode-hooks",
+            ),
             "slash_commands": CommandFileBindingProfile(
                 root_path_resolver=lambda context: context.xdg_config_home / "opencode",
                 output_dir_resolver=lambda context: context.xdg_config_home / "opencode" / "commands",
@@ -212,6 +239,49 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                 capability_unavailable_reason=(
                     "Installed OpenClaw does not expose MCP config support"
                 ),
+            ),
+        },
+    ),
+    HarnessDefinition(
+        harness="agy",
+        label="Antigravity",
+        logo_key="agy",
+        install_probe="agy",
+        bindings={
+            "skills": FileTreeBindingProfile(
+                managed_env="SKILL_MANAGER_AGY_ROOT",
+                managed_default=lambda context: context.home / ".gemini" / "antigravity-cli" / "skills",
+                discovery_roots=(
+                    FileTreeDiscoveryRoot(
+                        kind="compat-root",
+                        scope="agents-compat",
+                        label="Agents compatibility root",
+                        path_resolver=lambda context: context.home / ".agents" / "skills",
+                    ),
+                    FileTreeDiscoveryRoot(
+                        kind="legacy-root",
+                        scope="legacy",
+                        label="Legacy import root",
+                        path_resolver=lambda context: context.home / ".gemini" / "skills",
+                    ),
+                ),
+            ),
+            "mcp": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".gemini" / "config" / "mcp_config.json",
+                discovery_config_path_resolvers=(
+                    lambda context: context.home / ".gemini" / "antigravity-cli" / "mcp_config.json",
+                    lambda context: context.home / ".gemini" / "antigravity" / "mcp_config.json",
+                    lambda context: context.home / ".gemini" / "antigravity-ide" / "mcp_config.json",
+                ),
+                file_format="json",
+                subtree_path=("mcpServers",),
+                codec="antigravity-cli",
+            ),
+            "hooks": ConfigSubtreeBindingProfile(
+                config_path_resolver=lambda context: context.home / ".gemini" / "config" / "hooks.json",
+                file_format="json",
+                subtree_path=(),
+                codec="antigravity-hooks",
             ),
         },
     ),

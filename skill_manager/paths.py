@@ -22,6 +22,7 @@ class AppPaths:
     skills_store_manifest: Path
     marketplace_cache_root: Path
     mcp_store_manifest: Path
+    hooks_store_manifest: Path
     slash_command_store_root: Path
     slash_command_commands_dir: Path
     slash_command_sync_state_path: Path
@@ -45,6 +46,7 @@ def resolve_app_paths(env: dict[str, str] | None = None) -> AppPaths:
         skills_store_manifest=data_dir / "manifest.json",
         marketplace_cache_root=data_dir / "marketplace",
         mcp_store_manifest=data_dir / "mcp" / "manifest.json",
+        hooks_store_manifest=data_dir / "hooks" / "manifest.json",
         slash_command_store_root=data_dir / "slash-commands",
         slash_command_commands_dir=data_dir / "slash-commands" / "commands",
         slash_command_sync_state_path=data_dir / "slash-commands" / "sync-state.json",

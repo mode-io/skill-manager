@@ -18,6 +18,12 @@ from .mcp.availability import McpAvailabilityProbe
 from .mcp.query import McpQueryService
 from .mcp.read_models import McpReadModelService
 from .mcp.store import McpServerStore
+from .hooks import (
+    HookStore,
+    HooksReadModelService,
+    HooksQueryService,
+    HooksMutationService,
+)
 from .settings import SettingsMutationService, SettingsQueryService
 from .slash_commands import (
     SlashCommandMutationService,
@@ -74,6 +80,10 @@ class BackendContainer:
     mcp_read_models: McpReadModelService
     mcp_queries: McpQueryService
     mcp_mutations: McpMutationService
+    hooks_store: HookStore
+    hooks_read_models: HooksReadModelService
+    hooks_queries: HooksQueryService
+    hooks_mutations: HooksMutationService
     db: Database
     scan_config_service: ScanConfigService
     scan_service: ScanService
@@ -182,6 +192,15 @@ def build_backend_container(
         availability_cache=mcp_availability_cache,
     )
 
+    hooks_store = HookStore(paths.hooks_store_manifest)
+    hooks_read_models = HooksReadModelService.from_kernel(store=hooks_store, kernel=harness_kernel)
+    invalidation.register(hooks_read_models)
+    hooks_queries = HooksQueryService(hooks_read_models)
+    hooks_mutations = HooksMutationService(
+        store=hooks_store,
+        read_models=hooks_read_models,
+    )
+
     db = Database(paths.db_path)
     scan_config_service = ScanConfigService(ScanConfigRepository(db))
     scan_service = ScanService(
@@ -216,6 +235,10 @@ def build_backend_container(
         mcp_read_models=mcp_read_models,
         mcp_queries=mcp_queries,
         mcp_mutations=mcp_mutations,
+        hooks_store=hooks_store,
+        hooks_read_models=hooks_read_models,
+        hooks_queries=hooks_queries,
+        hooks_mutations=hooks_mutations,
         db=db,
         scan_config_service=scan_config_service,
         scan_service=scan_service,

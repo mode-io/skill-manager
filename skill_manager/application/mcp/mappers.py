@@ -271,6 +271,57 @@ class OpenClawMapper:
         )
 
 
+# Antigravity CLI -----------------------------------------------------------
+
+
+class AntigravityCliMapper:
+    """Used by Antigravity CLI (agy). Uses serverUrl for HTTP, and command/args/env for stdio."""
+
+    def spec_to_dict(self, spec: McpServerSpec) -> dict[str, object]:
+        if spec.transport == "stdio":
+            payload: dict[str, object] = {}
+            if spec.command is not None:
+                payload["command"] = spec.command
+            if spec.args:
+                payload["args"] = list(spec.args)
+            if spec.env:
+                payload["env"] = dict(spec.env)
+            return payload
+        payload = {}
+        if spec.url is not None:
+            payload["serverUrl"] = spec.url
+        if spec.headers:
+            payload["headers"] = dict(spec.headers)
+        return payload
+
+    def dict_to_spec(
+        self, name: str, raw: Mapping[str, object], *, source: McpSource | None = None
+    ) -> McpServerSpec:
+        if "command" in raw or "args" in raw:
+            return McpServerSpec(
+                name=name,
+                display_name=name,
+                source=source or McpSource.adopted("agy", name),
+                transport="stdio",
+                command=_str_or_none(raw.get("command")),
+                args=_str_tuple(raw.get("args")),
+                env=_str_pairs(raw.get("env")),
+            )
+        if "serverUrl" in raw or "url" in raw:
+            return McpServerSpec(
+                name=name,
+                display_name=name,
+                source=source or McpSource.adopted("agy", name),
+                transport="http",
+                url=_str_or_none(raw.get("serverUrl") or raw.get("url")),
+                headers=_str_pairs(raw.get("headers")),
+            )
+        raise MutationError(
+            f"unsupported agy mcp entry '{name}': missing 'command' and 'serverUrl'",
+            status=400,
+        )
+
+
 # Helpers ------------------------------------------------------------------
 
 
@@ -298,6 +349,7 @@ _MAPPERS: dict[str, TransportMapper] = {
     "opencode": OpenCodeMapper(),
     "codex": CodexMapper(),
     "openclaw": OpenClawMapper(),
+    "antigravity-cli": AntigravityCliMapper(),
 }
 
 
@@ -308,6 +360,7 @@ def get_mapper(kind: str) -> TransportMapper:
 
 
 __all__ = [
+    "AntigravityCliMapper",
     "ClaudeCodeMapper",
     "CodexMapper",
     "CursorMapper",
@@ -316,3 +369,4 @@ __all__ = [
     "TransportMapper",
     "get_mapper",
 ]
+

@@ -21,6 +21,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Hooks */
+        get: operations["list_hooks_api_hooks_get"];
+        put?: never;
+        /** Create Hook */
+        post: operations["create_hook_api_hooks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hook */
+        get: operations["get_hook_api_hooks__id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Hook */
+        delete: operations["delete_hook_api_hooks__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Hook */
+        post: operations["disable_hook_api_hooks__id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Hook */
+        post: operations["enable_hook_api_hooks__id__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Hook */
+        post: operations["reconcile_hook_api_hooks__id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Hook Harnesses */
+        post: operations["set_hook_harnesses_api_hooks__id__set_harnesses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/marketplace/clis/items/{slug}": {
         parameters: {
             query?: never;
@@ -814,6 +918,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddHookRequest */
+        AddHookRequest: {
+            /** Command */
+            command: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Event */
+            event: string;
+            /** Id */
+            id: string;
+            /** Match */
+            match?: string | null;
+            /** Timeout */
+            timeout?: number | null;
+        };
         /** AddMcpServerRequest */
         AddMcpServerRequest: {
             /** Qualifiedname */
@@ -948,6 +1070,14 @@ export interface components {
             /** Provider */
             provider: string;
         };
+        /** DisableHookRequest */
+        DisableHookRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
         /** DisableMcpServerRequest */
         DisableMcpServerRequest: {
             /**
@@ -958,6 +1088,14 @@ export interface components {
         };
         /** DisableSkillRequest */
         DisableSkillRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
+        /** EnableHookRequest */
+        EnableHookRequest: {
             /**
              * Harness
              * @description Harness identifier
@@ -1015,6 +1153,129 @@ export interface components {
             label: string;
             /** Logokey */
             logoKey?: string | null;
+        };
+        /** HookApplyConfigResponse */
+        HookApplyConfigResponse: {
+            /** Failed */
+            failed: components["schemas"]["HookMutationFailureResponse"][];
+            hook: components["schemas"]["HookSpecResponse"];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** HookBindingResponse */
+        HookBindingResponse: {
+            /** Caveat */
+            caveat?: string | null;
+            /** Driftdetail */
+            driftDetail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "managed" | "drifted" | "unmanaged" | "missing" | "unsupported";
+        };
+        /** HookInventoryColumnResponse */
+        HookInventoryColumnResponse: {
+            /** Configpresent */
+            configPresent: boolean;
+            /** Harness */
+            harness: string;
+            /** Hooksunavailablereason */
+            hooksUnavailableReason?: string | null;
+            /**
+             * Hookswritable
+             * @default true
+             */
+            hooksWritable: boolean;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+        };
+        /** HookInventoryEntryResponse */
+        HookInventoryEntryResponse: {
+            /** Canenable */
+            canEnable: boolean;
+            /** Displayname */
+            displayName: string;
+            /**
+             * Enabledstatus
+             * @enum {string}
+             */
+            enabledStatus: "enabled" | "disabled";
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            /** Sightings */
+            sightings: components["schemas"]["HookBindingResponse"][];
+            spec?: components["schemas"]["HookSpecResponse"] | null;
+        };
+        /** HookInventoryIssueResponse */
+        HookInventoryIssueResponse: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
+        /** HookInventoryResponse */
+        HookInventoryResponse: {
+            /** Columns */
+            columns: components["schemas"]["HookInventoryColumnResponse"][];
+            /** Entries */
+            entries: components["schemas"]["HookInventoryEntryResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["HookInventoryIssueResponse"][];
+        };
+        /** HookMutationFailureResponse */
+        HookMutationFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
+        };
+        /** HookMutationResponse */
+        HookMutationResponse: {
+            hook: components["schemas"]["HookSpecResponse"];
+            /** Ok */
+            ok: boolean;
+        };
+        /** HookSetHarnessesResultResponse */
+        HookSetHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["HookMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** HookSpecResponse */
+        HookSpecResponse: {
+            /** Command */
+            command: string;
+            /** Description */
+            description: string;
+            /** Event */
+            event: string;
+            /** Id */
+            id: string;
+            /** Installedat */
+            installedAt: string;
+            /** Match */
+            match?: string | null;
+            /** Revision */
+            revision: string;
+            /** Timeout */
+            timeout?: number | null;
         };
         /** InstallMarketplaceSkillRequest */
         InstallMarketplaceSkillRequest: {
@@ -1614,6 +1875,18 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** ReconcileHookRequest */
+        ReconcileHookRequest: {
+            /** Harnesses */
+            harnesses?: string[] | null;
+            /** Observed harness */
+            observedHarness?: string | null;
+            /**
+             * Sourcekind
+             * @enum {string}
+             */
+            sourceKind: "managed" | "harness";
+        };
         /** ReconcileMcpServerRequest */
         ReconcileMcpServerRequest: {
             /** Harnesses */
@@ -1873,6 +2146,14 @@ export interface components {
         SetHarnessSupportRequest: {
             /** Enabled */
             enabled: boolean;
+        };
+        /** SetHookHarnessesRequest */
+        SetHookHarnessesRequest: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "enabled" | "disabled";
         };
         /** SetMcpServerHarnessesRequest */
         SetMcpServerHarnessesRequest: {
@@ -2289,6 +2570,261 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    list_hooks_api_hooks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookInventoryResponse"];
+                };
+            };
+        };
+    };
+    create_hook_api_hooks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_hook_api_hooks__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookInventoryEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_hook_api_hooks__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_hook_api_hooks__id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisableHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_hook_api_hooks__id__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnableHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_hook_api_hooks__id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookApplyConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_hook_harnesses_api_hooks__id__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHookHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
