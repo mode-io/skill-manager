@@ -59,7 +59,8 @@ def _base_dirs(context: PlatformContext) -> tuple[Path, Path, Path]:
     state_override = context.env.get(STATE_DIR_ENV)
 
     if context.platform == "macos":
-        default_macos = context.home / "Library" / "Application Support" / APP_NAME
+        legacy_dir = context.home / "Library" / "Application Support" / APP_NAME
+        default_macos = legacy_dir if legacy_dir.is_dir() else context.home / f".{APP_NAME}"
         config_dir = _xdg_dir(context.env, "XDG_CONFIG_HOME", default_macos)
         data_dir = _xdg_dir(context.env, "XDG_DATA_HOME", default_macos)
         state_dir = (

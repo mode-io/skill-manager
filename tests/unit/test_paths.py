@@ -26,11 +26,11 @@ def isolated_env(platform: str):
 
 
 class ResolveAppPathsTests(unittest.TestCase):
-    def test_macos_default_layout_collapses_to_application_support(self) -> None:
+    def test_macos_default_layout_collapses_to_dot_dir(self) -> None:
         with isolated_env("darwin"), TemporaryDirectory() as temp:
             home = Path(temp) / "home"
             paths = resolve_app_paths({"HOME": str(home)})
-            base = home / "Library" / "Application Support" / APP_NAME
+            base = home / f".{APP_NAME}"
             self.assertEqual(paths.config_dir, base)
             self.assertEqual(paths.data_dir, base)
             self.assertEqual(paths.state_dir, base)
@@ -43,6 +43,16 @@ class ResolveAppPathsTests(unittest.TestCase):
             self.assertEqual(paths.slash_command_sync_state_path, base / "slash-commands" / "sync-state.json")
             self.assertEqual(paths.runtime_state_path, base / "runtime.json")
             self.assertEqual(paths.server_log_path, base / "server.log")
+
+    def test_macos_default_layout_falls_back_to_legacy_application_support_if_exists(self) -> None:
+        with isolated_env("darwin"), TemporaryDirectory() as temp:
+            home = Path(temp) / "home"
+            legacy_dir = home / "Library" / "Application Support" / APP_NAME
+            legacy_dir.mkdir(parents=True)
+            paths = resolve_app_paths({"HOME": str(home)})
+            self.assertEqual(paths.config_dir, legacy_dir)
+            self.assertEqual(paths.data_dir, legacy_dir)
+            self.assertEqual(paths.state_dir, legacy_dir)
 
     def test_xdg_overrides_each_dir_independently(self) -> None:
         with isolated_env("darwin"), TemporaryDirectory() as temp:
