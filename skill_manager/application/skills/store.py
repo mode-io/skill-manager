@@ -6,7 +6,7 @@ from pathlib import Path
 from skill_manager.atomic_files import file_lock
 
 from .health import CheckIssue
-from .identity import SourceDescriptor
+from .identity import SkillRef, SourceDescriptor
 from .manifest import (
     SkillStoreEntry,
     SkillStoreManifest,
@@ -27,27 +27,35 @@ class SkillStore:
         return self.manifest_path.with_suffix(".lock")
 
     def scan(self) -> SkillStoreScan:
+        all_packages: list[StorePackageObservation] = []
+        issues: list[str] = list(issue.message for issue in self.check_integrity())
+
+        if not self.root.exists():
+            return SkillStoreScan(packages=(), issues=())
+
         manifest = load_skill_store_manifest(self.manifest_path)
         manifest_index = {entry.package_dir: entry for entry in manifest.entries}
-        packages: list[StorePackageObservation] = []
+
         for path in find_skill_roots(self.root):
             entry = manifest_index.get(path.name)
             source = SourceDescriptor(
                 kind=entry.source_kind if entry else "shared-store",
                 locator=entry.source_locator if entry else f"shared-store:{path.name}",
             )
-            packages.append(
+            pkg = parse_skill_package(path, default_source=source)
+            all_packages.append(
                 StorePackageObservation(
-                    package=parse_skill_package(path, default_source=source),
+                    package=pkg,
                     recorded_revision=entry.revision if entry else None,
                     recorded_source_ref=entry.source_ref if entry else None,
                     recorded_source_path=entry.source_path if entry else None,
                     origin_harness=entry.origin_harness if entry else None,
                 )
             )
+
         return SkillStoreScan(
-            packages=tuple(packages),
-            issues=tuple(issue.message for issue in self.check_integrity()),
+            packages=tuple(all_packages),
+            issues=tuple(issues),
         )
 
     def ingest(
@@ -61,14 +69,14 @@ class SkillStore:
         source_path_hint: str | None = None,
         origin_harness: str | None = None,
     ) -> Path:
-        self.root.mkdir(parents=True, exist_ok=True)
         with file_lock(self.lock_path):
             dest = self.root / source_path.name
             if dest.exists():
-                raise ValueError(f"package directory already exists in store: {source_path.name}")
+                raise ValueError(f"package already exists in store: {dest}")
+            self.root.mkdir(parents=True, exist_ok=True)
             shutil.copytree(source_path, dest)
-            fingerprint, _ = fingerprint_package(dest)
             manifest = load_skill_store_manifest(self.manifest_path)
+            fingerprint, _ = fingerprint_package(dest)
             entry = SkillStoreEntry(
                 package_dir=source_path.name,
                 declared_name=declared_name,

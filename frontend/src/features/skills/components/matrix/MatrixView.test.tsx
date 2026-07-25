@@ -69,7 +69,11 @@ describe("Skills MatrixView", () => {
     renderMatrix();
 
     const table = screen.getByRole("table", { name: "Skills harness matrix" });
-    expect(table.querySelectorAll("col")).toHaveLength(harnessColumns.length + 4);
+    // Column widths come from the header cells, so header and body have to
+    // agree cell-for-cell (see MatrixTable.tsx).
+    const headerCells = table.querySelectorAll("thead tr > th");
+    expect(headerCells).toHaveLength(harnessColumns.length + 4);
+    expect(table.querySelectorAll("tbody tr:first-child > td")).toHaveLength(headerCells.length);
     expect(rowNames()).toEqual(["Alpha", "Zeta"]);
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by Name" }));

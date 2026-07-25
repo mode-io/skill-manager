@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Literal, Mapping
 
 from skill_manager.atomic_files import atomic_write_text, file_lock
 
-
 McpTransport = Literal["stdio", "http", "sse"]
 McpSourceKind = Literal["marketplace", "adopted", "manual"]
 if TYPE_CHECKING:

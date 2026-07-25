@@ -8,7 +8,6 @@ from skill_manager.application.mcp.availability import McpAvailabilityResult
 from skill_manager.application.mcp.stdio import parse_static_stdio_function
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
 from skill_manager.errors import MutationError
-
 from tests.support.app_harness import AppTestHarness
 
 
@@ -404,7 +403,7 @@ class McpRoutesTests(unittest.TestCase):
                 "/api/mcp/servers/exa/set-harnesses", {"target": "enabled"}
             )
             self.assertTrue(response["ok"])
-            self.assertEqual(set(response["succeeded"]), {"codex", "claude", "cursor", "opencode", "hermes", "openclaw"})
+            self.assertEqual(set(response["succeeded"]), {"codex", "claude", "cursor", "opencode", "openclaw", "agy", "hermes"})
 
             # Verify each config file
             self.assertTrue((harness.spec.home / ".cursor" / "mcp.json").is_file())
@@ -412,6 +411,7 @@ class McpRoutesTests(unittest.TestCase):
             self.assertTrue((harness.spec.home / ".codex" / "config.toml").is_file())
             self.assertTrue((harness.spec.home / ".opencode" / "opencode.jsonc").is_file())
             self.assertTrue((harness.spec.home / ".openclaw" / "openclaw.json").is_file())
+            self.assertTrue((harness.spec.home / ".gemini" / "config" / "mcp_config.json").is_file())
             self.assertTrue(harness.spec.hermes_config_path.is_file())
 
     def test_uninstall_cleans_all_harnesses_and_central(self) -> None:

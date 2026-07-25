@@ -3,12 +3,14 @@ import { Archive, Database } from "lucide-react";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
+import { useFormatPath } from "../../../lib/paths";
 import { SettingsHarnessCard } from "../components/SettingsHarnessCard";
 import { useSettingsCopy } from "../i18n";
 import { useSettingsPageController } from "../model/use-settings-page-controller";
 
 export default function SettingsPage() {
   const copy = useSettingsCopy();
+  const formatPath = useFormatPath();
   const controller = useSettingsPageController({
     unableToUpdateHarnessSupport: copy.errors.unableToUpdateHarnessSupport,
   });
@@ -46,7 +48,7 @@ export default function SettingsPage() {
                 <p className="settings-row__title">{copy.storage.storeTitle}</p>
                 <p className="settings-row__sub">{copy.storage.storeSubtitle}</p>
               </div>
-              <span className="settings-path">{controller.data.storage.skillsStorePath}</span>
+              <span className="settings-path">{formatPath(controller.data.storage.skillsStorePath)}</span>
             </div>
             <div className="settings-row">
               <span className="settings-row__icon">
@@ -56,7 +58,7 @@ export default function SettingsPage() {
                 <p className="settings-row__title">{copy.storage.cacheTitle}</p>
                 <p className="settings-row__sub">{copy.storage.cacheSubtitle}</p>
               </div>
-              <span className="settings-path">{controller.data.storage.marketplaceCachePath}</span>
+              <span className="settings-path">{formatPath(controller.data.storage.marketplaceCachePath)}</span>
             </div>
           </section>
 
@@ -74,6 +76,7 @@ export default function SettingsPage() {
           </section>
         </>
       )}
+
     </>
   );
 }

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.request import urlopen
 
 from tests.support.fake_home import create_fake_home_spec
@@ -108,6 +108,36 @@ class CliRuntimeTests(unittest.TestCase):
             )
             self.assertEqual(stop.returncode, 0, stop.stderr)
             self.assertFalse((state_dir / "runtime.json").exists())
+
+    def test_serve_refuses_non_loopback_host_without_allow_remote(self) -> None:
+        with TemporaryDirectory(prefix="skill-manager-cli-") as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            env = dict(os.environ)
+            env.update(spec.env())
+
+            refused = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "skill_manager",
+                    "serve",
+                    "--host",
+                    "0.0.0.0",
+                    "--port",
+                    "0",
+                    "--state-dir",
+                    str(Path(temp_dir) / "state"),
+                    "--no-open-browser",
+                ],
+                cwd=Path(__file__).resolve().parents[2],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+            self.assertEqual(refused.returncode, 2)
+            self.assertIn("--allow-remote", refused.stderr)
 
 
 if __name__ == "__main__":

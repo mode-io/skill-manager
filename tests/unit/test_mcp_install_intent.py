@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import unittest
 
-from skill_manager.application.mcp.install_intent import ManagedMcpRecord, RegistryInstallIntent
-from skill_manager.application.mcp.install_state import install_config_status, resolve_enable_managed_spec
+from skill_manager.application.mcp.install_intent import (
+    ManagedMcpRecord,
+    RegistryInstallIntent,
+)
+from skill_manager.application.mcp.install_state import (
+    install_config_status,
+    resolve_enable_managed_spec,
+)
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
 
 

@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import json
 import re
-from io import StringIO
 import shutil
 import subprocess
 import tomllib
-from dataclasses import dataclass
-from pathlib import Path
 from collections.abc import MutableMapping
+from dataclasses import dataclass
+from io import StringIO
+from pathlib import Path
 from typing import Mapping
 
 import tomli_w
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
-from skill_manager.errors import MutationError
 from skill_manager.atomic_files import atomic_write_text, file_lock
+from skill_manager.errors import MutationError
 from skill_manager.harness import (
     ConfigSubtreeBindingProfile,
     HarnessDefinition,
@@ -25,7 +25,12 @@ from skill_manager.harness import (
     SubtreePath,
 )
 
-from .contracts import McpHarnessAdapter, McpHarnessScan, McpHarnessStatus, McpObservedEntry
+from .contracts import (
+    McpHarnessAdapter,
+    McpHarnessScan,
+    McpHarnessStatus,
+    McpObservedEntry,
+)
 from .mappers import TransportMapper, get_mapper
 from .store import McpServerSpec, McpSource
 
@@ -278,6 +283,8 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         if not config_path.is_file():
             return {}
         text = config_path.read_text(encoding="utf-8")
+        if not text.strip():
+            return {}
         if self._file_format in {"json", "jsonc"}:
             try:
                 payload = json.loads(_strip_jsonc(text) if self._file_format == "jsonc" else text)

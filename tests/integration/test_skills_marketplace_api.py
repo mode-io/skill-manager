@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from skill_manager.application.skills.marketplace import MarketplaceCatalog
 from skill_manager.application.skills.marketplace.client import SkillsShClient
 from skill_manager.application.skills.marketplace.models import RepoDisplayMetadata
-from skill_manager.application.skills.marketplace.skillssh import fetch_all_time_leaderboard, fetch_detail_page, search_skills
+from skill_manager.application.skills.marketplace.skillssh import (
+    fetch_all_time_leaderboard,
+    fetch_detail_page,
+    search_skills,
+)
 from skill_manager.application.skills.source_fetch import SourceFetchService
 from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MutationError
 from skill_manager.sources import ResolvedGitHubSkill, github_owner_avatar_url

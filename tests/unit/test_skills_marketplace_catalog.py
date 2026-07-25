@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import mkdtemp
-import unittest
 
-from skill_manager.application.skills.marketplace import MarketplaceCatalog
 from skill_manager.application.marketplace_cache import MarketplaceCache
+from skill_manager.application.skills.marketplace import MarketplaceCatalog
 from skill_manager.application.skills.marketplace.models import SkillsShSkill
-from skill_manager.application.skills.marketplace.repo_snapshots import GitHubRepoSnapshotService
-from skill_manager.application.skills.marketplace.resolver import DetailEnrichment, GitHubSkillResolver
-from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MarketplaceUpstreamError
+from skill_manager.application.skills.marketplace.repo_snapshots import (
+    GitHubRepoSnapshotService,
+)
+from skill_manager.application.skills.marketplace.resolver import (
+    DetailEnrichment,
+    GitHubSkillResolver,
+)
+from skill_manager.errors import (
+    MARKETPLACE_UNAVAILABLE_MESSAGE,
+    MarketplaceUpstreamError,
+)
 from skill_manager.sources import GitHubRepoMetadata, GitHubRepoMetadataClient
 from tests.support.marketplace_fixture import create_fixture_marketplace_service
 

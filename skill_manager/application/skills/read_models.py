@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from threading import Lock
-import time
 
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService
 
 from .adapters import build_skills_adapters, scan_all_adapters
 from .contracts import SkillsHarnessAdapter, SkillsHarnessStatus
-from .observations import SkillStoreScan, SkillsHarnessScan
+from .observations import SkillsHarnessScan, SkillStoreScan
 from .store import SkillStore
 
 
@@ -47,10 +47,11 @@ class SkillsReadModelService:
         *,
         store: SkillStore,
         kernel: HarnessKernelService,
+        data_dir: Path | None = None,
     ) -> "SkillsReadModelService":
         return cls(
             store=store,
-            adapters=build_skills_adapters(kernel),
+            adapters=build_skills_adapters(kernel, data_dir=data_dir),
             kernel=kernel,
         )
 

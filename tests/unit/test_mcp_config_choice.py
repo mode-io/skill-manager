@@ -3,7 +3,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from skill_manager.application.mcp.config_choice import config_choices_payload, recommended_observed_harness
+from skill_manager.application.mcp.config_choice import (
+    config_choices_payload,
+    recommended_observed_harness,
+)
 from skill_manager.application.mcp.contracts import McpHarnessScan, McpObservedEntry
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
 

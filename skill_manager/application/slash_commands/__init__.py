@@ -1,6 +1,12 @@
 from .executor import SlashCommandSyncExecutor
 from .migration import migrate_legacy_slash_commands
-from .models import SlashCommand, SlashCommandReviewRow, SlashCommandSyncEntry, SlashTarget, SlashTargetId
+from .models import (
+    SlashCommand,
+    SlashCommandReviewRow,
+    SlashCommandSyncEntry,
+    SlashTarget,
+    SlashTargetId,
+)
 from .mutations import SlashCommandMutationService
 from .path_policy import SlashCommandPathPolicy
 from .planner import SlashCommandPlanner

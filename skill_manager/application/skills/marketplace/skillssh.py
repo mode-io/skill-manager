@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from html import unescape
-from html.parser import HTMLParser
-from dataclasses import dataclass
 import json
 import re
+from dataclasses import dataclass
+from html import unescape
+from html.parser import HTMLParser
 from urllib.parse import quote
 
 from skill_manager.errors import MarketplaceUpstreamError

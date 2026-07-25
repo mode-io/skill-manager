@@ -47,10 +47,9 @@ export function McpServerMatrixView({
   return (
     <MatrixTable
       ariaLabel={copy.detail.matrix.ariaLabel}
-      harnessColumnCount={displayColumns.length}
       harnessColumnWidth="52px"
       compactColumnWidth="140px"
-      coverageColumnWidth="72px"
+      coverageColumnWidth="160px"
     >
       <thead className="matrix-table__head">
         <tr>

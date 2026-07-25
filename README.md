@@ -1,14 +1,12 @@
 # skill-manager
 
-[中文说明](README.zh-CN.md)
-
 <p align="center">
   <img src="assets/skill_manager_logo.svg" alt="Skill Manager" width="520" />
 </p>
 
 <p align="center">
   <strong>A local-first control center for AI extensions.</strong><br />
-  Use, review, scan, and discover Skills, MCP servers, slash commands, and CLI tools across agent harnesses.
+  Use, review, and discover Skills, Agents, MCP servers, slash commands, hooks, and CLI tools across agent harnesses.
 </p>
 
 <p align="center">
@@ -30,16 +28,17 @@ AI extensions are scattered across harness-specific folders, MCP config files, s
 |---|---|
 | **In use** | Skill Manager controls the item and can enable or disable it across harnesses. |
 | **Needs review** | Skill Manager found local state, config differences, or inventory issues that need a decision. |
-| **Scan** | Run LLM-backed security checks against Skills before trusting them. |
 | **Discover** | Browse marketplaces and preview external tools. |
 
 ## What you can do
 
 - See what is in use, what needs review, and where extensions are active.
 - Adopt local Skills into one shared inventory, then enable or disable them per harness.
-- Scan Skills with a saved LLM provider configuration and review findings before use.
 - Install or adopt MCP server configs, resolve differences, and enable them where supported.
 - Manage reusable slash commands once, then sync them to supported harnesses.
+- Manage hooks as normalized records, then sync them into supported harness settings with drift detection and review for unmanaged entries.
+- Manage Agents — agents are markdown files in the store that get symlinked into each harness's agents directory, with In Use and Needs Review views like every other family.
+- Keep everything in portable packages: the default `local` package holds your own resources, and additional packages can be dropped in (or deactivated) as a unit.
 - Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
 
 ## Product tour
@@ -62,23 +61,6 @@ Typical flow:
 4. Update, remove, or delete it from one place.
 
 ![skill-market-skill-matrxi](./assets/skill-manager-skill-matrix.png)
-
-### Skill scanning
-
-Scan Skills with an LLM-backed security review before you rely on them.
-
-Typical flow:
-
-1. Add and validate an LLM scan configuration.
-2. Switch Skills in use to the Scan view.
-3. Run a scan for one Skill, selected Skills, or the full visible list.
-4. Review severity, findings, snippets, and remediation guidance.
-
-![skill-manager-scan-view](./assets/skill-manager-scan-view.svg)
-
-Scan configurations are managed separately so you can save multiple providers, choose one active configuration, and keep API keys masked in list views.
-
-![skill-manager-scan-config](./assets/skill-manager-scan-config.svg)
 
 ### MCP servers
 
@@ -105,6 +87,16 @@ Typical flow:
 4. Review existing harness command files and adopt them into the shared library when needed.
 
 ![skill-market-slash-commands-matrix](./assets/skill-manager-slash_commands-matrix.png)
+
+### Agents
+
+Subagents you keep in one place instead of copy-pasting between harnesses.
+
+Typical flow:
+
+1. Write an agent — a name, a description, and a system prompt — or adopt one Skill Manager found in a harness.
+2. Turn it on for the harnesses that should have it.
+3. Review agents discovered in harness directories and adopt the ones worth keeping.
 
 ### Marketplace
 
@@ -141,14 +133,19 @@ Native release artifacts are published on GitHub Releases for macOS ARM64/x64 an
 <table align="center">
   <tr>
     <td align="center" valign="middle">
+      <img src="assets/harness-logos/claude-code-logo.svg" alt="Claude Code" height="56" /><br />
+      <strong>Claude Code</strong><br />
+      <a href="https://code.claude.com/docs/en/overview">Docs</a>
+    </td>
+    <td align="center" valign="middle">
       <img src="assets/harness-logos/codex-logo.svg" alt="Codex CLI" height="56" /><br />
       <strong>Codex CLI</strong><br />
       <a href="https://developers.openai.com/codex/cli">Docs</a>
     </td>
     <td align="center" valign="middle">
-      <img src="assets/harness-logos/claude-code-logo.svg" alt="Claude Code" height="56" /><br />
-      <strong>Claude Code</strong><br />
-      <a href="https://code.claude.com/docs/en/overview">Docs</a>
+      <img src="assets/harness-logos/agy-logo.svg" alt="Antigravity CLI" height="56" /><br />
+      <strong>Antigravity (agy)</strong><br />
+      <a href="https://antigravity.google">Docs</a>
     </td>
     <td align="center" valign="middle">
       <img src="assets/harness-logos/cursor-logo.svg" alt="Cursor" height="56" /><br />
@@ -161,7 +158,7 @@ Native release artifacts are published on GitHub Releases for macOS ARM64/x64 an
       <a href="https://opencode.ai/docs">Docs</a>
     </td>
     <td align="center" valign="middle">
-      <img src="assets/harness-logos/hermes-logo.png" alt="Hermes Agent" height="56" /><br />
+      <img src="assets/harness-logos/hermes-logo.svg" alt="Hermes Agent" height="56" /><br />
       <strong>Hermes Agent</strong><br />
       <a href="https://hermes-agent.nousresearch.com/docs">Docs</a>
     </td>
@@ -173,14 +170,23 @@ Native release artifacts are published on GitHub Releases for macOS ARM64/x64 an
   </tr>
 </table>
 
-| Harness | Skills | MCP servers | Slash commands |
-|---|---:|---:|---:|
-| Codex CLI | Yes | Yes | Yes |
-| Claude Code | Yes | Yes | Yes |
-| Cursor | Yes | Yes | Yes |
-| OpenCode | Yes | Yes | Yes |
-| Hermes Agent | Yes | Yes | Not Yet |
-| OpenClaw | Yes | Not Yet | Not Yet |
+Harnesses appear in this order everywhere in the app — Settings, and every resource
+matrix. The order is declared once, in `SUPPORTED_HARNESS_DEFINITIONS`
+(`skill_manager/harness/catalog.py`); every family derives its columns from it, so there
+is no per-page ordering to keep in sync. A harness switched off in Settings is dropped
+from every matrix rather than shown as an inert column.
+
+| Harness | Skills | MCP servers | Slash commands | Hooks |
+|---|---:|---:|---:|---:|
+| Codex CLI | Yes | Yes | Yes | Yes |
+| Claude Code | Yes | Yes | Yes | Yes |
+| Cursor | Yes | Yes | Yes | Yes |
+| OpenCode | Yes | Yes | Yes | Partial |
+| Hermes Agent | Yes | Yes | Yes* | Not Yet |
+| OpenClaw | Yes | Not Yet | Not Yet | Not Yet |
+| Antigravity (agy) | Yes | Yes | Not Yet | Partial |
+
+<sub>\* Hermes Agent slash-command support is provisional. Its slash-command directory (`~/.hermes/commands`, frontmatter Markdown) follows common conventions but is **not yet verified against a shipping Hermes build**; hooks are not yet mapped. See `handoff.md`.</sub>
 
 ## Local-first safety
 
@@ -192,17 +198,24 @@ Actions that can change local state include:
 - enabling or disabling a skill for a harness
 - updating a source-backed skill
 - removing or deleting a skill
-- creating, updating, validating, activating, or deleting an LLM scan configuration
-- running a Skill scan, which sends selected Skill context to the configured LLM provider
 - installing an MCP server into a selected harness config
 - adopting an existing MCP config
 - enabling, disabling, resolving, or uninstalling an MCP server
 - creating, updating, syncing, importing, or deleting a slash command
+- creating, enabling, disabling, resolving, or deleting a hook binding
 - changing harness support settings
 
-App-owned files live under `~/Library/Application Support/skill-manager` on macOS and XDG base directories on Linux.
+App-owned files live under `~/.skill-manager` on macOS (with a legacy fallback to `~/Library/Application Support/skill-manager` if it already exists) and XDG base directories on Linux.
 
 ## How it works
+
+### Packages
+
+All Skill Manager resources live inside packages under the app's `packages/` directory. Each package carries a `package.json` (`slug`, `name`, `version`, `mutable`, `active`) plus per-family content (`skills/`, `agents/`, and a skills `manifest.json`). There is always a default `local` package — the mutable workspace where your own resources live. Additional packages are just directories: drop one in to install it, set `active: false` to disable it, and mark it `mutable: false` to protect shared content from accidental edits (the API rejects writes into immutable packages).
+
+Resource identity stays stable (content-derived refs), while `<package>/<resource>` aliases give human-readable references; agent compilation resolves aliases and pins them. If two packages provide the same resource, the `local` package wins and the collision is reported as an inventory issue.
+
+On first start after upgrading, the legacy shared store (`shared/` + top-level `manifest.json`) is migrated one-time into `packages/local/` — the migration is locked, idempotent, and skipped when the new layout already exists.
 
 ### Skills
 
@@ -214,14 +227,6 @@ Hermes Agent Skills use the categorized Hermes layout under `~/.hermes/skills/<c
 
 ![skill-market-overview](./assets/skill-manager-skill-unification.svg)
 
-### Skill scans
-
-Skill scans build a bounded prompt context from `SKILL.md`, manifest metadata, script and config files, and files referenced by the Skill instructions. Secret-bearing files such as `.env`, private keys, certificates, and credential files are excluded from the prompt context, and large files are skipped when they exceed scanner limits.
-
-The scanner uses the active saved LLM configuration first. If none is active, it can fall back to supported environment variables such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `AZURE_OPENAI_API_KEY`, `AWS_BEDROCK_MODEL`, or `OLLAMA_HOST`.
-
-Scan reports show whether the Skill is safe, the maximum severity, findings, locations, snippets, and remediation text. The frontend caches completed reports in browser local storage so recent results remain visible after navigation.
-
 ### MCP servers
 
 MCP servers are stored as normalized Skill Manager records, then translated into the config shape each harness expects:
@@ -229,6 +234,7 @@ MCP servers are stored as normalized Skill Manager records, then translated into
 - Codex uses TOML under `mcp_servers`.
 - Claude Code and Cursor use `mcpServers` JSON entries.
 - OpenCode uses typed local/remote MCP entries.
+- Antigravity (agy) uses `mcpServers` JSON entries with `serverUrl` for HTTP transports and `command`/`args`/`env` for stdio.
 - Hermes Agent uses YAML under `mcp_servers` in `~/.hermes/config.yaml` (or `$HERMES_HOME/config.yaml`).
 - OpenClaw MCP writes are not yet supported.
 
@@ -240,14 +246,53 @@ When Skill Manager finds different configs for the same MCP server, it asks you 
 
 Slash commands are stored as TOML records under Skill Manager app storage, then rendered into each supported harness format:
 
-- OpenCode writes Markdown command files under `~/.config/opencode/commands` and invokes them with `/`.
 - Claude Code writes Markdown command files under `~/.claude/commands` and invokes them with `/`.
-- Cursor writes plain text command files under `~/.cursor/commands` and invokes them with `/`.
 - Codex writes prompt files under `~/.codex/prompts` and invokes them with `/prompts:`.
-- Hermes Agent slash command writes are not yet supported; reusable Hermes workflows are managed through Skills.
-- OpenClaw slash command writes are not yet supported.
+- Cursor writes plain text command files under `~/.cursor/commands` and invokes them with `/`.
+- OpenCode writes Markdown command files under `~/.config/opencode/commands` and invokes them with `/`.
+- Hermes Agent writes Markdown command files under `~/.hermes/commands` and invokes them with `/` (provisional).
+- OpenClaw and Antigravity (agy) slash command writes are not yet supported.
+
+Disabling a harness in Settings removes its column here immediately, without a restart.
+Command files already written to that harness and their sync records are left alone —
+re-enabling it restores the column and its sync state unchanged.
 
 Skill Manager tracks target ownership with sync state and content hashes. It will not overwrite an untracked command file automatically, and it reports managed files as changed or missing when the target no longer matches the last synced hash. Review actions let you adopt unmanaged commands, restore managed content, adopt a changed harness command as the new source, or remove a broken binding while leaving the harness file untouched.
+
+### Hooks
+
+Hooks are stored as normalized Skill Manager records using **canonical events** (`pre_tool_use`, `post_tool_use`, `user_prompt_submit`, `session_start`, `stop`, `pre_compact`) and **canonical tool categories** (`shell`, `file_read`, `file_write`, `mcp`, `web`, `any`). Each harness codec translates a canonical record into that harness's native event names and config shape, and merges it into the harness's hook config:
+
+- Claude Code writes hook entries into `~/.claude/settings.json` under the `hooks` key.
+- Codex writes inline `[hooks]` tables into `~/.codex/config.toml` (same event schema as Claude).
+- Cursor writes `~/.cursor/hooks.json`, expressing each tool category as its dedicated event (`beforeShellExecution`, `afterFileEdit`, `beforeMCPExecution`, and so on).
+- OpenCode writes `experimental.hook` entries in `opencode.json` — limited to `file_edited` (post-edit on write) and `session_completed` (stop), so coverage is partial.
+- Antigravity (agy) writes a name-keyed `~/.gemini/config/hooks.json`, matching against its own tool names (`run_command`, `view_file`, …); it covers tool, stop, and (via `PreInvocation`) prompt-submit hooks, so coverage is partial.
+
+Because harnesses differ, not every canonical event maps to every harness. Skill Manager exposes a **representability matrix** showing where each hook can sync and where it cannot, including caveats — for example, an Antigravity `user_prompt_submit` hook maps to `PreInvocation`, which fires before every model invocation rather than only on prompt submit.
+
+Skill Manager owns only the specific hook entries it writes. It merges into each harness's config without disturbing hooks or other keys it does not manage, and it tracks ownership with content hashes. When a managed hook is edited outside Skill Manager it is reported as drifted, and hooks found in a harness that Skill Manager does not manage are reported as unmanaged for review.
+
+### Agents
+
+Agents are Markdown files with YAML frontmatter and the system prompt as the body. They live in Skill Manager's store; enabling one for a harness symlinks it into that harness's agents directory, so editing the agent once updates it everywhere it is enabled.
+
+Skill Manager reads `name`, `description`, and `tools`, and **leaves every other frontmatter key alone**. Harness agents routinely carry settings we have no business interpreting — Claude's `model`, `permissionMode`, `maxTurns`, `hooks`; Cursor's `readonly` and `is_background`; Codex's `sandbox_mode` — so an edit merges into the original frontmatter rather than re-rendering it, and unrecognized keys survive untouched. The detail view lists them verbatim under **Configuration**, which means a new harness field shows up without any code change here. The only keys dropped on write are `capabilities:` and `harnesses:` from the retired compile model, which nothing reads.
+
+The agents matrix shows the same harnesses as every other family — whichever you have enabled in Settings:
+
+| Harness | Location | How it is installed |
+|---|---|---|
+| Claude Code | `~/.claude/agents/` | symlink |
+| Cursor | `~/.cursor/agents/` | symlink |
+| Antigravity | `~/.gemini/antigravity-cli/agents/` | symlink |
+| OpenCode | `$XDG_CONFIG_HOME/opencode/agents/` | symlink |
+| Codex | `~/.codex/agents/` | rendered TOML |
+| Hermes | — | not installable |
+
+Most harnesses read the same Markdown format the store holds, so enabling one symlinks the store file into place — edit the agent once and every harness it is enabled for follows. **Codex** is the exception: it reads TOML with different keys (`name`, `description`, `developer_instructions`), so Skill Manager renders a real file marked `# skill-manager:generated`. Rendered files carry no drift detection — re-enabling overwrites local edits to them. **Hermes** keeps a column for consistency but spawns subagents dynamically and has no agent-definition file to install into, so its cells say so rather than offering a toggle that cannot work.
+
+Skill Manager only ever removes files it owns — a symlink into its store, or a file carrying its generated marker. Anything else in a harness's agents directory is reported as **unmanaged** for review, never overwritten. Adopting one moves it into the store (converting Codex TOML to Markdown) and installs it back. If the name is already taken in the store, Skill Manager refuses to guess and asks which version to keep.
 
 ### CLIs
 
@@ -255,26 +300,31 @@ CLI marketplace entries are preview-only.
 
 ## Configuration
 
-On macOS, app-owned files live under `~/Library/Application Support/skill-manager`. On Linux, app-owned files use XDG base directories.
+On macOS, app-owned files live under `~/.skill-manager` (with a legacy fallback to `~/Library/Application Support/skill-manager` if it already exists). On Linux, app-owned files use XDG base directories.
 
 Useful macOS paths:
 
-- shared skills store: `~/Library/Application Support/skill-manager/shared`
-- MCP manifest: `~/Library/Application Support/skill-manager/mcp/manifest.json`
-- slash command library: `~/Library/Application Support/skill-manager/slash-commands/commands`
-- slash command sync state: `~/Library/Application Support/skill-manager/slash-commands/sync-state.json`
-- marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
-- app database and LLM scan configs: `~/Library/Application Support/skill-manager/skill-manager.db`
-- app settings: `~/Library/Application Support/skill-manager/settings.json`
+- packages root: `~/.skill-manager/packages` (default package: `packages/local`)
+- shared skills store: `~/.skill-manager/packages/local/skills` (migrated from the legacy `~/.skill-manager/shared` on first start)
+- agents: `~/.skill-manager/packages/<package>/agents`
+- MCP manifest: `~/.skill-manager/mcp/manifest.json`
+- hooks manifest: `~/.skill-manager/hooks/manifest.json`
+- slash command library: `~/.skill-manager/slash-commands/commands`
+- slash command sync state: `~/.skill-manager/slash-commands/sync-state.json`
+- marketplace cache: `~/.skill-manager/marketplace`
+- app database: `~/.skill-manager/skill-manager.db`
+- app settings: `~/.skill-manager/settings.json`
 
 Useful Linux paths:
 
-- shared skills store: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/shared`
+- packages root: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/packages`
+- shared skills store: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/packages/local/skills`
+- agents: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/packages/<package>/agents`
 - MCP manifest: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/mcp/manifest.json`
+- hooks manifest: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/hooks/manifest.json`
 - slash command library: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/commands`
 - slash command sync state: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/slash-commands/sync-state.json`
 - marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
-- app database and LLM scan configs: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - app settings: `${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
 
 Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual skill roots with environment variables.
@@ -287,6 +337,7 @@ Most users do not need to change these locations. If you manage skills in a cust
 | OpenCode | `SKILL_MANAGER_OPENCODE_ROOT` | `~/.config/opencode/skills` |
 | Hermes Agent | `SKILL_MANAGER_HERMES_ROOT` | `${HERMES_HOME:-~/.hermes}/skills` |
 | OpenClaw | `n/a` | `~/.openclaw/skills` |
+| Antigravity (agy) | `SKILL_MANAGER_AGY_ROOT` | `~/.gemini/antigravity-cli/skills` |
 
 MCP config locations are harness-owned. Skill Manager writes only to verified config paths and skips unsupported harness writes. Hermes Agent config discovery honors `SKILL_MANAGER_HERMES_HOME` first, then `HERMES_HOME`, then `~/.hermes`.
 
@@ -331,6 +382,15 @@ Default local URLs:
 - Backend: `http://127.0.0.1:8000`
 - Health: `http://127.0.0.1:8000/api/health`
 
+The server binds to loopback only, and it rejects requests with a non-loopback `Host` header
+(DNS-rebinding protection) and mutations with a non-loopback `Origin` header (CSRF protection).
+Binding a non-loopback address requires an explicit opt-in, and is discouraged because the API
+has no authentication:
+
+```bash
+skill-manager serve --host 0.0.0.0 --allow-remote
+```
+
 Validation:
 
 ```bash
@@ -351,8 +411,10 @@ npm run build
 
 ### Extension families
 
-- [ ] Hook support
+- [x] Hook support
 - [x] Slash command support
+- [x] Agent personas
+- [x] Package-based storage (portable resource bundles)
 - [ ] Plugin support
 
 ### Harness expansion

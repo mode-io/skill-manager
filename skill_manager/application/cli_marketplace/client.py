@@ -8,6 +8,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urljoin
 from urllib.request import Request, urlopen
 
+from skill_manager import __version__
 from skill_manager.application.marketplace_http import (
     configured_marketplace_ca_file,
     marketplace_ssl_context,
@@ -17,7 +18,7 @@ from skill_manager.errors import MarketplaceUpstreamError
 DEFAULT_CLIS_DEV_BASE_URL = "https://clis.dev"
 CLIS_DEV_BASE_URL_ENV = "SKILL_MANAGER_CLIS_DEV_BASE_URL"
 _TIMEOUT_SECONDS = 15
-_USER_AGENT = "skill-manager/0.1"
+_USER_AGENT = f"skill-manager/{__version__}"
 
 
 def configured_clis_dev_base_url(env: dict[str, str] | None = None) -> str:

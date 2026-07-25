@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Plus, X } from "lucide-react";
 
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { FilterBar } from "../../../components/FilterBar";
@@ -10,7 +11,8 @@ import {
   McpConfigChoiceDialog,
   type McpConfigChoiceOption,
 } from "../components/edit/McpConfigChoiceDialog";
-import { McpNeedsReviewServerList } from "../components/McpNeedsReviewServerList";
+import { MatrixTable } from "../../../components/matrix";
+import { McpNeedsReviewMatrixView } from "../components/McpNeedsReviewMatrixView";
 import { useCommonCopy } from "../../../i18n";
 import type { McpIdentityGroupDto } from "../api/management-types";
 import { useMcpCopy } from "../i18n";
@@ -44,6 +46,53 @@ export default function McpNeedsReviewPage() {
   const identicalCount = useMemo(() => filtered.filter((g) => g.identical).length, [filtered]);
   const totalServers = groups.length;
   const isReady = !isNeedsReviewByServerLoading && Boolean(needsReviewByServer);
+
+  const [selectedNames, setSelectedNames] = useState<ReadonlySet<string>>(() => new Set());
+  const [adoptingSelected, setAdoptingSelected] = useState(false);
+
+  useEffect(() => {
+    setSelectedNames((current) => {
+      let changed = false;
+      const next = new Set<string>();
+      const adoptableNames = new Set(filtered.filter(g => g.identical).map(g => g.name));
+      for (const name of current) {
+        if (adoptableNames.has(name)) next.add(name);
+        else changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, [filtered]);
+
+  const toggleSelected = (name: string) => {
+    setSelectedNames((current) => {
+      const next = new Set(current);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const clearSelected = () => setSelectedNames(new Set());
+
+  const handleAdoptSelected = async () => {
+    const names = filtered.filter(g => selectedNames.has(g.name) && g.identical).map(g => g.name);
+    if (names.length === 0) return;
+    setAdoptingSelected(true);
+    try {
+      for (const name of names) {
+        try {
+          await handleAdoptConfig(name);
+        } catch {
+        }
+      }
+      setSelectedNames(new Set());
+    } finally {
+      setAdoptingSelected(false);
+    }
+  };
+
+  const selectedCount = selectedNames.size;
+
   const isAdoptPending = useCallback(
     (name: string) =>
       pendingAdoptKeys.has(name) ||
@@ -116,12 +165,15 @@ export default function McpNeedsReviewPage() {
         </div>
       ) : isReady ? (
         filtered.length > 0 ? (
-          <McpNeedsReviewServerList
+          <McpNeedsReviewMatrixView
             groups={filtered}
+            harnesses={needsReviewByServer?.harnesses ?? []}
             pendingNames={pendingAdoptKeys}
             onOpenDetail={setDetailName}
             onAdoptIdentical={(name) => void handleAdoptConfig(name)}
             onChooseConfigToAdopt={setChooseConfigName}
+            selectedNames={selectedNames}
+            onToggleSelected={toggleSelected}
           />
         ) : totalServers > 0 ? (
           <div className="empty-panel">
@@ -191,6 +243,47 @@ export default function McpNeedsReviewPage() {
             setChooseConfigName(null);
           }}
         />
+      ) : null}
+
+      {selectedCount > 0 ? (
+        <div className="bulk-dock">
+          <div className="bulk-dock__fade" />
+          <div
+            className="bulk-bar"
+            data-state="open"
+            role="toolbar"
+            aria-label={common.bulk.ariaLabel}
+          >
+            <div className="bulk-bar__group">
+              <span className="bulk-bar__count">{common.bulk.selected(selectedCount)}</span>
+              <button
+                type="button"
+                className="bulk-bar__clear"
+                onClick={clearSelected}
+                disabled={adoptingSelected}
+                aria-label={common.actions.clearSelection}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <span className="bulk-bar__divider" aria-hidden="true" />
+
+            <button
+              type="button"
+              className="bulk-bar__action"
+              onClick={() => void handleAdoptSelected()}
+              disabled={adoptingSelected}
+            >
+              {adoptingSelected ? (
+                <LoadingSpinner size="sm" label={copy.review.adoptingSelected || "Adopting selected servers..."} />
+              ) : (
+                <Plus size={15} />
+              )}
+              {copy.review.adoptSelected || "Adopt selected"}
+            </button>
+          </div>
+        </div>
       ) : null}
     </>
   );

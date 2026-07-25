@@ -19,8 +19,14 @@ from skill_manager.application.slash_commands import (
     migrate_legacy_slash_commands,
     resolve_slash_targets,
 )
-from skill_manager.application.slash_commands.codecs import parse_slash_command_document, render_slash_command
-from skill_manager.application.slash_commands.sync_state import SlashCommandSyncRecord, hash_file
+from skill_manager.application.slash_commands.codecs import (
+    parse_slash_command_document,
+    render_slash_command,
+)
+from skill_manager.application.slash_commands.sync_state import (
+    SlashCommandSyncRecord,
+    hash_file,
+)
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
 from skill_manager.harness.resolution import resolve_context
@@ -36,7 +42,7 @@ def _services(home: Path, root: Path):
     store = SlashCommandStore(SlashCommandStorePaths(root=root / "app" / "slash-commands", commands_dir=root / "app" / "slash-commands" / "commands"))
     sync_state = SlashCommandSyncStateStore(root / "app" / "slash-commands" / "sync-state.json")
     path_policy = SlashCommandPathPolicy()
-    read_models = SlashCommandReadModelService(store, sync_state, targets, path_policy)
+    read_models = SlashCommandReadModelService(store, sync_state, lambda: resolve_slash_targets(kernel), path_policy)
     queries = SlashCommandQueryService(read_models)
     mutations = SlashCommandMutationService(
         store,
@@ -44,7 +50,7 @@ def _services(home: Path, root: Path):
         queries,
         read_models,
         SlashCommandPlanner(path_policy),
-        targets,
+        lambda: resolve_slash_targets(kernel),
     )
     return kernel, targets, store, sync_state, queries, mutations
 
@@ -136,7 +142,7 @@ class SlashCommandStoreTests(unittest.TestCase):
 
             defaults = {target.id for target in targets if target.default_selected}
             self.assertEqual(defaults, {"claude", "codex"})
-            self.assertEqual(set(kernel.enabled_harness_ids_for_family("slash_commands")), {"opencode", "claude", "cursor", "codex"})
+            self.assertEqual(set(kernel.enabled_harness_ids_for_family("slash_commands")), {"opencode", "claude", "cursor", "codex", "hermes"})
 
     def test_disabled_harness_is_excluded_from_target_actions(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -149,9 +155,9 @@ class SlashCommandStoreTests(unittest.TestCase):
             )
 
             targets = resolve_slash_targets(kernel)
-            codex = next(target for target in targets if target.id == "codex")
+            codex_ids = [target.id for target in targets if target.id == "codex"]
 
-            self.assertFalse(codex.enabled)
+            self.assertEqual(codex_ids, [])
 
     def test_sync_refuses_to_overwrite_untracked_manual_file(self) -> None:
         with TemporaryDirectory() as tmp:

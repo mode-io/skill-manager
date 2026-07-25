@@ -15,11 +15,14 @@ import {
   Command,
   Languages,
   LayoutDashboard,
+  Moon,
   RefreshCw,
   Settings,
   Store,
   SunMedium,
   Terminal,
+  Webhook,
+  Bot,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
@@ -27,6 +30,7 @@ import { useSidebarModel, type SidebarIconKey } from "../app/capability-registry
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useToast } from "./Toast";
 import { useCommonCopy, useLocale } from "../i18n";
+import { useTheme } from "../lib/theme";
 
 interface SidebarProps {
   onRefresh: () => void | Promise<void>;
@@ -37,6 +41,7 @@ export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
   const model = useSidebarModel();
   const { toast } = useToast();
   const common = useCommonCopy();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="sidebar ui-scrollbar--thin" aria-label={common.nav.primary}>
@@ -52,7 +57,7 @@ export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
             key={link.key}
             to={link.to}
             label={link.label}
-            icon={<LayoutDashboard size={16} />}
+            icon={sidebarIcon(link.iconKey)}
           />
         ))}
 
@@ -89,10 +94,11 @@ export function Sidebar({ onRefresh, refreshPending }: SidebarProps) {
         <button
           type="button"
           className="sidebar-footer-btn"
-          onClick={() => toast(common.nav.lightComingSoon)}
+          onClick={toggleTheme}
+          aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
         >
-          <SunMedium size={16} />
-          <span>{common.nav.light}</span>
+          {theme === "light" ? <Moon size={16} /> : <SunMedium size={16} />}
+          <span>{theme === "light" ? common.nav.dark : common.nav.light}</span>
         </button>
         <SidebarLanguageMenu />
         <NavLink
@@ -170,7 +176,9 @@ function sidebarIcon(iconKey: SidebarIconKey): ReactNode {
   if (iconKey === "skills") return <BookOpen size={16} />;
   if (iconKey === "slash-commands") return <Command size={16} />;
   if (iconKey === "mcp") return <Terminal size={16} />;
+  if (iconKey === "hooks") return <Webhook size={16} />;
   if (iconKey === "marketplace") return <Store size={16} />;
+  if (iconKey === "agents") return <Bot size={16} />;
   return <LayoutDashboard size={16} />;
 }
 

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { SlashCommandDto, SlashCommandReviewDto, SlashTargetId } from "../api/types";
 import {
-  bucketSlashCommands,
   countSyncedTargets,
   filterSlashCommands,
   filterSlashReviewRows,
@@ -18,16 +17,11 @@ describe("slash command selectors", () => {
     command("enabled-command", ["claude", "codex"]),
   ];
 
-  it("filters, buckets, and counts coverage", () => {
+  it("filters and counts coverage", () => {
     expect(filterSlashCommands(commands, "selective").map((item) => item.name)).toEqual([
       "selective-command",
     ]);
     expect(countSyncedTargets(commands[2])).toBe(2);
-    expect(bucketSlashCommands(commands, 2)).toMatchObject({
-      disabled: [{ name: "disabled-command" }],
-      selective: [{ name: "selective-command" }],
-      enabled: [{ name: "enabled-command" }],
-    });
   });
 
   it("sorts by coverage and target columns", () => {

@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from skill_manager.sources import GitHubSource, github_folder_url as build_github_folder_url
-from .repo_snapshots import GitHubRepoSnapshotService
+from skill_manager.sources import GitHubSource
+from skill_manager.sources import github_folder_url as build_github_folder_url
 
 from .models import RepoDisplayMetadata
+from .repo_snapshots import GitHubRepoSnapshotService
 
 
 @dataclass(frozen=True)

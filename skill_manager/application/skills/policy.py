@@ -4,7 +4,6 @@ from typing import Literal
 
 from .inventory import InventoryEntry
 
-
 DisplayStatus = Literal["Managed", "Unmanaged"]
 HarnessCellState = Literal["enabled", "disabled", "found", "empty"]
 StopManagingStatus = Literal["available", "disabled_no_enabled"]

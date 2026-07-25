@@ -12,7 +12,6 @@ from skill_manager.errors import MutationError
 
 from .models import SlashCommand
 
-
 COMMAND_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 

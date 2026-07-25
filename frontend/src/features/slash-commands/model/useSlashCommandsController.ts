@@ -11,11 +11,9 @@ import {
 } from "../api/queries";
 import type { SlashCommandDto, SlashTargetDto, SlashTargetId } from "../api/types";
 import {
-  bucketSlashCommands,
   filterSlashCommands,
   syncedTargetIds,
 } from "./selectors";
-import { useSlashCommandsViewMode } from "./useSlashCommandsViewMode";
 
 export function useSlashCommandsController() {
   const query = useSlashCommandsQuery();
@@ -35,7 +33,6 @@ export function useSlashCommandsController() {
   const [deleteCommand, setDeleteCommand] = useState<SlashCommandDto | null>(null);
   const [selectedCommandName, setSelectedCommandName] = useState<string | null>(null);
   const [savedCommandSnapshot, setSavedCommandSnapshot] = useState<SlashCommandDto | null>(null);
-  const [viewMode, setViewMode] = useSlashCommandsViewMode();
 
   const data = query.data;
   const listSelectedCommand = useMemo(
@@ -53,11 +50,6 @@ export function useSlashCommandsController() {
     () => filterSlashCommands(data?.commands ?? [], search),
     [data?.commands, search],
   );
-  const buckets = useMemo(
-    () => bucketSlashCommands(commands, data?.targets.length ?? 0),
-    [commands, data?.targets.length],
-  );
-
   const pendingName = syncMutation.isPending
     ? syncMutation.variables?.name ?? null
     : updateMutation.isPending
@@ -165,33 +157,6 @@ export function useSlashCommandsController() {
     }
   }
 
-  async function handleSetAllTargets(
-    command: SlashCommandDto,
-    target: "enabled" | "disabled",
-  ): Promise<void> {
-    if (!data) return;
-    setActionError("");
-    setPendingTargetKey(`${command.name}:all`);
-    try {
-      const targets = target === "enabled" ? data.targets.filter((item) => item.enabled).map((item) => item.id) : [];
-      const result = await syncMutation.mutateAsync({
-        name: command.name,
-        body: { targets },
-      });
-      toast(
-        result.ok
-          ? target === "enabled"
-            ? "Slash command enabled"
-            : "Slash command disabled"
-          : "Sync finished with warnings",
-      );
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Unable to update slash command.");
-    } finally {
-      setPendingTargetKey(null);
-    }
-  }
-
   function handleToggleChecked(name: string): void {
     setCheckedNames((current) => {
       const next = new Set(current);
@@ -290,7 +255,6 @@ export function useSlashCommandsController() {
 
   return {
     actionError,
-    buckets,
     bulkPending,
     checkedNames,
     commands,
@@ -310,13 +274,10 @@ export function useSlashCommandsController() {
     setDeleteCommand,
     setFormMode,
     setSearch,
-    viewMode,
-    setViewMode,
     executeDeleteCommand,
     handleBulkDelete,
     handleBulkDisableAll,
     handleBulkEnableAll,
-    handleSetAllTargets,
     handleSubmit,
     handleToggleChecked,
     handleToggleTarget,

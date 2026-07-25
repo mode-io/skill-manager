@@ -163,7 +163,7 @@ describe("McpInUsePage", () => {
     );
   });
 
-  it("renders cards for each server in use with the X/N count", async () => {
+  it("renders the matrix for each server in use", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
@@ -172,83 +172,24 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    expect(screen.getByLabelText("MCP servers list")).toBeInTheDocument();
-    expect(screen.queryByRole("table", { name: "MCP server harness matrix" })).not.toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "MCP server harness matrix" })).toBeInTheDocument();
     expect(screen.getByText("Context7")).toBeInTheDocument();
-    expect(screen.getByText("1/3")).toBeInTheDocument();
-    expect(screen.getByText("0/3")).toBeInTheDocument();
-    expect(screen.getByLabelText("MCP status: Available")).toBeInTheDocument();
-    expect(screen.getByLabelText("MCP status: Unchecked")).toBeInTheDocument();
+    expect(screen.getByLabelText("Enabled on 1 of 3 writable harnesses")).toBeInTheDocument();
+    expect(screen.getByLabelText("Enabled on 0 of 3 writable harnesses")).toBeInTheDocument();
   });
 
-  it("renders all public MCP status labels", async () => {
-    const inventory = inventoryFixture();
-    inventory.entries = [
-      inventory.entries[0],
-      inventory.entries[1],
-      {
-        ...inventory.entries[1],
-        name: "needs-config",
-        displayName: "Needs Config",
-        mcpStatus: { kind: "needs_config", reason: null },
-        installConfigStatus: {
-          hasFields: true,
-          missingRequired: ["API_KEY"],
-          configured: false,
-        },
-      },
-      {
-        ...inventory.entries[1],
-        name: "failed",
-        displayName: "Failed MCP",
-        availabilityReason: "Connection refused",
-        mcpStatus: { kind: "connection_issue", reason: "Connection refused" },
-      },
-    ];
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers")) return okJson(inventory);
-      throw new Error(`Unhandled URL ${url}`);
-    });
-
-    renderPage();
-    await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-
-    expect(screen.getByLabelText("MCP status: Available")).toBeInTheDocument();
-    expect(screen.getByLabelText("MCP status: Unchecked")).toBeInTheDocument();
-    expect(screen.getByLabelText("MCP status: Needs config")).toBeInTheDocument();
-    expect(screen.getByLabelText("MCP status: Connection issue")).toBeInTheDocument();
-  });
-
-  it("renders the matrix view from the URL parameter", async () => {
+  it("renders the matrix view", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
       throw new Error(`Unhandled URL ${url}`);
     });
 
-    renderPage("/mcp/use?view=matrix");
+    renderPage();
     await waitFor(() =>
       expect(screen.getByRole("table", { name: "MCP server harness matrix" })).toBeInTheDocument(),
     );
-    expect(screen.queryByLabelText("MCP servers list")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Enabled on 1 of 3 writable harnesses")).toBeInTheDocument();
-  });
-
-  it("switches between cards and matrix views", async () => {
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
-      throw new Error(`Unhandled URL ${url}`);
-    });
-
-    renderPage();
-    await waitFor(() => expect(screen.getByLabelText("MCP servers list")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: "Matrix" }));
-    expect(await screen.findByRole("table", { name: "MCP server harness matrix" })).toBeInTheDocument();
-    expect(window.localStorage.getItem("skillmgr.mcp.inUse.view")).toBe("matrix");
-    fireEvent.click(screen.getByRole("button", { name: "Cards" }));
-    expect(await screen.findByLabelText("MCP servers list")).toBeInTheDocument();
   });
 
   it("filters servers by search input", async () => {
@@ -308,27 +249,6 @@ describe("McpInUsePage", () => {
     expect(screen.getByRole("button", { name: /uninstall 1 selected/i })).toBeInTheDocument();
   });
 
-  it("opens a confirm dialog when uninstall is selected from the card menu", async () => {
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers")) return okJson(inventoryFixture());
-      throw new Error(`Unhandled URL ${url}`);
-    });
-
-    renderPage();
-    await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    const menu = screen.getByRole("button", { name: /more actions for exa search/i });
-    fireEvent.click(menu);
-    const uninstall = await screen.findByRole("button", { name: /^uninstall$/i });
-    fireEvent.click(uninstall);
-    await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /uninstall exa search\?/i })).toBeInTheDocument(),
-    );
-    expect(screen.queryByText(/confirm uninstall/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/drifted harness entries are preserved/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/delete its bindings from all harnesses where it is currently present/i)).toBeInTheDocument();
-  });
-
   it("uses the shared confirm dialog for bulk uninstall", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
@@ -349,12 +269,12 @@ describe("McpInUsePage", () => {
     expect(screen.getByText(/delete its bindings from all harnesses where it is currently present/i)).toBeInTheDocument();
   });
 
-  it("calls set-harnesses when the power button is pressed", async () => {
+  it("calls enable when a harness cell is toggled", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers/exa/set-harnesses")) {
+      if (url.includes("/api/mcp/servers/exa/enable")) {
         expect(init?.method).toBe("POST");
-        return okJson({ ok: true, succeeded: ["codex"], failed: [] });
+        return okJson({ ok: true });
       }
       if (url.includes("/api/mcp/servers/exa/availability/check")) {
         expect(init?.method).toBe("POST");
@@ -374,12 +294,11 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    const enableButtons = screen.getAllByLabelText(/enable on all harnesses/i);
-    fireEvent.click(enableButtons[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Enable Exa Search on Claude" }));
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some((call) =>
-          String(call[0]).includes("/api/mcp/servers/exa/set-harnesses"),
+          String(call[0]).includes("/api/mcp/servers/exa/enable"),
         ),
       ).toBe(true),
     );
@@ -545,13 +464,13 @@ describe("McpInUsePage", () => {
     );
   });
 
-  it("uses set-harnesses when no install config is required", async () => {
+  it("uses enable when no install config is required", async () => {
     const inventory = inventoryFixture();
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers/exa/set-harnesses")) {
+      if (url.includes("/api/mcp/servers/exa/enable")) {
         expect(init?.method).toBe("POST");
-        return okJson({ ok: true, succeeded: ["cursor"], failed: [] });
+        return okJson({ ok: true });
       }
       if (url.includes("/api/marketplace/mcp/items/exa")) {
         return okJson(marketplaceDetailFixture());
@@ -562,12 +481,12 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByLabelText(/enable on all harnesses/i)[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Enable Exa Search on Claude" }));
 
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some((call) =>
-          String(call[0]).includes("/api/mcp/servers/exa/set-harnesses"),
+          String(call[0]).includes("/api/mcp/servers/exa/enable"),
         ),
       ).toBe(true),
     );
@@ -585,9 +504,9 @@ describe("McpInUsePage", () => {
     };
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers/exa/set-harnesses")) {
+      if (url.includes("/api/mcp/servers/exa/enable")) {
         expect(init?.method).toBe("POST");
-        return okJson({ ok: true, succeeded: ["cursor"], failed: [] });
+        return okJson({ ok: true });
       }
       if (url.includes("/api/marketplace/mcp/items/exa")) {
         throw new Error("registry detail should not be loaded for optional-only fields");
@@ -598,12 +517,12 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByLabelText(/enable on all harnesses/i)[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Enable Exa Search on Claude" }));
 
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some((call) =>
-          String(call[0]).includes("/api/mcp/servers/exa/set-harnesses"),
+          String(call[0]).includes("/api/mcp/servers/exa/enable"),
         ),
       ).toBe(true),
     );
@@ -614,7 +533,7 @@ describe("McpInUsePage", () => {
     ).toBe(false);
   });
 
-  it("collects required install config before enabling all from a card", async () => {
+  it("collects required install config before enabling a harness", async () => {
     const inventory = inventoryFixture();
     inventory.entries[0] = {
       ...inventory.entries[0],
@@ -630,13 +549,13 @@ describe("McpInUsePage", () => {
     };
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/mcp/servers/exa/set-harnesses")) {
+      if (url.includes("/api/mcp/servers/exa/enable")) {
         expect(init?.method).toBe("POST");
         expect(JSON.parse(String(init?.body))).toEqual({
-          target: "enabled",
+          harness: "claude",
           config: { EXA_API_KEY: "secret" },
         });
-        return okJson({ ok: true, succeeded: ["cursor"], failed: [] });
+        return okJson({ ok: true });
       }
       if (url.includes("/api/marketplace/mcp/items/exa")) {
         return okJson(marketplaceDetailFixture({
@@ -662,7 +581,7 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByLabelText(/enable on all harnesses/i)[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Enable Exa Search on Claude" }));
 
     await waitFor(() =>
       expect(screen.getAllByRole("heading", { name: /configure exa search/i }).length).toBeGreaterThan(0),
@@ -675,7 +594,7 @@ describe("McpInUsePage", () => {
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.some((call) =>
-          String(call[0]).includes("/api/mcp/servers/exa/set-harnesses"),
+          String(call[0]).includes("/api/mcp/servers/exa/enable"),
         ),
       ).toBe(true),
     );
@@ -737,7 +656,7 @@ describe("McpInUsePage", () => {
 
     renderPage();
     await waitFor(() => expect(screen.getByText("Exa Search")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: "Resolve config" }));
+    fireEvent.click(screen.getByRole("button", { name: "Resolve config for Exa Search on Claude" }));
 
     await waitFor(() =>
       expect(

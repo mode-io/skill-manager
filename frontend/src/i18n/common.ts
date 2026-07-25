@@ -25,8 +25,10 @@ const englishCommonCopy = {
     mcpServers: "MCP Servers",
     marketplace: "Marketplace",
     clis: "CLIs",
+    permissions: "Permissions",
     settings: "Settings",
     light: "Light",
+    dark: "Dark",
     lightComingSoon: "Light theme — coming soon",
   },
   language: {
@@ -36,7 +38,7 @@ const englishCommonCopy = {
   },
   productLanguage: {
     inUse: "In use",
-    needsReview: "Needs review",
+    needsReview: "Unmanaged",
     review: "Review",
     discover: "Discover",
   },
@@ -93,8 +95,10 @@ export const commonCopy = {
       mcpServers: "MCP 服务器",
       marketplace: "商城",
       clis: "CLI",
+      permissions: "权限",
       settings: "设置",
       light: "浅色",
+      dark: "深色",
       lightComingSoon: "浅色主题即将推出",
     },
     language: {
@@ -104,7 +108,7 @@ export const commonCopy = {
     },
     productLanguage: {
       inUse: "使用中",
-      needsReview: "待确认",
+      needsReview: "未托管",
       review: "确认",
       discover: "发现",
     },

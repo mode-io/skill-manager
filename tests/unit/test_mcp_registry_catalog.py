@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import unittest
-from unittest import mock
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest import mock
 
 from skill_manager.application.marketplace_cache import MarketplaceCache
 from skill_manager.application.mcp.marketplace.catalog import (
@@ -11,7 +11,6 @@ from skill_manager.application.mcp.marketplace.catalog import (
     _flatten_input_schema,
 )
 from skill_manager.errors import MarketplaceUpstreamError
-
 
 _OFFICIAL_META = "io.modelcontextprotocol.registry/official"
 

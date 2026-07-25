@@ -9,8 +9,13 @@ from .contracts import (
     McpInventoryEntry,
     McpObservedEntry,
 )
-from .identity import AdoptionIssue, AdoptionPlan, HarnessSighting, ServerIdentityGroup, build_identity_plan
-from .names import canonical_server_name
+from .identity import (
+    AdoptionIssue,
+    AdoptionPlan,
+    HarnessSighting,
+    ServerIdentityGroup,
+    build_identity_plan,
+)
 from .inventory import build_inventory
 from .mappers import (
     ClaudeCodeMapper,
@@ -21,6 +26,7 @@ from .mappers import (
     TransportMapper,
     get_mapper,
 )
+from .names import canonical_server_name
 from .planner import McpAdoptionPlanner
 from .read_models import McpReadModelService, McpReadModelSnapshot
 from .store import McpManagedManifest, McpServerSpec

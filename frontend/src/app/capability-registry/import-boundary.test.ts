@@ -6,9 +6,11 @@ const FORBIDDEN = [
   ["../..", "mcp", "api"].join("/"),
   ["../..", "skills", "api"].join("/"),
   ["../..", "settings", "queries"].join("/"),
+  ["../..", "agents", "api"].join("/"),
   ["..", "mcp", "api"].join("/"),
   ["..", "skills", "api"].join("/"),
   ["..", "settings", "queries"].join("/"),
+  ["..", "agents", "api"].join("/"),
 ];
 
 describe("feature public import boundaries", () => {

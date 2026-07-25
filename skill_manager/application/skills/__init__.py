@@ -1,5 +1,5 @@
-from .queries import SkillsQueryService
 from .mutations import SkillsMutationService
+from .queries import SkillsQueryService
 
 __all__ = [
     "SkillsMutationService",

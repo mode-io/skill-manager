@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from skill_manager.application import build_backend_container
+from skill_manager.application.agents.parser import parse_agent_file
+from skill_manager.application.container import _migrate_legacy_layouts
 from skill_manager.application.skills.manifest import SkillStoreEntry
 from skill_manager.application.skills.package import fingerprint_package
 from skill_manager.sources import ResolvedGitHubSkill
-
 from tests.support.fake_home import (
     create_fake_home_spec,
     seed_divergent_source_fixture,
@@ -143,7 +144,7 @@ class BackendContainerServiceTests(unittest.TestCase):
                 settings["storage"]["marketplaceCachePath"],
                 str(spec.xdg_data_home / "skill-manager" / "marketplace"),
             )
-            self.assertEqual(len(settings["harnesses"]), 6)
+            self.assertEqual(len(settings["harnesses"]), 7)
             codex = next(item for item in settings["harnesses"] if item["harness"] == "codex")
             self.assertIn("managedLocation", codex)
             self.assertIn("installed", codex)
@@ -189,7 +190,7 @@ class BackendContainerServiceTests(unittest.TestCase):
 
             assert detail is not None
 
-            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex", "OpenClaw", "OpenCode"])
+            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Antigravity", "Codex", "OpenClaw", "OpenCode"])
             self.assertEqual(detail["locations"][0]["path"], str(spec.skills_store_root / "shared-audit"))
             self.assertEqual(detail["locations"][1]["path"], str(spec.codex_root / "shared-audit"))
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
@@ -325,6 +326,100 @@ class BackendContainerServiceTests(unittest.TestCase):
                 "installedSkillRef": "shared:mode-switch",
             })
             self.assertIn(document["status"], {"ready", "unavailable"})
+
+
+class LegacyLayoutMigrationTests(unittest.TestCase):
+    """Tests for _migrate_legacy_layouts covering both old shapes and agent rewriting."""
+
+    def test_migrates_from_shared_shape(self) -> None:
+        """Pre-package shape: data_dir/shared → data_dir/skills"""
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            data_dir = spec.xdg_data_home / "skill-manager"
+            legacy_dir = data_dir / "shared"
+            legacy_dir.mkdir(parents=True)
+            (legacy_dir / "audit").mkdir()
+            (legacy_dir / "audit" / "SKILL.md").write_text("---\nname: Audit\n---\nbody", encoding="utf-8")
+            (legacy_dir / "trace").mkdir()
+            (legacy_dir / "trace" / "SKILL.md").write_text("---\nname: Trace\n---\nbody", encoding="utf-8")
+
+            _migrate_legacy_layouts(data_dir, spec.skills_store_root, spec.agents_root)
+
+            self.assertTrue((spec.skills_store_root / "audit" / "SKILL.md").is_file())
+            self.assertTrue((spec.skills_store_root / "trace" / "SKILL.md").is_file())
+            self.assertFalse((legacy_dir / "audit").exists())
+            self.assertFalse((legacy_dir / "trace").exists())
+
+    def test_migrates_from_package_layout_shape(self) -> None:
+        """Package-layout shape: data_dir/packages/local/skills → data_dir/skills"""
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            data_dir = spec.xdg_data_home / "skill-manager"
+            legacy_dir = data_dir / "packages" / "local" / "skills"
+            legacy_dir.mkdir(parents=True)
+            (legacy_dir / "audit").mkdir()
+            (legacy_dir / "audit" / "SKILL.md").write_text("---\nname: Audit\n---\nbody", encoding="utf-8")
+
+            _migrate_legacy_layouts(data_dir, spec.skills_store_root, spec.agents_root)
+
+            self.assertTrue((spec.skills_store_root / "audit" / "SKILL.md").is_file())
+
+    def test_migrates_manifest_from_legacy(self) -> None:
+        """Legacy manifest.json is copied to skills-manifest.json."""
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            data_dir = spec.xdg_data_home / "skill-manager"
+            legacy_dir = data_dir / "shared"
+            legacy_dir.mkdir(parents=True)
+            (legacy_dir / "audit").mkdir()
+            (legacy_dir / "audit" / "SKILL.md").write_text("---\nname: Audit\n---\nbody", encoding="utf-8")
+            manifest_path = data_dir / "manifest.json"
+            manifest_path.write_text('{"version":1,"entries":[]}', encoding="utf-8")
+
+            _migrate_legacy_layouts(data_dir, spec.skills_store_root, spec.agents_root)
+
+            target_manifest = data_dir / "skills-manifest.json"
+            self.assertTrue(target_manifest.is_file())
+            self.assertIn('"version"', target_manifest.read_text(encoding="utf-8"))
+
+    def test_agent_migration_moves_files_verbatim(self) -> None:
+        """Legacy agent files move to the flat store with their bytes untouched.
+
+        The migration used to rewrite `capabilities.skills` / `.mcps` to strip a
+        `local/` prefix. Those keys are no longer part of the agent model, and the
+        parser ignores them, so the migration is now a plain move — rewriting
+        someone's file on upgrade would be gratuitous.
+        """
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            data_dir = spec.xdg_data_home / "skill-manager"
+            legacy_agents = data_dir / "packages" / "local" / "agents"
+            legacy_agents.mkdir(parents=True)
+            agent_doc = (
+                "---\n"
+                "name: Chief of Staff\n"
+                "description: Orchestrates tasks.\n"
+                "capabilities:\n"
+                "  skills:\n"
+                "    - local/project-context\n"
+                "  mcps:\n"
+                "    - local/github-mcp\n"
+                "---\n\n"
+                "You are a chief of staff.\n"
+            )
+            (legacy_agents / "chief-of-staff.md").write_text(agent_doc, encoding="utf-8")
+
+            _migrate_legacy_layouts(data_dir, spec.skills_store_root, spec.agents_root)
+
+            migrated = spec.agents_root / "chief-of-staff.md"
+            self.assertTrue(migrated.is_file())
+            self.assertEqual(migrated.read_text(encoding="utf-8"), agent_doc)
+
+            # And it still parses under the current model, legacy keys and all.
+            agent = parse_agent_file(migrated)
+            self.assertEqual(agent.name, "Chief of Staff")
+            self.assertEqual(agent.description, "Orchestrates tasks.")
+            self.assertEqual(agent.prompt, "You are a chief of staff.")
 
 
 if __name__ == "__main__":

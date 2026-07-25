@@ -5,9 +5,6 @@ import type {
   SlashTargetDto,
 } from "../api/types";
 
-export type SlashBucket = "disabled" | "selective" | "enabled";
-export type SlashTerminalBucket = "disabled" | "enabled";
-export type SlashCommandBuckets = Record<SlashBucket, SlashCommandDto[]>;
 export type SlashMatrixSortKey = "name" | "coverage" | { target: string };
 export type SlashMatrixSortDirection = "asc" | "desc";
 
@@ -15,12 +12,6 @@ export interface SlashMatrixSortState {
   key: SlashMatrixSortKey;
   direction: SlashMatrixSortDirection;
 }
-
-export const EMPTY_BUCKETS: SlashCommandBuckets = {
-  disabled: [],
-  selective: [],
-  enabled: [],
-};
 
 export function syncedTargetIds(command: SlashCommandDto): Set<string> {
   return new Set(
@@ -42,29 +33,6 @@ export function filterSlashCommands(
   if (!needle) return commands;
   return commands.filter((command) =>
     `${command.name} ${command.description}`.toLowerCase().includes(needle),
-  );
-}
-
-export function bucketForSlashCommand(
-  command: SlashCommandDto,
-  targetCount: number,
-): SlashBucket {
-  const enabledCount = countSyncedTargets(command);
-  if (enabledCount === 0 || targetCount === 0) return "disabled";
-  if (enabledCount === targetCount) return "enabled";
-  return "selective";
-}
-
-export function bucketSlashCommands(
-  commands: SlashCommandDto[],
-  targetCount: number,
-): SlashCommandBuckets {
-  return commands.reduce<SlashCommandBuckets>(
-    (acc, command) => {
-      acc[bucketForSlashCommand(command, targetCount)].push(command);
-      return acc;
-    },
-    { disabled: [], selective: [], enabled: [] },
   );
 }
 

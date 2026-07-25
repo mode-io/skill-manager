@@ -20,7 +20,19 @@ class FakeHomeSpec:
     xdg_state_home: Path
 
     @property
+    def legacy_packages_skills_store_root(self) -> Path:
+        return self.xdg_data_home / "skill-manager" / "packages" / "local" / "skills"
+
+    @property
     def skills_store_root(self) -> Path:
+        return self.xdg_data_home / "skill-manager" / "skills"
+
+    @property
+    def agents_root(self) -> Path:
+        return self.xdg_data_home / "skill-manager" / "agents"
+
+    @property
+    def legacy_skills_store_root(self) -> Path:
         return self.xdg_data_home / "skill-manager" / "shared"
 
     @property
@@ -54,6 +66,10 @@ class FakeHomeSpec:
     @property
     def openclaw_managed_root(self) -> Path:
         return self.openclaw_home / "skills"
+
+    @property
+    def agy_root(self) -> Path:
+        return self.home / ".gemini" / "antigravity-cli" / "skills"
 
     @property
     def hermes_home(self) -> Path:
@@ -91,19 +107,21 @@ def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> Fa
     )
     for path in (
         spec.skills_store_root,
+        spec.agents_root,
         spec.codex_root,
         spec.codex_legacy_root,
         spec.claude_root,
         spec.cursor_root,
         spec.opencode_root,
         spec.openclaw_managed_root,
+        spec.agy_root,
         spec.hermes_skills_root,
         spec.xdg_state_home,
         spec.bin_dir,
     ):
         path.mkdir(parents=True, exist_ok=True)
 
-    for executable in ("codex", "claude", "cursor-agent", "opencode", "hermes"):
+    for executable in ("codex", "claude", "cursor-agent", "opencode", "agy", "hermes"):
         write_cli_stub(spec.bin_dir / executable, executable)
     if seed_openclaw_state:
         write_cli_stub(spec.bin_dir / "openclaw", "openclaw")
@@ -150,7 +168,13 @@ def seed_skill_package(
 
 def seed_store_manifest(spec: FakeHomeSpec, entries: list[SkillStoreEntry]) -> None:
     write_skill_store_manifest(
-        spec.skills_store_root.parent / "manifest.json",
+        spec.skills_store_root.parent / "skills-manifest.json",
+        SkillStoreManifest(entries=tuple(entries)),
+    )
+
+def seed_legacy_store_manifest(spec: FakeHomeSpec, entries: list[SkillStoreEntry]) -> None:
+    write_skill_store_manifest(
+        spec.legacy_skills_store_root.parent / "manifest.json",
         SkillStoreManifest(entries=tuple(entries)),
     )
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import json
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-import json
 from pathlib import Path
-import shutil
 from uuid import uuid4
 
 from skill_manager.errors import MutationError
@@ -36,6 +36,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         app_probe_paths: tuple[Path, ...],
         layout: FileTreeLayout = "flat",
         default_category: str | None = None,
+        data_dir: Path | None = None,
     ) -> None:
         self.harness = harness
         self.label = label
@@ -48,6 +49,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         self._app_probe_paths = app_probe_paths
         self._layout = layout
         self._default_category = default_category or "skill-manager"
+        self._data_dir = data_dir
 
     def status(self) -> SkillsHarnessStatus:
         return SkillsHarnessStatus(
@@ -84,15 +86,29 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
             excluded_skill_names=tuple(sorted(excluded_skill_names)),
         )
 
+    def _self_heal_or_raise(self, existing_link: Path, resolved_target: Path, package_name: str, method: str) -> None:
+        """Repoint a symlink if the old target is stale, otherwise raise."""
+        if existing_link.resolve() == resolved_target:
+            return
+        existing_target = existing_link.resolve()
+        if self._data_dir is not None and _is_stale_target(existing_target, package_name, self._data_dir):
+            existing_link.unlink()
+            existing_link.symlink_to(resolved_target)
+            return
+        if not existing_target.exists():
+            existing_link.unlink()
+            existing_link.symlink_to(resolved_target)
+            return
+        raise MutationError(
+            f"symlink already exists but points to {existing_target}, not {resolved_target} (use {method})"
+        )
+
     def enable_shared_package(self, package_path: Path) -> None:
         resolved_target = package_path.resolve()
         link = self._binding_path(package_path.name)
         if link.is_symlink():
-            if link.resolve() == resolved_target:
-                return
-            raise MutationError(
-                f"symlink already exists but points to {link.resolve()}, not {resolved_target}"
-            )
+            self._self_heal_or_raise(link, resolved_target, package_path.name, "enable_shared_package")
+            return
         if link.exists():
             raise MutationError(f"real directory exists at {link}; will not overwrite")
         link.parent.mkdir(parents=True, exist_ok=True)
@@ -111,11 +127,8 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         if not existing_dir.exists() and not existing_dir.is_symlink():
             raise MutationError(f"directory does not exist: {existing_dir}")
         if existing_dir.is_symlink():
-            if existing_dir.resolve() == resolved_target:
-                return
-            raise MutationError(
-                f"symlink exists but points to {existing_dir.resolve()}, not {resolved_target}"
-            )
+            self._self_heal_or_raise(existing_dir, resolved_target, existing_dir.name, "adopt_local_copy")
+            return
         shutil.rmtree(existing_dir)
         existing_dir.symlink_to(resolved_target)
 
@@ -130,10 +143,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         if not existing_link.is_symlink():
             raise MutationError(f"not a symlink at {existing_link}; will not overwrite real directory")
         resolved_target = expected_target.resolve()
-        if existing_link.resolve() != resolved_target:
-            raise MutationError(
-                f"symlink exists but points to {existing_link.resolve()}, not {resolved_target}"
-            )
+        self._self_heal_or_raise(existing_link, resolved_target, package_dir, "prepare_materialize")
 
     def materialize_binding(self, package_dir: str, source_path: Path) -> None:
         existing_link = self._binding_path(package_dir)
@@ -244,7 +254,7 @@ def _iter_skill_roots(root: _ResolvedRoot):
             yield skill_root, f"{category_dir.name}/{skill_root.name}"
 
 
-def build_skills_adapters(kernel: HarnessKernelService) -> tuple[FileTreeSkillsAdapter, ...]:
+def build_skills_adapters(kernel: HarnessKernelService, *, data_dir: Path | None = None) -> tuple[FileTreeSkillsAdapter, ...]:
     adapters: list[FileTreeSkillsAdapter] = []
     for binding in kernel.bindings_for_family("skills"):
         definition = binding.definition
@@ -286,6 +296,7 @@ def build_skills_adapters(kernel: HarnessKernelService) -> tuple[FileTreeSkillsA
                 ),
                 layout=profile.layout,
                 default_category=profile.default_category,
+                data_dir=data_dir,
             )
         )
     return tuple(adapters)
@@ -515,6 +526,34 @@ def _is_excluded_skill(
         for candidate in (package_name, package_dir, locator_name, locator_leaf)
         if candidate
     )
+
+
+def _is_stale_target(target: Path, package_name: str, data_dir: Path) -> bool:
+    """Check if a symlink target is a known-stale old store location under data_dir.
+
+    Returns True only if the target resolves to one of the old shapes directly
+    under data_dir with an exact package_name match:
+
+        data_dir / shared            / <package_name>
+        data_dir / packages / local / skills / <package_name>
+        data_dir / packages / local / agents / <package_name>
+    """
+    # Must end with the expected leaf name
+    if target.name != package_name:
+        return False
+
+    resolved_data = data_dir.resolve()
+    parent = target.parent
+    # Old shape: data_dir/shared/<package_name>
+    if parent.resolve() == (resolved_data / "shared"):
+        return True
+    # Old shape: data_dir/packages/local/skills/<package_name>
+    if parent.resolve() == (resolved_data / "packages" / "local" / "skills"):
+        return True
+    # Old shape: data_dir/packages/local/agents/<package_name>
+    if parent.resolve() == (resolved_data / "packages" / "local" / "agents"):
+        return True
+    return False
 
 
 __all__ = ["FileTreeSkillsAdapter", "build_skills_adapters", "scan_all_adapters"]

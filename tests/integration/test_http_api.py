@@ -6,7 +6,10 @@ from tempfile import TemporaryDirectory
 from urllib.request import urlopen
 
 from tests.support.app_harness import AppTestHarness
-from tests.support.fake_home import seed_divergent_source_fixture, seed_managed_linked_fixture
+from tests.support.fake_home import (
+    seed_divergent_source_fixture,
+    seed_managed_linked_fixture,
+)
 
 
 class HttpApiTests(unittest.TestCase):
@@ -28,11 +31,11 @@ class HttpApiTests(unittest.TestCase):
                 settings["storage"]["settingsPath"],
                 str(harness.spec.xdg_config_home / "skill-manager" / "settings.json"),
             )
-            self.assertEqual(len(settings["harnesses"]), 6)
+            self.assertEqual(len(settings["harnesses"]), 7)
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
             self.assertTrue(openclaw["installed"])
             self.assertTrue(openclaw["supportEnabled"])
-            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw" / "skills"))
+            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw"))
             self.assertNotIn("discoveryMode", openclaw)
             self.assertNotIn("centralStore", settings)
             self.assertNotIn("topology", settings)
@@ -49,7 +52,7 @@ class HttpApiTests(unittest.TestCase):
             openclaw = next(item for item in settings["harnesses"] if item["harness"] == "openclaw")
             self.assertFalse(openclaw["installed"])
             self.assertTrue(openclaw["supportEnabled"])
-            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw" / "skills"))
+            self.assertEqual(openclaw["managedLocation"], str(harness.spec.home / ".openclaw"))
 
     def test_settings_support_toggle_hides_disabled_harness_from_skills_inventory(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -84,7 +87,7 @@ class HttpApiTests(unittest.TestCase):
             self.assertEqual(detail["displayStatus"], "Managed")
             self.assertEqual(
                 [cell["label"] for cell in detail["harnessCells"]],
-                ["Codex", "Claude", "Cursor", "OpenCode", "Hermes", "OpenClaw"],
+                ["Claude", "Codex", "Antigravity", "Cursor", "OpenCode", "Hermes Agent", "OpenClaw"],
             )
             self.assertNotIn("updateStatus", detail["actions"])
             self.assertEqual(source_status["updateStatus"], "no_update_available")
@@ -108,7 +111,7 @@ class HttpApiTests(unittest.TestCase):
             shared_audit = next(row for row in skills["rows"] if row["name"] == "Shared Audit")
             detail = harness.get_json(f"/api/skills/{shared_audit['skillRef']}")
 
-            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Codex", "OpenClaw", "OpenCode"])
+            self.assertEqual([location["label"] for location in detail["locations"]], ["Shared Store", "Antigravity", "Codex", "OpenClaw", "OpenCode"])
             self.assertEqual(detail["actions"]["stopManagingStatus"], "available")
             self.assertEqual(detail["actions"]["stopManagingHarnessLabels"], ["Codex"])
             self.assertEqual(detail["actions"]["deleteHarnessLabels"], ["Codex"])

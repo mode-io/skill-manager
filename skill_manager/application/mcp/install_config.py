@@ -6,7 +6,6 @@ from typing import Literal, Mapping
 
 from skill_manager.errors import MutationError
 
-
 McpInstallConfigTarget = Literal["env", "header", "urlVariable", "packageArgument", "runtimeArgument"]
 McpInstallConfigFormat = Literal["string", "number", "boolean", "filepath"]
 

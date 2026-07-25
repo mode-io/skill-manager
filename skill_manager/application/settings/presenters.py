@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from skill_manager.harness import HarnessStatus
-from skill_manager.platform_context import PlatformName
 from skill_manager.paths import AppPaths
+from skill_manager.platform_context import PlatformName
 
 
 def settings_payload(
@@ -46,5 +48,19 @@ def harness_payload(
         "logoKey": status.logo_key,
         "supportEnabled": support_enabled,
         "installed": status.installed,
-        "managedLocation": str(status.managed_location) if status.managed_location is not None else None,
+        "managedLocation": _harness_root_display(status.managed_location),
     }
+
+
+def _harness_root_display(managed_location: Path | None) -> str | None:
+    """Present the harness root the app writes into, not the skills subtree.
+
+    ``managed_location`` is the managed *skills* root (e.g. ``~/.claude/skills``),
+    but Skill Manager also manages this harness's MCP servers, hooks, and slash
+    commands under the same parent. Show the parent directory so the label reads
+    as a harness root rather than a skills-only path. Home-prefix abbreviation
+    (``~``) is applied on the frontend so every path display shares one rule.
+    """
+    if managed_location is None:
+        return None
+    return str(managed_location.parent)

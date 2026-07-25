@@ -16,5 +16,6 @@ export {
   type SidebarGroupModel,
   type SidebarIconKey,
   type SidebarLinkModel,
+  type SidebarTopLinkModel,
   type SidebarModel,
 } from "./sidebar";

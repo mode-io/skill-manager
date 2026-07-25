@@ -1,22 +1,21 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from skill_manager.application.skills.adapters import build_skills_adapters
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
-
 from tests.support.fake_home import create_fake_home_spec, seed_skill_package
 
 
-def _adapter(harness: str, spec) :
+def _adapter(harness: str, spec, *, data_dir: Path | None = None) :
     kernel = HarnessKernelService.from_environment(
         spec.env(),
         support_store=HarnessSupportStore(spec.root / "settings.json"),
     )
-    return next(adapter for adapter in build_skills_adapters(kernel) if adapter.harness == harness)
+    return next(adapter for adapter in build_skills_adapters(kernel, data_dir=data_dir) if adapter.harness == harness)
 
 
 class SkillsAdapterTests(unittest.TestCase):
@@ -293,6 +292,81 @@ class SkillsAdapterTests(unittest.TestCase):
 
             self.assertFalse(link.exists())
             self.assertFalse(link.is_symlink())
+
+
+class StaleTargetHealingTests(unittest.TestCase):
+    """Tests for symlink self-healing when targets point to old store locations."""
+
+    def test_enable_heals_stale_shared_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            # Create old-shape directory structure
+            stale_dir = spec.legacy_skills_store_root / "audit"
+            stale_dir.mkdir(parents=True)
+            (stale_dir / "SKILL.md").write_text("---\nname: Audit\n---\nold audit", encoding="utf-8")
+            # Create new-flat skill in the store
+            new_pkg = seed_skill_package(spec.skills_store_root, "audit", "Audit", body="new audit")
+            # Create symlink in harness pointing to OLD location
+            link = spec.codex_root / "audit"
+            link.symlink_to(stale_dir.resolve())
+            codex = _adapter("codex", spec, data_dir=spec.xdg_data_home / "skill-manager")
+
+            # Should heal without raising
+            codex.enable_shared_package(new_pkg)
+
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(link.resolve(), new_pkg.resolve())
+
+    def test_enable_heals_stale_package_layout_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            # Create old-shape packages/local/skills directory structure
+            stale_dir = spec.legacy_packages_skills_store_root / "audit"
+            stale_dir.mkdir(parents=True, exist_ok=True)
+            (stale_dir / "SKILL.md").write_text("---\nname: Audit\n---\nold", encoding="utf-8")
+            # Create new-flat skill in the store
+            new_pkg = seed_skill_package(spec.skills_store_root, "audit", "Audit", body="new")
+            link = spec.codex_root / "audit"
+            link.symlink_to(stale_dir.resolve())
+            codex = _adapter("codex", spec, data_dir=spec.xdg_data_home / "skill-manager")
+
+            codex.enable_shared_package(new_pkg)
+
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(link.resolve(), new_pkg.resolve())
+
+    def test_enable_refuses_foreign_symlink(self) -> None:
+        """A symlink to an unrelated location without data_dir should still raise."""
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            # Create a foreign dir (NOT under data_dir)
+            foreign_dir = Path(temp_dir) / "foreign" / "audit"
+            foreign_dir.mkdir(parents=True)
+            (foreign_dir / "SKILL.md").write_text("---\nname: Audit\n---\nforeign", encoding="utf-8")
+            new_pkg = seed_skill_package(spec.skills_store_root, "audit", "Audit", body="new")
+            link = spec.codex_root / "audit"
+            link.symlink_to(foreign_dir.resolve())
+            codex = _adapter("codex", spec, data_dir=spec.xdg_data_home / "skill-manager")
+
+            with self.assertRaises(MutationError) as ctx:
+                codex.enable_shared_package(new_pkg)
+            self.assertIn("symlink already exists", str(ctx.exception))
+
+    def test_adopt_heals_stale_symlink(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            stale_dir = spec.legacy_skills_store_root / "audit"
+            stale_dir.mkdir(parents=True)
+            (stale_dir / "SKILL.md").write_text("---\nname: Audit\n---\nold", encoding="utf-8")
+            new_pkg = seed_skill_package(spec.skills_store_root, "audit", "Audit", body="new")
+            harness_dir = spec.codex_root / "audit"
+            harness_dir.symlink_to(stale_dir.resolve())
+            codex = _adapter("codex", spec, data_dir=spec.xdg_data_home / "skill-manager")
+
+            codex.adopt_local_copy(harness_dir, new_pkg)
+
+            self.assertTrue(harness_dir.is_symlink())
+            self.assertEqual(harness_dir.resolve(), new_pkg.resolve())
 
 
 if __name__ == "__main__":

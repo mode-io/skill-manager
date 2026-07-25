@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from skill_manager.application import BackendContainer
 from skill_manager.api.deps import get_container
 from skill_manager.api.schemas import (
     SlashCommandDeleteResponse,
@@ -15,6 +14,7 @@ from skill_manager.api.schemas import (
     SlashCommandUpdateRequest,
     SlashSyncRequest,
 )
+from skill_manager.application import BackendContainer
 
 router = APIRouter(prefix="/api/slash-commands")
 

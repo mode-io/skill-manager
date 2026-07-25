@@ -25,7 +25,6 @@ from .install_config import (
 )
 from .store import McpServerSpec, McpSource
 
-
 _SAFE_NAME_RE = re.compile(r"[^a-z0-9]+")
 
 

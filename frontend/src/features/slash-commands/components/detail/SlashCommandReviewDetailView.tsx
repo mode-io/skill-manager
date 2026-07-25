@@ -8,6 +8,7 @@ import {
 import { DetailHeader } from "../../../../components/detail/DetailHeader";
 import { DetailSection } from "../../../../components/detail/DetailSection";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
+import { useFormatPath } from "../../../../lib/paths";
 import type { SlashCommandDto, SlashCommandReviewDto, SlashReviewAction, SlashTargetDto } from "../../api/types";
 import { useSlashCommandsCopy, type SlashCommandsCopy } from "../../i18n";
 import {
@@ -239,10 +240,11 @@ function ReviewLocationSection({ row, copy }: { row: SlashCommandReviewDto; copy
 }
 
 function TargetPathBlock({ path, copy }: { path: string; copy: SlashCommandsCopy }) {
+  const formatPath = useFormatPath();
   return (
     <div className="slash-review-detail__target-path">
       <span>{copy.detail.review.path}</span>
-      <code>{path}</code>
+      <code>{formatPath(path)}</code>
     </div>
   );
 }

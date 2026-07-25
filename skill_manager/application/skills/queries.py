@@ -5,7 +5,11 @@ from tempfile import TemporaryDirectory
 from typing import Literal
 
 from skill_manager.errors import MutationError
-from skill_manager.sources import github_folder_url, github_repo_from_locator, github_repo_url
+from skill_manager.sources import (
+    github_folder_url,
+    github_repo_from_locator,
+    github_repo_url,
+)
 
 from .document_utils import read_skill_document_markdown
 from .inventory import InventoryEntry, SkillInventory

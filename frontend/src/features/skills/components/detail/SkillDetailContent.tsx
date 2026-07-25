@@ -7,6 +7,7 @@ import { DetailSection } from "../../../../components/detail/DetailSection";
 import { DetailSourceLinks, type DetailSourceLink } from "../../../../components/detail/DetailSourceLinks";
 import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
+import { useFormatPath } from "../../../../lib/paths";
 import { skillStatusConcept } from "../../../../lib/product-language";
 import { useSkillsCopy, type SkillsCopy } from "../../i18n";
 import type { StructuralSkillAction } from "../../model/pending";
@@ -49,6 +50,7 @@ export function SkillDetailContent({
 }: SkillDetailContentProps) {
   const headingId = useId();
   const copy = useSkillsCopy();
+  const formatPath = useFormatPath();
   const showSkillManagerStoreNote =
     skillStatusConcept(detail.displayStatus) === "inUse" &&
     detail.locations.some((location) => location.kind === "shared");
@@ -148,7 +150,9 @@ export function SkillDetailContent({
                       ) : null}
                     </div>
                     <p className="skill-detail__location-path">
-                      {location.path ?? location.detail ?? location.sourceLocator}
+                      {location.path
+                        ? formatPath(location.path)
+                        : location.detail ?? location.sourceLocator}
                     </p>
                   </article>
                 );

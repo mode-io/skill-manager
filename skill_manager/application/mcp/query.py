@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from skill_manager.errors import MutationError
 
-from .config_choice import recommended_observed_harness
-from .contracts import McpHarnessScan, McpInventory, McpInventoryIssue
 from .availability import (
     AvailabilityCache,
     McpAvailabilityProbe,
     availability_cache_key,
 )
+from .config_choice import recommended_observed_harness
+from .contracts import McpHarnessScan, McpInventory, McpInventoryIssue
 from .enrichment import McpEnrichmentService
 from .inventory import build_inventory
 from .managed_state import detail_extras_payload, entry_payload, inventory_payload

@@ -5,9 +5,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from skill_manager.application.skills.manifest import load_skill_store_manifest as load_manifest
+from skill_manager.application.skills.manifest import (
+    load_skill_store_manifest as load_manifest,
+)
 from skill_manager.application.skills.store import SkillStore
-
 from tests.support.fake_home import seed_skill_package
 
 

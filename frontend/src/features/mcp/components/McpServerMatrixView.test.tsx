@@ -100,19 +100,21 @@ describe("McpServerMatrixView", () => {
     renderMatrix();
 
     const table = screen.getByRole("table", { name: "MCP server harness matrix" });
-    const cols = table.querySelectorAll("col");
+    const headerCells = table.querySelectorAll("thead tr > th");
+    const bodyCells = table.querySelectorAll("tbody tr:first-child > td");
 
     expect(table).toHaveClass("matrix-table");
     expect(table).not.toHaveClass("matrix-table--panel");
     expect(table.closest(".matrix-table-wrapper")).not.toHaveClass("matrix-table-wrapper--panel");
-    expect(cols).toHaveLength(columns().length + 4);
-    expect(cols[0]).toHaveClass("matrix-table__col-checkbox");
-    expect(cols[1]).toHaveClass("matrix-table__col-identity");
-    expect(cols[2]).toHaveClass("matrix-table__col-harness");
-    expect(cols[cols.length - 2]).toHaveClass("matrix-table__col-compact");
-    expect(cols[cols.length - 1]).toHaveClass("matrix-table__col-coverage");
+    // Header and body must agree cell-for-cell — every column's width is taken
+    // from the header cell that sits above it.
+    expect(headerCells).toHaveLength(columns().length + 4);
+    expect(bodyCells).toHaveLength(headerCells.length);
+    expect(headerCells[0]).toHaveClass("matrix-table__th--checkbox");
+    expect(headerCells[headerCells.length - 2]).toHaveClass("matrix-table__th--compact");
+    expect(headerCells[headerCells.length - 1]).toHaveClass("matrix-table__th--end");
     expect(screen.getByText("Server").closest("th")).toHaveClass("matrix-table__th--identity");
-    expect(screen.getByText("Enabled").closest("th")).toHaveClass("matrix-table__th--end");
+    expect(screen.getByText("Active").closest("th")).toHaveClass("matrix-table__th--end");
     expect(screen.getByLabelText("Codex")).toHaveClass("matrix-harness-target--header");
   });
 

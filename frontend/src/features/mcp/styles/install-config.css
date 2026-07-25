@@ -1,0 +1,247 @@
+/*
+ * MCP install-config dialog styles.
+ * Preserved verbatim from the removed skills scan.css: the MCP install-config
+ * dialog/field reuse these `scan-config-*` class names. Kept in @layer features
+ * to match the original cascade; only the scan feature itself was removed.
+ */
+
+@layer features {
+  .scan-config-panel__field {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+  }
+
+  .scan-config-panel__field--wide {
+  grid-column: 1 / -1;
+  }
+
+  .scan-config-panel__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+  }
+
+  .scan-config-panel__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 38px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  }
+
+  .scan-config-panel__checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  }
+
+  .scan-config-panel__input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+
+  .scan-config-panel__input-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  }
+
+  .scan-config-panel__input-wrap .scan-config-panel__input {
+  padding-right: 42px;
+  }
+
+  .scan-config-panel__input-action {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 120ms ease, background 120ms ease;
+  }
+
+  .scan-config-panel__input-action:disabled {
+  cursor: progress;
+  opacity: 0.5;
+  }
+
+  .scan-config-panel__input-action:hover,
+.scan-config-panel__input-action:focus-visible {
+  color: var(--color-accent);
+  background: var(--color-accent-softer);
+  }
+
+  .scan-config-panel__input-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+  }
+
+  .scan-config-panel__input {
+  font-family: var(--font-mono);
+  }
+
+  .scan-config-panel__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-surface-sunken) 72%, var(--color-accent-softer));
+  box-shadow: 0 0 0 3px var(--color-accent-softer);
+  }
+
+  .scan-config-panel__input::placeholder {
+  color: var(--color-text-subtle);
+  font-family: var(--font-sans);
+  }
+
+  .scan-config-panel__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  }
+
+  .scan-config-panel__hint-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  }
+
+  .scan-config-panel__hint-link:hover,
+.scan-config-panel__hint-link:focus-visible {
+  text-decoration: underline;
+  }
+
+  .scan-config-panel__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  }
+
+  .scan-config-panel__status {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  }
+
+  .scan-config-panel__status--neutral {
+  background: color-mix(in srgb, var(--color-surface-sunken) 78%, var(--color-text) 4%);
+  color: var(--color-text-muted);
+  }
+
+  .scan-config-panel__status--success {
+  border-color: color-mix(in srgb, var(--color-success) 42%, transparent);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  }
+
+  .scan-config-panel__status--error {
+  border-color: color-mix(in srgb, var(--color-danger) 42%, transparent);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  }
+
+  .detail-sheet.scan-config-detail-modal {
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(760px, calc(100vw - 48px));
+  overflow: hidden;
+  }
+
+  .scan-config-detail-modal__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  }
+
+  .scan-config-detail-modal__form {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  min-width: 0;
+  }
+
+  .scan-config-detail-modal__body {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  }
+
+  .scan-config-detail-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  }
+
+  .scan-config-detail-modal__validation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  }
+
+  .scan-config-detail-modal__validation-label {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  }
+
+  .scan-config-detail-modal__validation-value {
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  }
+
+  .scan-config-detail-modal__validation-value--error,
+.scan-config-detail-modal__validation-error {
+  color: var(--color-danger);
+  }
+
+  .scan-config-detail-modal__validation-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  }
+
+  @media (max-width: 680px) {
+    .scan-config-panel__form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

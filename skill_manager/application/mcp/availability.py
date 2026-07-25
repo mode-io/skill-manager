@@ -13,7 +13,6 @@ from urllib.request import Request, urlopen
 
 from .store import McpServerSpec
 
-
 AvailabilityStatus = Literal["available", "unavailable"]
 HttpPost = Callable[[str, dict[str, object], dict[str, str]], tuple[dict[str, object], dict[str, str]]]
 

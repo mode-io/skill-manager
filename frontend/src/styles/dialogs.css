@@ -98,6 +98,30 @@
   margin-top: 24px;
 }
 
+/* Three-way choice (e.g. adopt conflict): stack full-width so neither option
+   reads as the incidental one. */
+.confirm-dialog__actions--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  margin-top: 16px;
+}
+
+.confirm-dialog__pending {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.confirm-dialog__path {
+  word-break: break-all;
+}
+
+.confirm-dialog__lede {
+  margin-bottom: var(--space-3);
+}
+
 .confirm-dialog__button {
   min-width: 110px;
   height: 38px;

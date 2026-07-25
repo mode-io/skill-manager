@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 import socket
-from urllib.error import HTTPError, URLError
-from unittest import mock
 import unittest
+from unittest import mock
+from urllib.error import HTTPError, URLError
 
 from skill_manager.application.skills.marketplace.client import (
     SkillsShClient,
     configured_marketplace_base_url,
     configured_marketplace_ca_file,
 )
-from skill_manager.application.skills.marketplace.skillssh import fetch_all_time_leaderboard, search_skills
-from skill_manager.errors import MARKETPLACE_UNAVAILABLE_MESSAGE, MarketplaceUpstreamError
+from skill_manager.application.skills.marketplace.skillssh import (
+    fetch_all_time_leaderboard,
+    search_skills,
+)
+from skill_manager.errors import (
+    MARKETPLACE_UNAVAILABLE_MESSAGE,
+    MarketplaceUpstreamError,
+)
 
 
 class MarketplaceClientConfigTests(unittest.TestCase):

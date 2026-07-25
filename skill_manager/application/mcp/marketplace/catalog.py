@@ -22,7 +22,6 @@ from .support_policy import (
     supported_registry_entry,
 )
 
-
 Fetcher = Callable[[str], dict[str, object]]
 SupportedRegistryEntry = tuple[Mapping[str, object], Mapping[str, object], tuple[RegistryInstallOption, ...]]
 RegistrySummaryCandidate = tuple[Mapping[str, object], dict[str, object]]

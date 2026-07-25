@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from skill_manager.errors import MutationError
 
 from .codecs import parse_slash_command_document
-from .models import SlashCommand, SlashCommandReviewRow, SlashCommandSyncEntry, SlashTarget
+from .models import (
+    SlashCommand,
+    SlashCommandReviewRow,
+    SlashCommandSyncEntry,
+    SlashTarget,
+)
 from .path_policy import SlashCommandPathPolicy
 from .store import SlashCommandStore
 from .sync_state import SlashCommandSyncRecord, SlashCommandSyncStateStore, hash_file
@@ -16,66 +22,72 @@ class SlashCommandReadModelService:
         self,
         store: SlashCommandStore,
         sync_state: SlashCommandSyncStateStore,
-        targets: tuple[SlashTarget, ...],
+        resolve_targets: Callable[[], tuple[SlashTarget, ...]],
         path_policy: SlashCommandPathPolicy | None = None,
     ) -> None:
         self.store = store
         self.sync_state = sync_state
-        self.targets = targets
+        self.resolve_targets = resolve_targets
         self.path_policy = path_policy or SlashCommandPathPolicy()
 
     def list_commands(self) -> dict[str, object]:
+        targets = self.resolve_targets()
         commands = self.store.list_commands()
         state = self.sync_state.load()
         return {
             "storePath": str(self.store.paths.commands_dir),
             "syncStatePath": str(self.sync_state.path),
-            "targets": [target.to_dict() for target in self.targets],
-            "defaultTargets": [target.id for target in self.targets if target.default_selected],
-            "commands": [self._command_payload(command, state.get(command.name, {})) for command in commands],
-            "reviewCommands": self.review_commands(commands=commands, state=state),
+            "targets": [target.to_dict() for target in targets],
+            "defaultTargets": [target.id for target in targets if target.default_selected],
+            "commands": [self._command_payload(command, state.get(command.name, {}), targets) for command in commands],
+            "reviewCommands": self.review_commands(commands=commands, state=state, targets=targets),
         }
 
     def get_command(self, name: str) -> dict[str, object] | None:
+        targets = self.resolve_targets()
         command = self.store.get_command(name)
         if command is None:
             return None
         state = self.sync_state.load()
-        return self._command_payload(command, state.get(command.name, {}))
+        return self._command_payload(command, state.get(command.name, {}), targets)
 
     def review_commands(
         self,
         *,
         commands: tuple[SlashCommand, ...] | None = None,
         state: dict[str, dict[str, SlashCommandSyncRecord]] | None = None,
+        targets: tuple[SlashTarget, ...] | None = None,
     ) -> list[dict[str, object]]:
+        resolved_targets = targets if targets is not None else self.resolve_targets()
         managed_commands = commands if commands is not None else self.store.list_commands()
         command_names = {command.name for command in managed_commands}
         sync_state = state if state is not None else self.sync_state.load()
         rows: list[SlashCommandReviewRow] = []
-        rows.extend(self._tracked_review_rows(command_names, sync_state))
-        rows.extend(self._unmanaged_review_rows(command_names, sync_state))
+        rows.extend(self._tracked_review_rows(command_names, sync_state, resolved_targets))
+        rows.extend(self._unmanaged_review_rows(command_names, sync_state, resolved_targets))
         return [row.to_dict() for row in rows]
 
     def _command_payload(
         self,
         command: SlashCommand,
         records: dict[str, SlashCommandSyncRecord],
+        targets: tuple[SlashTarget, ...],
     ) -> dict[str, object]:
         return {
             "name": command.name,
             "description": command.description,
             "prompt": command.prompt,
-            "syncTargets": [entry.to_dict() for entry in self._sync_entries(command.name, records)],
+            "syncTargets": [entry.to_dict() for entry in self._sync_entries(command.name, records, targets)],
         }
 
     def _sync_entries(
         self,
         command_name: str,
         records: dict[str, SlashCommandSyncRecord],
+        targets: tuple[SlashTarget, ...],
     ) -> list[SlashCommandSyncEntry]:
         entries: list[SlashCommandSyncEntry] = []
-        for target in self.targets:
+        for target in targets:
             record = records.get(target.id)
             if record is None:
                 path = self.path_policy.output_path(target, command_name)
@@ -119,11 +131,12 @@ class SlashCommandReadModelService:
         self,
         command_names: set[str],
         state: dict[str, dict[str, SlashCommandSyncRecord]],
+        targets: tuple[SlashTarget, ...],
     ) -> list[SlashCommandReviewRow]:
         rows: list[SlashCommandReviewRow] = []
         for command_name, records in state.items():
             for record in records.values():
-                target = self._target(record.target)
+                target = self._target(record.target, targets)
                 if target is None:
                     continue
                 try:
@@ -176,6 +189,7 @@ class SlashCommandReadModelService:
         self,
         command_names: set[str],
         state: dict[str, dict[str, SlashCommandSyncRecord]],
+        targets: tuple[SlashTarget, ...],
     ) -> list[SlashCommandReviewRow]:
         known_paths = {
             self.path_policy.path_identity(record.path)
@@ -183,7 +197,7 @@ class SlashCommandReadModelService:
             for record in records.values()
         }
         rows: list[SlashCommandReviewRow] = []
-        for target in self.targets:
+        for target in targets:
             if not target.output_dir.is_dir():
                 continue
             for path in sorted(target.output_dir.glob(target.file_glob)):
@@ -246,8 +260,8 @@ class SlashCommandReadModelService:
                 error=str(parse_error),
             )
 
-    def _target(self, target_id: str) -> SlashTarget | None:
-        return next((target for target in self.targets if target.id == target_id), None)
+    def _target(self, target_id: str, targets: tuple[SlashTarget, ...]) -> SlashTarget | None:
+        return next((target for target in targets if target.id == target_id), None)
 
 
 __all__ = ["SlashCommandReadModelService"]

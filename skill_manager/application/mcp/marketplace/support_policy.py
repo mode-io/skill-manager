@@ -4,7 +4,6 @@ from typing import Mapping
 
 from ..install_resolver import RegistryInstallOption, registry_install_options
 
-
 _OFFICIAL_META_KEY = "io.modelcontextprotocol.registry/official"
 
 

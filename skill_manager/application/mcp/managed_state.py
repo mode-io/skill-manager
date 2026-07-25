@@ -10,7 +10,6 @@ from .install_state import McpInstallConfigStatus, install_config_status
 from .redaction import annotate_redacted_env, redacted_spec_dict
 from .store import McpServerSpec
 
-
 InstallDetailLookup = Callable[[str], Mapping[str, object] | None]
 
 

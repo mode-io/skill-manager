@@ -9,6 +9,8 @@ from .install_intent import (
     ManagedMcpRecord,
     RegistryInstallIntent,
     install_intent_config_status,
+)
+from .install_intent import (
     resolve_enable_record as resolve_enable_managed_record,
 )
 from .install_resolver import (

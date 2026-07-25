@@ -104,6 +104,11 @@
   text-overflow: ellipsis;
 }
 
+.mcp-server-card .harness-stack__item[data-state="disabled"] {
+  opacity: 0.36;
+  filter: grayscale(1);
+}
+
 /* Drift overlay on harness logos */
 .harness-stack__item[data-drifted="true"]::after {
   content: "";

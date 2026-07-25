@@ -7,7 +7,6 @@ from .contracts import McpHarnessAdapter
 from .read_models import McpReadModelService
 from .store import McpServerSpec
 
-
 HarnessAction = Literal["enable", "disable"]
 ManifestCommit = Callable[[], None]
 

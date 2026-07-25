@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from .inventory import InventoryColumn, InventoryEntry, InventorySighting, SkillInventory
+from .inventory import (
+    InventoryColumn,
+    InventoryEntry,
+    InventorySighting,
+    SkillInventory,
+)
 from .policy import (
     attention_message,
     can_delete,

@@ -1,24 +1,56 @@
 from __future__ import annotations
 
 import os
+import shutil
 from dataclasses import dataclass
 
-from skill_manager.db import Database
-from skill_manager.db.repositories import ScanConfigRepository
+from skill_manager.atomic_files import file_lock
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
+from skill_manager.harness.resolution import resolve_context
 from skill_manager.paths import AppPaths, resolve_app_paths
 
+from .agents import (
+    AgentHarnessAdapter,
+    AgentInventoryService,
+    AgentMutationService,
+    AgentStore,
+    resolve_agent_targets,
+)
 from .cli_marketplace import CliMarketplaceCatalog
+from .hooks import (
+    HooksMutationService,
+    HooksQueryService,
+    HooksReadModelService,
+    HookStore,
+)
 from .invalidation import InvalidationFanout
+from .marketplace_cache import MarketplaceCache
+from .mcp.availability import McpAvailabilityProbe
 from .mcp.enrichment import McpEnrichmentService
 from .mcp.marketplace import McpMarketplaceCatalog
 from .mcp.mutations import McpMutationService
 from .mcp.planner import McpAdoptionPlanner
-from .mcp.availability import McpAvailabilityProbe
 from .mcp.query import McpQueryService
 from .mcp.read_models import McpReadModelService
 from .mcp.store import McpServerStore
+from .permissions import (
+    PermissionsMutationService,
+    PermissionsQueryService,
+    PermissionsReadModelService,
+    PermissionStore,
+)
+from .scaffold import ScaffoldService
 from .settings import SettingsMutationService, SettingsQueryService
+from .skills import SkillsMutationService, SkillsQueryService
+from .skills.marketplace import (
+    MarketplaceCatalog,
+    MarketplaceDocumentService,
+    MarketplaceInstallService,
+    MarketplaceQueryService,
+)
+from .skills.read_models import SkillsReadModelService
+from .skills.source_fetch import SourceFetchService
+from .skills.store import SkillStore
 from .slash_commands import (
     SlashCommandMutationService,
     SlashCommandPathPolicy,
@@ -31,19 +63,6 @@ from .slash_commands import (
     migrate_legacy_slash_commands,
     resolve_slash_targets,
 )
-from .skills import SkillsMutationService, SkillsQueryService
-from .skills.marketplace import (
-    MarketplaceCatalog,
-    MarketplaceDocumentService,
-    MarketplaceInstallService,
-    MarketplaceQueryService,
-)
-from .skills.read_models import SkillsReadModelService
-from .skills.source_fetch import SourceFetchService
-from .skills.store import SkillStore
-from .marketplace_cache import MarketplaceCache
-from .scan import ScanConfigService, ScanService
-from .scan.target_resolver import ScanTargetResolver
 
 
 @dataclass(frozen=True)
@@ -74,9 +93,68 @@ class BackendContainer:
     mcp_read_models: McpReadModelService
     mcp_queries: McpQueryService
     mcp_mutations: McpMutationService
-    db: Database
-    scan_config_service: ScanConfigService
-    scan_service: ScanService
+    hooks_store: HookStore
+    hooks_read_models: HooksReadModelService
+    hooks_queries: HooksQueryService
+    hooks_mutations: HooksMutationService
+    permissions_store: PermissionStore
+    permissions_read_models: PermissionsReadModelService
+    permissions_queries: PermissionsQueryService
+    permissions_mutations: PermissionsMutationService
+    scaffold_service: ScaffoldService
+    agents_store: AgentStore
+    agents_inventory: AgentInventoryService
+    agents_mutations: AgentMutationService
+    app_home: Path
+
+
+def _migrate_legacy_layouts(data_dir: Path, skills_store_root: Path, agents_root: Path) -> None:
+    """Migrate old storage layouts into the new flat layout.
+
+    Handles two old shapes:
+      - pre-package: ``data_dir/shared`` → ``data_dir/skills``
+      - package-layout: ``data_dir/packages/local/skills`` → ``data_dir/skills``
+    and similarly for agents: ``data_dir/packages/local/agents`` → ``data_dir/agents``.
+    Also moves legacy manifest files.
+    """
+    skills_store_root.mkdir(parents=True, exist_ok=True)
+    agents_root.mkdir(parents=True, exist_ok=True)
+
+    lock_path = data_dir / ".migration.lock"
+    with file_lock(lock_path):
+        # Skills migration
+        legacy_shared = data_dir / "shared"
+        legacy_pkg_skills = data_dir / "packages" / "local" / "skills"
+        legacy_manifest = data_dir / "manifest.json"
+        legacy_pkg_manifest = data_dir / "packages" / "local" / "manifest.json"
+
+        # Migrate skills from old shapes if the new directory looks empty
+        skills_populated = any(skills_store_root.iterdir()) if skills_store_root.is_dir() else False
+        if not skills_populated:
+            for legacy_dir in (legacy_pkg_skills, legacy_shared):
+                if legacy_dir.is_dir():
+                    for item in legacy_dir.iterdir():
+                        target = skills_store_root / item.name
+                        if not target.exists():
+                            shutil.move(str(item), str(target))
+                    break  # Only migrate the first-populated legacy shape
+
+            # Manifest migration
+            if not (data_dir / "skills-manifest.json").exists():
+                if legacy_pkg_manifest.is_file():
+                    shutil.copy2(str(legacy_pkg_manifest), str(data_dir / "skills-manifest.json"))
+                elif legacy_manifest.is_file():
+                    shutil.copy2(str(legacy_manifest), str(data_dir / "skills-manifest.json"))
+
+        # Agents migration
+        agents_populated = any(agents_root.iterdir()) if agents_root.is_dir() else False
+        if not agents_populated:
+            legacy_agents_dir = data_dir / "packages" / "local" / "agents"
+            if legacy_agents_dir.is_dir():
+                for item in legacy_agents_dir.iterdir():
+                    target = agents_root / item.name
+                    if not target.exists():
+                        shutil.move(str(item), str(target))
 
 
 def build_backend_container(
@@ -93,12 +171,19 @@ def build_backend_container(
         active_env.update(env)
 
     paths = resolve_app_paths(active_env)
+    app_home = resolve_context(active_env).home
+    
+    _migrate_legacy_layouts(paths.data_dir, paths.skills_store_root, paths.agents_root)
+
     support_store = HarnessSupportStore(paths.settings_path)
     harness_kernel = HarnessKernelService.from_environment(active_env, support_store=support_store)
     invalidation = InvalidationFanout()
 
-    skills_store = SkillStore(paths.skills_store_root, manifest_path=paths.skills_store_manifest)
-    skills_read_models = SkillsReadModelService.from_kernel(store=skills_store, kernel=harness_kernel)
+    skills_store = SkillStore(
+        paths.skills_store_root,
+        manifest_path=paths.skills_store_manifest,
+    )
+    skills_read_models = SkillsReadModelService.from_kernel(store=skills_store, kernel=harness_kernel, data_dir=paths.data_dir)
     invalidation.register(skills_read_models)
 
     active_source_fetcher = source_fetcher or SourceFetchService()
@@ -121,10 +206,15 @@ def build_backend_container(
         targets=slash_targets,
         path_policy=slash_command_path_policy,
     )
+
+    def resolve_slash_snapshot():
+        # Re-resolved per call so toggling a harness in Settings takes effect at once.
+        return resolve_slash_targets(harness_kernel)
+
     slash_command_read_models = SlashCommandReadModelService(
         slash_command_store,
         slash_command_sync_state,
-        slash_targets,
+        resolve_slash_snapshot,
         slash_command_path_policy,
     )
     slash_command_queries = SlashCommandQueryService(slash_command_read_models)
@@ -134,7 +224,7 @@ def build_backend_container(
         slash_command_queries,
         slash_command_read_models,
         SlashCommandPlanner(slash_command_path_policy),
-        slash_targets,
+        resolve_slash_snapshot,
     )
 
     cache = MarketplaceCache.from_environment(active_env)
@@ -182,12 +272,36 @@ def build_backend_container(
         availability_cache=mcp_availability_cache,
     )
 
-    db = Database(paths.db_path)
-    scan_config_service = ScanConfigService(ScanConfigRepository(db))
-    scan_service = ScanService(
-        scan_config_service,
-        target_resolver=ScanTargetResolver(skills_queries),
+    hooks_store = HookStore(paths.hooks_store_manifest)
+    hooks_read_models = HooksReadModelService.from_kernel(store=hooks_store, kernel=harness_kernel)
+    invalidation.register(hooks_read_models)
+    hooks_queries = HooksQueryService(hooks_read_models)
+    hooks_mutations = HooksMutationService(
+        store=hooks_store,
+        read_models=hooks_read_models,
     )
+
+    permissions_store = PermissionStore(paths.permissions_store_manifest)
+    permissions_read_models = PermissionsReadModelService.from_kernel(store=permissions_store, kernel=harness_kernel)
+    invalidation.register(permissions_read_models)
+    permissions_queries = PermissionsQueryService(permissions_read_models)
+    permissions_mutations = PermissionsMutationService(
+        store=permissions_store,
+        read_models=permissions_read_models,
+    )
+
+    scaffold_service = ScaffoldService(paths)
+    agents_store = AgentStore(paths.agents_root)
+
+    def resolve_agents_snapshot():
+        # Re-resolved per call so toggling a harness in Settings takes effect at once.
+        targets = resolve_agent_targets(harness_kernel)
+        return targets, {
+            target.id: AgentHarnessAdapter(target, paths.agents_root) for target in targets
+        }
+
+    agents_inventory = AgentInventoryService(agents_store, resolve_agents_snapshot)
+    agents_mutations = AgentMutationService(agents_store, resolve_agents_snapshot)
 
     return BackendContainer(
         paths=paths,
@@ -216,7 +330,17 @@ def build_backend_container(
         mcp_read_models=mcp_read_models,
         mcp_queries=mcp_queries,
         mcp_mutations=mcp_mutations,
-        db=db,
-        scan_config_service=scan_config_service,
-        scan_service=scan_service,
+        hooks_store=hooks_store,
+        hooks_read_models=hooks_read_models,
+        hooks_queries=hooks_queries,
+        hooks_mutations=hooks_mutations,
+        permissions_store=permissions_store,
+        permissions_read_models=permissions_read_models,
+        permissions_queries=permissions_queries,
+        permissions_mutations=permissions_mutations,
+        scaffold_service=scaffold_service,
+        agents_store=agents_store,
+        agents_inventory=agents_inventory,
+        agents_mutations=agents_mutations,
+        app_home=app_home,
     )

@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "release-targets:check": "node scripts/check_release_targets_js.cjs",
+    "audit:check": "node scripts/audit_gate.cjs",
     "codegen:openapi": "./.venv/bin/python scripts/dump_openapi.py && openapi-typescript frontend/src/api/openapi.json -o frontend/src/api/generated.ts",
     "codegen:check": "npm run codegen:openapi && git diff --exit-code frontend/src/api/openapi.json frontend/src/api/generated.ts"
   },

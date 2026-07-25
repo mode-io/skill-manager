@@ -5,7 +5,6 @@ import time
 from urllib.error import URLError
 from urllib.request import urlopen
 
-
 SOURCE_STARTUP_TIMEOUT_SECONDS = 10.0
 PACKAGED_STARTUP_TIMEOUT_SECONDS = 90.0
 HEALTHCHECK_REQUEST_TIMEOUT_SECONDS = 2.0

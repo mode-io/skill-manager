@@ -5,9 +5,9 @@ import { MatrixHarnessHeader } from "./MatrixHarnessHeader";
 import { MatrixTable } from "./MatrixTable";
 
 describe("MatrixTable", () => {
-  it("renders the shared column structure", () => {
+  it("declares no columns of its own so widths follow the rendered cells", () => {
     render(
-      <MatrixTable ariaLabel="Example matrix" harnessColumnCount={2}>
+      <MatrixTable ariaLabel="Example matrix">
         <thead>
           <tr>
             <th>Select</th>
@@ -22,18 +22,15 @@ describe("MatrixTable", () => {
     );
 
     const table = screen.getByRole("table", { name: "Example matrix" });
-    const cols = table.querySelectorAll("col");
 
     expect(table).toHaveClass("matrix-table");
     expect(table).not.toHaveClass("matrix-table--panel");
     expect(table.closest(".matrix-table-wrapper")).not.toHaveClass("matrix-table-wrapper--panel");
-    expect(cols).toHaveLength(6);
-    expect(cols[0]).toHaveClass("matrix-table__col-checkbox");
-    expect(cols[1]).toHaveClass("matrix-table__col-identity");
-    expect(cols[2]).toHaveClass("matrix-table__col-harness");
-    expect(cols[3]).toHaveClass("matrix-table__col-harness");
-    expect(cols[4]).toHaveClass("matrix-table__col-compact");
-    expect(cols[5]).toHaveClass("matrix-table__col-coverage");
+    // A colgroup has to mirror exactly which cells each view renders, including
+    // the ones `display: none` drops per breakpoint. It never did, so trailing
+    // cells landed one column early. Widths come from the th classes instead.
+    expect(table.querySelector("colgroup")).toBeNull();
+    expect(table.querySelectorAll("col")).toHaveLength(0);
   });
 
   it("renders harness headers through the centered matrix target", () => {

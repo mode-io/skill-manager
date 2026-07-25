@@ -1,4 +1,10 @@
 import type { QueryClient } from "@tanstack/react-query";
+import {
+  invalidateAgentsQueries,
+  agentsRoutes,
+  useAgentsInventoryQuery,
+  type AgentInventoryDto,
+} from "../../features/agents/public";
 import { useMemo } from "react";
 
 import {
@@ -22,6 +28,18 @@ import {
 } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
 import { overviewCopy, useOverviewCopy, type OverviewCopy } from "../../features/overview/i18n";
+import {
+  invalidateHooksQueries,
+  hooksRoutes,
+  useHooksInventoryQuery,
+  type HookInventoryDto,
+} from "../../features/hooks/public";
+import {
+  invalidatePermissionsQueries,
+  permissionsRoutes,
+  usePermissionsInventoryQuery,
+  type PermissionInventoryDto,
+} from "../../features/permissions/public";
 
 export interface OverviewStatMetric {
   value: number | null;
@@ -47,9 +65,9 @@ export interface OverviewExtensionFact {
 }
 
 export interface OverviewExtensionKind {
-  key: "skills" | "slash-commands" | "mcp";
+  key: "skills" | "slash-commands" | "mcp" | "hooks" | "permissions" | "agents";
   label: string;
-  iconKey: "skills" | "slash-commands" | "mcp";
+  iconKey: "skills" | "slash-commands" | "mcp" | "agents";
   facts: OverviewExtensionFact[];
   actions: OverviewExtensionAction[];
 }
@@ -104,12 +122,25 @@ export function useOverviewData() {
   const skillsQuery = useSkillsListQuery();
   const slashCommandsQuery = useSlashCommandsQuery();
   const mcpQuery = useMcpInventoryQuery();
-  const model = useOverviewModel(skillsQuery.data, slashCommandsQuery.data, mcpQuery.data);
+  const hooksQuery = useHooksInventoryQuery();
+  const permissionsQuery = usePermissionsInventoryQuery();
+  const agentsQuery = useAgentsInventoryQuery();
+  const model = useOverviewModel(
+    skillsQuery.data,
+    slashCommandsQuery.data,
+    mcpQuery.data,
+    hooksQuery.data,
+    permissionsQuery.data,
+    agentsQuery.data,
+  );
 
   return {
     skillsQuery,
     slashCommandsQuery,
     mcpQuery,
+    hooksQuery,
+    permissionsQuery,
+    agentsQuery,
     model,
   };
 }
@@ -119,6 +150,9 @@ export async function invalidateOverviewData(queryClient: QueryClient): Promise<
     invalidateSkillsQueries(queryClient),
     invalidateSlashCommandQueries(queryClient),
     invalidateMcpQueries(queryClient),
+    invalidateHooksQueries(queryClient),
+    invalidatePermissionsQueries(queryClient),
+    invalidateAgentsQueries(queryClient),
   ]);
 }
 
@@ -130,31 +164,44 @@ export function useOverviewModel(
   skills: SkillsWorkspaceData | null | undefined,
   slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
+  hooks: HookInventoryDto | null | undefined,
+  permissions: PermissionInventoryDto | null | undefined,
+  agents: AgentInventoryDto | null | undefined,
 ): OverviewModel {
   const copy = useOverviewCopy();
-  return useMemo(() => buildOverviewModel(skills, slashCommands, mcp, copy), [skills, slashCommands, mcp, copy]);
+  return useMemo(
+    () => buildOverviewModel(skills, slashCommands, mcp, hooks, permissions, agents, copy),
+    [skills, slashCommands, mcp, hooks, permissions, agents, copy],
+  );
 }
 
 export function buildOverviewModel(
   skills: SkillsWorkspaceData | null | undefined,
   slashCommands: SlashCommandListDto | null | undefined,
   mcp: McpInventoryDto | null | undefined,
+  hooks: HookInventoryDto | null | undefined,
+  permissions: PermissionInventoryDto | null | undefined,
+  agents: AgentInventoryDto | null | undefined,
   copy: OverviewCopy = overviewCopy.en,
 ): OverviewModel {
   const inUseSkills = skills?.summary.managed ?? null;
   const skillsToReview = skills?.summary.unmanaged ?? null;
   const inUseSlashCommands = slashCommands?.commands?.length ?? null;
   const slashCommandsToReview = slashCommands?.reviewCommands?.length ?? null;
-  const inUseMcpServers = mcp?.entries.filter((entry) => entry.kind === "managed").length ?? null;
-  const mcpConfigsToReview = mcp?.entries.filter((entry) => entry.kind === "unmanaged").length ?? null;
+  const inUseMcpServers = mcp?.entries?.filter((entry) => entry.kind === "managed").length ?? null;
+  const mcpConfigsToReview = mcp?.entries?.filter((entry) => entry.kind === "unmanaged").length ?? null;
+  const inUseHooks = hooks?.entries?.filter((entry) => entry.kind === "managed").length ?? null;
+  const inUsePermissions = permissions?.entries?.filter((entry) => entry.kind === "managed").length ?? null;
+  const inUseAgents = agents?.entries?.filter((entry) => entry.kind === "managed").length ?? null;
+  const agentsToReview = agents?.entries?.filter((entry) => entry.kind === "unmanaged").length ?? null;
   const differentConfigMcpServers =
-    mcp?.entries.filter(
+    mcp?.entries?.filter(
       (entry) =>
         entry.kind === "managed" &&
         entry.sightings.some((sighting) => sighting.state === "drifted"),
     ).length ?? null;
   const inventoryIssues = mcp?.issues?.length ?? null;
-  const unavailableHarnesses = mcp?.columns.filter((column) => column.mcpWritable === false).length ?? null;
+  const unavailableHarnesses = mcp?.columns?.filter((column) => column.mcpWritable === false).length ?? null;
   const reviewItems = buildReviewItems({
     skillsToReview,
     slashCommandsToReview,
@@ -165,13 +212,16 @@ export function buildOverviewModel(
     copy,
   });
   const harnessRows = buildHarnessRows(skills, mcp);
-  const hasOverviewData = Boolean(skills || slashCommands || mcp);
+  const hasOverviewData = Boolean(skills || slashCommands || mcp || hooks || permissions || agents);
 
   return {
     stats: buildStats({
       inUseSkills,
       inUseSlashCommands,
       inUseMcpServers,
+      inUseHooks,
+      inUsePermissions,
+      inUseAgents,
       needsReview: hasOverviewData ? reviewItems.reduce((total, item) => total + item.count, 0) : null,
       harnesses: hasOverviewData ? harnessRows.length : null,
       copy,
@@ -186,6 +236,10 @@ export function buildOverviewModel(
       differentConfigMcpServers,
       inventoryIssues,
       unavailableHarnesses,
+      inUseHooks,
+      inUsePermissions,
+      inUseAgents,
+      agentsToReview,
       copy,
     }),
     marketplaceEntries: buildMarketplaceEntries(copy),
@@ -198,6 +252,9 @@ function buildStats({
   inUseSkills,
   inUseSlashCommands,
   inUseMcpServers,
+  inUseHooks,
+  inUsePermissions,
+  inUseAgents,
   needsReview,
   harnesses,
   copy,
@@ -205,13 +262,16 @@ function buildStats({
   inUseSkills: number | null;
   inUseSlashCommands: number | null;
   inUseMcpServers: number | null;
+  inUseHooks: number | null;
+  inUsePermissions: number | null;
+  inUseAgents: number | null;
   needsReview: number | null;
   harnesses: number | null;
   copy: OverviewCopy;
 }): OverviewStats {
   return {
     inUse: {
-      value: sumKnown(inUseSkills, inUseSlashCommands, inUseMcpServers),
+      value: sumKnown(inUseSkills, inUseSlashCommands, inUseMcpServers, inUseHooks, inUsePermissions, inUseAgents),
       detail: copy.stats.inUseDetail(inUseSkills, inUseSlashCommands, inUseMcpServers),
     },
     needsReview: {
@@ -243,6 +303,10 @@ function buildExtensions({
   differentConfigMcpServers,
   inventoryIssues,
   unavailableHarnesses,
+  inUseHooks,
+  inUsePermissions,
+  inUseAgents,
+  agentsToReview,
   copy,
 }: {
   inUseSkills: number | null;
@@ -254,6 +318,10 @@ function buildExtensions({
   differentConfigMcpServers: number | null;
   inventoryIssues: number | null;
   unavailableHarnesses: number | null;
+  inUseHooks: number | null;
+  inUsePermissions: number | null;
+  inUseAgents: number | null;
+  agentsToReview: number | null;
   copy: OverviewCopy;
 }): OverviewExtensionKind[] {
   return [
@@ -303,6 +371,41 @@ function buildExtensions({
       actions: [
         { label: copy.stats.inUse, to: mcpRoutes.inUse, primary: true },
         { label: copy.stats.needsReview, to: mcpRoutes.needsReview },
+      ],
+    },
+    {
+      key: "hooks",
+      label: "Hooks",
+      iconKey: "mcp",
+      facts: [
+        { label: copy.extensions.inUseFact, value: inUseHooks },
+      ],
+      actions: [
+        { label: copy.stats.inUse, to: hooksRoutes.inUse, primary: true },
+      ],
+    },
+    {
+      key: "permissions",
+      label: "Permissions",
+      iconKey: "skills",
+      facts: [
+        { label: copy.extensions.inUseFact, value: inUsePermissions },
+      ],
+      actions: [
+        { label: copy.stats.inUse, to: permissionsRoutes.inUse, primary: true },
+      ],
+    },
+    {
+      key: "agents",
+      label: "Agents",
+      iconKey: "agents",
+      facts: [
+        { label: copy.extensions.inUseFact, value: inUseAgents },
+        { label: copy.extensions.reviewFact, value: agentsToReview, tone: "warning" },
+      ],
+      actions: [
+        { label: copy.stats.inUse, to: agentsRoutes.inUse, primary: true },
+        { label: copy.stats.needsReview, to: agentsRoutes.needsReview },
       ],
     },
   ];

@@ -359,71 +359,7 @@ describe("SlashCommandsPage", () => {
     expect(screen.queryByRole("heading", { name: "Delete /code-review?" })).not.toBeInTheDocument();
   });
 
-  it("groups slash commands by coverage in board view", async () => {
-    fetchMock.mockImplementation(
-      createRouteFetchMock([
-        {
-          match: "/api/slash-commands",
-          response: slashCommandsPayload({
-            commands: [
-              {
-                name: "disabled-command",
-                description: "Not synced anywhere",
-                prompt: "Disabled",
-                syncTargets: [],
-              },
-              {
-                name: "selective-command",
-                description: "Synced to one target",
-                prompt: "Selective",
-                syncTargets: [
-                  {
-                    target: "claude",
-                    path: "/tmp/home/.claude/commands/selective-command.md",
-                    status: "synced",
-                  },
-                ],
-              },
-              {
-                name: "enabled-command",
-                description: "Synced everywhere",
-                prompt: "Enabled",
-                syncTargets: [
-                  {
-                    target: "claude",
-                    path: "/tmp/home/.claude/commands/enabled-command.md",
-                    status: "synced",
-                  },
-                  {
-                    target: "codex",
-                    path: "/tmp/home/.codex/prompts/enabled-command.md",
-                    status: "synced",
-                  },
-                ],
-              },
-            ],
-          }),
-        },
-      ]),
-    );
-
-    renderWithAppProviders(<SlashCommandsPage />);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Board" }));
-
-    const disabledColumn = screen.getByRole("heading", { name: "Disabled everywhere" }).closest("section");
-    const selectiveColumn = screen.getByRole("heading", { name: "Selective" }).closest("section");
-    const enabledColumn = screen.getByRole("heading", { name: "Enabled everywhere" }).closest("section");
-
-    expect(disabledColumn).not.toBeNull();
-    expect(selectiveColumn).not.toBeNull();
-    expect(enabledColumn).not.toBeNull();
-    expect(within(disabledColumn!).getByText("disabled-command")).toBeInTheDocument();
-    expect(within(selectiveColumn!).getByText("selective-command")).toBeInTheDocument();
-    expect(within(enabledColumn!).getByText("enabled-command")).toBeInTheDocument();
-  });
-
-  it("renders slash commands in matrix view", async () => {
+  it("renders slash commands in the matrix", async () => {
     fetchMock.mockImplementation(
       createRouteFetchMock([
         {
@@ -450,9 +386,7 @@ describe("SlashCommandsPage", () => {
 
     renderWithAppProviders(<SlashCommandsPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Matrix" }));
-
-    expect(screen.getByRole("table", { name: "Slash commands target matrix" })).toBeInTheDocument();
+    expect(await screen.findByRole("table", { name: "Slash commands target matrix" })).toBeInTheDocument();
     expect(screen.getByText("code-review")).toBeInTheDocument();
     expect(screen.queryByText("/prompts:code-review")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Disable Claude Code for code-review")).toBeInTheDocument();

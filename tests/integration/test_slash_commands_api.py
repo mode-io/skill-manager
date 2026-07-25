@@ -13,10 +13,47 @@ class SlashCommandApiTests(unittest.TestCase):
 
             self.assertEqual(payload["commands"], [])
             target_ids = [target["id"] for target in payload["targets"]]
-            self.assertEqual(target_ids, ["opencode", "claude", "cursor", "codex"])
+            self.assertEqual(target_ids, ["claude", "codex", "cursor", "opencode", "hermes"])
             self.assertIn("codex", payload["defaultTargets"])
             self.assertTrue(all("enabled" in target for target in payload["targets"]))
             self.assertTrue(str(harness.spec.xdg_data_home / "skill-manager") in payload["storePath"])
+
+    def test_disabled_harness_is_omitted_without_restart(self) -> None:
+        with AppTestHarness() as harness:
+            payload = harness.get_json("/api/slash-commands")
+            target_ids = [target["id"] for target in payload["targets"]]
+            self.assertIn("codex", target_ids)
+
+            harness.put_json("/api/settings/harnesses/codex/support", {"enabled": False})
+
+            updated_payload = harness.get_json("/api/slash-commands")
+            updated_target_ids = [target["id"] for target in updated_payload["targets"]]
+            self.assertNotIn("codex", updated_target_ids)
+
+    def test_sync_distinguishes_a_disabled_harness_from_an_unknown_one(self) -> None:
+        with AppTestHarness() as harness:
+            harness.post_json(
+                "/api/slash-commands",
+                {"name": "audit", "description": "Audit", "prompt": "Audit this"},
+            )
+            harness.put_json("/api/settings/harnesses/codex/support", {"enabled": False})
+
+            disabled = harness.post_json(
+                "/api/slash-commands/audit/sync",
+                {"targets": ["codex"]},
+                expected_status=400,
+            )
+            self.assertEqual(disabled["error"], "harness support is disabled: codex")
+
+            # An id that is not a slash-command harness at all never reaches the
+            # mutation layer: the request schema's Literal rejects it first. The
+            # "unknown slash command target" message is for internal callers only.
+            unknown = harness.post_json(
+                "/api/slash-commands/audit/sync",
+                {"targets": ["nope"]},
+                expected_status=422,
+            )
+            self.assertIn("Input should be", unknown["error"])
 
     def test_create_update_sync_and_delete_command(self) -> None:
         with AppTestHarness() as harness:

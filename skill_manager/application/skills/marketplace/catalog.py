@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 import base64
-from dataclasses import dataclass
 import json
 import subprocess
-from threading import Thread
 import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from threading import Thread
 from typing import Callable
 
+from skill_manager.application.marketplace_cache import MarketplaceCache
 from skill_manager.errors import MarketplaceUpstreamError
 from skill_manager.sources import github_repo_url
 
-from skill_manager.application.marketplace_cache import MarketplaceCache
-
 from .client import DEFAULT_SKILLS_SH_BASE_URL, SkillsShClient
-from .models import MarketplaceCard, MarketplacePageResult, RepoDisplayMetadata, SkillsShSkill
+from .models import (
+    MarketplaceCard,
+    MarketplacePageResult,
+    RepoDisplayMetadata,
+    SkillsShSkill,
+)
 from .resolver import DetailEnrichment, GitHubSkillResolver
 from .skillssh import (
     extract_detail_description,
@@ -23,7 +27,6 @@ from .skillssh import (
     fetch_detail_page,
     search_skills,
 )
-
 
 LeaderboardFetcher = Callable[[], list[SkillsShSkill]]
 SearchFetcher = Callable[[str, int], list[SkillsShSkill]]

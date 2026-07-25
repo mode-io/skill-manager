@@ -3,6 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Loader2, X } from "lucide-react";
 
 import { DetailBindingIdentity } from "../../../components/detail/DetailBindingIdentity";
+import { useFormatPath } from "../../../lib/paths";
 import type { SlashCommandDto, SlashSyncEntryDto, SlashTargetDto, SlashTargetId } from "../api/types";
 import { useSlashCommandsCopy, type SlashCommandsCopy } from "../i18n";
 
@@ -240,6 +241,7 @@ function SlashWrittenLocationRow({
   copy: SlashCommandsCopy;
 }) {
   const label = target?.label ?? entry.target;
+  const formatPath = useFormatPath();
   return (
     <div className="detail-sheet__binding-row slash-written-location-row">
       <DetailBindingIdentity
@@ -250,7 +252,7 @@ function SlashWrittenLocationRow({
         tone="enabled"
         visibleStatus={copy.detail.written}
       />
-      <p className="slash-written-location-row__path">{entry.path}</p>
+      <p className="slash-written-location-row__path">{formatPath(entry.path)}</p>
     </div>
   );
 }

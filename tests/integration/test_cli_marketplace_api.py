@@ -6,7 +6,6 @@ from skill_manager.application.cli_marketplace import CliMarketplaceCatalog
 from skill_manager.application.marketplace_cache import MarketplaceCache
 from tests.support.app_harness import AppTestHarness
 
-
 _FIXTURE_CLIS: dict[str, object] = {
     "clis": [
         {

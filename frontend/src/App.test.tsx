@@ -19,7 +19,6 @@ function stubEmptyApi() {
     createRouteFetchMock(
       [
         { match: "/api/skills", response: skillsPayload() },
-        { match: "/api/scan/configs", response: { configs: [], activeId: null } },
         { match: "/api/mcp/servers", response: mcpInventoryPayload() },
         { match: "/api/settings", response: settingsPayload() },
         { match: "/api/slash-commands", response: slashCommandsPayload() },
@@ -59,7 +58,6 @@ describe("App shell", () => {
     expect(screen.getByText(/skill-manager/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^Overview$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Skills/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Scan Config" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Slash Commands/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /MCP Servers/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Marketplace/i })).toBeInTheDocument();
@@ -98,10 +96,9 @@ describe("App shell", () => {
       expect(screen.getByRole("button", { name: "MCP Servers 3" })).toBeInTheDocument();
     });
     expect(screen.getByRole("link", { name: "In use 10" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Needs review 3" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Scan Config" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Unmanaged 3" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "In use 2" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Needs review 1" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Unmanaged 1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Marketplace" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Skills" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "MCP" })).toBeInTheDocument();
@@ -127,7 +124,6 @@ describe("App shell", () => {
     ["/overview", "Overview"],
     ["/skills/use", "Skills in use"],
     ["/skills/review", "Skills to review"],
-    ["/scan-config", "Scan Config"],
     ["/slash-commands", "Slash Commands"],
     ["/slash-commands/use", "Slash Commands"],
     ["/slash-commands/review", "Slash commands to review"],

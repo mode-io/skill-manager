@@ -1,5 +1,6 @@
 import { ToggleSwitch } from "../../../components/ToggleSwitch";
 import { HarnessAvatar } from "../../../components/harness/HarnessAvatar";
+import { useFormatPath } from "../../../lib/paths";
 import type { SettingsHarness } from "../api/types";
 import type { SettingsCopy } from "../i18n";
 
@@ -11,6 +12,7 @@ interface SettingsHarnessCardProps {
 }
 
 export function SettingsHarnessCard({ harness, pending, copy, onToggle }: SettingsHarnessCardProps) {
+  const formatPath = useFormatPath();
   return (
     <div className="settings-row">
       <span className="settings-row__icon">
@@ -24,7 +26,7 @@ export function SettingsHarnessCard({ harness, pending, copy, onToggle }: Settin
       </div>
       <div className="settings-row__controls">
         {harness.managedLocation ? (
-          <span className="settings-path">{harness.managedLocation}</span>
+          <span className="settings-path">{formatPath(harness.managedLocation)}</span>
         ) : null}
         <ToggleSwitch
           checked={harness.supportEnabled}

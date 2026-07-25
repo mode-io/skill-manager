@@ -8,7 +8,6 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from .env import annotate_env, is_env_var_reference
 from .store import McpServerSpec
 
-
 REDACTED_MCP_SECRET_VALUE = "[redacted]"
 
 _SECRET_KEY_RE = re.compile(r"(authorization|api[-_]?key|token|secret|password)", re.IGNORECASE)

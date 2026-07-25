@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import socket
-from tempfile import TemporaryDirectory
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from skill_manager.runtime import process as runtime_process
@@ -15,7 +15,12 @@ from skill_manager.runtime.startup import (
     SOURCE_STARTUP_TIMEOUT_SECONDS,
     startup_timeout_seconds,
 )
-from skill_manager.runtime.state import RuntimeState, clear_runtime_state, load_runtime_state, write_runtime_state
+from skill_manager.runtime.state import (
+    RuntimeState,
+    clear_runtime_state,
+    load_runtime_state,
+    write_runtime_state,
+)
 
 
 class RuntimeTests(unittest.TestCase):

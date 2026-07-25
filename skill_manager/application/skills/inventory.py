@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 from .identity import SourceDescriptor, stable_id
-from .observations import SkillStoreScan, SkillsHarnessScan
-
+from .observations import SkillsHarnessScan, SkillStoreScan
 
 EntryKind = Literal["managed", "unmanaged"]
 

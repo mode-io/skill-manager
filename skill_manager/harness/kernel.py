@@ -3,7 +3,11 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 
-from .catalog import harness_definitions_for_family, supported_harness_definitions, supported_harness_ids
+from .catalog import (
+    harness_definitions_for_family,
+    supported_harness_definitions,
+    supported_harness_ids,
+)
 from .contracts import (
     BindingProfile,
     FamilyKey,

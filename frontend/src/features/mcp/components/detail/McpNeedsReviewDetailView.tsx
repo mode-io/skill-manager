@@ -7,6 +7,7 @@ import { ErrorBanner } from "../../../../components/ErrorBanner";
 import { HarnessAvatar } from "../../../../components/harness/HarnessAvatar";
 import { LoadingSpinner } from "../../../../components/LoadingSpinner";
 import { UiTooltip } from "../../../../components/ui/UiTooltip";
+import { useFormatPath } from "../../../../lib/paths";
 import type { McpIdentityGroupDto, McpIdentitySightingDto } from "../../api/management-types";
 import { useMcpCopy } from "../../i18n";
 import { McpDetailShell } from "./McpDetailShell";
@@ -145,6 +146,7 @@ export function McpNeedsReviewDetailView({
 }
 
 function McpNeedsReviewSightingCard({ sighting }: { sighting: McpIdentitySightingDto }) {
+  const formatPath = useFormatPath();
   return (
     <div className="mcp-needs-review-detail__sighting">
       <div className="mcp-needs-review-detail__sighting-head">
@@ -156,7 +158,7 @@ function McpNeedsReviewSightingCard({ sighting }: { sighting: McpIdentitySightin
         />
         <strong className="mcp-needs-review-detail__sighting-label">{sighting.label}</strong>
         {sighting.configPath ? (
-          <code className="mcp-needs-review-detail__sighting-path">{sighting.configPath}</code>
+          <code className="mcp-needs-review-detail__sighting-path">{formatPath(sighting.configPath)}</code>
         ) : null}
       </div>
       <pre className="mcp-needs-review-row__preview ui-scrollbar">

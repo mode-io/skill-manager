@@ -6,11 +6,12 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ruamel.yaml import YAML
+
 from skill_manager.application.mcp import FileBackedMcpAdapter
 from skill_manager.application.mcp.store import McpServerSpec, McpServerStore, McpSource
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
-from ruamel.yaml import YAML
 
 
 def _spec(name: str = "exa") -> McpServerSpec:

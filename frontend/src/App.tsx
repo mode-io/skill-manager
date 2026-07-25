@@ -10,9 +10,11 @@ import { invalidateCapabilityQueries } from "./app/capability-registry";
 import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
 import SkillsNeedsReviewPage from "./features/skills/screens/SkillsNeedsReviewPage";
 import SkillsInUsePage from "./features/skills/screens/SkillsInUsePage";
-import ScanConfigPage from "./features/skills/screens/ScanConfigPage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
 import { LocaleProvider, useCommonCopy } from "./i18n";
+
+import { HomeDirProvider } from "./lib/paths";
+import { ThemeProvider } from "./lib/theme";
 
 const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
 const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
@@ -21,6 +23,12 @@ const SlashCommandsPage = lazy(() => import("./features/slash-commands/screens/S
 const SlashCommandsReviewPage = lazy(() => import("./features/slash-commands/screens/SlashCommandsReviewPage"));
 const McpNeedsReviewPage = lazy(() => import("./features/mcp/screens/McpNeedsReviewPage"));
 const McpInUsePage = lazy(() => import("./features/mcp/screens/McpInUsePage"));
+const AgentsInUsePage = lazy(() => import("./features/agents/screens/AgentsInUsePage"));
+const AgentsNeedsReviewPage = lazy(() => import("./features/agents/screens/AgentsNeedsReviewPage"));
+const HooksInUsePage = lazy(() => import("./features/hooks/screens/HooksInUsePage"));
+const HooksNeedsReviewPage = lazy(() => import("./features/hooks/screens/HooksNeedsReviewPage"));
+const PermissionsInUsePage = lazy(() => import("./features/permissions/screens/PermissionsInUsePage"));
+const PermissionsNeedsReviewPage = lazy(() => import("./features/permissions/screens/PermissionsNeedsReviewPage"));
 
 export function App() {
   const [queryClient] = useState(
@@ -36,13 +44,17 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LocaleProvider>
-        <ToastProvider>
-          <UiTooltipProvider>
-            <AppContent />
-          </UiTooltipProvider>
-        </ToastProvider>
-      </LocaleProvider>
+      <ThemeProvider>
+        <LocaleProvider>
+          <ToastProvider>
+            <UiTooltipProvider>
+              <HomeDirProvider>
+                <AppContent />
+              </HomeDirProvider>
+            </UiTooltipProvider>
+          </ToastProvider>
+        </LocaleProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
@@ -75,6 +87,23 @@ function AppContent() {
               </Suspense>
             }
           />
+          <Route path="agents" element={<Navigate to="/agents/use" replace />} />
+          <Route
+            path="agents/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading agents..." />}>
+                <AgentsInUsePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="agents/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading agents..." />}>
+                <AgentsNeedsReviewPage />
+              </Suspense>
+            }
+          />
 
           <Route path="skills" element={<SkillsWorkspacePage />}>
             <Route index element={<Navigate to="use" replace />} />
@@ -85,7 +114,6 @@ function AppContent() {
           </Route>
 
           <Route path="mcp" element={<Navigate to="/mcp/use" replace />} />
-          <Route path="scan-config" element={<ScanConfigPage />} />
           <Route
             path="mcp/use"
             element={
@@ -104,6 +132,42 @@ function AppContent() {
           />
           <Route path="mcp/managed" element={<Navigate to="/mcp/use" replace />} />
           <Route path="mcp/unmanaged" element={<Navigate to="/mcp/review" replace />} />
+
+          <Route path="hooks" element={<Navigate to="/hooks/use" replace />} />
+          <Route
+            path="hooks/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading hooks..." />}>
+                <HooksInUsePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="hooks/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading hooks..." />}>
+                <HooksNeedsReviewPage />
+              </Suspense>
+            }
+          />
+
+          <Route path="permissions" element={<Navigate to="/permissions/use" replace />} />
+          <Route
+            path="permissions/use"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading permissions..." />}>
+                <PermissionsInUsePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="permissions/review"
+            element={
+              <Suspense fallback={<RouteLoadingPanel label="Loading permissions..." />}>
+                <PermissionsNeedsReviewPage />
+              </Suspense>
+            }
+          />
 
           <Route
             path="marketplace"

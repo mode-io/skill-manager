@@ -10,7 +10,6 @@ from skill_manager.harness.contracts import CommandFileRenderFormat
 
 from .models import SlashTargetId
 
-
 SYNC_STATE_VERSION = 2
 
 

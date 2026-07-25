@@ -271,6 +271,11 @@ class SkillsMutationService:
         else:
             source_kind = "centralized"
             source_locator = f"centralized:{entry.name}"
+
+        # Pre-flight check: ensure all required adapters are enabled and installed
+        # before mutating the central store or creating bindings.
+        for sighting in harness_sightings:
+            self.read_models.require_enabled_adapter(sighting.harness)
         try:
             ingested = self.read_models.store.ingest(
                 source_path=harness_sightings[0].path,

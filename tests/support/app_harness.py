@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from contextlib import AbstractContextManager
-import json
 from http.client import IncompleteRead
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -69,6 +69,7 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
         cli_marketplace: CliMarketplaceCatalog | None = None,
         env_overrides: dict[str, str] | None = None,
         source_fetcher: SourceFetchService | None = None,
+        allow_remote: bool = False,
     ) -> None:
         self._tempdir = TemporaryDirectory(prefix="skill-manager-tests-")
         self.spec = create_fake_home_spec(Path(self._tempdir.name), seed_openclaw_state=seed_openclaw)
@@ -100,12 +101,11 @@ class AppTestHarness(AbstractContextManager["AppTestHarness"]):
             )
             # Ensure tests exercising a custom catalog use the same read-model root.
             self.container.skills_read_models.invalidate()
-        self.server = serve_in_thread(self.container, frontend_dist=frontend_dist)
+        self.server = serve_in_thread(self.container, frontend_dist=frontend_dist, allow_remote=allow_remote)
         self.base_url = self.server.base_url
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.server.stop()
-        self.container.db.close()
         self._tempdir.cleanup()
 
     def get_json(self, path: str, *, expected_status: int = 200) -> object:

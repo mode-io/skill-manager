@@ -36,9 +36,9 @@ jobs:
           - "3.13"
           - "3.14"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -48,19 +48,30 @@ jobs:
           ./.venv/bin/python -m pip install --upgrade pip
           ./.venv/bin/pip install -r requirements.txt
 
+      - name: Install dev dependencies
+        run: ./.venv/bin/pip install -r requirements-dev.txt
+
+      - name: Backend lint
+        run: ./.venv/bin/ruff check skill_manager tests
+
+      - name: Python dependency audit
+        run: |
+          ./.venv/bin/pip install pip-audit
+          ./.venv/bin/pip-audit
+
       - name: Backend compatibility tests
         run: bash scripts/test_backend.sh
 
   frontend-validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "20"
           cache: "npm"
@@ -72,6 +83,9 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Dependency audit
+        run: npm run audit:check
 
       - name: Check version sync
         run: ./.venv/bin/python scripts/sync_version.py --check
@@ -115,13 +129,13 @@ jobs:
             runner: ubuntu-24.04-arm
             homebrew: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "20"
           cache: "npm"
@@ -155,7 +169,7 @@ jobs:
           bash scripts/validate_homebrew_formula.sh "$VERSION" "$ARTIFACT"
 
       - name: Upload packaged artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: package-smoke-${{ matrix.target }}
           path: .artifacts/release/*

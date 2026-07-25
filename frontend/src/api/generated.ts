@@ -4,6 +4,128 @@
  */
 
 export interface paths {
+    "/api/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agents */
+        get: operations["list_agents_api_agents_get"];
+        put?: never;
+        /** Create Agent */
+        post: operations["create_agent_api_agents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/adopt-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adopt All Agents */
+        post: operations["adopt_all_agents_api_agents_adopt_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Agent */
+        get: operations["get_agent_api_agents__agent_ref__get"];
+        /** Update Agent */
+        put: operations["update_agent_api_agents__agent_ref__put"];
+        post?: never;
+        /** Delete Agent */
+        delete: operations["delete_agent_api_agents__agent_ref__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_ref}/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adopt Agent */
+        post: operations["adopt_agent_api_agents__agent_ref__adopt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_ref}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Agent */
+        post: operations["disable_agent_api_agents__agent_ref__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_ref}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Agent */
+        post: operations["enable_agent_api_agents__agent_ref__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_ref}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Agent Harnesses */
+        post: operations["set_agent_harnesses_api_agents__agent_ref__set_harnesses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -15,6 +137,127 @@ export interface paths {
         get: operations["health_api_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Hooks */
+        get: operations["list_hooks_api_hooks_get"];
+        put?: never;
+        /** Create Hook */
+        post: operations["create_hook_api_hooks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hook */
+        get: operations["get_hook_api_hooks__id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Hook */
+        delete: operations["delete_hook_api_hooks__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Hook */
+        post: operations["disable_hook_api_hooks__id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Hook */
+        post: operations["enable_hook_api_hooks__id__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote Hook */
+        post: operations["promote_hook_api_hooks__id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Hook */
+        post: operations["reconcile_hook_api_hooks__id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hooks/{id}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Hook Harnesses */
+        post: operations["set_hook_harnesses_api_hooks__id__set_harnesses_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -363,42 +606,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/scan/availability": {
+    "/api/permissions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Check Scan Availability */
-        get: operations["check_scan_availability_api_scan_availability_get"];
+        /** List Permissions */
+        get: operations["list_permissions_api_permissions_get"];
+        put?: never;
+        /** Create Permission */
+        post: operations["create_permission_api_permissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permissions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Permission */
+        get: operations["get_permission_api_permissions__id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Permission */
+        delete: operations["delete_permission_api_permissions__id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/scan/configs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scan Configs */
-        get: operations["list_scan_configs_api_scan_configs_get"];
-        put?: never;
-        /** Create Scan Config */
-        post: operations["create_scan_config_api_scan_configs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/scan/configs/validate": {
+    "/api/permissions/{id}/disable": {
         parameters: {
             query?: never;
             header?: never;
@@ -407,84 +651,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Validate Scan Config */
-        post: operations["validate_scan_config_api_scan_configs_validate_post"];
+        /** Disable Permission */
+        post: operations["disable_permission_api_permissions__id__disable_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/scan/configs/{config_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Scan Config */
-        put: operations["update_scan_config_api_scan_configs__config_id__put"];
-        post?: never;
-        /** Delete Scan Config */
-        delete: operations["delete_scan_config_api_scan_configs__config_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/scan/configs/{config_id}/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Set Active Scan Config */
-        put: operations["set_active_scan_config_api_scan_configs__config_id__active_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/scan/configs/{config_id}/secret": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Reveal Scan Config Secret */
-        get: operations["reveal_scan_config_secret_api_scan_configs__config_id__secret_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/scan/llm/detection": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Detect Llm */
-        get: operations["detect_llm_api_scan_llm_detection_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/scan/skills/{skill_ref}": {
+    "/api/permissions/{id}/enable": {
         parameters: {
             query?: never;
             header?: never;
@@ -493,8 +668,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Scan Skill */
-        post: operations["scan_skill_api_scan_skills__skill_ref__post"];
+        /** Enable Permission */
+        post: operations["enable_permission_api_permissions__id__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permissions/{id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote Permission */
+        post: operations["promote_permission_api_permissions__id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permissions/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Permission */
+        post: operations["reconcile_permission_api_permissions__id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permissions/{id}/set-harnesses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Permission Harnesses */
+        post: operations["set_permission_harnesses_api_permissions__id__set_harnesses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scaffold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scaffold Asset */
+        post: operations["scaffold_asset_api_scaffold_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -814,10 +1057,72 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddHookRequest */
+        AddHookRequest: {
+            /** Command */
+            command: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Event */
+            event: string;
+            /** Id */
+            id: string;
+            /** Match */
+            match?: string | null;
+            /** Timeout */
+            timeout?: number | null;
+        };
         /** AddMcpServerRequest */
         AddMcpServerRequest: {
             /** Qualifiedname */
             qualifiedName: string;
+        };
+        /** AddPermissionRequest */
+        AddPermissionRequest: {
+            /** Decision */
+            decision: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Id */
+            id: string;
+            /** Pattern */
+            pattern?: string | null;
+            /** Scope */
+            scope: string;
+        };
+        /** AdoptAgentRequest */
+        AdoptAgentRequest: {
+            /** Onconflict */
+            onConflict?: ("keep_store" | "replace_store") | null;
+        };
+        /** AdoptAgentResponse */
+        AdoptAgentResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Ref */
+            ref: string;
+        };
+        /** AdoptAllAgentsResponse */
+        AdoptAllAgentsResponse: {
+            /** Adopted */
+            adopted: string[];
+            /** Ok */
+            ok: boolean;
+            /** Skipped */
+            skipped: components["schemas"]["AdoptAllSkippedResponse"][];
+        };
+        /** AdoptAllSkippedResponse */
+        AdoptAllSkippedResponse: {
+            /** Reason */
+            reason: string;
+            /** Ref */
+            ref: string;
         };
         /** AdoptMcpRequest */
         AdoptMcpRequest: {
@@ -827,6 +1132,141 @@ export interface components {
             name: string;
             /** Observed harness */
             observedHarness?: string | null;
+        };
+        /** AgentActionsResponse */
+        AgentActionsResponse: {
+            /** Canadopt */
+            canAdopt: boolean;
+            /** Candelete */
+            canDelete: boolean;
+        };
+        /** AgentBindingResponse */
+        AgentBindingResponse: {
+            /** Detail */
+            detail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "enabled" | "disabled" | "unsupported";
+        };
+        /** AgentColumnResponse */
+        AgentColumnResponse: {
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+        };
+        /**
+         * AgentConfigEntryResponse
+         * @description One frontmatter key we do not interpret, shown verbatim.
+         */
+        AgentConfigEntryResponse: {
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+        };
+        /** AgentDetailResponse */
+        AgentDetailResponse: {
+            /** Candelete */
+            canDelete: boolean;
+            /** Configuration */
+            configuration?: components["schemas"]["AgentConfigEntryResponse"][];
+            /** Description */
+            description: string;
+            /** Document */
+            document: string;
+            /** Harnesses */
+            harnesses: components["schemas"]["AgentHarnessDetailResponse"][];
+            /** Name */
+            name: string;
+            /** Prompt */
+            prompt: string;
+            /** Ref */
+            ref: string;
+            /** Storepath */
+            storePath: string;
+            /** Tools */
+            tools: string[];
+        };
+        /** AgentEntryResponse */
+        AgentEntryResponse: {
+            actions: components["schemas"]["AgentActionsResponse"];
+            /** Bindings */
+            bindings: components["schemas"]["AgentBindingResponse"][];
+            /** Description */
+            description: string;
+            /** Harnesspath */
+            harnessPath?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            /** Name */
+            name: string;
+            /** Ref */
+            ref: string;
+        };
+        /** AgentHarnessDetailResponse */
+        AgentHarnessDetailResponse: {
+            /** Detail */
+            detail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * Installmethod
+             * @enum {string}
+             */
+            installMethod: "symlink" | "rendered" | "none";
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Path */
+            path: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "enabled" | "disabled" | "unsupported";
+        };
+        /** AgentHarnessRequest */
+        AgentHarnessRequest: {
+            /** Harness */
+            harness: string;
+        };
+        /** AgentInventoryResponse */
+        AgentInventoryResponse: {
+            /** Columns */
+            columns: components["schemas"]["AgentColumnResponse"][];
+            /** Entries */
+            entries: components["schemas"]["AgentEntryResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["AgentIssueResponse"][];
+        };
+        /** AgentIssueResponse */
+        AgentIssueResponse: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
+        /** AgentMutationFailureResponse */
+        AgentMutationFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
         };
         /** BulkManageFailureResponse */
         BulkManageFailureResponse: {
@@ -935,21 +1375,41 @@ export interface components {
             /** Nextoffset */
             nextOffset?: number | null;
         };
-        /** DetectedProviderResponse */
-        DetectedProviderResponse: {
-            /** Apikeysource */
-            apiKeySource: string;
-            /** Baseurl */
-            baseUrl?: string | null;
-            /** Isavailable */
-            isAvailable: boolean;
-            /** Model */
-            model?: string | null;
-            /** Provider */
-            provider: string;
+        /** CreateAgentRequest */
+        CreateAgentRequest: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Name */
+            name: string;
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /** Tools */
+            tools?: string[];
+        };
+        /** DisableHookRequest */
+        DisableHookRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
         };
         /** DisableMcpServerRequest */
         DisableMcpServerRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
+        /** DisablePermissionRequest */
+        DisablePermissionRequest: {
             /**
              * Harness
              * @description Harness identifier
@@ -964,12 +1424,28 @@ export interface components {
              */
             harness: string;
         };
+        /** EnableHookRequest */
+        EnableHookRequest: {
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
         /** EnableMcpServerRequest */
         EnableMcpServerRequest: {
             /** Config */
             config?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Harness
+             * @description Harness identifier
+             */
+            harness: string;
+        };
+        /** EnablePermissionRequest */
+        EnablePermissionRequest: {
             /**
              * Harness
              * @description Harness identifier
@@ -1016,21 +1492,133 @@ export interface components {
             /** Logokey */
             logoKey?: string | null;
         };
+        /** HookApplyConfigResponse */
+        HookApplyConfigResponse: {
+            /** Failed */
+            failed: components["schemas"]["HookMutationFailureResponse"][];
+            hook: components["schemas"]["HookSpecResponse"];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** HookBindingResponse */
+        HookBindingResponse: {
+            /** Caveat */
+            caveat?: string | null;
+            /** Driftdetail */
+            driftDetail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "managed" | "drifted" | "unmanaged" | "missing" | "unsupported";
+        };
+        /** HookInventoryColumnResponse */
+        HookInventoryColumnResponse: {
+            /** Configpresent */
+            configPresent: boolean;
+            /** Harness */
+            harness: string;
+            /** Hooksunavailablereason */
+            hooksUnavailableReason?: string | null;
+            /**
+             * Hookswritable
+             * @default true
+             */
+            hooksWritable: boolean;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+        };
+        /** HookInventoryEntryResponse */
+        HookInventoryEntryResponse: {
+            /** Canenable */
+            canEnable: boolean;
+            /** Displayname */
+            displayName: string;
+            /**
+             * Enabledstatus
+             * @enum {string}
+             */
+            enabledStatus: "enabled" | "disabled";
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            /** Sightings */
+            sightings: components["schemas"]["HookBindingResponse"][];
+            spec?: components["schemas"]["HookSpecResponse"] | null;
+        };
+        /** HookInventoryIssueResponse */
+        HookInventoryIssueResponse: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
+        /** HookInventoryResponse */
+        HookInventoryResponse: {
+            /** Columns */
+            columns: components["schemas"]["HookInventoryColumnResponse"][];
+            /** Entries */
+            entries: components["schemas"]["HookInventoryEntryResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["HookInventoryIssueResponse"][];
+        };
+        /** HookMutationFailureResponse */
+        HookMutationFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
+        };
+        /** HookMutationResponse */
+        HookMutationResponse: {
+            hook: components["schemas"]["HookSpecResponse"];
+            /** Ok */
+            ok: boolean;
+        };
+        /** HookSetHarnessesResultResponse */
+        HookSetHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["HookMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** HookSpecResponse */
+        HookSpecResponse: {
+            /** Command */
+            command: string;
+            /** Description */
+            description: string;
+            /** Event */
+            event: string;
+            /** Id */
+            id: string;
+            /** Installedat */
+            installedAt: string;
+            /** Match */
+            match?: string | null;
+            /** Revision */
+            revision: string;
+            /** Timeout */
+            timeout?: number | null;
+        };
         /** InstallMarketplaceSkillRequest */
         InstallMarketplaceSkillRequest: {
             /** Installtoken */
             installToken: string;
-        };
-        /** LLMDetectionResponse */
-        LLMDetectionResponse: {
-            /** Defaultmodel */
-            defaultModel?: string | null;
-            /** Defaultprovider */
-            defaultProvider?: string | null;
-            /** Hasanyavailable */
-            hasAnyAvailable: boolean;
-            /** Providers */
-            providers: components["schemas"]["DetectedProviderResponse"][];
         };
         /** McpAdoptionIssueResponse */
         McpAdoptionIssueResponse: {
@@ -1614,6 +2202,149 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** PermissionApplyConfigResponse */
+        PermissionApplyConfigResponse: {
+            /** Failed */
+            failed: components["schemas"]["PermissionMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            permission: components["schemas"]["PermissionSpecResponse"];
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** PermissionBindingResponse */
+        PermissionBindingResponse: {
+            /** Caveat */
+            caveat?: string | null;
+            /** Driftdetail */
+            driftDetail?: string | null;
+            /** Harness */
+            harness: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "managed" | "drifted" | "unmanaged" | "missing" | "unsupported";
+        };
+        /** PermissionInventoryColumnResponse */
+        PermissionInventoryColumnResponse: {
+            /** Configpresent */
+            configPresent: boolean;
+            /** Harness */
+            harness: string;
+            /** Installed */
+            installed: boolean;
+            /** Label */
+            label: string;
+            /** Logokey */
+            logoKey?: string | null;
+            /** Permissionsunavailablereason */
+            permissionsUnavailableReason?: string | null;
+            /**
+             * Permissionswritable
+             * @default true
+             */
+            permissionsWritable: boolean;
+        };
+        /** PermissionInventoryEntryResponse */
+        PermissionInventoryEntryResponse: {
+            /** Canenable */
+            canEnable: boolean;
+            /** Displayname */
+            displayName: string;
+            /**
+             * Enabledstatus
+             * @enum {string}
+             */
+            enabledStatus: "enabled" | "disabled";
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "managed" | "unmanaged";
+            /** Sightings */
+            sightings: components["schemas"]["PermissionBindingResponse"][];
+            spec?: components["schemas"]["PermissionSpecResponse"] | null;
+        };
+        /** PermissionInventoryIssueResponse */
+        PermissionInventoryIssueResponse: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
+        /** PermissionInventoryResponse */
+        PermissionInventoryResponse: {
+            /** Columns */
+            columns: components["schemas"]["PermissionInventoryColumnResponse"][];
+            /** Entries */
+            entries: components["schemas"]["PermissionInventoryEntryResponse"][];
+            /** Issues */
+            issues?: components["schemas"]["PermissionInventoryIssueResponse"][];
+        };
+        /** PermissionMutationFailureResponse */
+        PermissionMutationFailureResponse: {
+            /** Error */
+            error: string;
+            /** Harness */
+            harness: string;
+        };
+        /** PermissionMutationResponse */
+        PermissionMutationResponse: {
+            /** Ok */
+            ok: boolean;
+            permission: components["schemas"]["PermissionSpecResponse"];
+        };
+        /** PermissionSetHarnessesResultResponse */
+        PermissionSetHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["PermissionMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
+        };
+        /** PermissionSpecResponse */
+        PermissionSpecResponse: {
+            /** Decision */
+            decision: string;
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Installedat */
+            installedAt: string;
+            /** Pattern */
+            pattern?: string | null;
+            /** Revision */
+            revision: string;
+            /** Scope */
+            scope: string;
+        };
+        /** PromoteHookRequest */
+        PromoteHookRequest: {
+            /** Observed harness */
+            observedHarness?: string | null;
+        };
+        /** PromotePermissionRequest */
+        PromotePermissionRequest: {
+            /** Observed harness */
+            observedHarness?: string | null;
+        };
+        /** ReconcileHookRequest */
+        ReconcileHookRequest: {
+            /** Harnesses */
+            harnesses?: string[] | null;
+            /** Observed harness */
+            observedHarness?: string | null;
+            /**
+             * Sourcekind
+             * @enum {string}
+             */
+            sourceKind: "managed" | "harness";
+        };
         /** ReconcileMcpServerRequest */
         ReconcileMcpServerRequest: {
             /** Harnesses */
@@ -1626,253 +2357,58 @@ export interface components {
              */
             sourceKind: "managed" | "harness";
         };
-        /** ScanAvailabilityResponse */
-        ScanAvailabilityResponse: {
-            /** Available */
-            available: boolean;
+        /** ReconcilePermissionRequest */
+        ReconcilePermissionRequest: {
+            /** Harnesses */
+            harnesses?: string[] | null;
+            /** Observed harness */
+            observedHarness?: string | null;
+            /**
+             * Sourcekind
+             * @enum {string}
+             */
+            sourceKind: "managed" | "harness";
         };
-        /** ScanConfigItem */
-        ScanConfigItem: {
-            /** Apikeymasked */
-            apiKeyMasked: string;
-            /** Apiversion */
-            apiVersion: string;
-            /** Awsprofile */
-            awsProfile: string;
-            /** Awsregion */
-            awsRegion: string;
-            /** Baseurl */
-            baseUrl: string;
-            /** Consensusruns */
-            consensusRuns: number;
-            /** Id */
-            id: number;
-            /** Isactive */
-            isActive: boolean;
-            /** Lastvalidatedat */
-            lastValidatedAt?: string | null;
-            /**
-             * Lastvalidationerror
-             * @default
-             */
-            lastValidationError: string;
-            /** Maxtokens */
-            maxTokens: number;
-            /** Model */
-            model: string;
-            /** Name */
-            name: string;
-            /** Provider */
-            provider: string;
-        };
-        /** ScanConfigListResponse */
-        ScanConfigListResponse: {
-            /** Activeid */
-            activeId: number | null;
-            /** Configs */
-            configs: components["schemas"]["ScanConfigItem"][];
-        };
-        /** ScanConfigSaveRequest */
-        ScanConfigSaveRequest: {
-            /** Apikey */
-            apiKey: string;
-            /**
-             * Apiversion
-             * @default
-             */
-            apiVersion: string;
-            /**
-             * Awsprofile
-             * @default
-             */
-            awsProfile: string;
-            /**
-             * Awsregion
-             * @default
-             */
-            awsRegion: string;
-            /**
-             * Awssessiontoken
-             * @default
-             */
-            awsSessionToken: string;
-            /** Baseurl */
-            baseUrl: string;
-            /**
-             * Consensusruns
-             * @default 1
-             */
-            consensusRuns: number;
-            /**
-             * Maxtokens
-             * @default 8192
-             */
-            maxTokens: number;
-            /** Model */
-            model: string;
-            /** Name */
-            name: string;
-            /**
-             * Provider
-             * @default
-             */
-            provider: string;
-        };
-        /** ScanConfigSecretResponse */
-        ScanConfigSecretResponse: {
-            /** Apikey */
-            apiKey: string;
-        };
-        /** ScanConfigValidateRequest */
-        ScanConfigValidateRequest: {
-            /** Apikey */
-            apiKey: string;
-            /**
-             * Apiversion
-             * @default
-             */
-            apiVersion: string;
-            /**
-             * Awsprofile
-             * @default
-             */
-            awsProfile: string;
-            /**
-             * Awsregion
-             * @default
-             */
-            awsRegion: string;
-            /**
-             * Awssessiontoken
-             * @default
-             */
-            awsSessionToken: string;
-            /** Baseurl */
-            baseUrl: string;
-            /**
-             * Consensusruns
-             * @default 1
-             */
-            consensusRuns: number;
-            /** Existingconfigid */
-            existingConfigId?: number | null;
-            /**
-             * Maxtokens
-             * @default 8192
-             */
-            maxTokens: number;
-            /** Model */
-            model: string;
-            /** Name */
-            name: string;
-            /**
-             * Provider
-             * @default
-             */
-            provider: string;
-        };
-        /** ScanConfigValidationResponse */
-        ScanConfigValidationResponse: {
-            /** Durationms */
-            durationMs?: number | null;
-            /** Errorcode */
-            errorCode?: string | null;
-            /** Message */
-            message: string;
-            /** Model */
-            model?: string | null;
-            /** Ok */
-            ok: boolean;
-            /** Provider */
-            provider?: string | null;
-        };
-        /** ScanFindingResponse */
-        ScanFindingResponse: {
-            /** Analyzer */
-            analyzer?: string | null;
-            /** Category */
-            category: string;
+        /** ScaffoldRequest */
+        ScaffoldRequest: {
+            /** Asset Type */
+            asset_type: string;
             /** Description */
             description: string;
-            /** Filepath */
-            filePath?: string | null;
-            /** Id */
-            id: string;
-            /** Linenumber */
-            lineNumber?: number | null;
-            /**
-             * Metadata
-             * @default {}
-             */
-            metadata: {
-                [key: string]: unknown;
-            };
-            /** Remediation */
-            remediation?: string | null;
-            /** Ruleid */
-            ruleId: string;
-            /** Severity */
-            severity: string;
-            /** Snippet */
-            snippet?: string | null;
-            /** Title */
-            title: string;
+            /** Name */
+            name: string;
         };
-        /** ScanOptionsRequest */
-        ScanOptionsRequest: {
-            /** Awsprofile */
-            awsProfile?: string | null;
-            /** Awsregion */
-            awsRegion?: string | null;
-            /** Awssessiontoken */
-            awsSessionToken?: string | null;
-            /** Llmapikey */
-            llmApiKey?: string | null;
-            /** Llmapiversion */
-            llmApiVersion?: string | null;
-            /** Llmbaseurl */
-            llmBaseUrl?: string | null;
-            /**
-             * Llmconsensusruns
-             * @default 1
-             */
-            llmConsensusRuns: number;
-            /**
-             * Llmmaxtokens
-             * @default 8192
-             */
-            llmMaxTokens: number;
-            /** Llmmodel */
-            llmModel?: string | null;
-            /** Llmprovider */
-            llmProvider?: string | null;
-            /**
-             * Usellm
-             * @default true
-             */
-            useLlm: boolean;
+        /** ScaffoldResponse */
+        ScaffoldResponse: {
+            /** File Path */
+            file_path: string;
         };
-        /** ScanResultResponse */
-        ScanResultResponse: {
-            /** Analyzersused */
-            analyzersUsed: string[];
-            /** Durationseconds */
-            durationSeconds: number;
-            /** Findings */
-            findings: components["schemas"]["ScanFindingResponse"][];
-            /** Findingscount */
-            findingsCount: number;
-            /** Issafe */
-            isSafe: boolean;
-            /** Maxseverity */
-            maxSeverity: string;
-            /** Skillname */
-            skillName: string;
+        /** SetAgentHarnessesRequest */
+        SetAgentHarnessesRequest: {
+            /** Harnesses */
+            harnesses?: string[];
+        };
+        /** SetAgentHarnessesResultResponse */
+        SetAgentHarnessesResultResponse: {
+            /** Failed */
+            failed: components["schemas"]["AgentMutationFailureResponse"][];
+            /** Ok */
+            ok: boolean;
+            /** Succeeded */
+            succeeded: string[];
         };
         /** SetHarnessSupportRequest */
         SetHarnessSupportRequest: {
             /** Enabled */
             enabled: boolean;
+        };
+        /** SetHookHarnessesRequest */
+        SetHookHarnessesRequest: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "enabled" | "disabled";
         };
         /** SetMcpServerHarnessesRequest */
         SetMcpServerHarnessesRequest: {
@@ -1880,6 +2416,14 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "enabled" | "disabled";
+        };
+        /** SetPermissionHarnessesRequest */
+        SetPermissionHarnessesRequest: {
             /**
              * Target
              * @enum {string}
@@ -2083,14 +2627,14 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "opencode" | "claude" | "cursor" | "codex";
+            target: "claude" | "codex" | "cursor" | "opencode" | "hermes";
         };
         /** SlashCommandListResponse */
         SlashCommandListResponse: {
             /** Commands */
             commands: components["schemas"]["SlashCommandResponse"][];
             /** Defaulttargets */
-            defaultTargets: ("opencode" | "claude" | "cursor" | "codex")[];
+            defaultTargets: ("claude" | "codex" | "cursor" | "opencode" | "hermes")[];
             /** Reviewcommands */
             reviewCommands: components["schemas"]["SlashCommandReviewResponse"][];
             /** Storepath */
@@ -2109,7 +2653,7 @@ export interface components {
             /** Prompt */
             prompt: string;
             /** Targets */
-            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+            targets?: ("claude" | "codex" | "cursor" | "opencode" | "hermes")[] | null;
         };
         /** SlashCommandMutationResponse */
         SlashCommandMutationResponse: {
@@ -2132,7 +2676,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "opencode" | "claude" | "cursor" | "codex";
+            target: "claude" | "codex" | "cursor" | "opencode" | "hermes";
         };
         /** SlashCommandResponse */
         SlashCommandResponse: {
@@ -2174,7 +2718,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "opencode" | "claude" | "cursor" | "codex";
+            target: "claude" | "codex" | "cursor" | "opencode" | "hermes";
             /** Targetlabel */
             targetLabel: string;
         };
@@ -2185,7 +2729,7 @@ export interface components {
             /** Prompt */
             prompt: string;
             /** Targets */
-            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+            targets?: ("claude" | "codex" | "cursor" | "opencode" | "hermes")[] | null;
         };
         /** SlashSyncEntryResponse */
         SlashSyncEntryResponse: {
@@ -2202,12 +2746,12 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "opencode" | "claude" | "cursor" | "codex";
+            target: "claude" | "codex" | "cursor" | "opencode" | "hermes";
         };
         /** SlashSyncRequest */
         SlashSyncRequest: {
             /** Targets */
-            targets?: ("opencode" | "claude" | "cursor" | "codex")[] | null;
+            targets?: ("claude" | "codex" | "cursor" | "opencode" | "hermes")[] | null;
         };
         /** SlashTargetResponse */
         SlashTargetResponse: {
@@ -2225,7 +2769,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "opencode" | "claude" | "cursor" | "codex";
+            id: "claude" | "codex" | "cursor" | "opencode" | "hermes";
             /** Invocationprefix */
             invocationPrefix: string;
             /** Label */
@@ -2249,6 +2793,17 @@ export interface components {
             /** Supportsfrontmatter */
             supportsFrontmatter: boolean;
         };
+        /** UpdateAgentRequest */
+        UpdateAgentRequest: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Prompt */
+            prompt?: string | null;
+            /** Tools */
+            tools?: string[] | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2271,6 +2826,316 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_agents_api_agents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentInventoryResponse"];
+                };
+            };
+        };
+    };
+    create_agent_api_agents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adopt_all_agents_api_agents_adopt_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptAllAgentsResponse"];
+                };
+            };
+        };
+    };
+    get_agent_api_agents__agent_ref__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_agent_api_agents__agent_ref__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_agent_api_agents__agent_ref__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adopt_agent_api_agents__agent_ref__adopt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptAgentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_agent_api_agents__agent_ref__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentHarnessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_agent_api_agents__agent_ref__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentHarnessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_agent_harnesses_api_agents__agent_ref__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAgentHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetAgentHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -2289,6 +3154,296 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    list_hooks_api_hooks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookInventoryResponse"];
+                };
+            };
+        };
+    };
+    create_hook_api_hooks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_hook_api_hooks__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookInventoryEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_hook_api_hooks__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_hook_api_hooks__id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisableHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_hook_api_hooks__id__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnableHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_hook_api_hooks__id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoteHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_hook_api_hooks__id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileHookRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookApplyConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_hook_harnesses_api_hooks__id__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHookHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2996,7 +4151,7 @@ export interface operations {
             };
         };
     };
-    check_scan_availability_api_scan_availability_get: {
+    list_permissions_api_permissions_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3011,32 +4166,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScanAvailabilityResponse"];
+                    "application/json": components["schemas"]["PermissionInventoryResponse"];
                 };
             };
         };
     };
-    list_scan_configs_api_scan_configs_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanConfigListResponse"];
-                };
-            };
-        };
-    };
-    create_scan_config_api_scan_configs_post: {
+    create_permission_api_permissions_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3045,7 +4180,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScanConfigSaveRequest"];
+                "application/json": components["schemas"]["AddPermissionRequest"];
             };
         };
         responses: {
@@ -3055,7 +4190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScanConfigItem"];
+                    "application/json": components["schemas"]["PermissionMutationResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3069,7 +4204,244 @@ export interface operations {
             };
         };
     };
-    validate_scan_config_api_scan_configs_validate_post: {
+    get_permission_api_permissions__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionInventoryEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_permission_api_permissions__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_permission_api_permissions__id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisablePermissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_permission_api_permissions__id__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnablePermissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_permission_api_permissions__id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotePermissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionMutationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_permission_api_permissions__id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcilePermissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionApplyConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_permission_harnesses_api_permissions__id__set_harnesses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPermissionHarnessesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionSetHarnessesResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scaffold_asset_api_scaffold_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3078,7 +4450,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScanConfigValidateRequest"];
+                "application/json": components["schemas"]["ScaffoldRequest"];
             };
         };
         responses: {
@@ -3088,190 +4460,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScanConfigValidationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_scan_config_api_scan_configs__config_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScanConfigSaveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanConfigItem"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_scan_config_api_scan_configs__config_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_active_scan_config_api_scan_configs__config_id__active_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reveal_scan_config_secret_api_scan_configs__config_id__secret_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanConfigSecretResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    detect_llm_api_scan_llm_detection_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LLMDetectionResponse"];
-                };
-            };
-        };
-    };
-    scan_skill_api_scan_skills__skill_ref__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                skill_ref: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ScanOptionsRequest"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanResultResponse"];
+                    "application/json": components["schemas"]["ScaffoldResponse"];
                 };
             };
             /** @description Validation Error */

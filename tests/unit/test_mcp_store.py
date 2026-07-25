@@ -5,7 +5,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from skill_manager.application.mcp.install_intent import ManagedMcpRecord, RegistryInstallIntent
+from skill_manager.application.mcp.install_intent import (
+    ManagedMcpRecord,
+    RegistryInstallIntent,
+)
 from skill_manager.application.mcp.store import McpServerSpec, McpServerStore, McpSource
 
 

@@ -18,7 +18,6 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "certifi>=2024.0.0",
   "fastapi>=0.135,<0.136",
   "tomli-w>=1.2,<2",
   "ruamel.yaml>=0.18,<0.19",
@@ -29,11 +28,6 @@ dependencies = [
 [project.optional-dependencies]
 build = [
   "pyinstaller>=6.11,<7",
-]
-scan = [
-  "azure-identity>=1.16,<2",
-  "google-genai>=1,<2",
-  "litellm>=1.40,<2",
 ]
 
 [project.scripts]
@@ -54,4 +48,26 @@ version = { attr = "skill_manager.__version__" }
 include = ["skill_manager*"]
 
 [tool.setuptools.package-data]
-skill_manager = ["VERSION", "data/prompts/*"]
+skill_manager = ["VERSION", "data/templates/*"]
+
+# Static analysis -------------------------------------------------------------
+# Ruff is the backend lint gate (per RECOMMENDATIONS.md §1.2). We adopt the
+# highest-value, lowest-noise pair first and keep it GREEN on adoption:
+#   * ``I``  -- import sorting (applied across the tree; enforced from here on)
+#   * ``F``  -- pyflakes (redefinitions, unused names, etc.)
+# Codes in ``ignore`` are the current baseline of pre-existing findings kept
+# green on adoption; each is a deliberate "fix-later". Removing a code from
+# ``ignore`` means the codebase now satisfies it and it is enforced — the list
+# is meant to shrink over time. Broadening ``select`` (E/W/UP/B/...) is the
+# follow-up once the deferred cleanup lands.
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["I", "F"]
+ignore = [
+    "F401",  # unused imports — 29 pre-existing; drop in a verified follow-up PR.
+    "F821",  # ruff false positives on conditional / TYPE_CHECKING-guarded names.
+    "F841",  # intentionally-unused locals (mostly test readability).
+]
+

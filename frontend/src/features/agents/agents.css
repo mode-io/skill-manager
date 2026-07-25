@@ -1,0 +1,95 @@
+/* Frontmatter we do not interpret, rendered verbatim as key/value rows. */
+.agent-detail__config {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.agent-detail__config-row {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.agent-detail__config-key {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+
+.agent-detail__config-value {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.agent-detail__config-empty {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 520px) {
+  .agent-detail__config-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.agent-detail__unsupported-pill {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.agent-detail__rendered-note {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  text-transform: none;
+  font-size: 0.85rem;
+  letter-spacing: normal;
+  font-family: inherit;
+}
+
+.agent-action-spinner {
+  margin-right: 4px;
+}
+
+.agent-icon-margin {
+  margin-right: 4px;
+}
+
+.agent-pointer {
+  cursor: pointer;
+}
+
+.agent-opacity-half {
+  opacity: 0.5;
+}
+
+.agent-dialog-content {
+  max-width: 620px;
+  width: 92vw;
+}
+
+.agent-dialog-form {
+  margin-top: 16px;
+}
+
+.agent-dialog-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agent-dialog-footer {
+  margin-top: 24px;
+}
+
+.agent-dialog-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--color-text-muted);
+}

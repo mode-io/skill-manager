@@ -10,6 +10,8 @@
   --font-size-xl: 1.32rem;
   --font-size-2xl: 2rem;
 
+  color-scheme: dark;
+
   /* Surfaces */
   --color-bg: #0b0c0f;
   --color-surface: #1c1d21;
@@ -81,4 +83,104 @@
 
   /* Layout */
   --sidebar-width: 256px;
+}
+
+/* System light theme preference if the user hasn't explicitly selected dark theme */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    /* Surfaces */
+    --color-bg: #f8f5ed;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffffff;
+    --color-surface-sunken: #eae6db;
+    --color-sidebar-bg: #f2efe7;
+
+    /* Borders */
+    --color-border: #e2dccb;
+    --color-border-strong: #c8bfa6;
+
+    /* Text */
+    --color-text: #1f1f1c;
+    --color-text-muted: #6e6859;
+    --color-text-subtle: #9a8e72;
+    --color-text-inverted: #ffffff;
+
+    /* Accent (Brand Amber from logo) */
+    --color-accent: #c07204;
+    --color-accent-strong: #965303;
+    --color-accent-soft: rgba(192, 114, 4, 0.12);
+    --color-accent-softer: rgba(192, 114, 4, 0.06);
+
+    /* Status */
+    --color-success: #0f6e56;
+    --color-success-soft: #e8f5ee;
+    --color-danger: #b14828;
+    --color-danger-soft: #f7e5da;
+    --color-warning: #9a8e72;
+    --color-warning-soft: #fbf9f4;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(31, 31, 28, 0.05);
+    --shadow-md: 0 4px 12px rgba(31, 31, 28, 0.08);
+    --shadow-panel: 0 12px 28px rgba(31, 31, 28, 0.1);
+    --shadow-lift: 0 10px 32px rgba(31, 31, 28, 0.12), 0 2px 8px rgba(31, 31, 28, 0.06);
+
+    /* Scrollbars */
+    --scrollbar-track: rgba(0, 0, 0, 0.02);
+    --scrollbar-thumb: rgba(154, 142, 114, 0.3);
+    --scrollbar-thumb-hover: rgba(154, 142, 114, 0.5);
+    --scrollbar-thumb-active: rgba(154, 142, 114, 0.7);
+    --scrollbar-corner: #f8f5ed;
+  }
+}
+
+/* Explicit light theme setting */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #f8f5ed;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #eae6db;
+  --color-sidebar-bg: #f2efe7;
+
+  /* Borders */
+  --color-border: #e2dccb;
+  --color-border-strong: #c8bfa6;
+
+  /* Text */
+  --color-text: #1f1f1c;
+  --color-text-muted: #6e6859;
+  --color-text-subtle: #9a8e72;
+  --color-text-inverted: #ffffff;
+
+  /* Accent (Brand Amber from logo) */
+  --color-accent: #c07204;
+  --color-accent-strong: #965303;
+  --color-accent-soft: rgba(192, 114, 4, 0.12);
+  --color-accent-softer: rgba(192, 114, 4, 0.06);
+
+  /* Status */
+  --color-success: #0f6e56;
+  --color-success-soft: #e8f5ee;
+  --color-danger: #b14828;
+  --color-danger-soft: #f7e5da;
+  --color-warning: #9a8e72;
+  --color-warning-soft: #fbf9f4;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(31, 31, 28, 0.05);
+  --shadow-md: 0 4px 12px rgba(31, 31, 28, 0.08);
+  --shadow-panel: 0 12px 28px rgba(31, 31, 28, 0.1);
+  --shadow-lift: 0 10px 32px rgba(31, 31, 28, 0.12), 0 2px 8px rgba(31, 31, 28, 0.06);
+
+  /* Scrollbars */
+  --scrollbar-track: rgba(0, 0, 0, 0.02);
+  --scrollbar-thumb: rgba(154, 142, 114, 0.3);
+  --scrollbar-thumb-hover: rgba(154, 142, 114, 0.5);
+  --scrollbar-thumb-active: rgba(154, 142, 114, 0.7);
+  --scrollbar-corner: #f8f5ed;
 }

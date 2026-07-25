@@ -1,4 +1,4 @@
-import { Columns3, LayoutGrid, Plus, Rows3 } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { BulkActionBar } from "../../../components/BulkActionBar";
 import { ConfirmActionDialog } from "../../../components/ConfirmActionDialog";
@@ -6,16 +6,12 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { FilterBar } from "../../../components/FilterBar";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
-import { ViewModeToggle, type ViewModeOption } from "../../../components/ViewModeToggle";
-import { SlashCommandBoard } from "../components/SlashCommandBoard";
 import { SlashCommandFormDialog } from "../components/SlashCommandFormDialog";
-import { SlashCommandList } from "../components/SlashCommandList";
 import { SlashCommandMatrix } from "../components/SlashCommandMatrix";
 import { SlashCommandDetailSheet } from "../components/detail/SlashCommandDetailSheet";
 import { useCommonCopy } from "../../../i18n";
 import { useSlashCommandsCopy } from "../i18n";
 import { useSlashCommandsController } from "../model/useSlashCommandsController";
-import type { SlashCommandsViewMode } from "../model/useSlashCommandsViewMode";
 
 export default function SlashCommandsPage() {
   const controller = useSlashCommandsController();
@@ -23,7 +19,6 @@ export default function SlashCommandsPage() {
   const common = useCommonCopy();
   const {
     actionError,
-    buckets,
     bulkPending,
     checkedNames,
     commands,
@@ -43,13 +38,10 @@ export default function SlashCommandsPage() {
     setDeleteCommand,
     setFormMode,
     setSearch,
-    viewMode,
-    setViewMode,
     executeDeleteCommand,
     handleBulkDelete,
     handleBulkDisableAll,
     handleBulkEnableAll,
-    handleSetAllTargets,
     handleSubmit,
     handleToggleChecked,
     handleToggleTarget,
@@ -58,12 +50,6 @@ export default function SlashCommandsPage() {
     openDetail,
     openEdit,
   } = controller;
-  const viewModeOptions: readonly ViewModeOption<SlashCommandsViewMode>[] = [
-    { value: "grid", label: copy.inUse.viewModes.grid, icon: LayoutGrid },
-    { value: "board", label: copy.inUse.viewModes.board, icon: Columns3 },
-    { value: "matrix", label: copy.inUse.viewModes.matrix, icon: Rows3 },
-  ];
-
   return (
     <>
       <div className="page-chrome">
@@ -71,18 +57,10 @@ export default function SlashCommandsPage() {
           title={copy.inUse.title}
           subtitle={copy.inUse.subtitle}
           actions={
-            <>
-              <ViewModeToggle
-                mode={viewMode}
-                options={viewModeOptions}
-                ariaLabel={copy.inUse.viewModeAria}
-                onChange={setViewMode}
-              />
-              <button type="button" className="action-pill action-pill--md" onClick={openCreate}>
-                <Plus size={14} aria-hidden="true" />
-                {copy.inUse.newCommand}
-              </button>
-            </>
+            <button type="button" className="action-pill action-pill--md" onClick={openCreate}>
+              <Plus size={14} aria-hidden="true" />
+              {copy.inUse.newCommand}
+            </button>
           }
         />
         <FilterBar
@@ -103,48 +81,18 @@ export default function SlashCommandsPage() {
           <LoadingSpinner label={copy.inUse.loading} />
         </div>
       ) : data ? (
-        viewMode === "board" ? (
-          <SlashCommandBoard
-            commands={commands}
-            buckets={buckets}
-            targets={data.targets}
-            pendingName={pendingName}
-            checkedNames={checkedNames}
-            onOpen={openDetail}
-            onToggleChecked={handleToggleChecked}
-            onSetAllTargets={handleSetAllTargets}
-          />
-        ) : viewMode === "matrix" ? (
-          <SlashCommandMatrix
-            commands={commands}
-            targets={data.targets}
-            pendingName={pendingName}
-            pendingTarget={pendingTarget}
-            checkedNames={checkedNames}
-            onOpen={openDetail}
-            onToggleChecked={handleToggleChecked}
-            onToggleTarget={(command, target) => {
-              void handleToggleTarget(command, target);
-            }}
-          />
-        ) : (
-          <SlashCommandList
-            commands={commands}
-            targets={data.targets}
-            pendingName={pendingName}
-            pendingTarget={pendingTarget}
-            checkedNames={checkedNames}
-            onOpen={openDetail}
-            onSetAllTargets={(command, target) => {
-              void handleSetAllTargets(command, target);
-            }}
-            onToggleTarget={(command, target) => {
-              void handleToggleTarget(command, target);
-            }}
-            onToggleChecked={handleToggleChecked}
-            onDelete={setDeleteCommand}
-          />
-        )
+        <SlashCommandMatrix
+          commands={commands}
+          targets={data.targets}
+          pendingName={pendingName}
+          pendingTarget={pendingTarget}
+          checkedNames={checkedNames}
+          onOpen={openDetail}
+          onToggleChecked={handleToggleChecked}
+          onToggleTarget={(command, target) => {
+            void handleToggleTarget(command, target);
+          }}
+        />
       ) : null}
 
       {data ? (

@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from threading import Lock
 
+from skill_manager.application.marketplace_cache import MarketplaceCache
 from skill_manager.sources import (
     GitHubRepoMetadata,
     GitHubRepoMetadataClient,
@@ -11,8 +12,6 @@ from skill_manager.sources import (
     github_owner_avatar_url,
     is_valid_github_repo,
 )
-
-from skill_manager.application.marketplace_cache import MarketplaceCache
 
 from .models import RepoDisplayMetadata
 

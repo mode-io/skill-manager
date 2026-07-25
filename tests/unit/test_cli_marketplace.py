@@ -11,7 +11,6 @@ from skill_manager.application.cli_marketplace.client import (
 )
 from skill_manager.application.marketplace_cache import MarketplaceCache
 
-
 _LIST_RESPONSE_SAMPLE: dict[str, object] = {
     "count": 4,
     "clis": [

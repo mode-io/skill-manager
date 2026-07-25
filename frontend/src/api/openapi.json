@@ -1,6 +1,60 @@
 {
   "components": {
     "schemas": {
+      "AddHookRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "minLength": 1,
+            "title": "Command",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "event": {
+            "minLength": 1,
+            "title": "Event",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match"
+          },
+          "timeout": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "command"
+        ],
+        "title": "AddHookRequest",
+        "type": "object"
+      },
       "AddMcpServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -14,6 +68,135 @@
           "qualifiedName"
         ],
         "title": "AddMcpServerRequest",
+        "type": "object"
+      },
+      "AddPermissionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "minLength": 1,
+            "title": "Decision",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          },
+          "scope": {
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "decision",
+          "scope"
+        ],
+        "title": "AddPermissionRequest",
+        "type": "object"
+      },
+      "AdoptAgentRequest": {
+        "properties": {
+          "onConflict": {
+            "anyOf": [
+              {
+                "enum": [
+                  "keep_store",
+                  "replace_store"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onconflict"
+          }
+        },
+        "title": "AdoptAgentRequest",
+        "type": "object"
+      },
+      "AdoptAgentResponse": {
+        "properties": {
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ref"
+        ],
+        "title": "AdoptAgentResponse",
+        "type": "object"
+      },
+      "AdoptAllAgentsResponse": {
+        "properties": {
+          "adopted": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Adopted",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/AdoptAllSkippedResponse"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "adopted",
+          "skipped"
+        ],
+        "title": "AdoptAllAgentsResponse",
+        "type": "object"
+      },
+      "AdoptAllSkippedResponse": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "reason"
+        ],
+        "title": "AdoptAllSkippedResponse",
         "type": "object"
       },
       "AdoptMcpRequest": {
@@ -54,6 +237,382 @@
           "name"
         ],
         "title": "AdoptMcpRequest",
+        "type": "object"
+      },
+      "AgentActionsResponse": {
+        "properties": {
+          "canAdopt": {
+            "title": "Canadopt",
+            "type": "boolean"
+          },
+          "canDelete": {
+            "title": "Candelete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canAdopt",
+          "canDelete"
+        ],
+        "title": "AgentActionsResponse",
+        "type": "object"
+      },
+      "AgentBindingResponse": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "enabled",
+              "disabled",
+              "unsupported"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "state"
+        ],
+        "title": "AgentBindingResponse",
+        "type": "object"
+      },
+      "AgentColumnResponse": {
+        "properties": {
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "installed"
+        ],
+        "title": "AgentColumnResponse",
+        "type": "object"
+      },
+      "AgentConfigEntryResponse": {
+        "description": "One frontmatter key we do not interpret, shown verbatim.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "AgentConfigEntryResponse",
+        "type": "object"
+      },
+      "AgentDetailResponse": {
+        "properties": {
+          "canDelete": {
+            "title": "Candelete",
+            "type": "boolean"
+          },
+          "configuration": {
+            "items": {
+              "$ref": "#/components/schemas/AgentConfigEntryResponse"
+            },
+            "title": "Configuration",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "document": {
+            "title": "Document",
+            "type": "string"
+          },
+          "harnesses": {
+            "items": {
+              "$ref": "#/components/schemas/AgentHarnessDetailResponse"
+            },
+            "title": "Harnesses",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "storePath": {
+            "title": "Storepath",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ref",
+          "name",
+          "description",
+          "prompt",
+          "tools",
+          "document",
+          "storePath",
+          "harnesses",
+          "canDelete"
+        ],
+        "title": "AgentDetailResponse",
+        "type": "object"
+      },
+      "AgentEntryResponse": {
+        "properties": {
+          "actions": {
+            "$ref": "#/components/schemas/AgentActionsResponse"
+          },
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/AgentBindingResponse"
+            },
+            "title": "Bindings",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "harnessPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Harnesspath"
+          },
+          "kind": {
+            "enum": [
+              "managed",
+              "unmanaged"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "name",
+          "description",
+          "kind",
+          "bindings",
+          "actions"
+        ],
+        "title": "AgentEntryResponse",
+        "type": "object"
+      },
+      "AgentHarnessDetailResponse": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "installMethod": {
+            "enum": [
+              "symlink",
+              "rendered",
+              "none"
+            ],
+            "title": "Installmethod",
+            "type": "string"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "enabled",
+              "disabled",
+              "unsupported"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "state",
+          "path",
+          "installMethod",
+          "installed"
+        ],
+        "title": "AgentHarnessDetailResponse",
+        "type": "object"
+      },
+      "AgentHarnessRequest": {
+        "properties": {
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "AgentHarnessRequest",
+        "type": "object"
+      },
+      "AgentInventoryResponse": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/AgentColumnResponse"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AgentEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/AgentIssueResponse"
+            },
+            "title": "Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns",
+          "entries"
+        ],
+        "title": "AgentInventoryResponse",
+        "type": "object"
+      },
+      "AgentIssueResponse": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "reason"
+        ],
+        "title": "AgentIssueResponse",
+        "type": "object"
+      },
+      "AgentMutationFailureResponse": {
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "error"
+        ],
+        "title": "AgentMutationFailureResponse",
         "type": "object"
       },
       "BulkManageFailureResponse": {
@@ -446,49 +1005,49 @@
         "title": "CliMarketplacePageResponse",
         "type": "object"
       },
-      "DetectedProviderResponse": {
+      "CreateAgentRequest": {
         "properties": {
-          "apiKeySource": {
-            "title": "Apikeysource",
+          "description": {
+            "default": "",
+            "title": "Description",
             "type": "string"
           },
-          "baseUrl": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Baseurl"
+          "name": {
+            "title": "Name",
+            "type": "string"
           },
-          "isAvailable": {
-            "title": "Isavailable",
-            "type": "boolean"
+          "prompt": {
+            "default": "",
+            "title": "Prompt",
+            "type": "string"
           },
-          "model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "provider": {
-            "title": "Provider",
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateAgentRequest",
+        "type": "object"
+      },
+      "DisableHookRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
             "type": "string"
           }
         },
         "required": [
-          "provider",
-          "apiKeySource",
-          "isAvailable"
+          "harness"
         ],
-        "title": "DetectedProviderResponse",
+        "title": "DisableHookRequest",
         "type": "object"
       },
       "DisableMcpServerRequest": {
@@ -506,6 +1065,21 @@
         "title": "DisableMcpServerRequest",
         "type": "object"
       },
+      "DisablePermissionRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "DisablePermissionRequest",
+        "type": "object"
+      },
       "DisableSkillRequest": {
         "properties": {
           "harness": {
@@ -519,6 +1093,21 @@
           "harness"
         ],
         "title": "DisableSkillRequest",
+        "type": "object"
+      },
+      "EnableHookRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "EnableHookRequest",
         "type": "object"
       },
       "EnableMcpServerRequest": {
@@ -546,6 +1135,21 @@
           "harness"
         ],
         "title": "EnableMcpServerRequest",
+        "type": "object"
+      },
+      "EnablePermissionRequest": {
+        "properties": {
+          "harness": {
+            "description": "Harness identifier",
+            "minLength": 1,
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness"
+        ],
+        "title": "EnablePermissionRequest",
         "type": "object"
       },
       "EnableSkillRequest": {
@@ -655,6 +1259,373 @@
         "title": "HarnessColumnResponse",
         "type": "object"
       },
+      "HookApplyConfigResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/HookMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "hook": {
+            "$ref": "#/components/schemas/HookSpecResponse"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "hook",
+          "succeeded",
+          "failed"
+        ],
+        "title": "HookApplyConfigResponse",
+        "type": "object"
+      },
+      "HookBindingResponse": {
+        "properties": {
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caveat"
+          },
+          "driftDetail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driftdetail"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "managed",
+              "drifted",
+              "unmanaged",
+              "missing",
+              "unsupported"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "state"
+        ],
+        "title": "HookBindingResponse",
+        "type": "object"
+      },
+      "HookInventoryColumnResponse": {
+        "properties": {
+          "configPresent": {
+            "title": "Configpresent",
+            "type": "boolean"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "hooksUnavailableReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hooksunavailablereason"
+          },
+          "hooksWritable": {
+            "default": true,
+            "title": "Hookswritable",
+            "type": "boolean"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "installed",
+          "configPresent"
+        ],
+        "title": "HookInventoryColumnResponse",
+        "type": "object"
+      },
+      "HookInventoryEntryResponse": {
+        "properties": {
+          "canEnable": {
+            "title": "Canenable",
+            "type": "boolean"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "enabledStatus": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Enabledstatus",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "managed",
+              "unmanaged"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "sightings": {
+            "items": {
+              "$ref": "#/components/schemas/HookBindingResponse"
+            },
+            "title": "Sightings",
+            "type": "array"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HookSpecResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "kind",
+          "canEnable",
+          "enabledStatus",
+          "sightings"
+        ],
+        "title": "HookInventoryEntryResponse",
+        "type": "object"
+      },
+      "HookInventoryIssueResponse": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "reason"
+        ],
+        "title": "HookInventoryIssueResponse",
+        "type": "object"
+      },
+      "HookInventoryResponse": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryColumnResponse"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/HookInventoryIssueResponse"
+            },
+            "title": "Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns",
+          "entries"
+        ],
+        "title": "HookInventoryResponse",
+        "type": "object"
+      },
+      "HookMutationFailureResponse": {
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "error"
+        ],
+        "title": "HookMutationFailureResponse",
+        "type": "object"
+      },
+      "HookMutationResponse": {
+        "properties": {
+          "hook": {
+            "$ref": "#/components/schemas/HookSpecResponse"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "hook"
+        ],
+        "title": "HookMutationResponse",
+        "type": "object"
+      },
+      "HookSetHarnessesResultResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/HookMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "succeeded",
+          "failed"
+        ],
+        "title": "HookSetHarnessesResultResponse",
+        "type": "object"
+      },
+      "HookSpecResponse": {
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installedAt": {
+            "title": "Installedat",
+            "type": "string"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          },
+          "timeout": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "command",
+          "description",
+          "installedAt",
+          "revision"
+        ],
+        "title": "HookSpecResponse",
+        "type": "object"
+      },
       "InstallMarketplaceSkillRequest": {
         "properties": {
           "installToken": {
@@ -667,49 +1638,6 @@
           "installToken"
         ],
         "title": "InstallMarketplaceSkillRequest",
-        "type": "object"
-      },
-      "LLMDetectionResponse": {
-        "properties": {
-          "defaultModel": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Defaultmodel"
-          },
-          "defaultProvider": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Defaultprovider"
-          },
-          "hasAnyAvailable": {
-            "title": "Hasanyavailable",
-            "type": "boolean"
-          },
-          "providers": {
-            "items": {
-              "$ref": "#/components/schemas/DetectedProviderResponse"
-            },
-            "title": "Providers",
-            "type": "array"
-          }
-        },
-        "required": [
-          "providers",
-          "hasAnyAvailable"
-        ],
-        "title": "LLMDetectionResponse",
         "type": "object"
       },
       "McpAdoptionIssueResponse": {
@@ -2548,6 +3476,441 @@
         "title": "OkResponse",
         "type": "object"
       },
+      "PermissionApplyConfigResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "permission": {
+            "$ref": "#/components/schemas/PermissionSpecResponse"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "permission",
+          "succeeded",
+          "failed"
+        ],
+        "title": "PermissionApplyConfigResponse",
+        "type": "object"
+      },
+      "PermissionBindingResponse": {
+        "properties": {
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caveat"
+          },
+          "driftDetail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driftdetail"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "managed",
+              "drifted",
+              "unmanaged",
+              "missing",
+              "unsupported"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "state"
+        ],
+        "title": "PermissionBindingResponse",
+        "type": "object"
+      },
+      "PermissionInventoryColumnResponse": {
+        "properties": {
+          "configPresent": {
+            "title": "Configpresent",
+            "type": "boolean"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "logoKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logokey"
+          },
+          "permissionsUnavailableReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permissionsunavailablereason"
+          },
+          "permissionsWritable": {
+            "default": true,
+            "title": "Permissionswritable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "harness",
+          "label",
+          "installed",
+          "configPresent"
+        ],
+        "title": "PermissionInventoryColumnResponse",
+        "type": "object"
+      },
+      "PermissionInventoryEntryResponse": {
+        "properties": {
+          "canEnable": {
+            "title": "Canenable",
+            "type": "boolean"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "enabledStatus": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Enabledstatus",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "managed",
+              "unmanaged"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "sightings": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionBindingResponse"
+            },
+            "title": "Sightings",
+            "type": "array"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PermissionSpecResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "kind",
+          "canEnable",
+          "enabledStatus",
+          "sightings"
+        ],
+        "title": "PermissionInventoryEntryResponse",
+        "type": "object"
+      },
+      "PermissionInventoryIssueResponse": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "reason"
+        ],
+        "title": "PermissionInventoryIssueResponse",
+        "type": "object"
+      },
+      "PermissionInventoryResponse": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionInventoryColumnResponse"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionInventoryEntryResponse"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionInventoryIssueResponse"
+            },
+            "title": "Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns",
+          "entries"
+        ],
+        "title": "PermissionInventoryResponse",
+        "type": "object"
+      },
+      "PermissionMutationFailureResponse": {
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "harness": {
+            "title": "Harness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "harness",
+          "error"
+        ],
+        "title": "PermissionMutationFailureResponse",
+        "type": "object"
+      },
+      "PermissionMutationResponse": {
+        "properties": {
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "permission": {
+            "$ref": "#/components/schemas/PermissionSpecResponse"
+          }
+        },
+        "required": [
+          "ok",
+          "permission"
+        ],
+        "title": "PermissionMutationResponse",
+        "type": "object"
+      },
+      "PermissionSetHarnessesResultResponse": {
+        "properties": {
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionMutationFailureResponse"
+            },
+            "title": "Failed",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "succeeded",
+          "failed"
+        ],
+        "title": "PermissionSetHarnessesResultResponse",
+        "type": "object"
+      },
+      "PermissionSpecResponse": {
+        "properties": {
+          "decision": {
+            "title": "Decision",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installedAt": {
+            "title": "Installedat",
+            "type": "string"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "decision",
+          "scope",
+          "description",
+          "installedAt",
+          "revision"
+        ],
+        "title": "PermissionSpecResponse",
+        "type": "object"
+      },
+      "PromoteHookRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "observedHarness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed harness"
+          }
+        },
+        "title": "PromoteHookRequest",
+        "type": "object"
+      },
+      "PromotePermissionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "observedHarness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed harness"
+          }
+        },
+        "title": "PromotePermissionRequest",
+        "type": "object"
+      },
+      "ReconcileHookRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "harnesses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Harnesses"
+          },
+          "observedHarness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed harness"
+          },
+          "sourceKind": {
+            "enum": [
+              "managed",
+              "harness"
+            ],
+            "title": "Sourcekind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceKind"
+        ],
+        "title": "ReconcileHookRequest",
+        "type": "object"
+      },
       "ReconcileMcpServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2591,54 +3954,24 @@
         "title": "ReconcileMcpServerRequest",
         "type": "object"
       },
-      "ScanAvailabilityResponse": {
+      "ReconcilePermissionRequest": {
+        "additionalProperties": false,
         "properties": {
-          "available": {
-            "title": "Available",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "available"
-        ],
-        "title": "ScanAvailabilityResponse",
-        "type": "object"
-      },
-      "ScanConfigItem": {
-        "properties": {
-          "apiKeyMasked": {
-            "title": "Apikeymasked",
-            "type": "string"
+          "harnesses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Harnesses"
           },
-          "apiVersion": {
-            "title": "Apiversion",
-            "type": "string"
-          },
-          "awsProfile": {
-            "title": "Awsprofile",
-            "type": "string"
-          },
-          "awsRegion": {
-            "title": "Awsregion",
-            "type": "string"
-          },
-          "baseUrl": {
-            "title": "Baseurl",
-            "type": "string"
-          },
-          "consensusRuns": {
-            "title": "Consensusruns",
-            "type": "integer"
-          },
-          "id": {
-            "title": "Id",
-            "type": "integer"
-          },
-          "isActive": {
-            "title": "Isactive",
-            "type": "boolean"
-          },
-          "lastValidatedAt": {
+          "observedHarness": {
             "anyOf": [
               {
                 "type": "string"
@@ -2647,542 +3980,99 @@
                 "type": "null"
               }
             ],
-            "title": "Lastvalidatedat"
+            "title": "Observed harness"
           },
-          "lastValidationError": {
-            "default": "",
-            "title": "Lastvalidationerror",
-            "type": "string"
-          },
-          "maxTokens": {
-            "title": "Maxtokens",
-            "type": "integer"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "provider": {
-            "title": "Provider",
+          "sourceKind": {
+            "enum": [
+              "managed",
+              "harness"
+            ],
+            "title": "Sourcekind",
             "type": "string"
           }
         },
         "required": [
-          "id",
-          "name",
-          "baseUrl",
-          "apiKeyMasked",
-          "model",
-          "provider",
-          "apiVersion",
-          "awsRegion",
-          "awsProfile",
-          "maxTokens",
-          "consensusRuns",
-          "isActive"
+          "sourceKind"
         ],
-        "title": "ScanConfigItem",
+        "title": "ReconcilePermissionRequest",
         "type": "object"
       },
-      "ScanConfigListResponse": {
+      "ScaffoldRequest": {
         "properties": {
-          "activeId": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Activeid"
-          },
-          "configs": {
-            "items": {
-              "$ref": "#/components/schemas/ScanConfigItem"
-            },
-            "title": "Configs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "configs",
-          "activeId"
-        ],
-        "title": "ScanConfigListResponse",
-        "type": "object"
-      },
-      "ScanConfigSaveRequest": {
-        "properties": {
-          "apiKey": {
-            "title": "Apikey",
-            "type": "string"
-          },
-          "apiVersion": {
-            "default": "",
-            "title": "Apiversion",
-            "type": "string"
-          },
-          "awsProfile": {
-            "default": "",
-            "title": "Awsprofile",
-            "type": "string"
-          },
-          "awsRegion": {
-            "default": "",
-            "title": "Awsregion",
-            "type": "string"
-          },
-          "awsSessionToken": {
-            "default": "",
-            "title": "Awssessiontoken",
-            "type": "string"
-          },
-          "baseUrl": {
-            "title": "Baseurl",
-            "type": "string"
-          },
-          "consensusRuns": {
-            "default": 1,
-            "title": "Consensusruns",
-            "type": "integer"
-          },
-          "maxTokens": {
-            "default": 8192,
-            "title": "Maxtokens",
-            "type": "integer"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "provider": {
-            "default": "",
-            "title": "Provider",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "baseUrl",
-          "apiKey",
-          "model"
-        ],
-        "title": "ScanConfigSaveRequest",
-        "type": "object"
-      },
-      "ScanConfigSecretResponse": {
-        "properties": {
-          "apiKey": {
-            "title": "Apikey",
-            "type": "string"
-          }
-        },
-        "required": [
-          "apiKey"
-        ],
-        "title": "ScanConfigSecretResponse",
-        "type": "object"
-      },
-      "ScanConfigValidateRequest": {
-        "properties": {
-          "apiKey": {
-            "title": "Apikey",
-            "type": "string"
-          },
-          "apiVersion": {
-            "default": "",
-            "title": "Apiversion",
-            "type": "string"
-          },
-          "awsProfile": {
-            "default": "",
-            "title": "Awsprofile",
-            "type": "string"
-          },
-          "awsRegion": {
-            "default": "",
-            "title": "Awsregion",
-            "type": "string"
-          },
-          "awsSessionToken": {
-            "default": "",
-            "title": "Awssessiontoken",
-            "type": "string"
-          },
-          "baseUrl": {
-            "title": "Baseurl",
-            "type": "string"
-          },
-          "consensusRuns": {
-            "default": 1,
-            "title": "Consensusruns",
-            "type": "integer"
-          },
-          "existingConfigId": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Existingconfigid"
-          },
-          "maxTokens": {
-            "default": 8192,
-            "title": "Maxtokens",
-            "type": "integer"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "provider": {
-            "default": "",
-            "title": "Provider",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "baseUrl",
-          "apiKey",
-          "model"
-        ],
-        "title": "ScanConfigValidateRequest",
-        "type": "object"
-      },
-      "ScanConfigValidationResponse": {
-        "properties": {
-          "durationMs": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Durationms"
-          },
-          "errorCode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Errorcode"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "ok": {
-            "title": "Ok",
-            "type": "boolean"
-          },
-          "provider": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider"
-          }
-        },
-        "required": [
-          "ok",
-          "message"
-        ],
-        "title": "ScanConfigValidationResponse",
-        "type": "object"
-      },
-      "ScanFindingResponse": {
-        "properties": {
-          "analyzer": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Analyzer"
-          },
-          "category": {
-            "title": "Category",
+          "asset_type": {
+            "title": "Asset Type",
             "type": "string"
           },
           "description": {
             "title": "Description",
             "type": "string"
           },
-          "filePath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Filepath"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "lineNumber": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Linenumber"
-          },
-          "metadata": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "Metadata",
-            "type": "object"
-          },
-          "remediation": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Remediation"
-          },
-          "ruleId": {
-            "title": "Ruleid",
-            "type": "string"
-          },
-          "severity": {
-            "title": "Severity",
-            "type": "string"
-          },
-          "snippet": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Snippet"
-          },
-          "title": {
-            "title": "Title",
+          "name": {
+            "title": "Name",
             "type": "string"
           }
         },
         "required": [
-          "id",
-          "ruleId",
-          "category",
-          "severity",
-          "title",
+          "asset_type",
+          "name",
           "description"
         ],
-        "title": "ScanFindingResponse",
+        "title": "ScaffoldRequest",
         "type": "object"
       },
-      "ScanOptionsRequest": {
+      "ScaffoldResponse": {
         "properties": {
-          "awsProfile": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Awsprofile"
-          },
-          "awsRegion": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Awsregion"
-          },
-          "awsSessionToken": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Awssessiontoken"
-          },
-          "llmApiKey": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmapikey"
-          },
-          "llmApiVersion": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmapiversion"
-          },
-          "llmBaseUrl": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmbaseurl"
-          },
-          "llmConsensusRuns": {
-            "default": 1,
-            "title": "Llmconsensusruns",
-            "type": "integer"
-          },
-          "llmMaxTokens": {
-            "default": 8192,
-            "title": "Llmmaxtokens",
-            "type": "integer"
-          },
-          "llmModel": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmmodel"
-          },
-          "llmProvider": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmprovider"
-          },
-          "useLlm": {
-            "default": true,
-            "title": "Usellm",
-            "type": "boolean"
+          "file_path": {
+            "title": "File Path",
+            "type": "string"
           }
         },
-        "title": "ScanOptionsRequest",
+        "required": [
+          "file_path"
+        ],
+        "title": "ScaffoldResponse",
         "type": "object"
       },
-      "ScanResultResponse": {
+      "SetAgentHarnessesRequest": {
         "properties": {
-          "analyzersUsed": {
+          "harnesses": {
             "items": {
               "type": "string"
             },
-            "title": "Analyzersused",
+            "title": "Harnesses",
             "type": "array"
-          },
-          "durationSeconds": {
-            "title": "Durationseconds",
-            "type": "number"
-          },
-          "findings": {
+          }
+        },
+        "title": "SetAgentHarnessesRequest",
+        "type": "object"
+      },
+      "SetAgentHarnessesResultResponse": {
+        "properties": {
+          "failed": {
             "items": {
-              "$ref": "#/components/schemas/ScanFindingResponse"
+              "$ref": "#/components/schemas/AgentMutationFailureResponse"
             },
-            "title": "Findings",
+            "title": "Failed",
             "type": "array"
           },
-          "findingsCount": {
-            "title": "Findingscount",
-            "type": "integer"
-          },
-          "isSafe": {
-            "title": "Issafe",
+          "ok": {
+            "title": "Ok",
             "type": "boolean"
           },
-          "maxSeverity": {
-            "title": "Maxseverity",
-            "type": "string"
-          },
-          "skillName": {
-            "title": "Skillname",
-            "type": "string"
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "array"
           }
         },
         "required": [
-          "skillName",
-          "isSafe",
-          "maxSeverity",
-          "findingsCount",
-          "findings",
-          "analyzersUsed",
-          "durationSeconds"
+          "ok",
+          "succeeded",
+          "failed"
         ],
-        "title": "ScanResultResponse",
+        "title": "SetAgentHarnessesResultResponse",
         "type": "object"
       },
       "SetHarnessSupportRequest": {
@@ -3196,6 +4086,23 @@
           "enabled"
         ],
         "title": "SetHarnessSupportRequest",
+        "type": "object"
+      },
+      "SetHookHarnessesRequest": {
+        "properties": {
+          "target": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "title": "SetHookHarnessesRequest",
         "type": "object"
       },
       "SetMcpServerHarnessesRequest": {
@@ -3225,6 +4132,23 @@
           "target"
         ],
         "title": "SetMcpServerHarnessesRequest",
+        "type": "object"
+      },
+      "SetPermissionHarnessesRequest": {
+        "properties": {
+          "target": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "title": "SetPermissionHarnessesRequest",
         "type": "object"
       },
       "SetSkillHarnessesFailureResponse": {
@@ -3838,10 +4762,11 @@
           },
           "target": {
             "enum": [
-              "opencode",
               "claude",
+              "codex",
               "cursor",
-              "codex"
+              "opencode",
+              "hermes"
             ],
             "title": "Target",
             "type": "string"
@@ -3866,10 +4791,11 @@
           "defaultTargets": {
             "items": {
               "enum": [
-                "opencode",
                 "claude",
+                "codex",
                 "cursor",
-                "codex"
+                "opencode",
+                "hermes"
               ],
               "type": "string"
             },
@@ -3932,10 +4858,11 @@
               {
                 "items": {
                   "enum": [
-                    "opencode",
                     "claude",
+                    "codex",
                     "cursor",
-                    "codex"
+                    "opencode",
+                    "hermes"
                   ],
                   "type": "string"
                 },
@@ -4006,10 +4933,11 @@
           },
           "target": {
             "enum": [
-              "opencode",
               "claude",
+              "codex",
               "cursor",
-              "codex"
+              "opencode",
+              "hermes"
             ],
             "title": "Target",
             "type": "string"
@@ -4119,10 +5047,11 @@
           },
           "target": {
             "enum": [
-              "opencode",
               "claude",
+              "codex",
               "cursor",
-              "codex"
+              "opencode",
+              "hermes"
             ],
             "title": "Target",
             "type": "string"
@@ -4165,10 +5094,11 @@
               {
                 "items": {
                   "enum": [
-                    "opencode",
                     "claude",
+                    "codex",
                     "cursor",
-                    "codex"
+                    "opencode",
+                    "hermes"
                   ],
                   "type": "string"
                 },
@@ -4221,10 +5151,11 @@
           },
           "target": {
             "enum": [
-              "opencode",
               "claude",
+              "codex",
               "cursor",
-              "codex"
+              "opencode",
+              "hermes"
             ],
             "title": "Target",
             "type": "string"
@@ -4245,10 +5176,11 @@
               {
                 "items": {
                   "enum": [
-                    "opencode",
                     "claude",
+                    "codex",
                     "cursor",
-                    "codex"
+                    "opencode",
+                    "hermes"
                   ],
                   "type": "string"
                 },
@@ -4288,10 +5220,11 @@
           },
           "id": {
             "enum": [
-              "opencode",
               "claude",
+              "codex",
               "cursor",
-              "codex"
+              "opencode",
+              "hermes"
             ],
             "title": "Id",
             "type": "string"
@@ -4362,6 +5295,59 @@
         "title": "SlashTargetResponse",
         "type": "object"
       },
+      "UpdateAgentRequest": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "title": "UpdateAgentRequest",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -4410,6 +5396,427 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/agents": {
+      "get": {
+        "operationId": "list_agents_api_agents_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentInventoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Agents",
+        "tags": [
+          "Agents"
+        ]
+      },
+      "post": {
+        "operationId": "create_agent_api_agents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/adopt-all": {
+      "post": {
+        "operationId": "adopt_all_agents_api_agents_adopt_all_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdoptAllAgentsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Adopt All Agents",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/{agent_ref}": {
+      "delete": {
+        "operationId": "delete_agent_api_agents__agent_ref__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Agent",
+        "tags": [
+          "Agents"
+        ]
+      },
+      "get": {
+        "operationId": "get_agent_api_agents__agent_ref__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Agent",
+        "tags": [
+          "Agents"
+        ]
+      },
+      "put": {
+        "operationId": "update_agent_api_agents__agent_ref__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/{agent_ref}/adopt": {
+      "post": {
+        "operationId": "adopt_agent_api_agents__agent_ref__adopt_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdoptAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdoptAgentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Adopt Agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/{agent_ref}/disable": {
+      "post": {
+        "operationId": "disable_agent_api_agents__agent_ref__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentHarnessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disable Agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/{agent_ref}/enable": {
+      "post": {
+        "operationId": "enable_agent_api_agents__agent_ref__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentHarnessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enable Agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/agents/{agent_ref}/set-harnesses": {
+      "post": {
+        "operationId": "set_agent_harnesses_api_agents__agent_ref__set_harnesses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_ref",
+            "required": true,
+            "schema": {
+              "title": "Agent Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAgentHarnessesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetAgentHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Agent Harnesses",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "health_api_health_get",
@@ -4428,6 +5835,381 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/hooks": {
+      "get": {
+        "operationId": "list_hooks_api_hooks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookInventoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Hooks"
+      },
+      "post": {
+        "operationId": "create_hook_api_hooks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Hook"
+      }
+    },
+    "/api/hooks/{id}": {
+      "delete": {
+        "operationId": "delete_hook_api_hooks__id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookSetHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Hook"
+      },
+      "get": {
+        "operationId": "get_hook_api_hooks__id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookInventoryEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Hook"
+      }
+    },
+    "/api/hooks/{id}/disable": {
+      "post": {
+        "operationId": "disable_hook_api_hooks__id__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disable Hook"
+      }
+    },
+    "/api/hooks/{id}/enable": {
+      "post": {
+        "operationId": "enable_hook_api_hooks__id__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnableHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enable Hook"
+      }
+    },
+    "/api/hooks/{id}/promote": {
+      "post": {
+        "operationId": "promote_hook_api_hooks__id__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoteHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote Hook"
+      }
+    },
+    "/api/hooks/{id}/reconcile": {
+      "post": {
+        "operationId": "reconcile_hook_api_hooks__id__reconcile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookApplyConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reconcile Hook"
+      }
+    },
+    "/api/hooks/{id}/set-harnesses": {
+      "post": {
+        "operationId": "set_hook_harnesses_api_hooks__id__set_harnesses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHookHarnessesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HookSetHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Hook Harnesses"
       }
     },
     "/api/marketplace/clis/items/{slug}": {
@@ -5454,48 +7236,30 @@
         "summary": "List Unmanaged By Server"
       }
     },
-    "/api/scan/availability": {
+    "/api/permissions": {
       "get": {
-        "operationId": "check_scan_availability_api_scan_availability_get",
+        "operationId": "list_permissions_api_permissions_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScanAvailabilityResponse"
+                  "$ref": "#/components/schemas/PermissionInventoryResponse"
                 }
               }
             },
             "description": "Successful Response"
           }
         },
-        "summary": "Check Scan Availability"
-      }
-    },
-    "/api/scan/configs": {
-      "get": {
-        "operationId": "list_scan_configs_api_scan_configs_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScanConfigListResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "List Scan Configs"
+        "summary": "List Permissions"
       },
       "post": {
-        "operationId": "create_scan_config_api_scan_configs_post",
+        "operationId": "create_permission_api_permissions_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScanConfigSaveRequest"
+                "$ref": "#/components/schemas/AddPermissionRequest"
               }
             }
           },
@@ -5506,7 +7270,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScanConfigItem"
+                  "$ref": "#/components/schemas/PermissionMutationResponse"
                 }
               }
             },
@@ -5523,58 +7287,20 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Create Scan Config"
+        "summary": "Create Permission"
       }
     },
-    "/api/scan/configs/validate": {
-      "post": {
-        "operationId": "validate_scan_config_api_scan_configs_validate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ScanConfigValidateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScanConfigValidationResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Validate Scan Config"
-      }
-    },
-    "/api/scan/configs/{config_id}": {
+    "/api/permissions/{id}": {
       "delete": {
-        "operationId": "delete_scan_config_api_scan_configs__config_id__delete",
+        "operationId": "delete_permission_api_permissions__id__delete",
         "parameters": [
           {
             "in": "path",
-            "name": "config_id",
+            "name": "id",
             "required": true,
             "schema": {
-              "title": "Config Id",
-              "type": "integer"
+              "title": "Id",
+              "type": "string"
             }
           }
         ],
@@ -5582,7 +7308,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionSetHarnessesResultResponse"
+                }
               }
             },
             "description": "Successful Response"
@@ -5598,104 +7326,18 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Delete Scan Config"
+        "summary": "Delete Permission"
       },
-      "put": {
-        "operationId": "update_scan_config_api_scan_configs__config_id__put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "config_id",
-            "required": true,
-            "schema": {
-              "title": "Config Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ScanConfigSaveRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScanConfigItem"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Update Scan Config"
-      }
-    },
-    "/api/scan/configs/{config_id}/active": {
-      "put": {
-        "operationId": "set_active_scan_config_api_scan_configs__config_id__active_put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "config_id",
-            "required": true,
-            "schema": {
-              "title": "Config Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Set Active Scan Config"
-      }
-    },
-    "/api/scan/configs/{config_id}/secret": {
       "get": {
-        "operationId": "reveal_scan_config_secret_api_scan_configs__config_id__secret_get",
+        "operationId": "get_permission_api_permissions__id__get",
         "parameters": [
           {
             "in": "path",
-            "name": "config_id",
+            "name": "id",
             "required": true,
             "schema": {
-              "title": "Config Id",
-              "type": "integer"
+              "title": "Id",
+              "type": "string"
             }
           }
         ],
@@ -5704,7 +7346,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScanConfigSecretResponse"
+                  "$ref": "#/components/schemas/PermissionInventoryEntryResponse"
                 }
               }
             },
@@ -5721,37 +7363,19 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Reveal Scan Config Secret"
+        "summary": "Get Permission"
       }
     },
-    "/api/scan/llm/detection": {
-      "get": {
-        "operationId": "detect_llm_api_scan_llm_detection_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LLMDetectionResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Detect Llm"
-      }
-    },
-    "/api/scan/skills/{skill_ref}": {
+    "/api/permissions/{id}/disable": {
       "post": {
-        "operationId": "scan_skill_api_scan_skills__skill_ref__post",
+        "operationId": "disable_permission_api_permissions__id__disable_post",
         "parameters": [
           {
             "in": "path",
-            "name": "skill_ref",
+            "name": "id",
             "required": true,
             "schema": {
-              "title": "Skill Ref",
+              "title": "Id",
               "type": "string"
             }
           }
@@ -5760,25 +7384,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/ScanOptionsRequest"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Body"
+                "$ref": "#/components/schemas/DisablePermissionRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScanResultResponse"
+                  "$ref": "#/components/schemas/OkResponse"
                 }
               }
             },
@@ -5795,7 +7412,244 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Scan Skill"
+        "summary": "Disable Permission"
+      }
+    },
+    "/api/permissions/{id}/enable": {
+      "post": {
+        "operationId": "enable_permission_api_permissions__id__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnablePermissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enable Permission"
+      }
+    },
+    "/api/permissions/{id}/promote": {
+      "post": {
+        "operationId": "promote_permission_api_permissions__id__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromotePermissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionMutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote Permission"
+      }
+    },
+    "/api/permissions/{id}/reconcile": {
+      "post": {
+        "operationId": "reconcile_permission_api_permissions__id__reconcile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcilePermissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionApplyConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reconcile Permission"
+      }
+    },
+    "/api/permissions/{id}/set-harnesses": {
+      "post": {
+        "operationId": "set_permission_harnesses_api_permissions__id__set_harnesses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPermissionHarnessesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionSetHarnessesResultResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Permission Harnesses"
+      }
+    },
+    "/api/scaffold": {
+      "post": {
+        "operationId": "scaffold_asset_api_scaffold_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScaffoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScaffoldResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scaffold Asset",
+        "tags": [
+          "Scaffold"
+        ]
       }
     },
     "/api/settings": {

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import get_args
+
 from skill_manager.errors import MutationError
 
 from .executor import SlashCommandSyncExecutor
-from .models import SlashCommand, SlashReviewAction, SlashTarget
+from .models import SlashCommand, SlashReviewAction, SlashTarget, SlashTargetId
 from .planner import SlashCommandPlanner
 from .queries import SlashCommandQueryService
 from .read_models import SlashCommandReadModelService
@@ -21,14 +24,14 @@ class SlashCommandMutationService:
         queries: SlashCommandQueryService,
         read_models: SlashCommandReadModelService,
         planner: SlashCommandPlanner,
-        targets: tuple[SlashTarget, ...],
+        resolve_targets: Callable[[], tuple[SlashTarget, ...]],
     ) -> None:
         self.store = store
         self.sync_state = sync_state
         self.queries = queries
         self.read_models = read_models
         self.planner = planner
-        self.targets = targets
+        self.resolve_targets = resolve_targets
         self.path_policy = planner.path_policy
         self.sync_executor = SlashCommandSyncExecutor(sync_state, planner, self.path_policy)
         self.review_resolver = SlashCommandReviewResolver(store, sync_state, queries, self.path_policy)
@@ -60,15 +63,17 @@ class SlashCommandMutationService:
         return {"ok": sync["ok"], "command": payload, "sync": sync["sync"]}
 
     def sync_command(self, name: str, *, targets: list[str] | None = None) -> dict[str, object]:
+        resolved_targets = self.resolve_targets()
         command = self.store.require_command(name)
-        selected = self._selected_targets(targets)
-        return self.sync_executor.sync_command(command, selected, self.targets)
+        selected = self._selected_targets(targets, resolved_targets)
+        return self.sync_executor.sync_command(command, selected, resolved_targets)
 
     def delete_command(self, name: str) -> dict[str, object]:
+        resolved_targets = self.resolve_targets()
         validate_command_name(name)
         self.store.require_command(name)
         records = self.sync_state.load().get(name, {})
-        removed = self.sync_executor.remove_tracked_outputs(records, self.targets)
+        removed = self.sync_executor.remove_tracked_outputs(records, resolved_targets)
         if not removed["ok"]:
             return removed
 
@@ -77,7 +82,8 @@ class SlashCommandMutationService:
         return {"ok": True, "sync": removed["sync"]}
 
     def import_unmanaged_command(self, *, target: str, name: str) -> dict[str, object]:
-        selected_target = self._require_target(target)
+        resolved_targets = self.resolve_targets()
+        selected_target = self._require_target(target, resolved_targets)
         return self.review_resolver.import_unmanaged_command(selected_target, name)
 
     def resolve_review_command(
@@ -87,28 +93,32 @@ class SlashCommandMutationService:
         name: str,
         action: SlashReviewAction,
     ) -> dict[str, object]:
-        selected_target = self._require_target(target)
+        resolved_targets = self.resolve_targets()
+        selected_target = self._require_target(target, resolved_targets)
         return self.review_resolver.resolve_review_command(target=selected_target, name=name, action=action)
 
-    def _selected_targets(self, targets: list[str] | None) -> tuple[SlashTarget, ...]:
-        target_ids = targets if targets is not None else list(default_target_ids(self.targets))
+    def _selected_targets(self, targets: list[str] | None, resolved_targets: tuple[SlashTarget, ...]) -> tuple[SlashTarget, ...]:
+        target_ids = targets if targets is not None else list(default_target_ids(resolved_targets))
         selected: list[SlashTarget] = []
         seen: set[str] = set()
         for target_id in target_ids:
             if target_id in seen:
                 continue
-            target = self._require_target(target_id)
+            target = self._require_target(target_id, resolved_targets)
             selected.append(target)
             seen.add(target_id)
         return tuple(selected)
 
-    def _require_target(self, target_id: str) -> SlashTarget:
-        target = target_by_id(self.targets, target_id)
-        if target is None:
-            raise MutationError(f"unknown slash command target: {target_id}", status=400)
-        if not target.enabled:
+    def _require_target(self, target_id: str, resolved_targets: tuple[SlashTarget, ...]) -> SlashTarget:
+        target = target_by_id(resolved_targets, target_id)
+        if target is not None:
+            return target
+        # Resolved targets already exclude harnesses disabled in Settings, so a
+        # target that is a real slash-command harness yet missing here is disabled,
+        # not unknown. Report it the way MCP, hooks, permissions, and skills do.
+        if target_id in get_args(SlashTargetId):
             raise MutationError(f"harness support is disabled: {target_id}", status=400)
-        return target
+        raise MutationError(f"unknown slash command target: {target_id}", status=400)
 
 
 __all__ = ["SlashCommandMutationService"]

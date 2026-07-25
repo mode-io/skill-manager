@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-import subprocess
 import socket
+import subprocess
 import sys
-from tempfile import TemporaryDirectory
 import time
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.request import urlopen
 
 from tests.support.fake_home import create_fake_home_spec

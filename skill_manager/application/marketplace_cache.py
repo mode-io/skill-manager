@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 from skill_manager.paths import resolve_app_paths

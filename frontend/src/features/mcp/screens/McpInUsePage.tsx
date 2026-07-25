@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { Grid2X2, Rows3 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { BulkActionBar } from "../../../components/BulkActionBar";
@@ -8,11 +7,9 @@ import { ErrorBanner } from "../../../components/ErrorBanner";
 import { FilterBar } from "../../../components/FilterBar";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
-import { ViewModeToggle, type ViewModeOption } from "../../../components/ViewModeToggle";
 import { McpServerDetailSheet } from "../components/detail/McpServerDetailSheet";
 import { McpInstallConfigDialog } from "../components/config/McpInstallConfigDialog";
 import { McpFilterMenu } from "../components/McpFilterMenu";
-import { McpServerCardList } from "../components/McpServerCardList";
 import { McpServerMatrixView } from "../components/McpServerMatrixView";
 import type { McpInventoryEntryDto } from "../api/management-types";
 import { useCommonCopy } from "../../../i18n";
@@ -25,7 +22,6 @@ import {
 } from "../model/selectors";
 import { useMcpEnableWorkflow } from "../model/use-mcp-enable-workflow";
 import { useMcpManagementController } from "../model/use-mcp-management-controller";
-import { useMcpInUseViewMode, type McpInUseViewMode } from "../model/useMcpInUseViewMode";
 
 const DETAIL_PARAM = "server";
 
@@ -60,7 +56,6 @@ export default function McpInUsePage() {
 
   const [search, setSearch] = useState("");
   const [pill, setPill] = useState<InUsePillValue>("all");
-  const [viewMode, setViewMode] = useMcpInUseViewMode();
   const copy = useMcpCopy();
   const common = useCommonCopy();
   const {
@@ -74,14 +69,6 @@ export default function McpInUsePage() {
     loadErrorMessage: copy.detail.unableToLoadInstallConfig,
     bulkRequiresSingleMessage: copy.detail.installConfig.bulkRequiresSingle,
   });
-  const viewModeOptions: readonly ViewModeOption<McpInUseViewMode>[] = useMemo(
-    () => [
-      { value: "cards", label: copy.inUse.viewModes.cards, icon: Grid2X2 },
-      { value: "matrix", label: copy.inUse.viewModes.matrix, icon: Rows3 },
-    ],
-    [copy],
-  );
-
   const entries = useMemo(
     () => filterMcpServersInUse(inventory, { search, pill }),
     [inventory, search, pill],
@@ -223,20 +210,12 @@ export default function McpInUsePage() {
           title={copy.inUse.title}
           subtitle={copy.inUse.subtitle}
           actions={
-            <>
-              <ViewModeToggle
-                mode={viewMode}
-                options={viewModeOptions}
-                ariaLabel={copy.inUse.viewModeAria}
-                onChange={setViewMode}
-              />
-              <Link
-                to="/marketplace/mcp"
-                className="action-pill action-pill--md action-pill--accent"
-              >
-                {common.actions.browseMarketplace}
-              </Link>
-            </>
+            <Link
+              to="/marketplace/mcp"
+              className="action-pill action-pill--md action-pill--accent"
+            >
+              {common.actions.browseMarketplace}
+            </Link>
           }
         />
         {totalInUse > 0 ? (
@@ -263,32 +242,19 @@ export default function McpInUsePage() {
         <div className="panel-state">{queryErrorMessage || copy.inUse.unableToLoad}</div>
       ) : isReady && inventory ? (
         entries.length > 0 ? (
-          viewMode === "matrix" ? (
-            <McpServerMatrixView
-              entries={entries}
-              columns={inventory.columns}
-              pendingServerKeys={pendingServerKeys}
-              pendingPerHarnessKeys={pendingPerHarnessKeys}
-              checkedNames={multiSelectedNames}
-              onOpenDetail={setDetailName}
-              onToggleChecked={handleToggleMultiSelect}
-              onEnableHarness={handleMatrixEnableHarness}
-              onDisableHarness={(name, harness) => {
-                void handleDisableInHarness(name, harness);
-              }}
-            />
-          ) : (
-            <McpServerCardList
-              entries={entries}
-              columns={inventory.columns}
-              pendingServerKeys={pendingServerKeys}
-              checkedNames={multiSelectedNames}
-              onOpenDetail={setDetailName}
-              onToggleChecked={handleToggleMultiSelect}
-              onSetHarnesses={handleCardSetHarnesses}
-              onRequestUninstall={confirmUninstall}
-            />
-          )
+          <McpServerMatrixView
+            entries={entries}
+            columns={inventory.columns}
+            pendingServerKeys={pendingServerKeys}
+            pendingPerHarnessKeys={pendingPerHarnessKeys}
+            checkedNames={multiSelectedNames}
+            onOpenDetail={setDetailName}
+            onToggleChecked={handleToggleMultiSelect}
+            onEnableHarness={handleMatrixEnableHarness}
+            onDisableHarness={(name, harness) => {
+              void handleDisableInHarness(name, harness);
+            }}
+          />
         ) : totalInUse > 0 ? (
           <div className="empty-panel">
             <h3 className="empty-panel__title">{common.status.noMatches}</h3>

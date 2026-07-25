@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-from pathlib import Path
 import signal
 import ssl
+from contextlib import AbstractContextManager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from threading import Thread
 from types import FrameType
 from urllib.parse import parse_qs, urlparse
 
-from tests.support.marketplace_payloads import fixture_detail_html, fixture_homepage_html, fixture_search_payload
+from tests.support.marketplace_payloads import (
+    fixture_detail_html,
+    fixture_homepage_html,
+    fixture_search_payload,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_TLS_ROOT = REPO_ROOT / "tests" / "fixtures" / "marketplace_tls"

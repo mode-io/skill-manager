@@ -6,6 +6,7 @@ from typing import Mapping
 
 from .marketplace.catalog import McpMarketplaceCatalog
 
+
 @dataclass(frozen=True)
 class MarketplaceLink:
     qualified_name: str

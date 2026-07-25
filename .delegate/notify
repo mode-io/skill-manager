@@ -1,0 +1,55 @@
+#!/bin/sh
+# notify — reverse-channel helper for a DELEGATED agent. Copied into each
+# delegate's worktree as ./.delegate/notify by `spawn`. Run it from the worktree.
+#
+# Usage:
+#   ./.delegate/notify needs-input "the question or decision you need answered"
+#   ./.delegate/notify blocked     "what you are stuck on"
+#   ./.delegate/notify done        "summary of what you finished (orchestrator re-verifies)"
+#   ./.delegate/notify resume      # AFTER the orchestrator replies, before you continue working
+#
+# It does two things so the orchestrator both wakes instantly AND gets full content:
+#   1. sets your herdr agent status (event-driven, ~ms wake) via report-agent
+#   2. writes the full message to ./.delegate/signal (the orchestrator polls this)
+# herdr injects $HERDR_PANE_ID into your pane; $DELEGATE_LABEL is set by spawn.
+#
+# IMPORTANT: a reported `blocked` is sticky and suppresses herdr's real detection
+# until cleared. After the orchestrator answers, run `notify resume` (or it will
+# sit falsely blocked forever).
+
+set -u
+
+kind="${1:-}"
+[ "$#" -gt 0 ] && shift
+msg="${*:-}"
+
+here="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"   # the .delegate dir
+sigfile="$here/signal"
+label="${DELEGATE_LABEL:-delegate}"
+pane="${HERDR_PANE_ID:-}"
+
+report() {  # report <state> <custom-status>
+  [ -n "$pane" ] || return 0
+  herdr pane report-agent "$pane" --source delegate-protocol --agent "$label" \
+    --state "$1" --custom-status "$2" >/dev/null 2>&1 || true
+}
+
+headline() { printf '%s' "$1" | tr '\n' ' ' | cut -c1-72; }
+
+case "$kind" in
+  needs-input)
+    report blocked "NEEDS-INPUT: $(headline "$msg")"
+    printf '<<DELEGATE:NEEDS-INPUT>> %s\n' "$msg" > "$sigfile" ;;
+  blocked)
+    report blocked "BLOCKED: $(headline "$msg")"
+    printf '<<DELEGATE:BLOCKED>> %s\n' "$msg" > "$sigfile" ;;
+  done)
+    # no reportable `done` state; completion rides the file + quiescence
+    printf '<<DELEGATE:DONE>> %s\n' "$msg" > "$sigfile" ;;
+  resume)
+    report working "resumed"
+    : > "$sigfile" ;;
+  *)
+    echo "usage: notify {needs-input|blocked|done|resume} [message]" >&2
+    exit 2 ;;
+esac

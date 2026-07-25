@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Mapping
 
-
 _ENV_REF_PATTERN = re.compile(r"^\$\{env:[A-Z][A-Z0-9_]*\}$")
 
 
