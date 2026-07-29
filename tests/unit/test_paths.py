@@ -18,6 +18,9 @@ def isolated_env(platform: str):
         "XDG_DATA_HOME",
         "XDG_STATE_HOME",
         "HOME",
+        "USERPROFILE",
+        "APPDATA",
+        "LOCALAPPDATA",
         "SKILL_MANAGER_SETTINGS_PATH",
         "SKILL_MANAGER_STATE_DIR",
     )}
@@ -91,9 +94,40 @@ class ResolveAppPathsTests(unittest.TestCase):
             self.assertEqual(paths.data_dir, home / ".local" / "share" / APP_NAME)
             self.assertEqual(paths.state_dir, home / ".local" / "state" / APP_NAME)
 
-    def test_unsupported_platform_fails_clearly(self) -> None:
+    def test_windows_defaults_use_known_folder_layout(self) -> None:
         with isolated_env("win32"), TemporaryDirectory() as temp:
-            with self.assertRaisesRegex(RuntimeError, "unsupported platform: win32"):
+            root = Path(temp)
+            paths = resolve_app_paths(
+                {
+                    "USERPROFILE": str(root / "用户"),
+                    "APPDATA": str(root / "Roaming Data"),
+                    "LOCALAPPDATA": str(root / "Local Data"),
+                }
+            )
+
+            self.assertEqual(paths.config_dir, root / "Roaming Data" / APP_NAME)
+            self.assertEqual(paths.data_dir, root / "Local Data" / APP_NAME)
+            self.assertEqual(paths.state_dir, root / "Local Data" / APP_NAME)
+            self.assertEqual(paths.skills_store_root, root / "Local Data" / APP_NAME / "shared")
+            self.assertEqual(paths.settings_path, root / "Roaming Data" / APP_NAME / "settings.json")
+
+    def test_windows_known_folder_fallbacks_are_under_userprofile(self) -> None:
+        with isolated_env("win32"), TemporaryDirectory() as temp:
+            home = Path(temp) / "home"
+            paths = resolve_app_paths({"USERPROFILE": str(home)})
+
+            self.assertEqual(
+                paths.config_dir,
+                home / "AppData" / "Roaming" / APP_NAME,
+            )
+            self.assertEqual(
+                paths.data_dir,
+                home / "AppData" / "Local" / APP_NAME,
+            )
+
+    def test_unsupported_platform_fails_clearly(self) -> None:
+        with isolated_env("freebsd"), TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(RuntimeError, "unsupported platform: freebsd"):
                 resolve_app_paths({"HOME": str(Path(temp) / "home")})
 
 

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import zipfile
 from pathlib import Path
 from urllib.parse import quote
 from urllib.request import urlopen
@@ -24,7 +25,7 @@ from tests.support.marketplace_https_fixture import MarketplaceFixtureServer
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate a packaged skill-manager release artifact.")
-    parser.add_argument("--artifact", required=True, help="Path to the release tar.gz artifact.")
+    parser.add_argument("--artifact", required=True, help="Path to the release archive.")
     parser.add_argument("--version", required=True, help="Expected app version.")
     return parser.parse_args(argv)
 
@@ -74,11 +75,15 @@ def main(argv: list[str] | None = None) -> int:
 
     with tempfile.TemporaryDirectory(prefix="skill-manager-artifact-") as tmpdir:
         tmp_path = Path(tmpdir)
-        with tarfile.open(artifact, "r:gz") as archive:
-            archive.extractall(tmp_path)
+        if artifact.suffix == ".zip":
+            with zipfile.ZipFile(artifact) as archive:
+                archive.extractall(tmp_path)
+        else:
+            with tarfile.open(artifact, "r:gz") as archive:
+                archive.extractall(tmp_path)
 
         bundle_dir = tmp_path / "skill-manager"
-        binary = bundle_dir / "skill-manager"
+        binary = bundle_dir / ("skill-manager.exe" if os.name == "nt" else "skill-manager")
         license_file = bundle_dir / "LICENSE"
         if not binary.exists():
             raise RuntimeError(f"packaged executable missing: {binary}")
@@ -106,6 +111,9 @@ def main(argv: list[str] | None = None) -> int:
             runtime_env.update(
                 {
                     "HOME": str(home_dir),
+                    "USERPROFILE": str(home_dir),
+                    "APPDATA": str(xdg_config_dir),
+                    "LOCALAPPDATA": str(xdg_data_dir),
                     "XDG_CONFIG_HOME": str(xdg_config_dir),
                     "XDG_DATA_HOME": str(xdg_data_dir),
                     "XDG_STATE_HOME": str(xdg_state_dir),

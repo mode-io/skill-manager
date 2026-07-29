@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 from tempfile import TemporaryDirectory
 import unittest
 
 from skill_manager.application.skills.adapters import build_skills_adapters
+from skill_manager.directory_links import create_directory_link, is_directory_link
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
 
@@ -143,8 +145,8 @@ class SkillsAdapterTests(unittest.TestCase):
             self.assertIn("user-helper", scan.excluded_skill_names)
             self.assertTrue((bundled / "SKILL.md").is_file())
             self.assertTrue((official / "SKILL.md").is_file())
-            self.assertFalse(bundled.is_symlink())
-            self.assertFalse(official.is_symlink())
+            self.assertFalse(is_directory_link(bundled))
+            self.assertFalse(is_directory_link(official))
             self.assertTrue((local / "SKILL.md").is_file())
             self.assertTrue((community_hub / "SKILL.md").is_file())
 
@@ -175,7 +177,7 @@ class SkillsAdapterTests(unittest.TestCase):
     def test_cursor_app_probe_keeps_skills_adapter_installed_without_cli(self) -> None:
         with TemporaryDirectory() as temp_dir:
             spec = create_fake_home_spec(Path(temp_dir))
-            (spec.bin_dir / "cursor-agent").unlink()
+            spec.cli_path("cursor-agent").unlink()
             (spec.home / "Applications" / "Cursor.app").mkdir(parents=True)
 
             cursor = _adapter("cursor", spec)
@@ -200,7 +202,7 @@ class SkillsAdapterTests(unittest.TestCase):
             codex.enable_shared_package(package)
 
             link = spec.codex_root / "audit"
-            self.assertTrue(link.is_symlink())
+            self.assertTrue(is_directory_link(link))
             self.assertEqual(link.resolve(), package.resolve())
 
     def test_enable_refuses_real_directory(self) -> None:
@@ -224,7 +226,7 @@ class SkillsAdapterTests(unittest.TestCase):
 
             codex.adopt_local_copy(harness_pkg, store_pkg)
 
-            self.assertTrue(harness_pkg.is_symlink())
+            self.assertTrue(is_directory_link(harness_pkg))
             self.assertEqual(harness_pkg.resolve(), store_pkg.resolve())
 
     def test_materialize_binding_restores_real_directory(self) -> None:
@@ -237,14 +239,27 @@ class SkillsAdapterTests(unittest.TestCase):
                 body="shared version",
             )
             link = spec.codex_root / "audit"
-            link.symlink_to(store_pkg.resolve())
+            create_directory_link(link, store_pkg)
             codex = _adapter("codex", spec)
 
             codex.materialize_binding("audit", store_pkg)
 
             self.assertTrue(link.is_dir())
-            self.assertFalse(link.is_symlink())
+            self.assertFalse(is_directory_link(link))
             self.assertIn("shared version", (link / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_has_binding_recognizes_directory_link_with_missing_target(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            spec = create_fake_home_spec(Path(temp_dir))
+            package = seed_skill_package(spec.skills_store_root, "audit", "Audit")
+            link = spec.codex_root / "audit"
+            create_directory_link(link, package)
+            codex = _adapter("codex", spec)
+
+            shutil.rmtree(package)
+
+            self.assertTrue(is_directory_link(link))
+            self.assertTrue(codex.has_binding("audit"))
 
     def test_hermes_enable_creates_symlink_under_default_category(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -255,7 +270,7 @@ class SkillsAdapterTests(unittest.TestCase):
             hermes.enable_shared_package(package)
 
             link = spec.hermes_skills_root / "skill-manager" / "audit"
-            self.assertTrue(link.is_symlink())
+            self.assertTrue(is_directory_link(link))
             self.assertEqual(link.resolve(), package.resolve())
             self.assertTrue(hermes.has_binding("audit"))
 
@@ -275,10 +290,10 @@ class SkillsAdapterTests(unittest.TestCase):
             hermes.enable_shared_package(package)
 
             link = spec.hermes_skills_root / "skill-manager" / "audit"
-            self.assertTrue(link.is_symlink())
+            self.assertTrue(is_directory_link(link))
             self.assertEqual(link.resolve(), package.resolve())
             self.assertTrue((hermes_owned / "SKILL.md").is_file())
-            self.assertFalse(hermes_owned.is_symlink())
+            self.assertFalse(is_directory_link(hermes_owned))
 
     def test_hermes_disable_finds_symlink_in_existing_category(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -286,13 +301,13 @@ class SkillsAdapterTests(unittest.TestCase):
             package = seed_skill_package(spec.skills_store_root, "audit", "Audit")
             link = spec.hermes_skills_root / "custom" / "audit"
             link.parent.mkdir(parents=True, exist_ok=True)
-            link.symlink_to(package)
+            create_directory_link(link, package)
             hermes = _adapter("hermes", spec)
 
             hermes.disable_shared_package("audit")
 
             self.assertFalse(link.exists())
-            self.assertFalse(link.is_symlink())
+            self.assertFalse(is_directory_link(link))
 
 
 if __name__ == "__main__":

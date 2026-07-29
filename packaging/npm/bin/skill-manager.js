@@ -5,8 +5,15 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { assertNoHomebrewConflict } = require("../scripts/channel-ownership");
+const { executableName } = require("../scripts/release-targets");
 
-const binaryPath = path.resolve(__dirname, "..", "vendor", "skill-manager", "skill-manager");
+const binaryPath = path.resolve(
+  __dirname,
+  "..",
+  "vendor",
+  "skill-manager",
+  executableName(),
+);
 
 if (!fs.existsSync(binaryPath)) {
   console.error("skill-manager binary is missing. Reinstall the npm package to restore it.");

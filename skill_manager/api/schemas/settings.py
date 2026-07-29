@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class SettingsStorageResponse(BaseModel):
-    platform: Literal["macos", "linux"]
+    platform: Literal["macos", "linux", "windows"]
     configDir: str
     dataDir: str
     stateDir: str

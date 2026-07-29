@@ -9,7 +9,12 @@ import time
 from skill_manager import __version__
 from skill_manager.runtime.browser import maybe_open_browser
 from skill_manager.paths import STATE_DIR_ENV
-from skill_manager.runtime.process import is_owned_runtime_process, terminate_process
+from skill_manager.runtime.process import (
+    is_owned_runtime_process,
+    process_command,
+    process_started_at,
+    terminate_process,
+)
 from skill_manager.runtime.state import (
     RuntimeState,
     clear_runtime_state,
@@ -127,6 +132,17 @@ def start_command(args: argparse.Namespace) -> int:
         *frontend_dist_args(args.frontend_dist),
         *state_dir_args(args.state_dir),
     )
+    background_options: dict[str, object]
+    if os.name == "nt":
+        background_options = {
+            "creationflags": (
+                subprocess.CREATE_NEW_PROCESS_GROUP
+                | subprocess.CREATE_NO_WINDOW
+                | subprocess.DETACHED_PROCESS
+            )
+        }
+    else:
+        background_options = {"start_new_session": True}
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,
@@ -135,7 +151,7 @@ def start_command(args: argparse.Namespace) -> int:
             stdin=subprocess.DEVNULL,
             cwd=os.getcwd(),
             env=env,
-            start_new_session=True,
+            **background_options,
         )
     timeout_seconds = startup_timeout_seconds()
     if not wait_for_health(url, timeout_seconds=timeout_seconds):
@@ -153,8 +169,9 @@ def start_command(args: argparse.Namespace) -> int:
             port=port,
             base_url=url,
             version=__version__,
-            executable=sys.executable,
+            executable=process_command(process.pid) or sys.executable,
             started_at=time.time(),
+            process_started_at=process_started_at(process.pid),
         ),
         env,
     )

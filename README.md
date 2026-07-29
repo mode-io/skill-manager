@@ -16,7 +16,7 @@
   <a href="https://github.com/mode-io/skill-manager/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mode-io/skill-manager?style=flat-square&color=EA580C" /></a>
   <a href="https://www.npmjs.com/package/@mode-io/skill-manager"><img alt="npm version" src="https://img.shields.io/npm/v/%40mode-io%2Fskill-manager?style=flat-square&logo=npm&logoColor=white" /></a>
   <a href="#install"><img alt="Install with Homebrew" src="https://img.shields.io/badge/install-homebrew-FBBF24?style=flat-square&logo=homebrew&logoColor=111827" /></a>
-  <a href="#install"><img alt="macOS ARM64/x64 and Linux x64/ARM64" src="https://img.shields.io/badge/platform-macOS%20ARM64%2Fx64%20%2B%20Linux%20x64%2FARM64-111827?style=flat-square&logo=linux&logoColor=white" /></a>
+  <a href="#install"><img alt="macOS ARM64/x64, Linux x64/ARM64, and Windows x64" src="https://img.shields.io/badge/platform-macOS%20%2B%20Linux%20%2B%20Windows%20x64-111827?style=flat-square" /></a>
   <a href="#local-first-safety"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
 
@@ -126,7 +126,7 @@ brew install skill-manager
 skill-manager start
 ```
 
-### npm (macOS ARM64/x64 and Linux x64/ARM64)
+### npm (macOS ARM64/x64, Linux x64/ARM64, and Windows x64)
 
 ```bash
 npm install -g @mode-io/skill-manager
@@ -134,7 +134,15 @@ skill-manager start
 ```
 
 The npm wrapper downloads the native release artifact for the current platform and CPU architecture.
-Native release artifacts are published on GitHub Releases for macOS ARM64/x64 and Linux x64/ARM64.
+Native release artifacts are published on GitHub Releases for macOS ARM64/x64, Linux x64/ARM64, and Windows x64.
+
+### Windows support scope
+
+Native Windows support targets Windows 10 22H2 and Windows 11 on x64 local disks. It does not require WSL, administrator privileges, or Windows Developer Mode.
+
+The first Windows release supports the complete **Codex CLI + Skills** flow: discover an existing Codex CLI installation, install or adopt Skills, and enable or disable them under `%USERPROFILE%\.agents\skills`. Skill Manager does not install, update, or sign in to Codex. Other harnesses, MCP server management, and slash command management are not yet supported on Windows.
+
+Windows ARM64, Windows Server, UNC paths, mapped network drives, and removable drives are outside the current support scope.
 
 ## Supported harnesses
 
@@ -182,6 +190,13 @@ Native release artifacts are published on GitHub Releases for macOS ARM64/x64 an
 | Hermes Agent | Yes | Yes | Not Yet |
 | OpenClaw | Yes | Not Yet | Not Yet |
 
+The table above describes macOS/Linux support. The initial native Windows support matrix is:
+
+| Harness | Skills | MCP servers | Slash commands |
+|---|---:|---:|---:|
+| Codex CLI | Yes | Not Yet | Not Yet |
+| Other harnesses | Not Yet | Not Yet | Not Yet |
+
 ## Local-first safety
 
 Skill Manager is a local configuration-management tool. It runs on your machine and reads or writes local harness extension state.
@@ -200,13 +215,13 @@ Actions that can change local state include:
 - creating, updating, syncing, importing, or deleting a slash command
 - changing harness support settings
 
-App-owned files live under `~/Library/Application Support/skill-manager` on macOS and XDG base directories on Linux.
+App-owned files live under `~/Library/Application Support/skill-manager` on macOS, XDG base directories on Linux, and `%APPDATA%\skill-manager` plus `%LOCALAPPDATA%\skill-manager` on Windows.
 
 ## How it works
 
 ### Skills
 
-Before adoption, each harness points at its own local skill folder. After adoption, Skill Manager keeps one canonical package in its shared local store and exposes it to selected harnesses with local links. Disabling a harness removes that harness binding without deleting the package.
+Before adoption, each harness points at its own local skill folder. After adoption, Skill Manager keeps one canonical package in its shared local store and exposes it to selected harnesses with local links. It uses symbolic links on macOS/Linux and ordinary-user directory junctions on Windows. Disabling a harness removes that harness binding without deleting the package.
 
 Skill Manager treats managed Skills as portable by default: once a Skill is adopted into the shared store, it can be enabled for any supported harness. `originHarness` is retained only as provenance.
 
@@ -255,7 +270,7 @@ CLI marketplace entries are preview-only.
 
 ## Configuration
 
-On macOS, app-owned files live under `~/Library/Application Support/skill-manager`. On Linux, app-owned files use XDG base directories.
+On macOS, app-owned files live under `~/Library/Application Support/skill-manager`. On Linux, app-owned files use XDG base directories. On Windows, roaming configuration uses `%APPDATA%` while app data and runtime state use `%LOCALAPPDATA%`.
 
 Useful macOS paths:
 
@@ -276,6 +291,13 @@ Useful Linux paths:
 - marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
 - app database and LLM scan configs: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - app settings: `${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
+
+Useful Windows paths:
+
+- shared skills store: `%LOCALAPPDATA%\skill-manager\shared`
+- marketplace cache, database, and runtime state: `%LOCALAPPDATA%\skill-manager`
+- app settings: `%APPDATA%\skill-manager\settings.json`
+- Codex Skills root: `%USERPROFILE%\.agents\skills`
 
 Most users do not need to change these locations. If you manage skills in a custom environment, you can override individual skill roots with environment variables.
 
@@ -306,16 +328,37 @@ MCP config locations are harness-owned. Skill Manager writes only to verified co
 scripts/install-dev.sh
 ```
 
+Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt ".[build]"
+npm ci
+```
+
 ### Run locally
 
 ```bash
 scripts/start-dev.sh
 ```
 
+Windows PowerShell:
+
+```powershell
+npm run build
+.\.venv\Scripts\python.exe -m skill_manager start --state-dir .artifacts\runtime
+```
+
 Stop the managed local instance:
 
 ```bash
 scripts/stop-dev.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m skill_manager stop --state-dir .artifacts\runtime
 ```
 
 The split dev flow is available when you want Vite hot reload:
@@ -345,6 +388,8 @@ npm run build
 
 - If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try again.
 - On macOS, if `npm install -g @mode-io/skill-manager` reports that Homebrew already owns `skill-manager`, uninstall the Homebrew formula first. The inverse also applies: uninstall the npm package before switching back to Homebrew.
+- On Windows, if Codex is unavailable, run `codex --version` in the same PowerShell session and restart Skill Manager after fixing `PATH`. Skill Manager does not install or sign in to Codex.
+- Windows Skill bindings are directory junctions. Keep the Skill Manager data directory and Codex Skills root on local disks; network and removable-drive paths are not supported.
 - If an MCP harness is shown as unavailable, Skill Manager has detected that the local client is missing or does not support the required config surface.
 
 ## More to come

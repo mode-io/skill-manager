@@ -51,9 +51,22 @@ class PlatformContextTests(unittest.TestCase):
 
         self.assertEqual(context.platform, "linux")
 
+    def test_windows_platform_context_prefers_userprofile(self) -> None:
+        context = resolve_platform_context(
+            {
+                "HOME": "D:/git-home",
+                "USERPROFILE": "C:/Users/Alice",
+            },
+            sys_platform="win32",
+        )
+
+        self.assertEqual(context.platform, "windows")
+        self.assertEqual(context.sys_platform, "win32")
+        self.assertEqual(context.home, Path("C:/Users/Alice"))
+
     def test_unsupported_platform_fails_clearly(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "unsupported platform: win32"):
-            resolve_platform_context({"HOME": "/tmp/home"}, sys_platform="win32")
+        with self.assertRaisesRegex(RuntimeError, "unsupported platform: freebsd"):
+            resolve_platform_context({"HOME": "/tmp/home"}, sys_platform="freebsd")
 
 
 if __name__ == "__main__":

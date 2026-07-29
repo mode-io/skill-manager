@@ -5,6 +5,7 @@ import unittest
 
 from skill_manager.application.skills.manifest import SkillStoreEntry
 from skill_manager.application.skills.package import fingerprint_package
+from skill_manager.directory_links import create_directory_link, is_directory_link
 
 from tests.support.app_harness import AppTestHarness
 from tests.support.fake_home import seed_shared_only_fixture, seed_skill_package, seed_store_manifest
@@ -66,13 +67,13 @@ def seed_delete_fixture(spec):
         spec.opencode_root / "shared-audit",
         spec.openclaw_managed_root / "shared-audit",
     ):
-        path.symlink_to(target)
+        create_directory_link(path, target)
 
 
 def seed_delete_preflight_failure_fixture(spec):
     seed_shared_only_fixture(spec)
     target = spec.skills_store_root / "shared-audit"
-    (spec.codex_root / "shared-audit").symlink_to(target)
+    create_directory_link(spec.codex_root / "shared-audit", target)
     seed_skill_package(spec.claude_root, "shared-audit", "Shared Audit", body="local conflict")
 
 
@@ -83,7 +84,7 @@ def seed_unmanage_fixture(spec):
         spec.codex_root / "shared-audit",
         spec.claude_root / "shared-audit",
     ):
-        path.symlink_to(target)
+        create_directory_link(path, target)
 
 
 def seed_cursor_owned_skill_fixture(spec):
@@ -175,7 +176,7 @@ class SkillsMutationTests(unittest.TestCase):
             )
 
             self.assertTrue(result["ok"])
-            self.assertTrue((harness.spec.codex_root / "external-helper").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "external-helper"))
 
     def test_hermes_owned_skills_are_hidden_and_manage_all_leaves_files_alone(self) -> None:
         with AppTestHarness(fixture_factory=seed_hermes_bundled_exclusion_fixture) as harness:
@@ -192,7 +193,7 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertNotIn("User Helper", [row["name"] for row in refreshed["rows"]])
             bundled_dir = harness.spec.hermes_skills_root / "builtin" / "bundled-core"
             self.assertTrue((bundled_dir / "SKILL.md").is_file())
-            self.assertFalse(bundled_dir.is_symlink())
+            self.assertFalse(is_directory_link(bundled_dir))
 
     def test_origin_metadata_exposes_every_harness_cell(self) -> None:
         with AppTestHarness(fixture_factory=seed_origin_shared_fixture) as harness:
@@ -216,7 +217,7 @@ class SkillsMutationTests(unittest.TestCase):
             )
 
             self.assertTrue(result["ok"])
-            self.assertTrue((harness.spec.codex_root / "policy-kit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "policy-kit"))
 
     def test_set_harnesses_targets_all_enabled_installed_harnesses(self) -> None:
         with AppTestHarness(fixture_factory=seed_origin_shared_fixture) as harness:
@@ -233,12 +234,16 @@ class SkillsMutationTests(unittest.TestCase):
                 set(result["succeeded"]),
                 {"codex", "claude", "cursor", "opencode", "openclaw", "hermes"},
             )
-            self.assertTrue((harness.spec.codex_root / "policy-kit").is_symlink())
-            self.assertTrue((harness.spec.claude_root / "policy-kit").is_symlink())
-            self.assertTrue((harness.spec.cursor_root / "policy-kit").is_symlink())
-            self.assertTrue((harness.spec.opencode_root / "policy-kit").is_symlink())
-            self.assertTrue((harness.spec.openclaw_managed_root / "policy-kit").is_symlink())
-            self.assertTrue((harness.spec.hermes_skills_root / "skill-manager" / "policy-kit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "policy-kit"))
+            self.assertTrue(is_directory_link(harness.spec.claude_root / "policy-kit"))
+            self.assertTrue(is_directory_link(harness.spec.cursor_root / "policy-kit"))
+            self.assertTrue(is_directory_link(harness.spec.opencode_root / "policy-kit"))
+            self.assertTrue(is_directory_link(harness.spec.openclaw_managed_root / "policy-kit"))
+            self.assertTrue(
+                is_directory_link(
+                    harness.spec.hermes_skills_root / "skill-manager" / "policy-kit"
+                )
+            )
 
     def test_manage_records_origin_only(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -259,7 +264,7 @@ class SkillsMutationTests(unittest.TestCase):
             result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/enable", {"harness": "codex"})
 
             self.assertTrue(result["ok"])
-            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "shared-audit"))
 
     def test_disable_managed_skill_removes_symlink(self) -> None:
         with AppTestHarness(fixture_factory=seed_shared_only_fixture) as harness:
@@ -291,7 +296,7 @@ class SkillsMutationTests(unittest.TestCase):
                 link_root = getattr(harness.spec, f"{harness_name}_root", None)
                 if link_root is None:
                     continue
-                self.assertTrue((link_root / "shared-audit").is_symlink(), harness_name)
+                self.assertTrue(is_directory_link(link_root / "shared-audit"), harness_name)
 
     def test_set_skill_harnesses_disables_every_live_harness(self) -> None:
         with AppTestHarness(fixture_factory=seed_delete_fixture) as harness:
@@ -347,7 +352,7 @@ class SkillsMutationTests(unittest.TestCase):
             # Simulate missing non-core CLIs by removing their stubs from the
             # fake PATH. Cursor may still be available through its app probe.
             for cli in ("cursor-agent", "opencode", "hermes", "openclaw"):
-                stub = harness.spec.bin_dir / cli
+                stub = harness.spec.cli_path(cli)
                 if stub.exists():
                     stub.unlink()
             harness.container.skills_read_models.invalidate()
@@ -376,10 +381,10 @@ class SkillsMutationTests(unittest.TestCase):
             if installed_by_harness["cursor"]:
                 expected.add("cursor")
             self.assertEqual(set(result["succeeded"]), expected)
-            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
-            self.assertTrue((harness.spec.claude_root / "shared-audit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "shared-audit"))
+            self.assertTrue(is_directory_link(harness.spec.claude_root / "shared-audit"))
             if installed_by_harness["cursor"]:
-                self.assertTrue((harness.spec.cursor_root / "shared-audit").is_symlink())
+                self.assertTrue(is_directory_link(harness.spec.cursor_root / "shared-audit"))
             else:
                 self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
             # Unavailable harness folders remain untouched.
@@ -398,11 +403,11 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertTrue(result["ok"])
             managed_trace = next(row for row in refreshed["rows"] if row["name"] == "Trace Lens")
             self.assertEqual(managed_trace["displayStatus"], "Managed")
-            self.assertTrue((harness.spec.codex_root / "trace-lens").is_symlink())
-            self.assertTrue((harness.spec.claude_root / "trace-lens-copy").is_symlink())
-            self.assertTrue((harness.spec.opencode_root / "trace-lens").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "trace-lens"))
+            self.assertTrue(is_directory_link(harness.spec.claude_root / "trace-lens-copy"))
+            self.assertTrue(is_directory_link(harness.spec.opencode_root / "trace-lens"))
             self.assertTrue((harness.spec.codex_legacy_root / "trace-lens").is_dir())
-            self.assertFalse((harness.spec.codex_legacy_root / "trace-lens").is_symlink())
+            self.assertFalse(is_directory_link(harness.spec.codex_legacy_root / "trace-lens"))
 
     def test_manage_all_skills_centralizes_all_found_local_rows(self) -> None:
         with AppTestHarness(mixed=True) as harness:
@@ -426,12 +431,12 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertEqual(result["managedCount"], 0)
             self.assertEqual(result["failures"], [])
             self.assertTrue((harness.spec.cursor_owned_root / "cursor-built" / "SKILL.md").is_file())
-            self.assertFalse((harness.spec.cursor_owned_root / "cursor-built").is_symlink())
+            self.assertFalse(is_directory_link(harness.spec.cursor_owned_root / "cursor-built"))
             self.assertFalse((harness.spec.cursor_root / "cursor-built").exists())
 
     def test_manage_rejects_missing_harness_install_before_creating_bindings(self) -> None:
         with AppTestHarness(mixed=True) as harness:
-            (harness.spec.bin_dir / "codex").unlink()
+            harness.spec.cli_path("codex").unlink()
             skills = harness.get_json("/api/skills")
             trace_lens = next(row for row in skills["rows"] if row["name"] == "Trace Lens")
 
@@ -439,7 +444,7 @@ class SkillsMutationTests(unittest.TestCase):
 
             self.assertIn("Codex is not installed or not available on PATH", result["error"])
             self.assertFalse((harness.spec.codex_root / "trace-lens").exists())
-            self.assertFalse((harness.spec.claude_root / "trace-lens-copy").is_symlink())
+            self.assertFalse(is_directory_link(harness.spec.claude_root / "trace-lens-copy"))
             self.assertFalse((harness.spec.opencode_root / "trace-lens").exists())
 
     def test_manage_unknown_skill_returns_404(self) -> None:
@@ -470,9 +475,9 @@ class SkillsMutationTests(unittest.TestCase):
             self.assertTrue(result["ok"])
             self.assertFalse((harness.spec.skills_store_root / "shared-audit").exists())
             self.assertTrue((harness.spec.codex_root / "shared-audit").is_dir())
-            self.assertFalse((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertFalse(is_directory_link(harness.spec.codex_root / "shared-audit"))
             self.assertTrue((harness.spec.claude_root / "shared-audit").is_dir())
-            self.assertFalse((harness.spec.claude_root / "shared-audit").is_symlink())
+            self.assertFalse(is_directory_link(harness.spec.claude_root / "shared-audit"))
             self.assertFalse((harness.spec.cursor_root / "shared-audit").exists())
 
             refreshed = harness.get_json("/api/skills")
@@ -499,7 +504,7 @@ class SkillsMutationTests(unittest.TestCase):
             result = harness.post_json(f"/api/skills/{shared_entry['skillRef']}/unmanage", expected_status=409)
 
             self.assertIn("disabled harnesses still have bindings", result["error"])
-            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "shared-audit"))
             self.assertTrue((harness.spec.skills_store_root / "shared-audit").is_dir())
 
     def test_unmanage_rejects_unmanaged_skills(self) -> None:
@@ -569,7 +574,7 @@ class SkillsMutationTests(unittest.TestCase):
 
             self.assertIn("not a symlink", result["error"])
             self.assertTrue((harness.spec.skills_store_root / "shared-audit").is_dir())
-            self.assertTrue((harness.spec.codex_root / "shared-audit").is_symlink())
+            self.assertTrue(is_directory_link(harness.spec.codex_root / "shared-audit"))
             self.assertTrue((harness.spec.claude_root / "shared-audit").is_dir())
 
 

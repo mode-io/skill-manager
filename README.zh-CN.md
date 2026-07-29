@@ -16,7 +16,7 @@
   <a href="https://github.com/mode-io/skill-manager/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mode-io/skill-manager?style=flat-square&color=EA580C" /></a>
   <a href="https://www.npmjs.com/package/@mode-io/skill-manager"><img alt="npm version" src="https://img.shields.io/npm/v/%40mode-io%2Fskill-manager?style=flat-square&logo=npm&logoColor=white" /></a>
   <a href="#安装"><img alt="Install with Homebrew" src="https://img.shields.io/badge/install-homebrew-FBBF24?style=flat-square&logo=homebrew&logoColor=111827" /></a>
-  <a href="#安装"><img alt="macOS ARM64/x64 and Linux x64/ARM64" src="https://img.shields.io/badge/platform-macOS%20ARM64%2Fx64%20%2B%20Linux%20x64%2FARM64-111827?style=flat-square&logo=linux&logoColor=white" /></a>
+  <a href="#安装"><img alt="macOS ARM64/x64、Linux x64/ARM64 和 Windows x64" src="https://img.shields.io/badge/platform-macOS%20%2B%20Linux%20%2B%20Windows%20x64-111827?style=flat-square" /></a>
   <a href="#本地优先安全模型"><img alt="Local-first" src="https://img.shields.io/badge/data-local--first-0F766E?style=flat-square" /></a>
 </p>
 
@@ -126,7 +126,7 @@ brew install skill-manager
 skill-manager start
 ```
 
-### npm（macOS ARM64/x64 和 Linux x64/ARM64）
+### npm（macOS ARM64/x64、Linux x64/ARM64 和 Windows x64）
 
 ```bash
 npm install -g @mode-io/skill-manager
@@ -134,7 +134,15 @@ skill-manager start
 ```
 
 npm wrapper 会为当前平台和 CPU 架构下载对应的原生 release artifact。
-GitHub Releases 会发布 macOS ARM64/x64 和 Linux x64/ARM64 的原生 release artifact。
+GitHub Releases 会发布 macOS ARM64/x64、Linux x64/ARM64 和 Windows x64 的原生 release artifact。
+
+### Windows 支持范围
+
+原生 Windows 支持面向使用本机磁盘的 Windows 10 22H2 和 Windows 11 x64，不依赖 WSL、管理员权限或 Windows 开发者模式。
+
+首个 Windows 版本支持完整的 **Codex CLI + Skill** 流程：发现已经安装的 Codex CLI，安装或采用 Skill，并在 `%USERPROFILE%\.agents\skills` 下启用或停用。Skill Manager 不负责安装、升级或登录 Codex。其他 harness、MCP 服务器管理和 slash command 管理暂不支持 Windows。
+
+Windows ARM64、Windows Server、UNC 路径、映射网络盘和便携式磁盘暂不在支持范围内。
 
 ## 支持的 harness
 
@@ -146,6 +154,13 @@ GitHub Releases 会发布 macOS ARM64/x64 和 Linux x64/ARM64 的原生 release 
 | OpenCode | 支持 | 支持 | 支持 |
 | Hermes Agent | 支持 | 支持 | 暂不支持 |
 | OpenClaw | 支持 | 暂不支持 | 暂不支持 |
+
+上表描述 macOS/Linux 支持。首个原生 Windows 版本的支持矩阵为：
+
+| Harness | Skill | MCP 服务器 | Slash command |
+|---|---:|---:|---:|
+| Codex CLI | 支持 | 暂不支持 | 暂不支持 |
+| 其他 harness | 暂不支持 | 暂不支持 | 暂不支持 |
 
 ## 本地优先安全模型
 
@@ -165,13 +180,13 @@ Skill Manager 是本地配置管理工具。它在你的机器上运行，并读
 - 创建、更新、同步、导入或删除 slash command
 - 修改 harness 支持设置
 
-在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories。
+在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories；在 Windows 上使用 `%APPDATA%\skill-manager` 和 `%LOCALAPPDATA%\skill-manager`。
 
 ## 工作方式
 
 ### Skill
 
-采用之前，各 harness 指向各自的本地 Skill 文件夹。采用之后，Skill Manager 会在共享本地存储中保留一个规范包，并通过本地链接暴露给选定 harness。停用某个 harness 会移除该 harness 绑定，但不会删除包本身。
+采用之前，各 harness 指向各自的本地 Skill 文件夹。采用之后，Skill Manager 会在共享本地存储中保留一个规范包，并通过本地链接暴露给选定 harness。macOS/Linux 使用符号链接，Windows 使用普通用户即可创建的目录联接。停用某个 harness 会移除该 harness 绑定，但不会删除包本身。
 
 Skill Manager 默认把已管理 Skill 视为可迁移：Skill 一旦进入 shared store，就可以启用到任何受支持 harness。`originHarness` 只保留作来源记录。
 
@@ -220,7 +235,7 @@ CLI marketplace 条目仅用于预览。
 
 ## 配置
 
-在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories。
+在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories；在 Windows 上，漫游配置使用 `%APPDATA%`，应用数据和运行状态使用 `%LOCALAPPDATA%`。
 
 常用 macOS 路径：
 
@@ -241,6 +256,13 @@ CLI marketplace 条目仅用于预览。
 - 商城缓存：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
 - 应用数据库和 LLM 扫描配置：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - 应用设置：`${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
+
+常用 Windows 路径：
+
+- 共享 Skill 存储：`%LOCALAPPDATA%\skill-manager\shared`
+- 商城缓存、应用数据库和运行状态：`%LOCALAPPDATA%\skill-manager`
+- 应用设置：`%APPDATA%\skill-manager\settings.json`
+- Codex Skill 根目录：`%USERPROFILE%\.agents\skills`
 
 大多数用户不需要修改这些位置。如果你在自定义环境中管理 Skill，可以用环境变量覆盖单个 Skill 根目录。
 
@@ -271,16 +293,37 @@ MCP 配置位置由 harness 拥有。Skill Manager 只写入经过验证的配�
 scripts/install-dev.sh
 ```
 
+Windows PowerShell：
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt ".[build]"
+npm ci
+```
+
 ### 本地运行
 
 ```bash
 scripts/start-dev.sh
 ```
 
+Windows PowerShell：
+
+```powershell
+npm run build
+.\.venv\Scripts\python.exe -m skill_manager start --state-dir .artifacts\runtime
+```
+
 停止本地托管实例：
 
 ```bash
 scripts/stop-dev.sh
+```
+
+Windows PowerShell：
+
+```powershell
+.\.venv\Scripts\python.exe -m skill_manager stop --state-dir .artifacts\runtime
 ```
 
 需要 Vite 热更新时，可以使用拆分开发流程：
@@ -310,6 +353,8 @@ npm run build
 
 - 如果商城请求失败并显示 `Marketplace is temporarily unavailable`，请确认网络连接后重试。
 - 在 macOS 上，如果 `npm install -g @mode-io/skill-manager` 提示 Homebrew 已拥有 `skill-manager`，请先卸载 Homebrew formula。反过来也一样：切回 Homebrew 前请先卸载 npm 包。
+- 在 Windows 上，如果 Codex 显示不可用，请在同一个 PowerShell 中运行 `codex --version`，修复 `PATH` 后重启 Skill Manager。Skill Manager 不负责安装或登录 Codex。
+- Windows Skill 绑定使用目录联接。请把 Skill Manager 数据目录和 Codex Skill 根目录放在本机磁盘；目前不支持网络盘和便携式磁盘。
 - 如果某个 MCP harness 显示为不可用，说明 Skill Manager 检测到本地客户端缺失，或该客户端不支持所需配置界面。
 
 ## 后续计划

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from skill_manager.application.skills.manifest import (
@@ -9,6 +10,7 @@ from skill_manager.application.skills.manifest import (
     write_skill_store_manifest,
 )
 from skill_manager.application.skills.package import fingerprint_package
+from skill_manager.directory_links import create_directory_link
 
 
 @dataclass(frozen=True)
@@ -71,9 +73,16 @@ class FakeHomeSpec:
     def bin_dir(self) -> Path:
         return self.root / "bin"
 
+    def cli_path(self, executable: str) -> Path:
+        suffix = ".cmd" if os.name == "nt" else ""
+        return self.bin_dir / f"{executable}{suffix}"
+
     def env(self) -> dict[str, str]:
         return {
             "HOME": str(self.home),
+            "USERPROFILE": str(self.home),
+            "APPDATA": str(self.xdg_config_home),
+            "LOCALAPPDATA": str(self.xdg_data_home),
             "XDG_CONFIG_HOME": str(self.xdg_config_home),
             "XDG_DATA_HOME": str(self.xdg_data_home),
             "XDG_STATE_HOME": str(self.xdg_state_home),
@@ -104,18 +113,24 @@ def create_fake_home_spec(root: Path, *, seed_openclaw_state: bool = True) -> Fa
         path.mkdir(parents=True, exist_ok=True)
 
     for executable in ("codex", "claude", "cursor-agent", "opencode", "hermes"):
-        write_cli_stub(spec.bin_dir / executable, executable)
+        write_cli_stub(spec.cli_path(executable), executable)
     if seed_openclaw_state:
-        write_cli_stub(spec.bin_dir / "openclaw", "openclaw")
+        write_cli_stub(spec.cli_path("openclaw"), "openclaw")
     return spec
 
 
 def write_cli_stub(path: Path, executable: str) -> None:
-    script = f"""#!/bin/sh
+    if os.name == "nt":
+        script = f"""@echo off
+echo {executable}
+"""
+    else:
+        script = f"""#!/bin/sh
 printf '%s\\n' '{executable}'
 """
     path.write_text(script, encoding="utf-8")
-    path.chmod(0o755)
+    if os.name != "nt":
+        path.chmod(0o755)
 
 
 def seed_skill_package(
@@ -235,7 +250,7 @@ def seed_managed_linked_fixture(spec: FakeHomeSpec) -> None:
     seed_shared_only_fixture(spec)
     target = spec.skills_store_root / "shared-audit"
     codex_link = spec.codex_root / "shared-audit"
-    codex_link.symlink_to(target)
+    create_directory_link(codex_link, target)
 
 
 def _package_revision(path: Path) -> str:

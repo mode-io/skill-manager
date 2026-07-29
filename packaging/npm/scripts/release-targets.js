@@ -22,11 +22,16 @@ function resolveTarget({ platform = process.platform, arch = process.arch } = {}
 }
 
 function artifactName(version, target = resolveTarget()) {
-  return `skill-manager-v${version}-${target.id}.tar.gz`;
+  return `skill-manager-v${version}-${target.id}.${target.archiveFormat}`;
+}
+
+function executableName(target = resolveTarget()) {
+  return target.executableName;
 }
 
 module.exports = {
   artifactName,
+  executableName,
   loadTargets,
   resolveTarget,
 };

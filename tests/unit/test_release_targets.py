@@ -28,6 +28,17 @@ class ReleaseTargetTests(unittest.TestCase):
         self.assertEqual(target.id, "linux-arm64")
         self.assertEqual(artifact_name("1.2.3", target), "skill-manager-v1.2.3-linux-arm64.tar.gz")
 
+    def test_resolves_windows_x64_aliases(self) -> None:
+        target = resolve_current_target(system="windows", machine="AMD64")
+
+        self.assertEqual(target.id, "windows-x64")
+        self.assertEqual(target.node_platform, "win32")
+        self.assertEqual(target.executable_name, "skill-manager.exe")
+        self.assertEqual(
+            artifact_name("1.2.3", target),
+            "skill-manager-v1.2.3-windows-x64.zip",
+        )
+
     def test_target_by_id_returns_configured_target(self) -> None:
         self.assertEqual(target_by_id("linux-x64").node_platform, "linux")
 
