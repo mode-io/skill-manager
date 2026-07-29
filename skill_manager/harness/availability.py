@@ -32,4 +32,20 @@ def command_is_available(
     return result.returncode == 0
 
 
-__all__ = ["command_is_available"]
+def any_command_is_available(
+    commands: tuple[str, ...],
+    *,
+    path_env: str | None,
+    platform: PlatformName,
+) -> bool:
+    return any(
+        command_is_available(
+            command,
+            path_env=path_env,
+            platform=platform,
+        )
+        for command in commands
+    )
+
+
+__all__ = ["any_command_is_available", "command_is_available"]

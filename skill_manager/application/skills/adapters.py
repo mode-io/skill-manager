@@ -20,7 +20,7 @@ from skill_manager.harness import (
     FileTreeLayout,
     HarnessKernelService,
 )
-from skill_manager.harness.availability import command_is_available
+from skill_manager.harness.availability import any_command_is_available
 from skill_manager.platform_context import PlatformName
 
 from .contracts import SkillsHarnessAdapter, SkillsHarnessStatus
@@ -36,7 +36,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         harness: str,
         label: str,
         logo_key: str | None,
-        install_probe: str,
+        install_probes: tuple[str, ...],
         path_env: str | None,
         platform: PlatformName,
         managed_root: Path,
@@ -49,7 +49,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         self.harness = harness
         self.label = label
         self.logo_key = logo_key
-        self._install_probe = install_probe
+        self._install_probes = install_probes
         self._path_env = path_env
         self._platform = platform
         self.managed_root = managed_root
@@ -228,8 +228,8 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         return None
 
     def _is_installed(self) -> bool:
-        cli_available = command_is_available(
-            self._install_probe,
+        cli_available = any_command_is_available(
+            self._install_probes,
             path_env=self._path_env,
             platform=self._platform,
         )
@@ -318,7 +318,7 @@ def build_skills_adapters(kernel: HarnessKernelService) -> tuple[FileTreeSkillsA
                 harness=definition.harness,
                 label=definition.label,
                 logo_key=definition.logo_key,
-                install_probe=definition.install_probe,
+                install_probes=definition.install_probes_for(kernel.context.platform),
                 path_env=kernel.context.env.get("PATH"),
                 platform=kernel.context.platform,
                 managed_root=managed_root,

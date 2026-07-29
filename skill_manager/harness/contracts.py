@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Literal, Mapping, TypeAlias
 
+from skill_manager.platform_context import PlatformName
+
 from .resolution import ResolutionContext
 
 
@@ -133,7 +135,12 @@ class HarnessDefinition:
     label: str
     logo_key: str | None
     install_probe: str
+    windows_install_probe_aliases: tuple[str, ...] = ()
     bindings: Mapping[FamilyKey, BindingProfile] = field(default_factory=dict)
+
+    def install_probes_for(self, platform: PlatformName) -> tuple[str, ...]:
+        aliases = self.windows_install_probe_aliases if platform == "windows" else ()
+        return (self.install_probe, *aliases)
 
     def supports_family(self, family: FamilyKey) -> bool:
         return family in self.bindings

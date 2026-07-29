@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .availability import command_is_available
+from .availability import any_command_is_available
 from .catalog import harness_definitions_for_family, supported_harness_definitions, supported_harness_ids
 from .contracts import (
     BindingProfile,
@@ -100,8 +100,8 @@ class HarnessKernelService:
         definition: HarnessDefinition,
         skills_binding: BindingProfile | None,
     ) -> bool:
-        cli_available = command_is_available(
-            definition.install_probe,
+        cli_available = any_command_is_available(
+            definition.install_probes_for(self.context.platform),
             path_env=self.context.env.get("PATH"),
             platform=self.context.platform,
         )

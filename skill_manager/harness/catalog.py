@@ -121,6 +121,7 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
         label="Cursor",
         logo_key="cursor",
         install_probe="cursor-agent",
+        windows_install_probe_aliases=("cursor",),
         bindings={
             "skills": FileTreeBindingProfile(
                 managed_env="SKILL_MANAGER_CURSOR_ROOT",

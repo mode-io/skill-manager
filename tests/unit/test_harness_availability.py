@@ -4,10 +4,27 @@ import subprocess
 import unittest
 from unittest import mock
 
-from skill_manager.harness.availability import command_is_available
+from skill_manager.harness.availability import any_command_is_available, command_is_available
 
 
 class HarnessAvailabilityTests(unittest.TestCase):
+    def test_multiple_probes_accept_first_working_windows_command(self) -> None:
+        with mock.patch(
+            "skill_manager.harness.availability.command_is_available",
+            side_effect=lambda command, **_kwargs: command == "cursor",
+        ) as probe_mock:
+            available = any_command_is_available(
+                ("cursor-agent", "cursor"),
+                path_env="C:/bin",
+                platform="windows",
+            )
+
+        self.assertTrue(available)
+        self.assertEqual(
+            [call.args[0] for call in probe_mock.call_args_list],
+            ["cursor-agent", "cursor"],
+        )
+
     def test_unix_discovery_only_requires_path_resolution(self) -> None:
         with (
             mock.patch("skill_manager.harness.availability.shutil.which", return_value="/bin/codex"),
