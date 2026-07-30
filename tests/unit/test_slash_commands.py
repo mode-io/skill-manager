@@ -20,6 +20,7 @@ from skill_manager.application.slash_commands import (
     resolve_slash_targets,
 )
 from skill_manager.application.slash_commands.codecs import parse_slash_command_document, render_slash_command
+from skill_manager.application.slash_commands.migration import LEGACY_MIGRATION_MARKER
 from skill_manager.application.slash_commands.sync_state import SlashCommandSyncRecord, hash_file
 from skill_manager.errors import MutationError
 from skill_manager.harness import HarnessKernelService, HarnessSupportStore
@@ -367,6 +368,56 @@ class SlashCommandStoreTests(unittest.TestCase):
                 state_payload["commands"]["code-review"]["codex"]["contentHash"],
                 hash_file(target),
             )
+
+    def test_migration_marker_stops_legacy_directory_from_being_read_again(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            legacy_commands = home / ".slash-command-manager" / "commands"
+            legacy_commands.mkdir(parents=True)
+            legacy_commands.joinpath("code-review.yaml").write_text(
+                'name: "code-review"\ndescription: "Review code"\nprompt: |\n  $ARGUMENTS\n',
+                encoding="utf-8",
+            )
+            kernel, targets, store, sync_state, *_ = _services(home, root)
+
+            migrate_legacy_slash_commands(
+                command_store=store,
+                sync_state_store=sync_state,
+                context=kernel.context,
+                targets=targets,
+            )
+
+            self.assertTrue((store.paths.root / LEGACY_MIGRATION_MARKER).is_file())
+            legacy_commands.joinpath("late-arrival.yaml").write_text(
+                'name: "late-arrival"\ndescription: "Written after the marker"\nprompt: |\n  $ARGUMENTS\n',
+                encoding="utf-8",
+            )
+
+            migrate_legacy_slash_commands(
+                command_store=store,
+                sync_state_store=sync_state,
+                context=kernel.context,
+                targets=targets,
+            )
+
+            self.assertIsNone(store.get_command("late-arrival"))
+
+    def test_empty_legacy_directory_still_writes_migration_marker(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            (home / ".slash-command-manager" / "commands").mkdir(parents=True)
+            kernel, targets, store, sync_state, *_ = _services(home, root)
+
+            migrate_legacy_slash_commands(
+                command_store=store,
+                sync_state_store=sync_state,
+                context=kernel.context,
+                targets=targets,
+            )
+
+            self.assertTrue((store.paths.root / LEGACY_MIGRATION_MARKER).is_file())
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import threading
 from pathlib import Path
@@ -12,6 +13,11 @@ class Database:
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(str(db_path), check_same_thread=False)
+        try:
+            # The database stores provider API keys; keep it owner-readable only.
+            os.chmod(db_path, 0o600)
+        except OSError:
+            pass
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.execute("PRAGMA journal_mode = WAL")
         self._conn.row_factory = sqlite3.Row

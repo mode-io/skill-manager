@@ -38,6 +38,7 @@ _SEARCH_FETCH_FLOOR = 40
 _SEARCH_CACHE_LIMIT = 24
 
 _DETAIL_NAMESPACE = "mcp-registry-detail-v1"
+_INSTALL_DETAIL_NAMESPACE = "mcp-registry-install-detail-v1"
 _PAGE_NAMESPACE = "mcp-registry-page-v1"
 
 
@@ -154,19 +155,20 @@ class McpMarketplaceCatalog:
         name = (qualified_name or "").strip()
         if not name:
             return None
+        cached = self._cache.read(_INSTALL_DETAIL_NAMESPACE, name, ttl_seconds=_DETAIL_TTL_SECONDS)
+        if cached is not None and isinstance(cached.payload, dict):
+            restored = _cached_install_detail(cached.payload, qualified_name=name)
+            if restored is not None:
+                return restored
         resolved = self._latest_supported_detail(name)
         if resolved is None:
             return None
         raw, options = resolved
-        server = _entry_server(raw)
-        if server is None:
+        detail = _install_detail(raw, qualified_name=name, options=options)
+        if detail is None:
             return None
-        return McpRegistryInstallDetail(
-            qualified_name=name,
-            display_name=_coerce_str(server.get("title"), default=name),
-            registry_server=server,
-            options=options,
-        )
+        self._cache.write(_INSTALL_DETAIL_NAMESPACE, name, raw)
+        return detail
 
     def _latest_supported_detail(
         self,
@@ -324,6 +326,37 @@ def _latest_active_entry(raw: Mapping[str, object]) -> Mapping[str, object] | No
     return None
 
 
+def _install_detail(
+    raw: Mapping[str, object],
+    *,
+    qualified_name: str,
+    options: tuple[RegistryInstallOption, ...],
+) -> McpRegistryInstallDetail | None:
+    server = _entry_server(raw)
+    if server is None:
+        return None
+    return McpRegistryInstallDetail(
+        qualified_name=qualified_name,
+        display_name=_coerce_str(server.get("title"), default=qualified_name),
+        registry_server=server,
+        options=options,
+    )
+
+
+def _cached_install_detail(
+    raw: Mapping[str, object],
+    *,
+    qualified_name: str,
+) -> McpRegistryInstallDetail | None:
+    # The cache stores the raw registry entry so install options are re-derived through the
+    # same support policy a live fetch uses; a now-unsupported entry reads back as a miss.
+    resolved = supported_registry_entry(raw)
+    if resolved is None:
+        return None
+    _server, options = resolved
+    return _install_detail(raw, qualified_name=qualified_name, options=options)
+
+
 def _next_cursor(raw: Mapping[str, object]) -> str | None:
     metadata = raw.get("metadata")
     if not isinstance(metadata, Mapping):
@@ -444,20 +477,12 @@ def _connection_from_option(option: RegistryInstallOption) -> dict[str, object]:
         return {
             "kind": "stdio",
             "deploymentUrl": None,
-            "configSchema": None,
-            "stdioFunction": None,
-            "bundleUrl": None,
-            "runtime": None,
             "stdioCommand": option.command,
             "stdioArgs": list(option.args or ()),
         }
     return {
         "kind": option.transport,
         "deploymentUrl": option.url,
-        "configSchema": None,
-        "stdioFunction": None,
-        "bundleUrl": None,
-        "runtime": None,
         "stdioCommand": None,
         "stdioArgs": None,
     }

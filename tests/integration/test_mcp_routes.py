@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 
 from skill_manager.application.mcp.availability import McpAvailabilityResult
-from skill_manager.application.mcp.stdio import parse_static_stdio_function
 from skill_manager.application.mcp.store import McpServerSpec, McpSource
 from skill_manager.errors import MutationError
 
@@ -18,7 +17,6 @@ class FakeMcpMarketplace:
     def __init__(
         self,
         qualified_name: str = "exa",
-        config_schema: dict[str, object] | None = None,
         *,
         is_remote: bool = True,
         deployment_url: str | None = "https://mcp.exa.ai",
@@ -41,7 +39,7 @@ class FakeMcpMarketplace:
             "connections": connections
             if connections is not None
             else [
-                {"kind": "http", "deploymentUrl": deployment_url, "configSchema": config_schema}
+                {"kind": "http", "deploymentUrl": deployment_url}
             ],
             "tools": [],
             "resources": [],
@@ -71,7 +69,6 @@ class _Container:
         self,
         harness: AppTestHarness,
         qualified_name: str = "exa",
-        config_schema: dict[str, object] | None = None,
         *,
         is_remote: bool = True,
         deployment_url: str | None = "https://mcp.exa.ai",
@@ -81,7 +78,6 @@ class _Container:
         self.harness = harness
         marketplace = FakeMcpMarketplace(
             qualified_name,
-            config_schema,
             is_remote=is_remote,
             deployment_url=deployment_url,
             connections=connections,
@@ -116,10 +112,11 @@ def _registry_server_from_connections(
     }
     first = connections[0] if connections else None
     if isinstance(first, dict) and str(first.get("kind") or first.get("type")).lower() == "stdio":
-        stdio = parse_static_stdio_function(first.get("stdioFunction"))
-        if stdio is None:
-            raise AssertionError("test stdio fixture must include a static stdioFunction")
-        package_ref = next((arg for arg in reversed(stdio.args) if not arg.startswith("-")), stdio.command)
+        command = first.get("stdioCommand")
+        args = first.get("stdioArgs")
+        if not isinstance(command, str) or not isinstance(args, list):
+            raise AssertionError("test stdio fixture must include stdioCommand and stdioArgs")
+        package_ref = next((arg for arg in reversed(args) if not arg.startswith("-")), command)
         server["packages"] = [
             {
                 "registryType": "npm",
@@ -215,7 +212,6 @@ class McpRoutesTests(unittest.TestCase):
             self.assertTrue(response["ok"])
             self.assertEqual(probe.probed, ["exa"])
             detail = harness.get_json("/api/mcp/servers/exa")
-            self.assertEqual(detail["availabilityStatus"], "available")
             self.assertEqual(detail["mcpStatus"]["kind"], "available")
 
     def test_list_servers_marks_mcp_disabled_when_no_addressable_harness_is_managed(self) -> None:
@@ -268,7 +264,6 @@ class McpRoutesTests(unittest.TestCase):
             harness.post_json("/api/mcp/servers/remote/enable", {"harness": "cursor"})
 
             detail_before = harness.get_json("/api/mcp/servers/remote")
-            self.assertEqual(detail_before["availabilityStatus"], "unavailable")
             self.assertEqual(detail_before["mcpStatus"]["kind"], "unchecked")
             self.assertIsNone(detail_before["mcpStatus"]["reason"])
 
@@ -278,7 +273,6 @@ class McpRoutesTests(unittest.TestCase):
             self.assertEqual(probe.probed, ["remote"])
 
             detail_after = harness.get_json("/api/mcp/servers/remote")
-            self.assertEqual(detail_after["availabilityStatus"], "available")
             self.assertEqual(detail_after["mcpStatus"]["kind"], "available")
             self.assertIsNone(detail_after["mcpStatus"]["reason"])
 
@@ -310,8 +304,6 @@ class McpRoutesTests(unittest.TestCase):
             probe.reason = "changed config failed"
 
             detail = harness.get_json("/api/mcp/servers/remote")
-            self.assertEqual(detail["availabilityStatus"], "unavailable")
-            self.assertIsNone(detail["availabilityReason"])
             self.assertEqual(detail["mcpStatus"]["kind"], "unchecked")
             self.assertIsNone(detail["mcpStatus"]["reason"])
             second = harness.post_json("/api/mcp/servers/remote/availability/check")
@@ -336,8 +328,6 @@ class McpRoutesTests(unittest.TestCase):
 
             detail_after = harness.get_json("/api/mcp/servers/remote")
             self.assertEqual(detail_after["enabledStatus"], "disabled")
-            self.assertEqual(detail_after["availabilityStatus"], "available")
-            self.assertIsNone(detail_after["availabilityReason"])
             self.assertEqual(detail_after["mcpStatus"]["kind"], "available")
             self.assertIsNone(detail_after["mcpStatus"]["reason"])
 
@@ -467,27 +457,6 @@ class McpRoutesTests(unittest.TestCase):
             cursor_config_path = harness.spec.home / ".cursor" / "mcp.json"
             cursor_cfg = json.loads(cursor_config_path.read_text()) if cursor_config_path.exists() else {}
             self.assertNotIn("exa", cursor_cfg.get("mcpServers", {}))
-
-    def test_marketplace_schema_metadata_does_not_change_observed_install(self) -> None:
-        schema = {
-            "type": "object",
-            "required": ["browserbaseApiKey"],
-            "properties": {
-                "browserbaseApiKey": {
-                    "type": "string",
-                    "description": "Browserbase API key",
-                    "x-from": {"query": "browserbaseApiKey"},
-                }
-            },
-        }
-        with AppTestHarness() as harness:
-            _Container(harness, "browserbase", schema)
-            install = harness.post_json("/api/mcp/servers", {"qualifiedName": "browserbase"})
-
-            self.assertTrue(install["ok"])
-            self.assertEqual(install["server"]["name"], "browserbase")
-            self.assertEqual(install["server"]["url"], "https://mcp.exa.ai")
-            self.assertFalse((harness.spec.home / ".cursor" / "mcp.json").exists())
 
     def test_install_stores_required_registry_environment_config_without_harness_write(self) -> None:
         registry_server = {
@@ -935,8 +904,8 @@ class McpRoutesTests(unittest.TestCase):
                 connections=[
                     {
                         "kind": "stdio",
-                        "stdioFunction": "(config) => ({ command: 'npx', args: ['-y', '@acme/desktop'] })",
-                        "configSchema": {"type": "object", "properties": {}},
+                        "stdioCommand": "npx",
+                        "stdioArgs": ["-y", "@acme/desktop"],
                     }
                 ],
             )

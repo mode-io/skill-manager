@@ -17,11 +17,8 @@ except (ImportError, ModuleNotFoundError):
     LITELLM_AVAILABLE = False
 
 try:
-    from azure.identity import DefaultAzureCredential
-
-    AZURE_IDENTITY_AVAILABLE = True
+    AZURE_IDENTITY_AVAILABLE = importlib.util.find_spec("azure.identity") is not None
 except (ImportError, ModuleNotFoundError):
-    DefaultAzureCredential = None  # type: ignore[misc,assignment]
     AZURE_IDENTITY_AVAILABLE = False
 
 
@@ -245,13 +242,15 @@ class ProviderConfig:
         )
 
     def _try_azure_entra_id_token(self) -> str | None:
-        if not AZURE_IDENTITY_AVAILABLE or DefaultAzureCredential is None:
+        if not AZURE_IDENTITY_AVAILABLE:
             logger.debug(
                 "Azure model detected but azure-identity is not installed. "
-                "Install with: pip install skill-scanner[azure]"
+                "Install with: pip install 'skill-manager[scan]'"
             )
             return None
         try:
+            from azure.identity import DefaultAzureCredential
+
             credential = DefaultAzureCredential()
             token = credential.get_token("https://cognitiveservices.azure.com/.default")
             logger.info("Acquired Azure OpenAI token via Entra ID (DefaultAzureCredential)")
@@ -267,7 +266,7 @@ class ProviderConfig:
                 raise ValueError(
                     f"No API key or Entra ID credentials found for Azure model {self.model}. "
                     "Set SKILL_SCANNER_LLM_API_KEY, run 'az login', or install "
-                    "skill-scanner[azure] for Entra ID support."
+                    "'skill-manager[scan]' for Entra ID support."
                 )
             raise ValueError(f"API key required for model {self.model}. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.")
 

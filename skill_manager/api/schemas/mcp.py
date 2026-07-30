@@ -113,14 +113,6 @@ class McpInventoryEntryResponse(BaseModel):
     spec: McpServerSpecResponse | None = None
     canEnable: bool
     enabledStatus: Literal["enabled", "disabled"]
-    availabilityStatus: Literal["available", "unavailable"] = Field(
-        ...,
-        description="Deprecated compatibility field; use mcpStatus instead.",
-    )
-    availabilityReason: str | None = Field(
-        default=None,
-        description="Deprecated compatibility field; use mcpStatus.reason instead.",
-    )
     mcpStatus: McpStatusResponse
     installConfigStatus: McpInstallConfigStatusResponse
     sightings: list[McpBindingResponse]
@@ -271,10 +263,6 @@ class McpMarketplacePageResponse(BaseModel):
 class McpMarketplaceConnectionResponse(BaseModel):
     kind: str
     deploymentUrl: str | None = None
-    configSchema: dict[str, object] | None = None
-    stdioFunction: str | None = None
-    bundleUrl: str | None = None
-    runtime: str | None = None
     stdioCommand: str | None = None
     stdioArgs: list[str] | None = None
 

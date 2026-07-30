@@ -712,6 +712,270 @@
         "title": "LLMDetectionResponse",
         "type": "object"
       },
+      "MarketplaceInstallationResponse": {
+        "properties": {
+          "installedSkillRef": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installedskillref"
+          },
+          "status": {
+            "enum": [
+              "installable",
+              "installed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MarketplaceInstallationResponse",
+        "type": "object"
+      },
+      "MarketplaceSkillDetailResponse": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installToken": {
+            "title": "Installtoken",
+            "type": "string"
+          },
+          "installation": {
+            "$ref": "#/components/schemas/MarketplaceInstallationResponse"
+          },
+          "installs": {
+            "title": "Installs",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "repoImageUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repoimageurl"
+          },
+          "repoLabel": {
+            "title": "Repolabel",
+            "type": "string"
+          },
+          "sourceLinks": {
+            "$ref": "#/components/schemas/MarketplaceSkillSourceLinksResponse"
+          },
+          "stars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stars"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "installs",
+          "repoLabel",
+          "sourceLinks",
+          "installation",
+          "installToken"
+        ],
+        "title": "MarketplaceSkillDetailResponse",
+        "type": "object"
+      },
+      "MarketplaceSkillDocumentResponse": {
+        "properties": {
+          "documentMarkdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentmarkdown"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MarketplaceSkillDocumentResponse",
+        "type": "object"
+      },
+      "MarketplaceSkillItemResponse": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "installToken": {
+            "title": "Installtoken",
+            "type": "string"
+          },
+          "installation": {
+            "$ref": "#/components/schemas/MarketplaceInstallationResponse"
+          },
+          "installs": {
+            "title": "Installs",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "repoImageUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repoimageurl"
+          },
+          "repoLabel": {
+            "title": "Repolabel",
+            "type": "string"
+          },
+          "repoUrl": {
+            "title": "Repourl",
+            "type": "string"
+          },
+          "skillsDetailUrl": {
+            "title": "Skillsdetailurl",
+            "type": "string"
+          },
+          "stars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stars"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "installs",
+          "repoLabel",
+          "repoUrl",
+          "skillsDetailUrl",
+          "installToken",
+          "installation"
+        ],
+        "title": "MarketplaceSkillItemResponse",
+        "type": "object"
+      },
+      "MarketplaceSkillPageResponse": {
+        "properties": {
+          "hasMore": {
+            "title": "Hasmore",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceSkillItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "nextOffset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextoffset"
+          }
+        },
+        "required": [
+          "items",
+          "hasMore"
+        ],
+        "title": "MarketplaceSkillPageResponse",
+        "type": "object"
+      },
+      "MarketplaceSkillSourceLinksResponse": {
+        "properties": {
+          "folderUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folderurl"
+          },
+          "repoLabel": {
+            "title": "Repolabel",
+            "type": "string"
+          },
+          "repoUrl": {
+            "title": "Repourl",
+            "type": "string"
+          },
+          "skillsDetailUrl": {
+            "title": "Skillsdetailurl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repoLabel",
+          "repoUrl",
+          "skillsDetailUrl"
+        ],
+        "title": "MarketplaceSkillSourceLinksResponse",
+        "type": "object"
+      },
       "McpAdoptionIssueResponse": {
         "properties": {
           "configPath": {
@@ -1287,27 +1551,6 @@
       },
       "McpInventoryEntryResponse": {
         "properties": {
-          "availabilityReason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Deprecated compatibility field; use mcpStatus.reason instead.",
-            "title": "Availabilityreason"
-          },
-          "availabilityStatus": {
-            "description": "Deprecated compatibility field; use mcpStatus instead.",
-            "enum": [
-              "available",
-              "unavailable"
-            ],
-            "title": "Availabilitystatus",
-            "type": "string"
-          },
           "canEnable": {
             "title": "Canenable",
             "type": "boolean"
@@ -1366,7 +1609,6 @@
           "kind",
           "canEnable",
           "enabledStatus",
-          "availabilityStatus",
           "mcpStatus",
           "installConfigStatus",
           "sightings"
@@ -1448,29 +1690,6 @@
       },
       "McpMarketplaceConnectionResponse": {
         "properties": {
-          "bundleUrl": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bundleurl"
-          },
-          "configSchema": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Configschema"
-          },
           "deploymentUrl": {
             "anyOf": [
               {
@@ -1485,17 +1704,6 @@
           "kind": {
             "title": "Kind",
             "type": "string"
-          },
-          "runtime": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Runtime"
           },
           "stdioArgs": {
             "anyOf": [
@@ -1521,17 +1729,6 @@
               }
             ],
             "title": "Stdiocommand"
-          },
-          "stdioFunction": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stdiofunction"
           }
         },
         "required": [
@@ -2122,27 +2319,6 @@
       },
       "McpServerDetailResponse": {
         "properties": {
-          "availabilityReason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Deprecated compatibility field; use mcpStatus.reason instead.",
-            "title": "Availabilityreason"
-          },
-          "availabilityStatus": {
-            "description": "Deprecated compatibility field; use mcpStatus instead.",
-            "enum": [
-              "available",
-              "unavailable"
-            ],
-            "title": "Availabilitystatus",
-            "type": "string"
-          },
           "canEnable": {
             "title": "Canenable",
             "type": "boolean"
@@ -2225,7 +2401,6 @@
           "kind",
           "canEnable",
           "enabledStatus",
-          "availabilityStatus",
           "mcpStatus",
           "installConfigStatus",
           "sightings"
@@ -4609,11 +4784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "title": "Response Install Marketplace Skill Api Marketplace Install Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/OkResponse"
                 }
               }
             },
@@ -4652,9 +4823,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Marketplace Detail Api Marketplace Items  Item Id  Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/MarketplaceSkillDetailResponse"
                 }
               }
             },
@@ -4693,9 +4862,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Marketplace Document Api Marketplace Items  Item Id  Document Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/MarketplaceSkillDocumentResponse"
                 }
               }
             },
@@ -4944,9 +5111,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Popular Marketplace Api Marketplace Popular Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/MarketplaceSkillPageResponse"
                 }
               }
             },
@@ -5011,9 +5176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Search Marketplace Api Marketplace Search Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/MarketplaceSkillPageResponse"
                 }
               }
             },

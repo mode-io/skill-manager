@@ -1032,6 +1032,91 @@ export interface components {
             /** Providers */
             providers: components["schemas"]["DetectedProviderResponse"][];
         };
+        /** MarketplaceInstallationResponse */
+        MarketplaceInstallationResponse: {
+            /** Installedskillref */
+            installedSkillRef?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "installable" | "installed";
+        };
+        /** MarketplaceSkillDetailResponse */
+        MarketplaceSkillDetailResponse: {
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Installtoken */
+            installToken: string;
+            installation: components["schemas"]["MarketplaceInstallationResponse"];
+            /** Installs */
+            installs: number;
+            /** Name */
+            name: string;
+            /** Repoimageurl */
+            repoImageUrl?: string | null;
+            /** Repolabel */
+            repoLabel: string;
+            sourceLinks: components["schemas"]["MarketplaceSkillSourceLinksResponse"];
+            /** Stars */
+            stars?: number | null;
+        };
+        /** MarketplaceSkillDocumentResponse */
+        MarketplaceSkillDocumentResponse: {
+            /** Documentmarkdown */
+            documentMarkdown?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "unavailable";
+        };
+        /** MarketplaceSkillItemResponse */
+        MarketplaceSkillItemResponse: {
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Installtoken */
+            installToken: string;
+            installation: components["schemas"]["MarketplaceInstallationResponse"];
+            /** Installs */
+            installs: number;
+            /** Name */
+            name: string;
+            /** Repoimageurl */
+            repoImageUrl?: string | null;
+            /** Repolabel */
+            repoLabel: string;
+            /** Repourl */
+            repoUrl: string;
+            /** Skillsdetailurl */
+            skillsDetailUrl: string;
+            /** Stars */
+            stars?: number | null;
+        };
+        /** MarketplaceSkillPageResponse */
+        MarketplaceSkillPageResponse: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Items */
+            items: components["schemas"]["MarketplaceSkillItemResponse"][];
+            /** Nextoffset */
+            nextOffset?: number | null;
+        };
+        /** MarketplaceSkillSourceLinksResponse */
+        MarketplaceSkillSourceLinksResponse: {
+            /** Folderurl */
+            folderUrl?: string | null;
+            /** Repolabel */
+            repoLabel: string;
+            /** Repourl */
+            repoUrl: string;
+            /** Skillsdetailurl */
+            skillsDetailUrl: string;
+        };
         /** McpAdoptionIssueResponse */
         McpAdoptionIssueResponse: {
             /** Configpath */
@@ -1227,17 +1312,6 @@ export interface components {
         };
         /** McpInventoryEntryResponse */
         McpInventoryEntryResponse: {
-            /**
-             * Availabilityreason
-             * @description Deprecated compatibility field; use mcpStatus.reason instead.
-             */
-            availabilityReason?: string | null;
-            /**
-             * Availabilitystatus
-             * @description Deprecated compatibility field; use mcpStatus instead.
-             * @enum {string}
-             */
-            availabilityStatus: "available" | "unavailable";
             /** Canenable */
             canEnable: boolean;
             /** Displayname */
@@ -1287,24 +1361,14 @@ export interface components {
         };
         /** McpMarketplaceConnectionResponse */
         McpMarketplaceConnectionResponse: {
-            /** Bundleurl */
-            bundleUrl?: string | null;
-            /** Configschema */
-            configSchema?: {
-                [key: string]: unknown;
-            } | null;
             /** Deploymenturl */
             deploymentUrl?: string | null;
             /** Kind */
             kind: string;
-            /** Runtime */
-            runtime?: string | null;
             /** Stdioargs */
             stdioArgs?: string[] | null;
             /** Stdiocommand */
             stdioCommand?: string | null;
-            /** Stdiofunction */
-            stdioFunction?: string | null;
         };
         /** McpMarketplaceDetailResponse */
         McpMarketplaceDetailResponse: {
@@ -1474,17 +1538,6 @@ export interface components {
         };
         /** McpServerDetailResponse */
         McpServerDetailResponse: {
-            /**
-             * Availabilityreason
-             * @description Deprecated compatibility field; use mcpStatus.reason instead.
-             */
-            availabilityReason?: string | null;
-            /**
-             * Availabilitystatus
-             * @description Deprecated compatibility field; use mcpStatus instead.
-             * @enum {string}
-             */
-            availabilityStatus: "available" | "unavailable";
             /** Canenable */
             canEnable: boolean;
             /** Configchoices */
@@ -2408,9 +2461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2441,9 +2492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MarketplaceSkillDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2474,9 +2523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MarketplaceSkillDocumentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2606,9 +2653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MarketplaceSkillPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2641,9 +2686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MarketplaceSkillPageResponse"];
                 };
             };
             /** @description Validation Error */

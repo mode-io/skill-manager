@@ -28,8 +28,6 @@ function entries(): McpInventoryEntryDto[] {
       kind: "managed",
       canEnable: true,
       enabledStatus: "enabled",
-      availabilityStatus: "available",
-      availabilityReason: null,
       mcpStatus: { kind: "available", reason: null },
       installConfigStatus: { hasFields: false, missingRequired: [], configured: true },
       spec: {
@@ -53,8 +51,6 @@ function entries(): McpInventoryEntryDto[] {
       kind: "managed",
       canEnable: true,
       enabledStatus: "disabled",
-      availabilityStatus: "unavailable",
-      availabilityReason: null,
       mcpStatus: {
         kind: "unchecked",
         reason: null,

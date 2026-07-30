@@ -22,16 +22,7 @@ export function mcpInventoryEntry({
   sightings = [],
   canEnable = kind === "managed",
   enabledStatus = "disabled",
-  availabilityStatus = "unavailable",
-  availabilityReason = null,
-  mcpStatus = availabilityStatus === "available"
-    ? { kind: "available" as const, reason: null }
-    : availabilityReason
-      ? {
-          kind: "connection_issue" as const,
-          reason: availabilityReason,
-        }
-      : { kind: "unchecked" as const, reason: null },
+  mcpStatus = { kind: "unchecked" as const, reason: null },
   installConfigStatus = {
     hasFields: false,
     missingRequired: [],
@@ -45,8 +36,6 @@ export function mcpInventoryEntry({
     kind,
     canEnable,
     enabledStatus,
-    availabilityStatus,
-    availabilityReason,
     mcpStatus,
     installConfigStatus,
     spec,
