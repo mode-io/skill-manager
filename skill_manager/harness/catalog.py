@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 from typing import Mapping
 
+from skill_manager.user_environment import live_user_environment_value
+
 from .contracts import (
     CommandFileBindingProfile,
     ConfigSubtreeBindingProfile,
@@ -14,7 +16,6 @@ from .contracts import (
 )
 
 
-_WINDOWS_ENV_REFERENCE = re.compile(r"%([^%]+)%")
 _CODEX_DESKTOP_MCP_ENV_MARKERS = frozenset(
     {
         "CODEX_CLI_PATH",
@@ -52,9 +53,9 @@ def _hermes_home(context) -> Path:
         return context.home / ".hermes"
 
     for variable in ("SKILL_MANAGER_HERMES_HOME", "HERMES_HOME"):
-        user_override = _windows_user_environment_value(variable)
+        user_override = live_user_environment_value(variable, context.env)
         if user_override:
-            return Path(_expand_windows_environment_references(user_override, context.env))
+            return Path(user_override)
 
     local_app_data = context.env.get("LOCALAPPDATA")
     if not local_app_data:
@@ -65,29 +66,6 @@ def _hermes_home(context) -> Path:
     if not native_home.exists() and legacy_home.exists():
         return legacy_home
     return native_home
-
-
-def _windows_user_environment_value(name: str) -> str | None:
-    try:
-        import winreg
-    except ImportError:
-        return None
-
-    try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
-            value, _value_type = winreg.QueryValueEx(key, name)
-    except OSError:
-        return None
-    normalized = str(value).strip()
-    return normalized or None
-
-
-def _expand_windows_environment_references(value: str, env: dict[str, str]) -> str:
-    lookup = {key.upper(): item for key, item in env.items()}
-    return _WINDOWS_ENV_REFERENCE.sub(
-        lambda match: lookup.get(match.group(1).upper(), match.group(0)),
-        value,
-    )
 
 
 def _hermes_skills_root(context) -> Path:

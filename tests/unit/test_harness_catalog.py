@@ -69,7 +69,7 @@ class HarnessCatalogTests(unittest.TestCase):
                 env={"LOCALAPPDATA": str(root / "local-app-data")},
             )
             with mock.patch(
-                "skill_manager.harness.catalog._windows_user_environment_value",
+                "skill_manager.harness.catalog.live_user_environment_value",
                 return_value=None,
             ):
                 managed_root = _hermes_profile().resolve_managed_root(context)
@@ -86,8 +86,8 @@ class HarnessCatalogTests(unittest.TestCase):
             env={"LOCALAPPDATA": "C:/Users/tester/AppData/Local"},
         )
         with mock.patch(
-            "skill_manager.harness.catalog._windows_user_environment_value",
-            side_effect=lambda name: "%LOCALAPPDATA%/custom-hermes"
+            "skill_manager.harness.catalog.live_user_environment_value",
+            side_effect=lambda name, env: str(Path(env["LOCALAPPDATA"]) / "custom-hermes")
             if name == "HERMES_HOME"
             else None,
         ):
@@ -109,7 +109,7 @@ class HarnessCatalogTests(unittest.TestCase):
                 env={"LOCALAPPDATA": str(root / "local-app-data")},
             )
             with mock.patch(
-                "skill_manager.harness.catalog._windows_user_environment_value",
+                "skill_manager.harness.catalog.live_user_environment_value",
                 return_value=None,
             ):
                 managed_root = _hermes_profile().resolve_managed_root(context)
@@ -123,7 +123,7 @@ class HarnessCatalogTests(unittest.TestCase):
             env={"LOCALAPPDATA": "/unexpected/windows/path"},
         )
         with mock.patch(
-            "skill_manager.harness.catalog._windows_user_environment_value"
+            "skill_manager.harness.catalog.live_user_environment_value"
         ) as read_user_environment:
             managed_root = _hermes_profile().resolve_managed_root(context)
 
