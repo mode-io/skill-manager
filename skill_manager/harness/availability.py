@@ -27,7 +27,13 @@ def command_is_available(
             timeout=3,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except subprocess.TimeoutExpired:
+        # Reaching the timeout means Windows successfully launched the
+        # executable. Some CLIs perform update or environment checks during
+        # `--version` and can exceed this short health-probe window on a cold
+        # start, but they are still installed and invokable.
+        return True
+    except OSError:
         return False
     return result.returncode == 0
 

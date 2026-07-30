@@ -66,6 +66,21 @@ class HarnessAvailabilityTests(unittest.TestCase):
 
         self.assertTrue(available)
 
+    def test_windows_discovery_accepts_slow_but_invokable_command(self) -> None:
+        with (
+            mock.patch(
+                "skill_manager.harness.availability.shutil.which",
+                return_value="C:/bin/hermes.exe",
+            ),
+            mock.patch(
+                "skill_manager.harness.availability.subprocess.run",
+                side_effect=subprocess.TimeoutExpired(["hermes", "--version"], timeout=3),
+            ),
+        ):
+            available = command_is_available("hermes", path_env="C:/bin", platform="windows")
+
+        self.assertTrue(available)
+
 
 if __name__ == "__main__":
     unittest.main()
