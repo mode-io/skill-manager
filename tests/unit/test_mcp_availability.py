@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -172,11 +173,30 @@ class McpAvailabilityProbeTests(unittest.TestCase):
             seen.update(kwargs["env"])
             raise OSError("probe stopped")
 
-        with patch("skill_manager.application.mcp.availability.subprocess.Popen", fake_popen):
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value="/opt/local-mcp",
+            ),
+            patch("skill_manager.application.mcp.availability.subprocess.Popen", fake_popen),
+        ):
             result = McpAvailabilityProbe(env={"INJECTED": "yes"}, retry_attempts=1).probe(spec)
 
         self.assertEqual(result.status, "unavailable")
         self.assertEqual(seen, {"INJECTED": "yes", "SPEC_KEY": "spec-value"})
+
+    def test_stdio_probe_resolution_never_falls_back_to_process_path(self) -> None:
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value=None,
+            ) as which_mock,
+            patch("skill_manager.application.mcp.availability.subprocess.Popen") as popen_mock,
+        ):
+            McpAvailabilityProbe(env={"INJECTED": "yes"}, retry_attempts=1).probe(_stdio_spec())
+
+        which_mock.assert_called_once_with("npx", path=os.defpath)
+        popen_mock.assert_not_called()
 
     def test_default_http_post_returns_first_sse_data_event_without_reading_to_eof(self) -> None:
         class SseResponse:

@@ -104,7 +104,10 @@ class McpAvailabilityProbe:
         env = dict(self._env) if self._env is not None else os.environ.copy()
         if spec.env:
             env.update(dict(spec.env))
-        executable = shutil.which(spec.command, path=env.get("PATH"))
+        # Resolve against the probe env only. Falling back to os.defpath keeps
+        # an injected env from silently reaching back into the process PATH,
+        # and matches how Popen itself resolves argv[0] for that env.
+        executable = shutil.which(spec.command, path=env.get("PATH", os.defpath))
         if executable is None:
             return McpAvailabilityResult(
                 "unavailable",
