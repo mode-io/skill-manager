@@ -8,7 +8,7 @@ import subprocess
 import threading
 import time
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Callable, Literal, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -40,11 +40,13 @@ class McpAvailabilityProbe:
         retry_attempts: int = 2,
         retry_delay_seconds: float = 0.25,
         http_post: HttpPost | None = None,
+        env: Mapping[str, str] | None = None,
     ) -> None:
         self.timeout_seconds = timeout_seconds
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay_seconds = max(0.0, retry_delay_seconds)
         self._http_post = http_post or self._default_http_post
+        self._env = env
 
     def probe(self, spec: McpServerSpec) -> McpAvailabilityResult:
         result = McpAvailabilityResult("unavailable")
@@ -99,7 +101,7 @@ class McpAvailabilityProbe:
     def _probe_stdio(self, spec: McpServerSpec) -> McpAvailabilityResult:
         if not spec.command:
             return McpAvailabilityResult("unavailable", "missing MCP command")
-        env = os.environ.copy()
+        env = dict(self._env) if self._env is not None else os.environ.copy()
         if spec.env:
             env.update(dict(spec.env))
         executable = shutil.which(spec.command, path=env.get("PATH"))

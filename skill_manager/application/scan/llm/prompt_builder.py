@@ -129,7 +129,7 @@ Referenced Files:
                     "threshold_name": "llm_analysis.max_total_prompt_chars",
                 })
                 continue
-            # Syntax-highlighted code blocks like skill-scanner
+            # Syntax-highlighted code blocks
             parts.append(f"**File: {sf.relative_path}**")
             parts.append(f"```{sf.file_type}")
             parts.append(sf.content)

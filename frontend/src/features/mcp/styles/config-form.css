@@ -1,0 +1,185 @@
+@layer features {
+
+/* -------------------------------------------------------------------------- */
+/* MCP install-config form fields                                             */
+/* -------------------------------------------------------------------------- */
+
+.mcp-config-form__field {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.mcp-config-form__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.mcp-config-form__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 38px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.mcp-config-form__checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.mcp-config-form__input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.mcp-config-form__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-surface-sunken) 72%, var(--color-accent-softer));
+  box-shadow: 0 0 0 3px var(--color-accent-softer);
+}
+
+.mcp-config-form__input::placeholder {
+  color: var(--color-text-subtle);
+  font-family: var(--font-sans);
+}
+
+.mcp-config-form__input-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.mcp-config-form__input-wrap .mcp-config-form__input {
+  padding-right: 42px;
+}
+
+.mcp-config-form__input-action {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.mcp-config-form__input-action:hover,
+.mcp-config-form__input-action:focus-visible {
+  color: var(--color-accent);
+  background: var(--color-accent-softer);
+}
+
+.mcp-config-form__input-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.mcp-config-form__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.mcp-config-form__hint-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.mcp-config-form__hint-link:hover,
+.mcp-config-form__hint-link:focus-visible {
+  text-decoration: underline;
+}
+
+.mcp-config-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* -------------------------------------------------------------------------- */
+/* MCP install-config modal                                                   */
+/* -------------------------------------------------------------------------- */
+
+.detail-sheet.mcp-config-modal {
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(760px, calc(100vw - 48px));
+  overflow: hidden;
+}
+
+.mcp-config-modal__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.mcp-config-modal__form {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.mcp-config-modal__body {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.mcp-config-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.mcp-config-modal__validation-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+@media (max-width: 680px) {
+  .mcp-config-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+}

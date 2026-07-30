@@ -68,7 +68,7 @@ export function McpInstallConfigDialog({
     <Dialog.Root open onOpenChange={(next) => (next ? null : onClose())}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="detail-sheet scan-config-detail-modal">
+        <Dialog.Content className="detail-sheet mcp-config-modal">
           <Dialog.Title className="u-visually-hidden">
             {copy.detail.installConfig.title(pending.displayName)}
           </Dialog.Title>
@@ -78,22 +78,22 @@ export function McpInstallConfigDialog({
           <DetailHeader
             title={<h2>{copy.detail.installConfig.title(pending.displayName)}</h2>}
             meta={
-                <p className="scan-config-detail-modal__description">
+                <p className="mcp-config-modal__description">
                 {copy.detail.installConfig.description(pending.targetLabel)}
               </p>
             }
             closeLabel={copy.detail.installConfig.cancel}
             onClose={onClose}
           />
-          <form className="scan-config-detail-modal__form" onSubmit={handleSubmit}>
-            <div className="scan-config-detail-modal__body ui-scrollbar">
+          <form className="mcp-config-modal__form" onSubmit={handleSubmit}>
+            <div className="mcp-config-modal__body ui-scrollbar">
               <div className="detail-sheet__body">
                 <p className="muted-text">
                   {pending.installConfig.required
                     ? copy.detail.installConfig.requiredHint
                     : copy.detail.installConfig.optionalHint}
                 </p>
-                <div className="scan-config-panel__form-grid">
+                <div className="mcp-config-form__grid">
                   {fields.map((field) => (
                     <McpInstallConfigField
                       key={field.name}
@@ -106,13 +106,13 @@ export function McpInstallConfigDialog({
                   ))}
                 </div>
                 {missingRequired.length > 0 ? (
-                  <p className="scan-config-detail-modal__validation-error">
+                  <p className="mcp-config-modal__validation-error">
                     {copy.detail.installConfig.missingRequired(missingRequired.join(", "))}
                   </p>
                 ) : null}
               </div>
             </div>
-            <div className="scan-config-detail-modal__footer">
+            <div className="mcp-config-modal__footer">
               <button type="button" className="action-pill action-pill--md" onClick={onClose}>
                 {copy.detail.installConfig.cancel}
               </button>

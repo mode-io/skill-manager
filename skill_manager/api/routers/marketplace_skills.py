@@ -3,13 +3,19 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from skill_manager.api.deps import get_container
-from skill_manager.api.schemas import InstallMarketplaceSkillRequest
+from skill_manager.api.schemas import (
+    InstallMarketplaceSkillRequest,
+    MarketplaceSkillDetailResponse,
+    MarketplaceSkillDocumentResponse,
+    MarketplaceSkillPageResponse,
+    OkResponse,
+)
 from skill_manager.application import BackendContainer
 
 router = APIRouter(prefix="/api/marketplace")
 
 
-@router.get("/popular")
+@router.get("/popular", response_model=MarketplaceSkillPageResponse)
 def popular_marketplace(
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
@@ -18,7 +24,7 @@ def popular_marketplace(
     return container.skills_marketplace_queries.popular_page(limit=limit, offset=offset)
 
 
-@router.get("/search")
+@router.get("/search", response_model=MarketplaceSkillPageResponse)
 def search_marketplace(
     q: str = Query(...),
     limit: int | None = Query(default=None),
@@ -31,7 +37,7 @@ def search_marketplace(
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
-@router.get("/items/{item_id:path}/document")
+@router.get("/items/{item_id:path}/document", response_model=MarketplaceSkillDocumentResponse)
 def get_marketplace_document(item_id: str, container: BackendContainer = Depends(get_container)) -> dict[str, object]:
     payload = container.skills_marketplace_queries.get_item_document(item_id)
     if payload is None:
@@ -39,7 +45,7 @@ def get_marketplace_document(item_id: str, container: BackendContainer = Depends
     return payload
 
 
-@router.get("/items/{item_id:path}")
+@router.get("/items/{item_id:path}", response_model=MarketplaceSkillDetailResponse)
 def get_marketplace_detail(item_id: str, container: BackendContainer = Depends(get_container)) -> dict[str, object]:
     payload = container.skills_marketplace_queries.get_item_detail(item_id)
     if payload is None:
@@ -47,7 +53,7 @@ def get_marketplace_detail(item_id: str, container: BackendContainer = Depends(g
     return payload
 
 
-@router.post("/install")
+@router.post("/install", response_model=OkResponse)
 def install_marketplace_skill(
     body: InstallMarketplaceSkillRequest,
     container: BackendContainer = Depends(get_container),

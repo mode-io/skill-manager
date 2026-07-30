@@ -80,7 +80,7 @@ class ClisDevClientTests(unittest.TestCase):
         response.__enter__ = mock.Mock(return_value=response)
         response.__exit__ = mock.Mock(return_value=None)
 
-        with mock.patch("skill_manager.application.cli_marketplace.client.urlopen", return_value=response) as urlopen:
+        with mock.patch("skill_manager.application.marketplace_http.urlopen", return_value=response) as urlopen:
             client = ClisDevClient(base_url="https://fixture.local", ssl_context=None)
             payload = client.list_clis()
 
@@ -95,7 +95,7 @@ class ClisDevClientTests(unittest.TestCase):
         response.__enter__ = mock.Mock(return_value=response)
         response.__exit__ = mock.Mock(return_value=None)
 
-        with mock.patch("skill_manager.application.cli_marketplace.client.urlopen", return_value=response) as urlopen:
+        with mock.patch("skill_manager.application.marketplace_http.urlopen", return_value=response) as urlopen:
             client = ClisDevClient(base_url="https://fixture.local", ssl_context=None)
             client.search_clis("git ui")
 

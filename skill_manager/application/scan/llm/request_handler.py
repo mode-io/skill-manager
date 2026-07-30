@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
 import logging
 import os
@@ -12,32 +13,30 @@ from .provider import ProviderConfig
 
 logger = logging.getLogger(__name__)
 
-acompletion: Any
 try:
-    from litellm import acompletion as _acompletion
-
-    acompletion = _acompletion
-    LITELLM_AVAILABLE = True
+    LITELLM_AVAILABLE = importlib.util.find_spec("litellm") is not None
 except (ImportError, ModuleNotFoundError):
     LITELLM_AVAILABLE = False
-    acompletion = None
 
-genai: Any
 try:
-    from google import genai as _genai
-
-    genai = _genai
-    GOOGLE_GENAI_AVAILABLE = True
+    GOOGLE_GENAI_AVAILABLE = importlib.util.find_spec("google.genai") is not None
 except (ImportError, ModuleNotFoundError):
     GOOGLE_GENAI_AVAILABLE = False
-    genai = None
 
-warnings.filterwarnings("ignore", message=".*Pydantic serializer warnings.*")
-warnings.filterwarnings("ignore", message=".*Expected `Message`.*")
-warnings.filterwarnings("ignore", message=".*Expected `StreamingChoices`.*")
-warnings.filterwarnings("ignore", message=".*close_litellm_async_clients.*")
-warnings.filterwarnings("ignore", message=".*async_success_handler.*was never awaited.*")
-warnings.filterwarnings("ignore", message=".*Enable tracemalloc.*")
+_litellm_warnings_filtered = False
+
+
+def _filter_litellm_warnings() -> None:
+    global _litellm_warnings_filtered
+    if _litellm_warnings_filtered:
+        return
+    warnings.filterwarnings("ignore", message=".*Pydantic serializer warnings.*")
+    warnings.filterwarnings("ignore", message=".*Expected `Message`.*")
+    warnings.filterwarnings("ignore", message=".*Expected `StreamingChoices`.*")
+    warnings.filterwarnings("ignore", message=".*close_litellm_async_clients.*")
+    warnings.filterwarnings("ignore", message=".*async_success_handler.*was never awaited.*")
+    warnings.filterwarnings("ignore", message=".*Enable tracemalloc.*")
+    _litellm_warnings_filtered = True
 
 
 class LLMRequestHandler:
@@ -166,6 +165,9 @@ class LLMRequestHandler:
             return await self._make_litellm_request(messages, context)
 
     async def _make_litellm_request(self, messages: list[dict[str, str]], context: str) -> str:
+        _filter_litellm_warnings()
+        from litellm import acompletion
+
         last_exception: Exception | None = None
 
         # Enable Anthropic prompt caching for system message if applicable
@@ -224,6 +226,8 @@ class LLMRequestHandler:
         raise RuntimeError("All retries exhausted")
 
     async def _make_google_sdk_request(self, prompt: str) -> str:
+        from google import genai
+
         last_exception: Exception | None = None
 
         for attempt in range(self.max_retries + 1):

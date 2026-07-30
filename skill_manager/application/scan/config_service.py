@@ -27,27 +27,19 @@ class LLMConfigValidationResult:
 
 
 class ScanConfigService:
-    def __init__(self, repository: ScanConfigRepository | None = None) -> None:
+    def __init__(self, repository: ScanConfigRepository) -> None:
         self.repository = repository
 
     def list_configs(self) -> list[LLMScanConfigRow]:
-        if self.repository is None:
-            return []
         return self.repository.list_all()
 
     def get_active_config(self) -> LLMScanConfigRow | None:
-        if self.repository is None:
-            return None
         return self.repository.get_active()
 
     def get_config_by_id(self, config_id: int) -> LLMScanConfigRow | None:
-        if self.repository is None:
-            return None
         return self.repository.get_by_id(config_id)
 
     def save_config(self, config: LLMScanConfigRow) -> int:
-        if self.repository is None:
-            raise RuntimeError("No database available")
         config_id = self.repository.save(config)
         logger.info("LLM scan config saved: id=%d name=%s", config_id, config.name)
         return config_id
@@ -57,14 +49,10 @@ class ScanConfigService:
         return self.save_config(validated)
 
     def delete_config(self, config_id: int) -> None:
-        if self.repository is None:
-            raise RuntimeError("No database available")
         self.repository.delete(config_id)
         logger.info("LLM scan config deleted: id=%d", config_id)
 
     def set_active_config(self, config_id: int) -> None:
-        if self.repository is None:
-            raise RuntimeError("No database available")
         self.repository.set_active(config_id)
         logger.info("LLM scan config set active: id=%d", config_id)
 

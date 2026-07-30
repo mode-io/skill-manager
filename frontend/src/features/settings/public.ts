@@ -3,7 +3,7 @@ export {
   settingsKeys,
   useHarnessSupportMutation,
   useSettingsQuery,
-} from "./queries";
+} from "./api/queries";
 
 export const settingsRoutes = {
   settings: "/settings",

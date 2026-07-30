@@ -78,16 +78,6 @@ class McpEnrichmentServiceTests(unittest.TestCase):
         self.assertEqual(catalog.popular_page.call_count, 1)
         self.assertEqual(catalog.search_page.call_count, 1)
 
-    def test_invalidate_clears_cache(self) -> None:
-        catalog = MagicMock()
-        catalog.popular_page.return_value = _popular([])
-        catalog.search_page.return_value = {"items": []}
-        service = McpEnrichmentService(catalog)
-        service.lookup("x")
-        service.invalidate()
-        service.lookup("x")
-        self.assertEqual(catalog.popular_page.call_count, 2)
-
 
 if __name__ == "__main__":
     unittest.main()

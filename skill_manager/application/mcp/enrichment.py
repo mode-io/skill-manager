@@ -106,11 +106,6 @@ class McpEnrichmentService:
             self._cache[key] = link
         return link
 
-    def invalidate(self) -> None:
-        with self._lock:
-            self._cache.clear()
-            self._popular_warmed = False
-
     def _search_by_name(self, name: str) -> MarketplaceLink | None:
         try:
             page = self._catalog.search_page(name, limit=10, offset=0, verified=True)

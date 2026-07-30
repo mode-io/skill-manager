@@ -88,9 +88,7 @@ def sync_slash_command(
     body: SlashSyncRequest,
     container: BackendContainer = Depends(get_container),
 ) -> dict[str, object]:
-    sync = container.slash_command_mutations.sync_command(name, targets=body.targets)
-    command = container.slash_command_queries.get_command(name)
-    return {"ok": sync["ok"], "command": command, "sync": sync["sync"]}
+    return container.slash_command_mutations.sync_command_result(name, targets=body.targets)
 
 
 @router.delete("/{name}", response_model=SlashCommandDeleteResponse)

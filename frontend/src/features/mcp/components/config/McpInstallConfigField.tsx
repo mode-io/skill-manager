@@ -28,8 +28,8 @@ export function McpInstallConfigField({
 
   if (field.format === "boolean") {
     return (
-      <div className="scan-config-panel__field">
-        <label className="scan-config-panel__checkbox">
+      <div className="mcp-config-form__field">
+        <label className="mcp-config-form__checkbox">
           <input
             type="checkbox"
             checked={Boolean(value)}
@@ -44,13 +44,13 @@ export function McpInstallConfigField({
 
   const inputType = field.format === "number" ? "number" : isSecret && !secretVisible ? "password" : "text";
   return (
-    <div className="scan-config-panel__field">
-      <label className="scan-config-panel__label" htmlFor={fieldId}>{label}</label>
-      <span className="scan-config-panel__input-wrap">
+    <div className="mcp-config-form__field">
+      <label className="mcp-config-form__label" htmlFor={fieldId}>{label}</label>
+      <span className="mcp-config-form__input-wrap">
         {field.choices?.length ? (
           <select
             id={fieldId}
-            className="scan-config-panel__input"
+            className="mcp-config-form__input"
             value={String(value ?? "")}
             onChange={(event) => onChange(event.currentTarget.value)}
           >
@@ -64,7 +64,7 @@ export function McpInstallConfigField({
         ) : (
           <input
             id={fieldId}
-            className="scan-config-panel__input"
+            className="mcp-config-form__input"
             type={inputType}
             value={String(value ?? "")}
             placeholder={field.placeholder ?? undefined}
@@ -75,7 +75,7 @@ export function McpInstallConfigField({
         {isSecret ? (
           <button
             type="button"
-            className="scan-config-panel__input-action"
+            className="mcp-config-form__input-action"
             aria-label={secretVisible ? copy.detail.installConfig.hideSecret : copy.detail.installConfig.showSecret}
             onClick={onToggleSecret}
           >
@@ -97,7 +97,7 @@ function InstallConfigFieldHint({ description }: { description: string | null | 
     return null;
   }
   return (
-    <span className="scan-config-panel__hint">
+    <span className="mcp-config-form__hint">
       <LinkifiedText text={description} />
     </span>
   );

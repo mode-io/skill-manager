@@ -157,6 +157,27 @@ class McpAvailabilityProbeTests(unittest.TestCase):
         self.assertEqual(result.status, "available")
         self.assertEqual(attempts, 2)
 
+    def test_stdio_probe_uses_injected_env_instead_of_process_env(self) -> None:
+        spec = McpServerSpec(
+            name="local",
+            display_name="Local",
+            source=McpSource.marketplace("local"),
+            transport="stdio",
+            command="local-mcp",
+            env=(("SPEC_KEY", "spec-value"),),
+        )
+        seen: dict[str, str] = {}
+
+        def fake_popen(_argv, **kwargs):
+            seen.update(kwargs["env"])
+            raise OSError("probe stopped")
+
+        with patch("skill_manager.application.mcp.availability.subprocess.Popen", fake_popen):
+            result = McpAvailabilityProbe(env={"INJECTED": "yes"}, retry_attempts=1).probe(spec)
+
+        self.assertEqual(result.status, "unavailable")
+        self.assertEqual(seen, {"INJECTED": "yes", "SPEC_KEY": "spec-value"})
+
     def test_default_http_post_returns_first_sse_data_event_without_reading_to_eof(self) -> None:
         class SseResponse:
             headers = {"Content-Type": "text/event-stream"}

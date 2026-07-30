@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from skill_manager.atomic_files import atomic_write_text
 from skill_manager.errors import MutationError
 from skill_manager.harness.resolution import ResolutionContext
 
@@ -13,6 +14,9 @@ from .sync_state import SlashCommandSyncRecord, SlashCommandSyncStateStore, hash
 from .targets import target_by_id
 
 
+LEGACY_MIGRATION_MARKER = ".legacy-migration-done"
+
+
 def migrate_legacy_slash_commands(
     *,
     command_store: SlashCommandStore,
@@ -21,13 +25,33 @@ def migrate_legacy_slash_commands(
     targets: tuple[SlashTarget, ...],
     path_policy: SlashCommandPathPolicy | None = None,
 ) -> None:
-    active_path_policy = path_policy or SlashCommandPathPolicy()
+    marker_path = command_store.paths.root / LEGACY_MIGRATION_MARKER
+    if marker_path.exists():
+        return
     legacy_root = context.home / ".slash-command-manager"
-    legacy_commands_dir = legacy_root / "commands"
-    legacy_sync_state_path = legacy_root / "sync-state.json"
-    if not legacy_commands_dir.exists() and not legacy_sync_state_path.exists():
+    if not (legacy_root / "commands").exists() and not (legacy_root / "sync-state.json").exists():
         return
 
+    _migrate_legacy_root(
+        legacy_root,
+        command_store=command_store,
+        sync_state_store=sync_state_store,
+        targets=targets,
+        path_policy=path_policy or SlashCommandPathPolicy(),
+    )
+    atomic_write_text(marker_path, "")
+
+
+def _migrate_legacy_root(
+    legacy_root: Path,
+    *,
+    command_store: SlashCommandStore,
+    sync_state_store: SlashCommandSyncStateStore,
+    targets: tuple[SlashTarget, ...],
+    path_policy: SlashCommandPathPolicy,
+) -> None:
+    legacy_commands_dir = legacy_root / "commands"
+    legacy_sync_state_path = legacy_root / "sync-state.json"
     legacy_command_paths = sorted(legacy_commands_dir.glob("*.yaml")) if legacy_commands_dir.is_dir() else ()
     for path in legacy_command_paths:
         try:
@@ -60,7 +84,7 @@ def migrate_legacy_slash_commands(
             if target is None:
                 continue
             try:
-                path = active_path_policy.tracked_path(target, Path(raw_path))
+                path = path_policy.tracked_path(target, Path(raw_path))
             except MutationError:
                 continue
             records[target.id] = SlashCommandSyncRecord(

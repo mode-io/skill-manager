@@ -27,8 +27,6 @@ function makeEntry(
     kind: "managed",
     canEnable: true,
     enabledStatus: enabled ? "enabled" : "disabled",
-    availabilityStatus: "unavailable",
-    availabilityReason: null,
     mcpStatus: {
       kind: "unchecked",
       reason: null,

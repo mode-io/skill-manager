@@ -162,7 +162,7 @@ def build_backend_container(
     )
     mcp_enrichment = McpEnrichmentService(mcp_catalog)
     mcp_planner = McpAdoptionPlanner(mcp_read_models)
-    mcp_availability_probe = mcp_availability_probe or McpAvailabilityProbe()
+    mcp_availability_probe = mcp_availability_probe or McpAvailabilityProbe(env=active_env)
     mcp_availability_cache = {}
     mcp_queries = McpQueryService(
         mcp_read_models,
