@@ -955,6 +955,36 @@ class McpRoutesTests(unittest.TestCase):
 
     # Identity-first unmanaged MCP flows and update compatibility -----------
 
+    def test_unmanaged_by_server_omits_codex_desktop_runtime_mcp(self) -> None:
+        with AppTestHarness() as harness:
+            codex_cfg = harness.spec.home / ".codex" / "config.toml"
+            codex_cfg.parent.mkdir(parents=True, exist_ok=True)
+            codex_cfg.write_text(
+                """
+[mcp_servers.node_repl]
+command = "C:\\\\Users\\\\tester\\\\AppData\\\\Local\\\\OpenAI\\\\Codex\\\\runtimes\\\\node_repl.exe"
+args = []
+
+[mcp_servers.node_repl.env]
+CODEX_CLI_PATH = "C:\\\\Codex\\\\codex.exe"
+NODE_REPL_NODE_PATH = "C:\\\\Codex\\\\node.exe"
+SKY_CUA_NATIVE_PIPE_DIRECTORY = "\\\\\\\\.\\\\pipe\\\\codex-test"
+
+[mcp_servers.user-server]
+command = "npx"
+args = ["-y", "user-mcp"]
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            response = harness.get_json("/api/mcp/unmanaged/by-server")
+            assert isinstance(response, dict)
+
+            self.assertEqual(
+                [server["name"] for server in response["servers"]],
+                ["user-server"],
+            )
+
     def test_unmanaged_by_server_dedupes_identical_entries_across_harnesses(self) -> None:
         with AppTestHarness() as harness:
             # Seed identical `context7` entries in cursor AND claude.

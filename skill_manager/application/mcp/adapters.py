@@ -57,6 +57,8 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         self._file_format = profile.file_format
         self._write_subtree_path = profile.subtree_path
         self._read_subtree_paths = profile.resolve_discovery_subtree_paths(context)
+        self._unmanaged_entry_exclusion = profile.unmanaged_entry_exclusion
+        self._context = context
         self._mapper: TransportMapper = get_mapper(profile.codec)
         self._capability_probe = profile.capability_probe
         self._capability_unavailable_reason = profile.capability_unavailable_reason
@@ -84,7 +86,14 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         scan_issue: str | None = None
 
         try:
-            raw_entries = self._read_entries() if status.config_present else ()
+            raw_entries = (
+                self._read_entries(
+                    exclude_harness_owned=True,
+                    managed_names=frozenset(specs_by_name),
+                )
+                if status.config_present
+                else ()
+            )
         except MutationError as error:
             raw_entries = ()
             scan_issue = str(error)
@@ -233,10 +242,14 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
                     [executable, "mcp", "--help"],
                     text=True,
                     capture_output=True,
-                    timeout=2.0,
+                    timeout=5.0,
                     check=False,
                 )
-            except (OSError, subprocess.TimeoutExpired):
+            except subprocess.TimeoutExpired:
+                # The executable and MCP subcommand both launched. Slow cold
+                # starts must not make the harness disappear from the UI.
+                return True, None
+            except OSError:
                 return False, reason
             return (result.returncode == 0, None if result.returncode == 0 else reason)
         reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
@@ -252,7 +265,12 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
             for probe in self._install_probes
         )
 
-    def _read_entries(self) -> tuple[_RawEntry, ...]:
+    def _read_entries(
+        self,
+        *,
+        exclude_harness_owned: bool = False,
+        managed_names: frozenset[str] = frozenset(),
+    ) -> tuple[_RawEntry, ...]:
         entries: list[_RawEntry] = []
         seen_names: set[str] = set()
         for config_path in self._discovery_config_paths:
@@ -263,6 +281,13 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
                 subtree = self._read_subtree(document, subtree_path)
                 for name, value in subtree.items():
                     if name in seen_names or not isinstance(value, dict):
+                        continue
+                    if (
+                        exclude_harness_owned
+                        and name not in managed_names
+                        and self._unmanaged_entry_exclusion is not None
+                        and self._unmanaged_entry_exclusion(name, value, self._context)
+                    ):
                         continue
                     seen_names.add(name)
                     entries.append(

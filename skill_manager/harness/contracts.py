@@ -17,6 +17,7 @@ FileTreeLayout = Literal["flat", "categorized"]
 PathResolver = Callable[[ResolutionContext], Path]
 SubtreePath: TypeAlias = tuple[str, ...]
 SubtreePathResolver = Callable[[ResolutionContext], SubtreePath]
+ConfigEntryExclusion = Callable[[str, Mapping[str, object], ResolutionContext], bool]
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,7 @@ class ConfigSubtreeBindingProfile:
     file_format: Literal["json", "jsonc", "toml", "yaml"] = "json"
     subtree_path: SubtreePath = ()
     discovery_subtree_path_resolvers: tuple[SubtreePathResolver, ...] = ()
+    unmanaged_entry_exclusion: ConfigEntryExclusion | None = None
     codec: str = "default"
     capability_probe: str | None = None
     capability_unavailable_reason: str | None = None

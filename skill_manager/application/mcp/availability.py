@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import shutil
 import subprocess
 import threading
 import time
@@ -98,10 +99,16 @@ class McpAvailabilityProbe:
     def _probe_stdio(self, spec: McpServerSpec) -> McpAvailabilityResult:
         if not spec.command:
             return McpAvailabilityResult("unavailable", "missing MCP command")
-        argv = [spec.command, *(spec.args or ())]
         env = os.environ.copy()
         if spec.env:
             env.update(dict(spec.env))
+        executable = shutil.which(spec.command, path=env.get("PATH"))
+        if executable is None:
+            return McpAvailabilityResult(
+                "unavailable",
+                f"MCP command not found on PATH: {spec.command}",
+            )
+        argv = [executable, *(spec.args or ())]
         try:
             process = subprocess.Popen(
                 argv,

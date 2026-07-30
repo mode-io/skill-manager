@@ -86,6 +86,8 @@ class FakeHomeSpec:
             "XDG_CONFIG_HOME": str(self.xdg_config_home),
             "XDG_DATA_HOME": str(self.xdg_data_home),
             "XDG_STATE_HOME": str(self.xdg_state_home),
+            "SKILL_MANAGER_HERMES_HOME": str(self.hermes_home),
+            "HERMES_HOME": str(self.hermes_home),
             "PATH": str(self.bin_dir),
         }
 
