@@ -469,7 +469,7 @@ profiles:
                     return_value=r"C:\bin\openclaw.CMD",
                 ),
                 mock.patch(
-                    "skill_manager.application.mcp.adapters.subprocess.run",
+                    "skill_manager.harness.availability.subprocess.run",
                     side_effect=subprocess.TimeoutExpired(
                         [r"C:\bin\openclaw.CMD", "mcp", "--help"],
                         timeout=5,

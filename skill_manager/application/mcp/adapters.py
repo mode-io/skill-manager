@@ -4,7 +4,6 @@ import json
 import re
 from io import StringIO
 import shutil
-import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,10 +23,14 @@ from skill_manager.harness import (
     ResolutionContext,
     SubtreePath,
 )
+from skill_manager.harness.availability import probe_command_succeeds
 
 from .contracts import McpHarnessAdapter, McpHarnessScan, McpHarnessStatus, McpObservedEntry
 from .mappers import TransportMapper, get_mapper
 from .store import McpServerSpec, McpSource
+
+
+MCP_CAPABILITY_PROBE_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -232,27 +235,16 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
     def _mcp_write_capability(self, *, installed: bool) -> tuple[bool, str | None]:
         if self._capability_probe is None:
             return True, None
+        reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
         if self._capability_probe == "openclaw-mcp-command":
             executable = shutil.which(self._install_probe, path=self._path_env)
-            reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
             if executable is None:
                 return False, reason
-            try:
-                result = subprocess.run(
-                    [executable, "mcp", "--help"],
-                    text=True,
-                    capture_output=True,
-                    timeout=5.0,
-                    check=False,
-                )
-            except subprocess.TimeoutExpired:
-                # The executable and MCP subcommand both launched. Slow cold
-                # starts must not make the harness disappear from the UI.
-                return True, None
-            except OSError:
-                return False, reason
-            return (result.returncode == 0, None if result.returncode == 0 else reason)
-        reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
+            writable = probe_command_succeeds(
+                [executable, "mcp", "--help"],
+                timeout_seconds=MCP_CAPABILITY_PROBE_TIMEOUT_SECONDS,
+            )
+            return (writable, None if writable else reason)
         return (installed, None if installed else reason)
 
     @staticmethod
