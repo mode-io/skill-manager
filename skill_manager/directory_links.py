@@ -39,19 +39,7 @@ def create_directory_link(link: Path, target: Path) -> None:
 
 
 def is_directory_link(path: Path) -> bool:
-    if path.is_symlink():
-        return True
-    if os.name != "nt":
-        return False
-    try:
-        metadata = path.lstat()
-    except (FileNotFoundError, OSError):
-        return False
-    attributes = getattr(metadata, "st_file_attributes", 0)
-    reparse_tag = getattr(metadata, "st_reparse_tag", 0)
-    return bool(attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT) and (
-        reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-    )
+    return path.is_symlink() or _is_junction(path)
 
 
 def resolve_directory_link(path: Path) -> Path:

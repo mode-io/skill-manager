@@ -1,15 +1,25 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import ctypes
 from ctypes import wintypes
+from functools import lru_cache
 import os
 from pathlib import Path
 import signal
 import shutil
 import subprocess
 import time
+from typing import Iterator
 
 from .state import RuntimeState
+
+
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+PROCESS_TERMINATE = 0x0001
+# FILETIME counts 100ns ticks from 1601-01-01; Unix time starts 369 years later.
+UNIX_EPOCH_IN_FILETIME_TICKS = 116_444_736_000_000_000
+FILETIME_TICKS_PER_SECOND = 10_000_000
 
 
 def process_is_alive(pid: int) -> bool:
@@ -76,33 +86,14 @@ def terminate_process(pid: int, *, timeout_seconds: float = 5.0) -> None:
 def process_started_at(pid: int) -> float | None:
     if not _is_windows():
         return None
-    process_query_limited_information = 0x1000
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    open_process = kernel32.OpenProcess
-    open_process.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-    open_process.restype = wintypes.HANDLE
-    get_process_times = kernel32.GetProcessTimes
-    get_process_times.argtypes = [
-        wintypes.HANDLE,
-        ctypes.POINTER(wintypes.FILETIME),
-        ctypes.POINTER(wintypes.FILETIME),
-        ctypes.POINTER(wintypes.FILETIME),
-        ctypes.POINTER(wintypes.FILETIME),
-    ]
-    get_process_times.restype = wintypes.BOOL
-    close_handle = kernel32.CloseHandle
-    close_handle.argtypes = [wintypes.HANDLE]
-    close_handle.restype = wintypes.BOOL
-
-    handle = open_process(process_query_limited_information, False, pid)
-    if not handle:
-        return None
-    try:
+    with _windows_process_handle(pid, PROCESS_QUERY_LIMITED_INFORMATION) as handle:
+        if handle is None:
+            return None
         creation = wintypes.FILETIME()
         exit_time = wintypes.FILETIME()
         kernel_time = wintypes.FILETIME()
         user_time = wintypes.FILETIME()
-        if not get_process_times(
+        if not _kernel32().GetProcessTimes(
             handle,
             ctypes.byref(creation),
             ctypes.byref(exit_time),
@@ -110,10 +101,8 @@ def process_started_at(pid: int) -> float | None:
             ctypes.byref(user_time),
         ):
             return None
-        windows_ticks = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
-        return (windows_ticks - 116444736000000000) / 10_000_000
-    finally:
-        close_handle(handle)
+        ticks = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
+        return (ticks - UNIX_EPOCH_IN_FILETIME_TICKS) / FILETIME_TICKS_PER_SECOND
 
 
 def _resolve_ps_executable() -> str | None:
@@ -146,59 +135,62 @@ def _wait_for_exit(pid: int, timeout_seconds: float) -> bool:
     return not process_is_alive(pid)
 
 
-def _windows_process_image(pid: int) -> str | None:
-    if not _is_windows():
-        return None
-    process_query_limited_information = 0x1000
+@lru_cache(maxsize=1)
+def _kernel32() -> "ctypes.WinDLL":
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    open_process = kernel32.OpenProcess
-    open_process.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-    open_process.restype = wintypes.HANDLE
-    close_handle = kernel32.CloseHandle
-    close_handle.argtypes = [wintypes.HANDLE]
-    close_handle.restype = wintypes.BOOL
-    query_image = kernel32.QueryFullProcessImageNameW
-    query_image.argtypes = [
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    kernel32.QueryFullProcessImageNameW.argtypes = [
         wintypes.HANDLE,
         wintypes.DWORD,
         wintypes.LPWSTR,
         ctypes.POINTER(wintypes.DWORD),
     ]
-    query_image.restype = wintypes.BOOL
+    kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+    kernel32.GetProcessTimes.argtypes = [
+        wintypes.HANDLE,
+        *(ctypes.POINTER(wintypes.FILETIME),) * 4,
+    ]
+    kernel32.GetProcessTimes.restype = wintypes.BOOL
+    kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    kernel32.TerminateProcess.restype = wintypes.BOOL
+    return kernel32
 
-    handle = open_process(process_query_limited_information, False, pid)
-    if not handle:
-        return None
+
+@contextmanager
+def _windows_process_handle(pid: int, access: int) -> Iterator["wintypes.HANDLE | None"]:
+    """Open a process handle, yielding None when the process is gone or denied."""
+    kernel32 = _kernel32()
+    handle = kernel32.OpenProcess(access, False, pid)
     try:
+        yield handle or None
+    finally:
+        if handle:
+            kernel32.CloseHandle(handle)
+
+
+def _windows_process_image(pid: int) -> str | None:
+    if not _is_windows():
+        return None
+    with _windows_process_handle(pid, PROCESS_QUERY_LIMITED_INFORMATION) as handle:
+        if handle is None:
+            return None
         buffer = ctypes.create_unicode_buffer(32768)
         size = wintypes.DWORD(len(buffer))
-        if not query_image(handle, 0, buffer, ctypes.byref(size)):
+        if not _kernel32().QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
             return None
         return buffer.value
-    finally:
-        close_handle(handle)
 
 
 def _terminate_windows_process(pid: int) -> None:
-    process_terminate = 0x0001
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    open_process = kernel32.OpenProcess
-    open_process.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-    open_process.restype = wintypes.HANDLE
-    terminate = kernel32.TerminateProcess
-    terminate.argtypes = [wintypes.HANDLE, wintypes.UINT]
-    terminate.restype = wintypes.BOOL
-    close_handle = kernel32.CloseHandle
-    close_handle.argtypes = [wintypes.HANDLE]
-    close_handle.restype = wintypes.BOOL
-
-    handle = open_process(process_terminate, False, pid)
-    if not handle:
-        if not process_is_alive(pid):
-            return
-        raise OSError(ctypes.get_last_error(), f"unable to open process {pid} for termination")
-    try:
-        if not terminate(handle, 0):
+    with _windows_process_handle(pid, PROCESS_TERMINATE) as handle:
+        if handle is None:
+            # Read the failure before process_is_alive issues its own calls.
+            open_error = ctypes.get_last_error()
+            if not process_is_alive(pid):
+                return
+            raise OSError(open_error, f"unable to open process {pid} for termination")
+        if not _kernel32().TerminateProcess(handle, 0):
             raise OSError(ctypes.get_last_error(), f"unable to terminate process {pid}")
-    finally:
-        close_handle(handle)
