@@ -80,6 +80,24 @@ def assert_health(base_url: str) -> None:
         raise RuntimeError(f"unexpected health response: {payload!r}")
 
 
+def assert_hermes_isolated(base_url: str, expected_root: Path) -> None:
+    with urlopen(f"{base_url}/api/settings", timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    hermes = next(
+        (
+            item
+            for item in payload.get("harnesses", [])
+            if isinstance(item, dict) and item.get("harness") == "hermes"
+        ),
+        None,
+    )
+    if hermes is None or Path(str(hermes.get("managedLocation"))) != expected_root:
+        raise RuntimeError(
+            "npm runtime escaped its isolated Hermes home: "
+            f"expected {expected_root}, got {hermes!r}"
+        )
+
+
 def runtime_cycle(
     wrapper: Path,
     *,
@@ -107,6 +125,10 @@ def runtime_cycle(
     state = json.loads(state_path.read_text(encoding="utf-8"))
     base_url = str(state["base_url"])
     assert_health(base_url)
+    assert_hermes_isolated(
+        base_url,
+        Path(env["SKILL_MANAGER_HERMES_HOME"]) / "skills",
+    )
 
     status = run(
         [str(wrapper), "status", "--state-dir", str(state_dir)],
@@ -166,6 +188,7 @@ def main(argv: list[str] | None = None) -> int:
                 "USERPROFILE": str(home),
                 "APPDATA": str(roaming),
                 "LOCALAPPDATA": str(local),
+                "SKILL_MANAGER_HERMES_HOME": str(home / ".hermes"),
                 "SKILL_MANAGER_LOCAL_ARTIFACT_PATH": str(artifact),
             }
         )

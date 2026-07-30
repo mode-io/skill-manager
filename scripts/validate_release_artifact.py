@@ -117,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
                     "XDG_CONFIG_HOME": str(xdg_config_dir),
                     "XDG_DATA_HOME": str(xdg_data_dir),
                     "XDG_STATE_HOME": str(xdg_state_dir),
+                    "SKILL_MANAGER_HERMES_HOME": str(home_dir / ".hermes"),
                 }
             )
             try:
@@ -142,6 +143,21 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 if not healthcheck_ready(base_url):
                     raise RuntimeError(f"packaged start returned before {base_url}/api/health was ready")
+                settings = fetch_json(f"{base_url}/api/settings")
+                hermes = next(
+                    (
+                        item
+                        for item in settings.get("harnesses", [])
+                        if isinstance(item, dict) and item.get("harness") == "hermes"
+                    ),
+                    None,
+                )
+                expected_hermes_root = home_dir / ".hermes" / "skills"
+                if hermes is None or Path(str(hermes.get("managedLocation"))) != expected_hermes_root:
+                    raise RuntimeError(
+                        "packaged runtime escaped its isolated Hermes home: "
+                        f"expected {expected_hermes_root}, got {hermes!r}"
+                    )
 
                 status_output = run(
                     [str(binary), "status", "--state-dir", str(runtime_dir)],

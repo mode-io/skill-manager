@@ -10,7 +10,10 @@ import sys
 import tarfile
 import zipfile
 
-from release_targets import ReleaseTarget, artifact_name, resolve_current_target
+if __package__:
+    from .release_targets import ReleaseTarget, artifact_name, resolve_current_target
+else:
+    from release_targets import ReleaseTarget, artifact_name, resolve_current_target
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -35,9 +38,16 @@ def run(command: list[str]) -> None:
     subprocess.run(command, cwd=REPO_ROOT, check=True)
 
 
+def resolve_executable(name: str) -> str:
+    executable = shutil.which(name)
+    if executable is None:
+        raise FileNotFoundError(f"required executable was not found on PATH: {name}")
+    return executable
+
+
 def build_frontend(skip: bool) -> None:
     if not skip:
-        run(["npm", "run", "build"])
+        run([resolve_executable("npm"), "run", "build"])
 
 
 def sync_versions() -> None:
