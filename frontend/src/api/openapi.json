@@ -3555,7 +3555,8 @@
           "platform": {
             "enum": [
               "macos",
-              "linux"
+              "linux",
+              "windows"
             ],
             "title": "Platform",
             "type": "string"

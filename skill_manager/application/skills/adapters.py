@@ -7,6 +7,12 @@ from pathlib import Path
 import shutil
 from uuid import uuid4
 
+from skill_manager.directory_links import (
+    create_directory_link,
+    is_directory_link,
+    remove_directory_link,
+    resolve_directory_link,
+)
 from skill_manager.errors import MutationError
 from skill_manager.harness import (
     FileTreeAvailability,
@@ -14,6 +20,8 @@ from skill_manager.harness import (
     FileTreeLayout,
     HarnessKernelService,
 )
+from skill_manager.harness.availability import any_command_is_available
+from skill_manager.platform_context import PlatformName
 
 from .contracts import SkillsHarnessAdapter, SkillsHarnessStatus
 from .identity import SourceDescriptor
@@ -28,8 +36,9 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         harness: str,
         label: str,
         logo_key: str | None,
-        install_probe: str,
+        install_probes: tuple[str, ...],
         path_env: str | None,
+        platform: PlatformName,
         managed_root: Path,
         discovery_roots: tuple["_ResolvedRoot", ...],
         availability: FileTreeAvailability,
@@ -40,8 +49,9 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         self.harness = harness
         self.label = label
         self.logo_key = logo_key
-        self._install_probe = install_probe
+        self._install_probes = install_probes
         self._path_env = path_env
+        self._platform = platform
         self.managed_root = managed_root
         self._discovery_roots = self._dedupe_roots(discovery_roots)
         self._availability = availability
@@ -87,52 +97,78 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
     def enable_shared_package(self, package_path: Path) -> None:
         resolved_target = package_path.resolve()
         link = self._binding_path(package_path.name)
-        if link.is_symlink():
-            if link.resolve() == resolved_target:
+        if is_directory_link(link):
+            if resolve_directory_link(link) == resolved_target:
                 return
             raise MutationError(
-                f"symlink already exists but points to {link.resolve()}, not {resolved_target}"
+                f"directory link already exists but points to "
+                f"{resolve_directory_link(link)}, not {resolved_target}"
             )
         if link.exists():
             raise MutationError(f"real directory exists at {link}; will not overwrite")
-        link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to(resolved_target)
+        try:
+            create_directory_link(link, resolved_target)
+        except OSError as error:
+            raise MutationError(f"unable to create managed directory link at {link}: {error}") from error
 
     def disable_shared_package(self, package_dir: str) -> None:
         link = self._binding_path(package_dir)
-        if not link.exists() and not link.is_symlink():
+        if not link.exists() and not is_directory_link(link):
             return
-        if not link.is_symlink():
-            raise MutationError(f"not a symlink at {link}; will not delete real directory")
-        link.unlink()
+        if not is_directory_link(link):
+            raise MutationError(
+                f"not a symlink or directory junction at {link}; will not delete real directory"
+            )
+        remove_directory_link(link)
 
     def adopt_local_copy(self, existing_dir: Path, package_path: Path) -> None:
         resolved_target = package_path.resolve()
-        if not existing_dir.exists() and not existing_dir.is_symlink():
+        if not existing_dir.exists() and not is_directory_link(existing_dir):
             raise MutationError(f"directory does not exist: {existing_dir}")
-        if existing_dir.is_symlink():
-            if existing_dir.resolve() == resolved_target:
+        if is_directory_link(existing_dir):
+            if resolve_directory_link(existing_dir) == resolved_target:
                 return
             raise MutationError(
-                f"symlink exists but points to {existing_dir.resolve()}, not {resolved_target}"
+                f"directory link exists but points to "
+                f"{resolve_directory_link(existing_dir)}, not {resolved_target}"
             )
-        shutil.rmtree(existing_dir)
-        existing_dir.symlink_to(resolved_target)
+
+        preflight_link = existing_dir.parent / f".{existing_dir.name}.preflight-{uuid4().hex}"
+        backup_dir = existing_dir.parent / f".{existing_dir.name}.backup-{uuid4().hex}"
+        try:
+            create_directory_link(preflight_link, resolved_target)
+            remove_directory_link(preflight_link)
+            existing_dir.rename(backup_dir)
+            create_directory_link(existing_dir, resolved_target)
+        except OSError as error:
+            if is_directory_link(preflight_link):
+                remove_directory_link(preflight_link)
+            if is_directory_link(existing_dir):
+                remove_directory_link(existing_dir)
+            if backup_dir.exists() and not existing_dir.exists():
+                backup_dir.rename(existing_dir)
+            raise MutationError(f"unable to adopt local copy at {existing_dir}: {error}") from error
+
+        shutil.rmtree(backup_dir)
 
     def has_binding(self, package_dir: str) -> bool:
         candidate = self._binding_path(package_dir)
-        return candidate.exists() or candidate.is_symlink()
+        return candidate.exists() or is_directory_link(candidate)
 
     def prepare_materialize(self, package_dir: str, expected_target: Path) -> None:
         existing_link = self._binding_path(package_dir)
-        if not existing_link.exists() and not existing_link.is_symlink():
+        if not existing_link.exists() and not is_directory_link(existing_link):
             raise MutationError(f"directory does not exist: {existing_link}")
-        if not existing_link.is_symlink():
-            raise MutationError(f"not a symlink at {existing_link}; will not overwrite real directory")
-        resolved_target = expected_target.resolve()
-        if existing_link.resolve() != resolved_target:
+        if not is_directory_link(existing_link):
             raise MutationError(
-                f"symlink exists but points to {existing_link.resolve()}, not {resolved_target}"
+                f"not a symlink or directory junction at {existing_link}; "
+                "will not overwrite real directory"
+            )
+        resolved_target = expected_target.resolve()
+        if resolve_directory_link(existing_link) != resolved_target:
+            raise MutationError(
+                f"directory link exists but points to "
+                f"{resolve_directory_link(existing_link)}, not {resolved_target}"
             )
 
     def materialize_binding(self, package_dir: str, source_path: Path) -> None:
@@ -154,22 +190,24 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
                 shutil.rmtree(temp_copy, ignore_errors=True)
             raise MutationError(f"unable to restore local copy at {existing_link}: {error}") from error
 
-        if backup_link.exists():
-            backup_link.unlink()
+        if is_directory_link(backup_link):
+            remove_directory_link(backup_link)
 
     def prepare_remove(self, package_dir: str) -> None:
         link = self._binding_path(package_dir)
-        if not link.exists() and not link.is_symlink():
+        if not link.exists() and not is_directory_link(link):
             return
-        if not link.is_symlink():
-            raise MutationError(f"not a symlink at {link}; will not delete real directory")
+        if not is_directory_link(link):
+            raise MutationError(
+                f"not a symlink or directory junction at {link}; will not delete real directory"
+            )
 
     def remove_binding(self, package_dir: str) -> None:
         self.disable_shared_package(package_dir)
 
     def _binding_path(self, package_dir: str) -> Path:
         default = self._default_binding_path(package_dir)
-        if default.exists() or default.is_symlink():
+        if default.exists() or is_directory_link(default):
             return default
         if self._layout != "categorized" or not self.managed_root.is_dir():
             return default
@@ -177,7 +215,7 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
             if not category_dir.is_dir() or category_dir.name.startswith("."):
                 continue
             candidate = category_dir / package_dir
-            if candidate.is_symlink():
+            if is_directory_link(candidate):
                 return candidate
         return default
 
@@ -190,7 +228,11 @@ class FileTreeSkillsAdapter(SkillsHarnessAdapter):
         return None
 
     def _is_installed(self) -> bool:
-        cli_available = shutil.which(self._install_probe, path=self._path_env) is not None
+        cli_available = any_command_is_available(
+            self._install_probes,
+            path_env=self._path_env,
+            platform=self._platform,
+        )
         if self._availability == "cli":
             return cli_available
         if self._availability == "cli_or_app":
@@ -276,8 +318,9 @@ def build_skills_adapters(kernel: HarnessKernelService) -> tuple[FileTreeSkillsA
                 harness=definition.harness,
                 label=definition.label,
                 logo_key=definition.logo_key,
-                install_probe=definition.install_probe,
+                install_probes=definition.install_probes_for(kernel.context.platform),
                 path_env=kernel.context.env.get("PATH"),
+                platform=kernel.context.platform,
                 managed_root=managed_root,
                 discovery_roots=resolved_roots,
                 availability=profile.availability,
@@ -484,7 +527,7 @@ def _is_skill_manager_hermes_binding(
     locator_name: str,
     managed_category: str,
 ) -> bool:
-    return skill_root.is_symlink() and locator_name.startswith(f"{managed_category}/")
+    return is_directory_link(skill_root) and locator_name.startswith(f"{managed_category}/")
 
 
 def _record_excluded_skill(

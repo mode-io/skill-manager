@@ -8,12 +8,13 @@ const cases = [
   ["darwin", "x64", "skill-manager-v1.2.3-darwin-x64.tar.gz"],
   ["linux", "x64", "skill-manager-v1.2.3-linux-x64.tar.gz"],
   ["linux", "arm64", "skill-manager-v1.2.3-linux-arm64.tar.gz"],
+  ["win32", "x64", "skill-manager-v1.2.3-windows-x64.zip"],
 ];
 
 for (const [platform, arch, expected] of cases) {
   assert.equal(artifactName("1.2.3", resolveTarget({ platform, arch })), expected);
 }
 
-assert.throws(() => resolveTarget({ platform: "win32", arch: "x64" }), /No packaged release artifact/);
+assert.throws(() => resolveTarget({ platform: "win32", arch: "arm64" }), /No packaged release artifact/);
 
 console.log("release target JS resolver ok");

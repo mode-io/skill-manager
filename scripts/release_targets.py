@@ -18,6 +18,8 @@ class ReleaseTarget:
     arch: str
     node_platform: str
     node_arch: str
+    archive_format: str
+    executable_name: str
     machine_aliases: tuple[str, ...]
 
 
@@ -53,7 +55,7 @@ def target_by_id(target_id: str, targets: tuple[ReleaseTarget, ...] | None = Non
 
 
 def artifact_name(version: str, target: ReleaseTarget) -> str:
-    return f"skill-manager-v{version}-{target.id}.tar.gz"
+    return f"skill-manager-v{version}-{target.id}.{target.archive_format}"
 
 
 def _target_from_payload(item: Any) -> ReleaseTarget:
@@ -65,6 +67,8 @@ def _target_from_payload(item: Any) -> ReleaseTarget:
         arch=str(item["arch"]),
         node_platform=str(item["nodePlatform"]),
         node_arch=str(item["nodeArch"]),
+        archive_format=str(item["archiveFormat"]),
+        executable_name=str(item["executableName"]),
         machine_aliases=tuple(str(alias).lower() for alias in item["machineAliases"]),
     )
 

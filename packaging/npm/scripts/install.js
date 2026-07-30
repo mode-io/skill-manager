@@ -9,7 +9,7 @@ const { spawnSync } = require("node:child_process");
 
 const packageJson = require("../package.json");
 const { assertNoHomebrewConflict, isGlobalNpmInstall } = require("./channel-ownership");
-const { artifactName } = require("./release-targets");
+const { artifactName, executableName, resolveTarget } = require("./release-targets");
 
 function releaseBaseUrl(version) {
   return process.env.SKILL_MANAGER_RELEASE_BASE_URL || `https://github.com/mode-io/skill-manager/releases/download/v${version}`;
@@ -56,7 +56,13 @@ function sha256(filePath) {
 function extractArtifact(artifactPath, vendorDir) {
   fs.rmSync(vendorDir, { recursive: true, force: true });
   fs.mkdirSync(vendorDir, { recursive: true });
-  const result = spawnSync("tar", ["-xzf", artifactPath, "-C", vendorDir], { stdio: "inherit" });
+  const extractArgs = artifactPath.endsWith(".zip") ? ["-xf"] : ["-xzf"];
+  const result = spawnSync("tar", [...extractArgs, artifactPath, "-C", vendorDir], {
+    stdio: "inherit",
+  });
+  if (result.error) {
+    throw new Error(`Failed to run the system archive extractor: ${result.error.message}`);
+  }
   if (result.status !== 0) {
     throw new Error("Failed to extract skill-manager release artifact.");
   }
@@ -66,7 +72,8 @@ async function main() {
   assertNoHomebrewConflict({ globalInstall: isGlobalNpmInstall() });
 
   const version = packageJson.version;
-  const artifact = artifactName(version);
+  const target = resolveTarget();
+  const artifact = artifactName(version, target);
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "skill-manager-npm-"));
   const artifactPath = path.join(tempDir, artifact);
   const checksumPath = `${artifactPath}.sha256`;
@@ -91,11 +98,13 @@ async function main() {
   }
 
   extractArtifact(artifactPath, vendorDir);
-  const binaryPath = path.join(vendorDir, "skill-manager", "skill-manager");
+  const binaryPath = path.join(vendorDir, "skill-manager", executableName(target));
   if (!fs.existsSync(binaryPath)) {
-    throw new Error("Installed artifact is missing vendor/skill-manager/skill-manager.");
+    throw new Error(`Installed artifact is missing vendor/skill-manager/${executableName(target)}.`);
   }
-  fs.chmodSync(binaryPath, 0o755);
+  if (process.platform !== "win32") {
+    fs.chmodSync(binaryPath, 0o755);
+  }
 }
 
 main().catch((error) => {

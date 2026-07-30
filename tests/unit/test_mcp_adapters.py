@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tomllib
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 from skill_manager.application.mcp import FileBackedMcpAdapter
 from skill_manager.application.mcp.store import McpServerSpec, McpServerStore, McpSource
@@ -37,7 +39,11 @@ def _adapter(
 ) -> FileBackedMcpAdapter:
     env = {
         "HOME": str(home),
+        "USERPROFILE": str(home),
+        "LOCALAPPDATA": str(home / "AppData" / "Local"),
         "XDG_CONFIG_HOME": str(xdg_config_home or (home / ".config")),
+        "SKILL_MANAGER_HERMES_HOME": str(home / ".hermes"),
+        "HERMES_HOME": str(home / ".hermes"),
         "PATH": "",
     }
     kernel = HarnessKernelService.from_environment(
@@ -119,6 +125,77 @@ class FileBackedMcpAdapterTests(unittest.TestCase):
             unmanaged = [entry for entry in scan.entries if entry.state == "unmanaged"]
             self.assertEqual(len(unmanaged), 1)
             self.assertEqual(unmanaged[0].name, "legacy-foo")
+
+    def test_codex_scan_excludes_desktop_owned_node_repl(self) -> None:
+        with TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            adapter = _adapter("codex", home=home)
+            adapter.config_path.parent.mkdir(parents=True, exist_ok=True)
+            adapter.config_path.write_text(
+                """
+[mcp_servers.node_repl]
+command = "C:\\\\Users\\\\tester\\\\AppData\\\\Local\\\\OpenAI\\\\Codex\\\\runtimes\\\\node_repl.exe"
+args = []
+
+[mcp_servers.node_repl.env]
+CODEX_CLI_PATH = "C:\\\\Codex\\\\codex.exe"
+NODE_REPL_NODE_PATH = "C:\\\\Codex\\\\node.exe"
+SKY_CUA_NATIVE_PIPE_DIRECTORY = "\\\\\\\\.\\\\pipe\\\\codex-test"
+
+[mcp_servers.user-server]
+command = "npx"
+args = ["-y", "user-mcp"]
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            scan = adapter.scan(())
+
+            self.assertEqual([entry.name for entry in scan.entries], ["user-server"])
+
+    def test_codex_scan_keeps_user_defined_node_repl_without_desktop_fingerprint(self) -> None:
+        with TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            adapter = _adapter("codex", home=home)
+            adapter.config_path.parent.mkdir(parents=True, exist_ok=True)
+            adapter.config_path.write_text(
+                """
+[mcp_servers.node_repl]
+command = "node_repl"
+args = ["--user-config"]
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            scan = adapter.scan(())
+
+            self.assertEqual([entry.name for entry in scan.entries], ["node_repl"])
+
+    def test_codex_scan_keeps_managed_node_repl_even_with_desktop_fingerprint(self) -> None:
+        with TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            store = McpServerStore(home / "manifest.json")
+            store.upsert_from_spec(
+                McpServerSpec(
+                    name="node_repl",
+                    display_name="Node REPL",
+                    source=McpSource.manual("node_repl"),
+                    transport="stdio",
+                    command="C:\\Codex\\node_repl.exe",
+                    env=(
+                        ("CODEX_CLI_PATH", "C:\\Codex\\codex.exe"),
+                        ("NODE_REPL_NODE_PATH", "C:\\Codex\\node.exe"),
+                        ("SKY_CUA_NATIVE_PIPE_DIRECTORY", "\\\\.\\pipe\\codex-test"),
+                    ),
+                )
+            )
+            adapter = _adapter("codex", home=home)
+            adapter.enable_server(store.get_binding_spec("node_repl"))  # type: ignore[arg-type]
+
+            scan = adapter.scan(store.list_binding_specs())
+
+            self.assertEqual([entry.name for entry in scan.entries], ["node_repl"])
+            self.assertEqual(scan.entries[0].state, "managed")
 
     def test_managed_spec_with_no_binding_is_missing(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -381,6 +458,29 @@ profiles:
             self.assertIn("OpenClaw", status.mcp_unavailable_reason or "")
             with self.assertRaises(MutationError):
                 adapter.enable_server(_spec())
+
+    def test_openclaw_slow_mcp_probe_remains_writable(self) -> None:
+        with TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            adapter = _adapter("openclaw", home=home)
+            with (
+                mock.patch(
+                    "skill_manager.application.mcp.adapters.shutil.which",
+                    return_value=r"C:\bin\openclaw.CMD",
+                ),
+                mock.patch(
+                    "skill_manager.harness.availability.subprocess.run",
+                    side_effect=subprocess.TimeoutExpired(
+                        [r"C:\bin\openclaw.CMD", "mcp", "--help"],
+                        timeout=5,
+                    ),
+                ),
+            ):
+                status = adapter.status()
+
+            self.assertTrue(status.installed)
+            self.assertTrue(status.mcp_writable)
+            self.assertIsNone(status.mcp_unavailable_reason)
 
     def test_has_binding_after_enable(self) -> None:
         with TemporaryDirectory() as tmp:

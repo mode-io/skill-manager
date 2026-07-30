@@ -62,6 +62,7 @@ class RuntimeTests(unittest.TestCase):
     def test_process_command_falls_back_to_system_ps_when_path_is_isolated(self) -> None:
         with patch.dict(os.environ, {"PATH": "/tmp/skill-manager-fake-bin"}):
             with (
+                patch.object(runtime_process, "_is_windows", return_value=False),
                 patch.object(runtime_process.shutil, "which", side_effect=[None, "/bin/ps"]) as which_mock,
                 patch.object(runtime_process.subprocess, "run") as run_mock,
             ):
@@ -75,11 +76,79 @@ class RuntimeTests(unittest.TestCase):
 
     def test_process_command_returns_empty_string_when_ps_is_unavailable(self) -> None:
         with (
+            patch.object(runtime_process, "_is_windows", return_value=False),
             patch.object(runtime_process.shutil, "which", return_value=None),
             patch.object(runtime_process.Path, "is_file", return_value=False),
             patch.object(runtime_process.os, "access", return_value=False),
         ):
             self.assertEqual(runtime_process.process_command(1234), "")
+
+    @unittest.skipUnless(os.name == "nt", "Windows process identity check")
+    def test_windows_process_identity_matches_current_executable(self) -> None:
+        executable = runtime_process.process_command(os.getpid())
+        started_at = runtime_process.process_started_at(os.getpid())
+        state = RuntimeState(
+            pid=os.getpid(),
+            host="127.0.0.1",
+            port=8123,
+            base_url="http://127.0.0.1:8123",
+            version="0.1.0",
+            executable=executable,
+            started_at=1.23,
+            process_started_at=started_at,
+        )
+
+        self.assertTrue(runtime_process.process_is_alive(os.getpid()))
+        self.assertTrue(Path(executable).is_file())
+        self.assertIsNotNone(started_at)
+        self.assertTrue(runtime_process.is_owned_runtime_process(state))
+
+    @unittest.skipUnless(os.name == "nt", "Windows process identity check")
+    def test_windows_process_identity_rejects_reused_pid_timestamp(self) -> None:
+        executable = runtime_process.process_command(os.getpid())
+        started_at = runtime_process.process_started_at(os.getpid())
+        assert started_at is not None
+        state = RuntimeState(
+            pid=os.getpid(),
+            host="127.0.0.1",
+            port=8123,
+            base_url="http://127.0.0.1:8123",
+            version="0.1.0",
+            executable=executable,
+            started_at=1.23,
+            process_started_at=started_at - 60,
+        )
+
+        self.assertFalse(runtime_process.is_owned_runtime_process(state))
+
+    @unittest.skipUnless(os.name == "nt", "Windows process identity check")
+    def test_windows_process_identity_rejects_state_without_creation_time(self) -> None:
+        executable = runtime_process.process_command(os.getpid())
+        state = RuntimeState(
+            pid=os.getpid(),
+            host="127.0.0.1",
+            port=8123,
+            base_url="http://127.0.0.1:8123",
+            version="0.1.0",
+            executable=executable,
+            started_at=1.23,
+        )
+
+        self.assertFalse(runtime_process.is_owned_runtime_process(state))
+
+    @unittest.skipUnless(os.name == "nt", "Windows process identity check")
+    def test_windows_process_identity_rejects_other_executable(self) -> None:
+        state = RuntimeState(
+            pid=os.getpid(),
+            host="127.0.0.1",
+            port=8123,
+            base_url="http://127.0.0.1:8123",
+            version="0.1.0",
+            executable="C:/not-skill-manager/other.exe",
+            started_at=1.23,
+        )
+
+        self.assertFalse(runtime_process.is_owned_runtime_process(state))
 
 
 if __name__ == "__main__":

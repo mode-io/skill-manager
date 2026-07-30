@@ -4,7 +4,6 @@ import json
 import re
 from io import StringIO
 import shutil
-import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,10 +23,14 @@ from skill_manager.harness import (
     ResolutionContext,
     SubtreePath,
 )
+from skill_manager.harness.availability import probe_command_succeeds
 
 from .contracts import McpHarnessAdapter, McpHarnessScan, McpHarnessStatus, McpObservedEntry
 from .mappers import TransportMapper, get_mapper
 from .store import McpServerSpec, McpSource
+
+
+MCP_CAPABILITY_PROBE_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -52,10 +55,13 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         self.config_path = profile.resolve_config_path(context)
         self._discovery_config_paths = profile.resolve_discovery_config_paths(context)
         self._install_probe = definition.install_probe
+        self._install_probes = definition.install_probes_for(context.platform)
         self._path_env = context.env.get("PATH")
         self._file_format = profile.file_format
         self._write_subtree_path = profile.subtree_path
         self._read_subtree_paths = profile.resolve_discovery_subtree_paths(context)
+        self._unmanaged_entry_exclusion = profile.unmanaged_entry_exclusion
+        self._context = context
         self._mapper: TransportMapper = get_mapper(profile.codec)
         self._capability_probe = profile.capability_probe
         self._capability_unavailable_reason = profile.capability_unavailable_reason
@@ -83,7 +89,14 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         scan_issue: str | None = None
 
         try:
-            raw_entries = self._read_entries() if status.config_present else ()
+            raw_entries = (
+                self._read_entries(
+                    exclude_harness_owned=True,
+                    managed_names=frozenset(specs_by_name),
+                )
+                if status.config_present
+                else ()
+            )
         except MutationError as error:
             raw_entries = ()
             scan_issue = str(error)
@@ -222,23 +235,16 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
     def _mcp_write_capability(self, *, installed: bool) -> tuple[bool, str | None]:
         if self._capability_probe is None:
             return True, None
+        reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
         if self._capability_probe == "openclaw-mcp-command":
             executable = shutil.which(self._install_probe, path=self._path_env)
-            reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
             if executable is None:
                 return False, reason
-            try:
-                result = subprocess.run(
-                    [executable, "mcp", "--help"],
-                    text=True,
-                    capture_output=True,
-                    timeout=2.0,
-                    check=False,
-                )
-            except (OSError, subprocess.TimeoutExpired):
-                return False, reason
-            return (result.returncode == 0, None if result.returncode == 0 else reason)
-        reason = self._capability_unavailable_reason or f"{self.label} MCP support is unavailable"
+            writable = probe_command_succeeds(
+                [executable, "mcp", "--help"],
+                timeout_seconds=MCP_CAPABILITY_PROBE_TIMEOUT_SECONDS,
+            )
+            return (writable, None if writable else reason)
         return (installed, None if installed else reason)
 
     @staticmethod
@@ -246,9 +252,17 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
         return config_path.with_suffix(config_path.suffix + ".lock")
 
     def _is_installed(self) -> bool:
-        return shutil.which(self._install_probe, path=self._path_env) is not None
+        return any(
+            shutil.which(probe, path=self._path_env) is not None
+            for probe in self._install_probes
+        )
 
-    def _read_entries(self) -> tuple[_RawEntry, ...]:
+    def _read_entries(
+        self,
+        *,
+        exclude_harness_owned: bool = False,
+        managed_names: frozenset[str] = frozenset(),
+    ) -> tuple[_RawEntry, ...]:
         entries: list[_RawEntry] = []
         seen_names: set[str] = set()
         for config_path in self._discovery_config_paths:
@@ -259,6 +273,13 @@ class FileBackedMcpAdapter(McpHarnessAdapter):
                 subtree = self._read_subtree(document, subtree_path)
                 for name, value in subtree.items():
                     if name in seen_names or not isinstance(value, dict):
+                        continue
+                    if (
+                        exclude_harness_owned
+                        and name not in managed_names
+                        and self._unmanaged_entry_exclusion is not None
+                        and self._unmanaged_entry_exclusion(name, value, self._context)
+                    ):
                         continue
                     seen_names.add(name)
                     entries.append(

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
+from typing import Mapping
+
+from skill_manager.user_environment import live_user_environment_value
 
 from .contracts import (
     CommandFileBindingProfile,
@@ -12,9 +16,56 @@ from .contracts import (
 )
 
 
+_CODEX_DESKTOP_MCP_ENV_MARKERS = frozenset(
+    {
+        "CODEX_CLI_PATH",
+        "NODE_REPL_NODE_PATH",
+        "SKY_CUA_NATIVE_PIPE_DIRECTORY",
+    }
+)
+
+
+def _is_codex_desktop_runtime_mcp(
+    name: str,
+    payload: Mapping[str, object],
+    _context,
+) -> bool:
+    if name.casefold() != "node_repl":
+        return False
+    command = payload.get("command")
+    if not isinstance(command, str):
+        return False
+    command_name = re.split(r"[/\\]", command)[-1].casefold()
+    if command_name not in {"node_repl", "node_repl.exe"}:
+        return False
+    env = payload.get("env")
+    if not isinstance(env, Mapping):
+        return False
+    env_keys = {str(key).upper() for key in env}
+    return _CODEX_DESKTOP_MCP_ENV_MARKERS.issubset(env_keys)
+
+
 def _hermes_home(context) -> Path:
     override = context.env.get("SKILL_MANAGER_HERMES_HOME") or context.env.get("HERMES_HOME")
-    return Path(override) if override else context.home / ".hermes"
+    if override:
+        return Path(override)
+    if context.platform != "windows":
+        return context.home / ".hermes"
+
+    for variable in ("SKILL_MANAGER_HERMES_HOME", "HERMES_HOME"):
+        user_override = live_user_environment_value(variable, context.env)
+        if user_override:
+            return Path(user_override)
+
+    local_app_data = context.env.get("LOCALAPPDATA")
+    if not local_app_data:
+        return context.home / ".hermes"
+
+    native_home = Path(local_app_data) / "hermes"
+    legacy_home = context.home / ".hermes"
+    if not native_home.exists() and legacy_home.exists():
+        return legacy_home
+    return native_home
 
 
 def _hermes_skills_root(context) -> Path:
@@ -68,6 +119,7 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
                 config_path_resolver=lambda context: context.home / ".codex" / "config.toml",
                 file_format="toml",
                 subtree_path=("mcp_servers",),
+                unmanaged_entry_exclusion=_is_codex_desktop_runtime_mcp,
                 codec="codex",
             ),
             "slash_commands": CommandFileBindingProfile(
@@ -121,6 +173,7 @@ SUPPORTED_HARNESS_DEFINITIONS: tuple[HarnessDefinition, ...] = (
         label="Cursor",
         logo_key="cursor",
         install_probe="cursor-agent",
+        windows_install_probe_aliases=("cursor",),
         bindings={
             "skills": FileTreeBindingProfile(
                 managed_env="SKILL_MANAGER_CURSOR_ROOT",

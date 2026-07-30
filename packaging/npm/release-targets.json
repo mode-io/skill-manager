@@ -6,6 +6,8 @@
       "arch": "arm64",
       "nodePlatform": "darwin",
       "nodeArch": "arm64",
+      "archiveFormat": "tar.gz",
+      "executableName": "skill-manager",
       "machineAliases": ["arm64", "aarch64"]
     },
     {
@@ -14,6 +16,8 @@
       "arch": "x64",
       "nodePlatform": "darwin",
       "nodeArch": "x64",
+      "archiveFormat": "tar.gz",
+      "executableName": "skill-manager",
       "machineAliases": ["x86_64", "amd64"]
     },
     {
@@ -22,6 +26,8 @@
       "arch": "x64",
       "nodePlatform": "linux",
       "nodeArch": "x64",
+      "archiveFormat": "tar.gz",
+      "executableName": "skill-manager",
       "machineAliases": ["x86_64", "amd64"]
     },
     {
@@ -30,7 +36,19 @@
       "arch": "arm64",
       "nodePlatform": "linux",
       "nodeArch": "arm64",
+      "archiveFormat": "tar.gz",
+      "executableName": "skill-manager",
       "machineAliases": ["arm64", "aarch64"]
+    },
+    {
+      "id": "windows-x64",
+      "platform": "windows",
+      "arch": "x64",
+      "nodePlatform": "win32",
+      "nodeArch": "x64",
+      "archiveFormat": "zip",
+      "executableName": "skill-manager.exe",
+      "machineAliases": ["x86_64", "amd64"]
     }
   ]
 }

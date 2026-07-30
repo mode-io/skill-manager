@@ -1,7 +1,7 @@
 {
   "name": "@mode-io/skill-manager",
   "version": "0.3.1",
-  "description": "Public macOS/Linux installer wrapper for the Mode IO skill-manager native release artifact.",
+  "description": "Public macOS, Linux, and Windows installer wrapper for the Mode IO skill-manager native release artifact.",
   "license": "MIT",
   "private": false,
   "bin": {
@@ -9,8 +9,8 @@
   },
   "scripts": {
     "preinstall": "node scripts/preinstall.js",
-    "prepack": "python3 ../../scripts/sync_public_metadata.py --write",
-    "postpack": "rm -f LICENSE",
+    "prepack": "node scripts/sync-license.js",
+    "postpack": "node scripts/sync-license.js --clean",
     "postinstall": "node scripts/install.js"
   },
   "files": [
@@ -30,7 +30,8 @@
   },
   "os": [
     "darwin",
-    "linux"
+    "linux",
+    "win32"
   ],
   "cpu": [
     "arm64",

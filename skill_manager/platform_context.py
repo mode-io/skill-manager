@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 
-PlatformName = Literal["macos", "linux"]
+PlatformName = Literal["macos", "linux", "windows"]
 
 
 @dataclass(frozen=True)
@@ -31,7 +31,7 @@ def resolve_platform_context(
         active_env.update(env)
     active_sys_platform = sys.platform if sys_platform is None else sys_platform
     platform_name = _platform_name(active_sys_platform)
-    home = _path_from_env(active_env, "HOME", Path.home())
+    home = _home_path(active_env, platform_name, env)
     return PlatformContext(
         platform=platform_name,
         sys_platform=active_sys_platform,
@@ -48,7 +48,30 @@ def _platform_name(sys_platform: str) -> PlatformName:
         return "macos"
     if sys_platform.startswith("linux"):
         return "linux"
+    if sys_platform == "win32":
+        return "windows"
     raise RuntimeError(f"unsupported platform: {sys_platform}")
+
+
+def _home_path(
+    env: dict[str, str],
+    platform: PlatformName,
+    explicit_env: dict[str, str] | None,
+) -> Path:
+    if platform == "windows":
+        if explicit_env is not None:
+            explicit_userprofile = explicit_env.get("USERPROFILE")
+            if explicit_userprofile:
+                return Path(explicit_userprofile)
+            explicit_home = explicit_env.get("HOME")
+            if explicit_home:
+                return Path(explicit_home)
+        return _path_from_env(
+            env,
+            "USERPROFILE",
+            _path_from_env(env, "HOME", Path.home()),
+        )
+    return _path_from_env(env, "HOME", Path.home())
 
 
 def _path_from_env(env: dict[str, str], key: str, fallback: Path) -> Path:

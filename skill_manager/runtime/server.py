@@ -78,9 +78,9 @@ def serve_foreground(
     maybe_open_browser(url, enabled=open_browser)
     try:
         uvicorn = _uvicorn()
-        config = uvicorn.Config(app, fd=sock.fileno(), log_level="info", access_log=False)
+        config = uvicorn.Config(app, log_level="info", access_log=False)
         server = uvicorn.Server(config)
-        server.run()
+        server.run(sockets=[sock])
         return 0
     finally:
         sock.close()
@@ -100,12 +100,11 @@ def serve_in_thread(
     uvicorn = _uvicorn()
     config = uvicorn.Config(
         app,
-        fd=sock.fileno(),
         log_level="warning",
         access_log=False,
     )
     server = uvicorn.Server(config=config)
-    thread = Thread(target=server.run, daemon=True)
+    thread = Thread(target=server.run, kwargs={"sockets": [sock]}, daemon=True)
     thread.start()
     deadline = time.time() + 5
     while not server.started and thread.is_alive() and time.time() < deadline:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from unittest import mock
 import unittest
@@ -23,13 +24,13 @@ class MarketplaceClientConfigTests(unittest.TestCase):
 
     def test_ssl_cert_override_takes_precedence(self) -> None:
         self.assertEqual(
-            str(configured_marketplace_ca_file({"SSL_CERT_FILE": "/tmp/custom-ca.pem"})),
-            "/tmp/custom-ca.pem",
+            configured_marketplace_ca_file({"SSL_CERT_FILE": "/tmp/custom-ca.pem"}),
+            Path("/tmp/custom-ca.pem"),
         )
 
     def test_certifi_is_used_when_no_override_exists(self) -> None:
         with mock.patch("skill_manager.application.marketplace_http.certifi.where", return_value="/tmp/certifi-ca.pem"):
-            self.assertEqual(str(configured_marketplace_ca_file({})), "/tmp/certifi-ca.pem")
+            self.assertEqual(configured_marketplace_ca_file({}), Path("/tmp/certifi-ca.pem"))
 
 
 class MarketplaceProviderErrorTests(unittest.TestCase):

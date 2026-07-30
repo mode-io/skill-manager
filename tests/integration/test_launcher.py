@@ -5,18 +5,20 @@ from pathlib import Path
 import subprocess
 import socket
 import sys
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 import time
 import unittest
 from urllib.request import urlopen
 
 from tests.support.fake_home import create_fake_home_spec
+from tests.support.temp_cleanup import remove_temporary_tree
 
 
 class LauncherTests(unittest.TestCase):
     def test_launcher_boots_local_server_without_frontend_bundle(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            spec = create_fake_home_spec(Path(temp_dir))
+        temp_root = Path(mkdtemp(prefix="skill-manager-launcher-"))
+        try:
+            spec = create_fake_home_spec(temp_root)
             env = dict(os.environ)
             env.update(spec.env())
             with socket.socket() as sock:
@@ -31,7 +33,7 @@ class LauncherTests(unittest.TestCase):
                     str(port),
                     "--no-open-browser",
                     "--frontend-dist",
-                    str(Path(temp_dir) / "missing-dist"),
+                    str(temp_root / "missing-dist"),
                 ],
                 cwd=Path(__file__).resolve().parents[2],
                 env=env,
@@ -55,7 +57,13 @@ class LauncherTests(unittest.TestCase):
                     self.assertIn("Frontend build missing", html)
             finally:
                 process.terminate()
-                process.wait(timeout=5)
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+        finally:
+            remove_temporary_tree(temp_root)
 
 
 if __name__ == "__main__":

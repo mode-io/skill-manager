@@ -29,6 +29,9 @@ jobs:
           - target: linux-arm64
             runner: ubuntu-24.04-arm
             homebrew: false
+          - target: windows-x64
+            runner: windows-latest
+            homebrew: false
     steps:
       - uses: actions/checkout@v6
 
@@ -54,16 +57,26 @@ jobs:
       - name: Build release artifact
         run: python scripts/build_release.py
 
-      - name: Validate packaged binary
+      - name: Validate packaged binary (macOS/Linux)
+        if: matrix.target != 'windows-x64'
         run: |
           VERSION="$(cat skill_manager/VERSION)"
           ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
 
-      - name: Validate npm wrapper with local artifact
+      - name: Validate npm wrapper with local artifact (macOS/Linux)
+        if: matrix.target != 'windows-x64'
         run: |
           ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Validate Windows package and npm wrapper
+        if: matrix.target == 'windows-x64'
+        run: |
+          $version = (Get-Content skill_manager\VERSION -Raw).Trim()
+          $artifact = (Get-ChildItem .artifacts\release\*windows-x64.zip | Select-Object -First 1).FullName
+          python scripts/validate_release_artifact.py --artifact $artifact --version $version
+          python scripts/validate_npm_wrapper.py --artifact $artifact
 
       - name: Validate Homebrew formula install smoke
         if: matrix.homebrew

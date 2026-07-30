@@ -91,6 +91,53 @@ jobs:
       - name: Frontend build
         run: npm run build
 
+  windows-native:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install build dependencies
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt ".[build]"
+          npm ci
+
+      - name: Windows backend tests
+        run: |
+          .\.venv\Scripts\python.exe -m unittest discover tests/unit -p "test_*.py"
+          .\.venv\Scripts\python.exe -m unittest discover tests/integration -p "test_*.py"
+
+      - name: Windows frontend validation
+        run: |
+          npm run release-targets:check
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Build and validate Windows package
+        run: |
+          .\.venv\Scripts\python.exe scripts/build_release.py --skip-frontend-build
+          $version = (Get-Content skill_manager\VERSION -Raw).Trim()
+          $artifact = (Get-ChildItem .artifacts\release\*windows-x64.zip | Select-Object -First 1).FullName
+          .\.venv\Scripts\python.exe scripts/validate_release_artifact.py --artifact $artifact --version $version
+          .\.venv\Scripts\python.exe scripts/validate_npm_wrapper.py --artifact $artifact
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-native
+          path: .artifacts/release/*
+
   package-smoke:
     name: package-smoke-${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
@@ -114,6 +161,9 @@ jobs:
           - target: linux-arm64
             runner: ubuntu-24.04-arm
             homebrew: false
+          - target: windows-x64
+            runner: windows-latest
+            homebrew: false
     steps:
       - uses: actions/checkout@v6
 
@@ -128,24 +178,33 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          python -m venv .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r requirements.txt .[build]
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt ".[build]"
           npm ci
 
       - name: Build release artifact
-        run: ./.venv/bin/python scripts/build_release.py
+        run: python scripts/build_release.py
 
-      - name: Validate packaged binary
+      - name: Validate packaged binary (macOS/Linux)
+        if: matrix.target != 'windows-x64'
         run: |
           VERSION="$(cat skill_manager/VERSION)"
           ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
-          ./.venv/bin/python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
+          python scripts/validate_release_artifact.py --artifact "$ARTIFACT" --version "$VERSION"
 
-      - name: Validate npm wrapper with local artifact
+      - name: Validate npm wrapper with local artifact (macOS/Linux)
+        if: matrix.target != 'windows-x64'
         run: |
           ARTIFACT="$(find .artifacts/release -name '*${{ matrix.target }}.tar.gz' -print -quit)"
           bash scripts/validate_npm_wrapper.sh "$ARTIFACT"
+
+      - name: Validate Windows package and npm wrapper
+        if: matrix.target == 'windows-x64'
+        run: |
+          $version = (Get-Content skill_manager\VERSION -Raw).Trim()
+          $artifact = (Get-ChildItem .artifacts\release\*windows-x64.zip | Select-Object -First 1).FullName
+          python scripts/validate_release_artifact.py --artifact $artifact --version $version
+          python scripts/validate_npm_wrapper.py --artifact $artifact
 
       - name: Validate Homebrew formula install smoke
         if: matrix.homebrew

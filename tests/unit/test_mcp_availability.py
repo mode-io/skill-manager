@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import subprocess
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
@@ -18,7 +20,56 @@ def _http_spec() -> McpServerSpec:
     )
 
 
+def _stdio_spec(*, env: tuple[tuple[str, str], ...] | None = None) -> McpServerSpec:
+    return McpServerSpec(
+        name="playwright",
+        display_name="Playwright",
+        source=McpSource.marketplace("io.github.microsoft/playwright-mcp"),
+        transport="stdio",
+        command="npx",
+        args=("-y", "@playwright/mcp"),
+        env=env,
+    )
+
+
 class McpAvailabilityProbeTests(unittest.TestCase):
+    def test_stdio_probe_resolves_windows_command_shim_before_launch(self) -> None:
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value=r"D:\npx.CMD",
+            ) as which_mock,
+            patch(
+                "skill_manager.application.mcp.availability.subprocess.Popen",
+                side_effect=OSError("launch sentinel"),
+            ) as popen_mock,
+        ):
+            result = McpAvailabilityProbe(retry_attempts=1).probe(
+                _stdio_spec(env=(("PATH", r"D:\bin"),))
+            )
+
+        self.assertEqual(result.status, "unavailable")
+        self.assertEqual(result.reason, "launch sentinel")
+        which_mock.assert_called_once_with("npx", path=r"D:\bin")
+        self.assertEqual(
+            popen_mock.call_args.args[0],
+            [r"D:\npx.CMD", "-y", "@playwright/mcp"],
+        )
+
+    def test_stdio_probe_reports_missing_command_without_launching(self) -> None:
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value=None,
+            ),
+            patch("skill_manager.application.mcp.availability.subprocess.Popen") as popen_mock,
+        ):
+            result = McpAvailabilityProbe(retry_attempts=1).probe(_stdio_spec())
+
+        self.assertEqual(result.status, "unavailable")
+        self.assertEqual(result.reason, "MCP command not found on PATH: npx")
+        popen_mock.assert_not_called()
+
     def test_http_probe_marks_server_available_when_tools_list_succeeds(self) -> None:
         calls: list[str] = []
 
@@ -122,11 +173,30 @@ class McpAvailabilityProbeTests(unittest.TestCase):
             seen.update(kwargs["env"])
             raise OSError("probe stopped")
 
-        with patch("skill_manager.application.mcp.availability.subprocess.Popen", fake_popen):
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value="/opt/local-mcp",
+            ),
+            patch("skill_manager.application.mcp.availability.subprocess.Popen", fake_popen),
+        ):
             result = McpAvailabilityProbe(env={"INJECTED": "yes"}, retry_attempts=1).probe(spec)
 
         self.assertEqual(result.status, "unavailable")
         self.assertEqual(seen, {"INJECTED": "yes", "SPEC_KEY": "spec-value"})
+
+    def test_stdio_probe_resolution_never_falls_back_to_process_path(self) -> None:
+        with (
+            patch(
+                "skill_manager.application.mcp.availability.shutil.which",
+                return_value=None,
+            ) as which_mock,
+            patch("skill_manager.application.mcp.availability.subprocess.Popen") as popen_mock,
+        ):
+            McpAvailabilityProbe(env={"INJECTED": "yes"}, retry_attempts=1).probe(_stdio_spec())
+
+        which_mock.assert_called_once_with("npx", path=os.defpath)
+        popen_mock.assert_not_called()
 
     def test_default_http_post_returns_first_sse_data_event_without_reading_to_eof(self) -> None:
         class SseResponse:

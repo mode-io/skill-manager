@@ -54,6 +54,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             seed_mixed_fixture(spec)
             container = build_backend_container(spec.env())
             payload = container.skills_queries.list_skills()
+            container.db.close()
 
             self.assertEqual(payload["summary"], {"managed": 1, "unmanaged": 2})
 
@@ -107,6 +108,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             audit = next(row for row in payload["rows"] if row["name"] == "Audit Skill")
             detail = container.skills_queries.get_skill_detail(audit["skillRef"])
             source_status = container.skills_queries.get_skill_source_status(audit["skillRef"])
+            container.db.close()
 
             assert detail is not None
             assert source_status is not None
@@ -126,6 +128,7 @@ class BackendContainerServiceTests(unittest.TestCase):
 
             payload = container.skills_queries.list_skills()
             policy_rows = [row for row in payload["rows"] if row["name"] == "Policy Kit"]
+            container.db.close()
 
             self.assertEqual(len(policy_rows), 2)
             self.assertTrue(all(row["displayStatus"] == "Unmanaged" for row in policy_rows))
@@ -137,6 +140,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             container = build_backend_container(spec.env())
 
             settings = container.settings_queries.get_settings()
+            container.db.close()
 
             self.assertEqual(settings["storage"]["skillsStorePath"], str(spec.skills_store_root))
             self.assertEqual(
@@ -163,6 +167,7 @@ class BackendContainerServiceTests(unittest.TestCase):
 
             shared_detail = container.skills_queries.get_skill_detail(shared["skillRef"])
             found_detail = container.skills_queries.get_skill_detail(found["skillRef"])
+            container.db.close()
 
             assert shared_detail is not None
             assert found_detail is not None
@@ -186,6 +191,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
+            container.db.close()
 
             assert detail is not None
 
@@ -226,6 +232,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             shared = next(row for row in payload["rows"] if row["name"] == "Shared Audit")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
             source_status = container.skills_queries.get_skill_source_status(shared["skillRef"])
+            container.db.close()
 
             assert detail is not None
             assert source_status is not None
@@ -271,6 +278,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             payload = container.skills_queries.list_skills()
             shared = next(row for row in payload["rows"] if row["name"] == "agent-browser")
             detail = container.skills_queries.get_skill_detail(shared["skillRef"])
+            container.db.close()
 
             assert detail is not None
 
@@ -313,6 +321,7 @@ class BackendContainerServiceTests(unittest.TestCase):
             item = next(row for row in page["items"] if row["name"] == "Mode Switch")
             detail = container.skills_marketplace_queries.get_item_detail(item["id"])
             document = container.skills_marketplace_queries.get_item_document(item["id"])
+            container.db.close()
 
             self.assertEqual(item["installation"], {
                 "status": "installed",

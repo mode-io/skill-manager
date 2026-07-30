@@ -1997,7 +1997,7 @@ export interface components {
              * Platform
              * @enum {string}
              */
-            platform: "macos" | "linux";
+            platform: "macos" | "linux" | "windows";
             /** Settingspath */
             settingsPath: string;
             /** Skillsstorepath */

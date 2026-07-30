@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
 
+from .availability import any_command_is_available
 from .catalog import harness_definitions_for_family, supported_harness_definitions, supported_harness_ids
 from .contracts import (
     BindingProfile,
@@ -100,10 +100,11 @@ class HarnessKernelService:
         definition: HarnessDefinition,
         skills_binding: BindingProfile | None,
     ) -> bool:
-        cli_available = shutil.which(
-            definition.install_probe,
-            path=self.context.env.get("PATH"),
-        ) is not None
+        cli_available = any_command_is_available(
+            definition.install_probes_for(self.context.platform),
+            path_env=self.context.env.get("PATH"),
+            platform=self.context.platform,
+        )
         if cli_available:
             return True
         if not isinstance(skills_binding, FileTreeBindingProfile):

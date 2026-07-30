@@ -67,7 +67,7 @@ def _base_dirs(context: PlatformContext) -> tuple[Path, Path, Path]:
             if state_override
             else _xdg_dir(context.env, "XDG_STATE_HOME", default_macos)
         )
-    else:
+    elif context.platform == "linux":
         config_dir = _xdg_dir(context.env, "XDG_CONFIG_HOME", context.xdg_config_home / APP_NAME)
         data_dir = _xdg_dir(context.env, "XDG_DATA_HOME", context.xdg_data_home / APP_NAME)
         state_dir = (
@@ -75,6 +75,20 @@ def _base_dirs(context: PlatformContext) -> tuple[Path, Path, Path]:
             if state_override
             else _xdg_dir(context.env, "XDG_STATE_HOME", context.xdg_state_home / APP_NAME)
         )
+    else:
+        roaming_app_data = _windows_dir(
+            context.env,
+            "APPDATA",
+            context.home / "AppData" / "Roaming",
+        )
+        local_app_data = _windows_dir(
+            context.env,
+            "LOCALAPPDATA",
+            context.home / "AppData" / "Local",
+        )
+        config_dir = roaming_app_data / APP_NAME
+        data_dir = local_app_data / APP_NAME
+        state_dir = Path(state_override) if state_override else local_app_data / APP_NAME
     return config_dir, data_dir, state_dir
 
 
@@ -83,6 +97,11 @@ def _xdg_dir(env: dict[str, str], xdg_key: str, fallback: Path) -> Path:
     if override:
         return Path(override) / APP_NAME
     return fallback
+
+
+def _windows_dir(env: dict[str, str], key: str, fallback: Path) -> Path:
+    value = env.get(key)
+    return Path(value) if value else fallback
 
 
 def _active_env(env: dict[str, str] | None) -> dict[str, str]:
