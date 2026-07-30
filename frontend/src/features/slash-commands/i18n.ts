@@ -27,8 +27,8 @@ const englishSlashCommandsCopy = {
     title: "Slash commands to review",
     subtitle: (count: number) =>
       count > 0
-        ? `${count} command${count === 1 ? "" : "s"} found outside normal managed state.`
-        : "No unmanaged, changed, or missing slash command files were found.",
+        ? `${count} command${count === 1 ? "" : "s"} found outside Skill Manager, changed, or missing.`
+        : "No command files are outside Skill Manager, changed, or missing.",
     adoptAllEligible: "Adopt all eligible",
     adoptingAllCommands: "Adopting all commands",
     searchPlaceholder: "Search slash commands to review",
@@ -37,7 +37,7 @@ const englishSlashCommandsCopy = {
     listAria: "Slash commands to review list",
     emptyTitle: "Nothing needs review",
     emptyBody:
-      "Slash command files in target folders are already managed or no supported target folders contain commands.",
+      "Slash command files in target folders are already in use, or no supported target folders contain commands.",
     cannotUpdate: "Cannot update",
     actionLabel: (action: SlashReviewAction | null) => {
       if (action === "restore_managed") return "Restore";
@@ -158,7 +158,9 @@ export const slashCommandsCopy = {
     review: {
       title: "待确认的 Slash command",
       subtitle: (count: number) =>
-        count > 0 ? `${count} 个 command 处于非正常托管状态。` : "没有发现未托管、已变更或缺失的 slash command 文件。",
+        count > 0
+          ? `${count} 个 command 在 Skill Manager 之外发现、已变更或缺失。`
+          : "没有在 Skill Manager 之外发现、已变更或缺失的 command 文件。",
       adoptAllEligible: "采用全部可用项",
       adoptingAllCommands: "正在采用全部 command",
       searchPlaceholder: "搜索待确认的 Slash command",
@@ -166,7 +168,7 @@ export const slashCommandsCopy = {
       loading: "正在加载待确认的 Slash command",
       listAria: "待确认的 Slash command 列表",
       emptyTitle: "没有需要确认的内容",
-      emptyBody: "目标文件夹中的 Slash command 文件已被托管，或支持的目标文件夹中没有 command。",
+      emptyBody: "目标文件夹中的 Slash command 文件都已在使用中，或支持的目标文件夹中没有 command。",
       cannotUpdate: "无法更新",
       actionLabel: (action: SlashReviewAction | null) => {
         if (action === "restore_managed") return "恢复";

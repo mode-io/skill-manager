@@ -4,7 +4,7 @@ import { usePendingRegistry } from "../../../lib/async/pending-registry";
 import {
   useHarnessSupportMutation,
   useSettingsQuery,
-} from "../queries";
+} from "../api/queries";
 import { settingsSupportActionKey } from "./pending";
 
 interface SettingsPageControllerCopy {

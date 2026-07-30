@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { queryPolicy } from "../../lib/query";
-import { invalidateMcpQueries } from "../mcp/public";
-import { invalidateSkillsQueries } from "../skills/public";
-import { fetchSettings, updateHarnessSupport } from "./api/client";
-import type { SettingsData } from "./api/types";
+import { queryPolicy } from "../../../lib/query";
+import { invalidateMcpQueries } from "../../mcp/public";
+import { invalidateSkillsQueries } from "../../skills/public";
+import { fetchSettings, updateHarnessSupport } from "./client";
+import type { SettingsData } from "./types";
 
 const SETTINGS_STALE_TIME_MS = 60_000;
 const SETTINGS_GC_TIME_MS = 15 * 60_000;

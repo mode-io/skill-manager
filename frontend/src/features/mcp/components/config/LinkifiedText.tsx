@@ -32,7 +32,7 @@ export function LinkifiedText({ text }: { text: string }) {
         ) : (
           <a
             key={`${node.text}-${index}`}
-            className="scan-config-panel__hint-link"
+            className="mcp-config-form__hint-link"
             href={node.href}
             target="_blank"
             rel="noreferrer"

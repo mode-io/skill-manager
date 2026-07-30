@@ -21,7 +21,7 @@ import {
   type SlashCommandListDto,
 } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
-import { overviewCopy, useOverviewCopy, type OverviewCopy } from "../../features/overview/i18n";
+import { overviewCopy, useOverviewCopy, type OverviewCopy } from "../../features/overview/public";
 
 export interface OverviewStatMetric {
   value: number | null;

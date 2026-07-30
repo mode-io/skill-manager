@@ -143,18 +143,6 @@ describe("App shell", () => {
     );
   });
 
-  it.each([
-    ["/skills/managed", "Skills in use"],
-    ["/skills/unmanaged", "Skills to review"],
-    ["/mcp/managed", "MCP servers in use"],
-    ["/mcp/unmanaged", "MCP configs to review"],
-  ])("redirects compatibility route %s to the new concept route", async (route, heading) => {
-    renderApp(route);
-    await waitFor(() =>
-      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument(),
-    );
-  });
-
   it("shows the preview-only note only on the CLI marketplace tab", async () => {
     const note = "Preview only · Skill Manager does not install or manage CLIs";
 

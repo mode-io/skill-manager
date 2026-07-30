@@ -60,7 +60,6 @@ frontend/src/styles/
     buttons.css
     bulk-bar.css
     cards.css              # generic .skill-card + grid (both skills + MCP cards extend it)
-    chips.css              # chips + status badges
     empty-panel.css           # shared empty-state panel
     harness.css            # shared single-harness avatar primitive
     note.css               # shared in-body highlight/note surface
@@ -77,11 +76,12 @@ frontend/src/features/
   skills/styles/           # all in features layer
     board.css
     detail.css             # also contains the shared skill-detail modal shell
-    list.css               # needs-review skill rows
+    scan.css               # scan config panel/table + scan result report
   mcp/styles/
     pages.css              # in-use / needs-review page-level rules + drift overlay
     detail-sheet.css       # MCP detail sheet (in-use + needs-review)
     edit-dialogs.css       # edit-config + reconcile dialogs
+    config-form.css        # install-config form fields + modal
   marketplace/styles/
     cards.css              # .market-card + mcp-card variants
     mcp-detail.css         # MCP marketplace detail modal
