@@ -23,8 +23,6 @@ function inventoryFixture(): McpInventoryDto {
         kind: "managed",
         canEnable: true,
         enabledStatus: "enabled",
-        availabilityStatus: "available",
-        availabilityReason: null,
         mcpStatus: { kind: "available", reason: null },
         installConfigStatus: { hasFields: false, missingRequired: [], configured: true },
         spec: {
@@ -48,8 +46,6 @@ function inventoryFixture(): McpInventoryDto {
         kind: "managed",
         canEnable: true,
         enabledStatus: "disabled",
-        availabilityStatus: "unavailable",
-        availabilityReason: null,
         mcpStatus: {
           kind: "unchecked",
           reason: null,
@@ -201,7 +197,6 @@ describe("McpInUsePage", () => {
         ...inventory.entries[1],
         name: "failed",
         displayName: "Failed MCP",
-        availabilityReason: "Connection refused",
         mcpStatus: { kind: "connection_issue", reason: "Connection refused" },
       },
     ];
@@ -411,8 +406,6 @@ describe("McpInUsePage", () => {
           entries: [
             {
               ...inventory.entries[0],
-              availabilityStatus: "unavailable",
-              availabilityReason: null,
               mcpStatus: {
                 kind: "unchecked",
                 reason: null,
@@ -456,8 +449,6 @@ describe("McpInUsePage", () => {
           entries: [
             {
               ...inventory.entries[0],
-              availabilityStatus: "unavailable",
-              availabilityReason: "Connection refused",
               mcpStatus: {
                 kind: "connection_issue",
                 reason: "Connection refused",

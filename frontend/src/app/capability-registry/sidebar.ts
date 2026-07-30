@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 
 import { mcpRoutes, useMcpInventoryQuery } from "../../features/mcp/public";
-import { useSkillsCopy } from "../../features/skills/i18n";
-import { skillsRoutes, useSkillsListQuery } from "../../features/skills/public";
+import { skillsRoutes, useSkillsCopy, useSkillsListQuery } from "../../features/skills/public";
 import { slashCommandRoutes, useSlashCommandsQuery } from "../../features/slash-commands/public";
 import { marketplaceRoutes } from "../../features/marketplace/public";
 import { useCommonCopy } from "../../i18n";

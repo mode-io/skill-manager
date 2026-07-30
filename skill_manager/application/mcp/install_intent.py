@@ -122,14 +122,12 @@ def registry_record_from_detail(
 def install_intent_config_status(
     detail: Mapping[str, object],
     intent: RegistryInstallIntent | None,
-    *,
-    legacy_values: Mapping[str, str] | None = None,
 ) -> tuple[bool, tuple[str, ...]]:
     option = _selected_option(detail, intent.option_key if intent else None)
     fields = option.fields
     if not fields:
         return False, ()
-    values = intent.values_dict() if intent is not None else dict(legacy_values or {})
+    values = intent.values_dict() if intent is not None else {}
     missing = tuple(
         field.name
         for field in fields

@@ -93,7 +93,7 @@ class SkillsShClientErrorTests(unittest.TestCase):
             hdrs=None,
             fp=None,
         )
-        with mock.patch("skill_manager.application.skills.marketplace.client.urlopen", side_effect=http_error):
+        with mock.patch("skill_manager.application.marketplace_http.urlopen", side_effect=http_error):
             with self.assertRaises(MarketplaceUpstreamError) as captured:
                 client.fetch_json("/api/search?q=trace&limit=20")
 
@@ -104,7 +104,7 @@ class SkillsShClientErrorTests(unittest.TestCase):
     def test_fetch_text_maps_timeout_to_upstream_error(self) -> None:
         client = SkillsShClient(base_url="https://fixture.local")
         timeout_error = URLError(socket.timeout("timed out"))
-        with mock.patch("skill_manager.application.skills.marketplace.client.urlopen", side_effect=timeout_error):
+        with mock.patch("skill_manager.application.marketplace_http.urlopen", side_effect=timeout_error):
             with self.assertRaises(MarketplaceUpstreamError) as captured:
                 client.fetch_text("/")
 

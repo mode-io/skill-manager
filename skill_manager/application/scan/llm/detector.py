@@ -26,7 +26,7 @@ class LLMDetector:
     def detect() -> LLMDetectionResult:
         providers: list[DetectedProvider] = []
 
-        # 1. Skill Scanner 显式配置（最高优先级）
+        # 1. Skill Scanner explicit configuration (highest priority)
         scanner_key = os.getenv("SKILL_SCANNER_LLM_API_KEY")
         scanner_model = os.getenv("SKILL_SCANNER_LLM_MODEL")
         scanner_base_url = os.getenv("SKILL_SCANNER_LLM_BASE_URL")
@@ -106,7 +106,7 @@ class LLMDetector:
                 is_available=True,
             ))
 
-        # 7. Ollama（无需 API key）
+        # 7. Ollama (no API key required)
         ollama_host = os.getenv("OLLAMA_HOST")
         ollama_model = os.getenv("OLLAMA_MODEL")
         if ollama_host:
@@ -118,7 +118,7 @@ class LLMDetector:
                 is_available=True,
             ))
 
-        # 确定默认模型和提供商
+        # Resolve the default model and provider
         default_model = _resolve_default_model(providers, scanner_model)
         default_provider = _resolve_default_provider(providers, scanner_provider)
         has_any = any(p.is_available for p in providers)

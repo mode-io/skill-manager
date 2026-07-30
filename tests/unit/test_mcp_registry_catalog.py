@@ -72,6 +72,14 @@ _PYPI_PACKAGE = {
     "transport": {"type": "stdio"},
 }
 
+_CONFIGURED_NPM_PACKAGE = {
+    "registryType": "npm",
+    "identifier": "@cueapi/mcp",
+    "version": "0.1.3",
+    "transport": {"type": "stdio"},
+    "environmentVariables": [{"name": "CUEAPI_API_KEY", "isRequired": True, "isSecret": True}],
+}
+
 _HTTP_REMOTE = {"type": "streamable-http", "url": "https://example.com/mcp"}
 
 
@@ -434,6 +442,24 @@ class McpRegistryCatalogTests(unittest.TestCase):
 
         self.assertEqual(first, second)
         self.assertEqual(fetcher.call_count, 2)
+
+    def test_install_detail_caches_within_ttl(self) -> None:
+        entry = _entry("ai.cueapi/mcp", "0.1.3", title="CueAPI", packages=[_CONFIGURED_NPM_PACKAGE])
+        fetcher = mock.Mock(side_effect=[{"servers": [entry], "metadata": {"count": 1}}, entry])
+        with TemporaryDirectory() as temp_dir:
+            catalog = McpMarketplaceCatalog(fetcher=fetcher, cache=MarketplaceCache(root=Path(temp_dir)))
+
+            first = catalog.install_detail("ai.cueapi/mcp")
+            fetches_after_first = fetcher.call_count
+            second = catalog.install_detail("ai.cueapi/mcp")
+
+        assert first is not None
+        self.assertEqual(fetches_after_first, 2)
+        self.assertEqual(fetcher.call_count, 2)
+        self.assertEqual(first.options[0].command, "npx")
+        self.assertEqual(first.options[0].fields[0].name, "CUEAPI_API_KEY")
+        self.assertTrue(first.options[0].env_bindings)
+        self.assertEqual(second, first)
 
     def test_detail_normalizes_legacy_cached_api_external_url(self) -> None:
         fetcher = mock.Mock()

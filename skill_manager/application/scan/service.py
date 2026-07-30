@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 from pathlib import Path
@@ -8,33 +9,38 @@ from .config_service import ScanConfigService
 from .context_builder import PromptContextBuilder
 from .llm.analyzer import LLMAnalyzer
 from .llm.detector import LLMDetector, LLMDetectionResult
-from .llm.provider import ProviderConfig
 from .models import Finding, ScanResult, Severity, ThreatCategory
 from .target_resolver import ScanTargetResolver
 
 logger = logging.getLogger(__name__)
 
 
+def _module_available(name: str) -> bool:
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        return False
+
+
 class ScanService:
     def __init__(
         self,
-        config_service: ScanConfigService | None = None,
+        config_service: ScanConfigService,
         *,
         target_resolver: ScanTargetResolver | None = None,
         context_builder: PromptContextBuilder | None = None,
     ) -> None:
-        self.config_service = config_service or ScanConfigService()
+        self.config_service = config_service
         self.target_resolver = target_resolver
         self.context_builder = context_builder or PromptContextBuilder()
         self._available = self._check_available()
 
-    def _check_available(self) -> bool:
-        try:
-            ProviderConfig
-            return True
-        except ImportError:
+    @staticmethod
+    def _check_available() -> bool:
+        available = _module_available("litellm") or _module_available("google.genai")
+        if not available:
             logger.info("LLM scan dependencies not installed")
-            return False
+        return available
 
     @property
     def available(self) -> bool:

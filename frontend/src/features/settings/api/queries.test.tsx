@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { mcpManagementKeys } from "../mcp/public";
-import { skillsKeys } from "../skills/public";
-import { okJson } from "../../test/fetch";
-import { renderWithAppProviders } from "../../test/render";
+import { mcpManagementKeys } from "../../mcp/public";
+import { skillsKeys } from "../../skills/public";
+import { okJson } from "../../../test/fetch";
+import { renderWithAppProviders } from "../../../test/render";
 import { settingsKeys, useHarnessSupportMutation } from "./queries";
 
 const fetchMock = vi.fn();

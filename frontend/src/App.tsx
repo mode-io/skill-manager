@@ -7,14 +7,14 @@ import { Shell } from "./components/Shell";
 import { ToastProvider } from "./components/Toast";
 import { UiTooltipProvider } from "./components/ui/UiTooltipProvider";
 import { invalidateCapabilityQueries } from "./app/capability-registry";
-import { SkillsWorkspaceSessionProvider } from "./features/skills/model/session";
+import { SkillsWorkspaceSessionProvider } from "./features/skills/public";
 import SkillsNeedsReviewPage from "./features/skills/screens/SkillsNeedsReviewPage";
 import SkillsInUsePage from "./features/skills/screens/SkillsInUsePage";
 import ScanConfigPage from "./features/skills/screens/ScanConfigPage";
 import SkillsWorkspacePage from "./features/skills/screens/SkillsWorkspacePage";
 import { LocaleProvider, useCommonCopy } from "./i18n";
 
-const MarketplaceLayout = lazy(() => import("./features/marketplace/components/MarketplaceLayout"));
+const MarketplaceLayout = lazy(() => import("./features/marketplace/screens/MarketplaceLayout"));
 const OverviewPage = lazy(() => import("./features/overview/screens/OverviewPage"));
 const SettingsPage = lazy(() => import("./features/settings/screens/SettingsPage"));
 const SlashCommandsPage = lazy(() => import("./features/slash-commands/screens/SlashCommandsPage"));
@@ -80,8 +80,6 @@ function AppContent() {
             <Route index element={<Navigate to="use" replace />} />
             <Route path="use" element={<SkillsInUsePage />} />
             <Route path="review" element={<SkillsNeedsReviewPage />} />
-            <Route path="managed" element={<Navigate to="/skills/use" replace />} />
-            <Route path="unmanaged" element={<Navigate to="/skills/review" replace />} />
           </Route>
 
           <Route path="mcp" element={<Navigate to="/mcp/use" replace />} />
@@ -102,8 +100,6 @@ function AppContent() {
               </Suspense>
             }
           />
-          <Route path="mcp/managed" element={<Navigate to="/mcp/use" replace />} />
-          <Route path="mcp/unmanaged" element={<Navigate to="/mcp/review" replace />} />
 
           <Route
             path="marketplace"

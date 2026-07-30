@@ -4,6 +4,14 @@ from .cli_marketplace import (
     CliMarketplaceItemResponse,
     CliMarketplacePageResponse,
 )
+from .marketplace_skills import (
+    MarketplaceInstallationResponse,
+    MarketplaceSkillDetailResponse,
+    MarketplaceSkillDocumentResponse,
+    MarketplaceSkillItemResponse,
+    MarketplaceSkillPageResponse,
+    MarketplaceSkillSourceLinksResponse,
+)
 from .mcp import (
     AddMcpServerRequest,
     AdoptMcpRequest,
@@ -103,6 +111,12 @@ __all__ = [
     "HarnessColumnResponse",
     "HarnessTarget",
     "InstallMarketplaceSkillRequest",
+    "MarketplaceInstallationResponse",
+    "MarketplaceSkillDetailResponse",
+    "MarketplaceSkillDocumentResponse",
+    "MarketplaceSkillItemResponse",
+    "MarketplaceSkillPageResponse",
+    "MarketplaceSkillSourceLinksResponse",
     "AddMcpServerRequest",
     "McpApplyConfigResponse",
     "McpAvailabilityCheckResponse",

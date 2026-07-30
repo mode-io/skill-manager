@@ -58,7 +58,7 @@ class MarketplaceCatalog:
         detail_fetcher: DetailFetcher | None = None,
         github_resolver: GitHubSkillResolver | None = None,
         cache: MarketplaceCache | None = None,
-        warm_on_init: bool = True,
+        warm_on_init: bool = False,
     ) -> None:
         self._leaderboard_fetcher = leaderboard_fetcher or fetch_all_time_leaderboard
         self._search_fetcher = search_fetcher or (lambda query, limit: search_skills(query, limit=limit))
@@ -78,7 +78,7 @@ class MarketplaceCatalog:
         search_fetcher: SearchFetcher | None = None,
         detail_fetcher: DetailFetcher | None = None,
         cache: MarketplaceCache | None = None,
-        warm_on_init: bool = True,
+        warm_on_init: bool = False,
     ) -> "MarketplaceCatalog":
         client = SkillsShClient.from_environment(env)
         return cls(

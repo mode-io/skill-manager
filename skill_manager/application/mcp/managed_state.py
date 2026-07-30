@@ -67,7 +67,6 @@ def entry_payload(
     addressable_harnesses = _addressable_harnesses(scans)
     spec_payload = redacted_spec_dict(entry.spec) if entry.spec is not None else None
     enabled_status = _entry_enabled_status(entry, addressable_harnesses)
-    effective_availability = _entry_effective_availability(availability)
     config_status = install_config_status_for_entry(entry, records, install_detail_lookup)
     return {
         "name": entry.name,
@@ -76,8 +75,6 @@ def entry_payload(
         "spec": spec_payload,
         "canEnable": entry.can_enable,
         "enabledStatus": enabled_status,
-        "availabilityStatus": effective_availability.status,
-        "availabilityReason": effective_availability.reason,
         "mcpStatus": mcp_status(availability, config_status),
         "installConfigStatus": config_status.to_dict(),
         "sightings": [
@@ -185,14 +182,6 @@ def _availability_cache_key(entry: McpInventoryEntry) -> tuple[str, str]:
     if entry.spec is None:
         return (entry.name, "")
     return availability_cache_key(entry.name, entry.spec)
-
-
-def _entry_effective_availability(
-    availability: McpAvailabilityResult | None,
-) -> McpAvailabilityResult:
-    if availability is None:
-        return McpAvailabilityResult(status="unavailable", reason=None)
-    return availability
 
 
 __all__ = [

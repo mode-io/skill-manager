@@ -42,9 +42,7 @@ class SlashCommandMutationService:
         targets: list[str] | None = None,
     ) -> dict[str, object]:
         command = self.store.create_command(SlashCommand(name=name, description=description, prompt=prompt))
-        sync = self.sync_command(command.name, targets=targets)
-        payload = self.queries.get_command(command.name)
-        return {"ok": sync["ok"], "command": payload, "sync": sync["sync"]}
+        return self.sync_command_result(command.name, targets=targets)
 
     def update_command(
         self,
@@ -55,14 +53,17 @@ class SlashCommandMutationService:
         targets: list[str] | None = None,
     ) -> dict[str, object]:
         self.store.update_command(name, description=description, prompt=prompt)
-        sync = self.sync_command(name, targets=targets)
-        payload = self.queries.get_command(name)
-        return {"ok": sync["ok"], "command": payload, "sync": sync["sync"]}
+        return self.sync_command_result(name, targets=targets)
 
     def sync_command(self, name: str, *, targets: list[str] | None = None) -> dict[str, object]:
         command = self.store.require_command(name)
         selected = self._selected_targets(targets)
         return self.sync_executor.sync_command(command, selected, self.targets)
+
+    def sync_command_result(self, name: str, *, targets: list[str] | None = None) -> dict[str, object]:
+        sync = self.sync_command(name, targets=targets)
+        payload = self.queries.get_command(name)
+        return {"ok": sync["ok"], "command": payload, "sync": sync["sync"]}
 
     def delete_command(self, name: str) -> dict[str, object]:
         validate_command_name(name)

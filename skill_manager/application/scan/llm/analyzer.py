@@ -121,7 +121,10 @@ class LLMAnalyzer:
                     title=f"'{item.path}' excluded from LLM analysis ({item.size:,} chars)",
                     description=item.reason,
                     file_path=item.path,
-                    remediation=f"Increase {item.threshold_name} in your scan policy to include this content in LLM analysis.",
+                    remediation=(
+                        f"The {item.threshold_name} limit is fixed and cannot be configured; "
+                        "split or shrink this content so it fits within the limit."
+                    ),
                     analyzer="llm",
                 ))
 
@@ -178,7 +181,7 @@ class LLMAnalyzer:
                 severity=Severity.INFO,
                 title="LLM analysis failed",
                 description=f"The LLM analyzer encountered an error and could not complete semantic analysis: {e}",
-                remediation="Check your LLM provider configuration (API key, model name, network connectivity). The scan completed with static analysis only — LLM-based threat detection was not performed.",
+                remediation="Check your LLM provider configuration (API key, model name, network connectivity). The scan did not complete — LLM-based threat detection was not performed.",
                 analyzer="llm_analyzer",
                 metadata={"error": str(e), "llm_model": self.provider_config.model},
             ))
@@ -274,7 +277,7 @@ class LLMAnalyzer:
                 continue
 
             # False positive: suppress command injection for standard install commands
-            if aitech == "AITech-9.1" and self._is_install_command_not_injection(title_lower, desc_lower, evidence_lower):
+            if aitech == "AITech-9.1" and self._is_standard_package_install(title_lower, desc_lower, evidence_lower):
                 continue
 
             # False positive: suppress data exfiltration for calls to well-known APIs
@@ -405,11 +408,6 @@ class LLMAnalyzer:
 
     @classmethod
     def _is_standard_package_install(cls, title: str, desc: str, evidence: str) -> bool:
-        combined = f"{title} {desc} {evidence}"
-        return any(cmd in combined for cmd in cls._INSTALL_COMMAND_PATTERNS)
-
-    @classmethod
-    def _is_install_command_not_injection(cls, title: str, desc: str, evidence: str) -> bool:
         combined = f"{title} {desc} {evidence}"
         return any(cmd in combined for cmd in cls._INSTALL_COMMAND_PATTERNS)
 
