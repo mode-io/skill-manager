@@ -130,7 +130,7 @@ export function McpServerCard({
       ) : null}
 
       <div className="skill-card__footer">
-        <McpHarnessLogoStack bindings={entry.sightings} columns={columns} />
+        <McpHarnessLogoStack bindings={entry.sightings} columns={columns} showAllWritable />
         <button
           type="button"
           className="action-pill"

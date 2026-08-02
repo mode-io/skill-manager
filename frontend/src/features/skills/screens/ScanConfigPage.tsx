@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 
 import type { ScanConfigItem } from "../api/scan-types";
+import { ConfirmActionDialog } from "../../../components/ConfirmActionDialog";
 import { ErrorBanner } from "../../../components/ErrorBanner";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { PageHeader } from "../../../components/PageHeader";
 import { ScanConfigDetailModal } from "../components/scan/ScanConfigDetailModal";
+import { useCommonCopy } from "../../../i18n";
 import { useSkillsCopy } from "../i18n";
 import { useSkillScan } from "../model/use-skill-scan";
 
@@ -20,6 +22,7 @@ function providerLabel(config: ScanConfigItem): string {
 
 export default function ScanConfigPage() {
   const copy = useSkillsCopy().scan;
+  const common = useCommonCopy();
   const {
     configs,
     activeConfigId,
@@ -32,6 +35,7 @@ export default function ScanConfigPage() {
     configLoaded,
   } = useSkillScan();
   const [editor, setEditor] = useState<EditorState>(null);
+  const [pendingDeleteConfig, setPendingDeleteConfig] = useState<ScanConfigItem | null>(null);
   const [pendingConfigId, setPendingConfigId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -67,14 +71,15 @@ export default function ScanConfigPage() {
     setEditor({ mode: "edit", config });
   }
 
-  async function deleteConfig(config: ScanConfigItem) {
-    if (!window.confirm(copy.deleteConfigConfirm(config.name))) {
+  async function executeDeleteConfig() {
+    if (!pendingDeleteConfig) {
       return;
     }
-    setPendingConfigId(config.id);
+    setPendingConfigId(pendingDeleteConfig.id);
     setErrorMessage(null);
     try {
-      await removeConfig(config.id);
+      await removeConfig(pendingDeleteConfig.id);
+      setPendingDeleteConfig(null);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -195,7 +200,7 @@ export default function ScanConfigPage() {
                             type="button"
                             className="action-pill action-pill--danger"
                             disabled={pending}
-                            onClick={() => void deleteConfig(config)}
+                            onClick={() => setPendingDeleteConfig(config)}
                           >
                             <Trash2 size={12} />
                             {copy.table.delete}
@@ -220,6 +225,19 @@ export default function ScanConfigPage() {
         onEditConfig={editConfig}
         onValidateConfig={validateConfig}
         onRevealApiKey={revealConfigApiKey}
+      />
+
+      <ConfirmActionDialog
+        open={pendingDeleteConfig !== null}
+        title={copy.deleteConfigTitle(pendingDeleteConfig?.name ?? "scan config")}
+        description={copy.deleteConfigDescription}
+        confirmLabel={common.actions.delete}
+        pendingLabel={copy.deletingConfig}
+        isPending={pendingDeleteConfig !== null && pendingConfigId === pendingDeleteConfig.id}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteConfig(null);
+        }}
+        onConfirm={executeDeleteConfig}
       />
     </>
   );

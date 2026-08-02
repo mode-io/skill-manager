@@ -170,6 +170,49 @@
   border-radius: 4px;
 }
 
+.skill-card__harness-toggle-stack {
+  flex: 1;
+}
+
+.skill-card__harness-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 120ms ease, filter 120ms ease, transform 120ms ease;
+}
+
+.skill-card__harness-toggle:hover:not(:disabled),
+.skill-card__harness-toggle:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.skill-card__harness-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+  border-radius: var(--radius-xs);
+}
+
+.skill-card__harness-toggle:disabled {
+  cursor: progress;
+}
+
+.skill-card__harness-toggle[data-state="disabled"] {
+  opacity: 0.36;
+  filter: grayscale(1);
+}
+
+.skill-card__harness-toggle[data-state="enabled"] {
+  opacity: 1;
+  filter: none;
+}
+
+.skill-card__harness-toggle[data-pending="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
 .skill-card__harness-count {
   margin-left: auto;
   font-family: var(--font-mono);

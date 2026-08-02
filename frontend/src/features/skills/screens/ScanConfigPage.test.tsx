@@ -69,6 +69,10 @@ describe("ScanConfigPage", () => {
             errorCode: null,
           },
         },
+        {
+          match: (url, _input, init) => url === "/api/scan/configs/1" && init?.method === "DELETE",
+          response: {},
+        },
         { match: "/api/scan/configs", response: configsPayload },
       ]),
     );
@@ -138,6 +142,45 @@ describe("ScanConfigPage", () => {
 
     fireEvent.change(apiKeyInput, { target: { value: "sk-default-new" } });
     expect(screen.getByRole("button", { name: "Update" })).not.toBeDisabled();
+  });
+
+  it("opens a styled delete confirmation dialog before deleting a scan config", async () => {
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Backup")).toBeInTheDocument());
+    const backupRow = screen.getAllByRole("row").find((row) => within(row).queryByText("Backup"));
+    expect(backupRow).toBeDefined();
+
+    fireEvent.click(within(backupRow as HTMLElement).getByRole("button", { name: "Delete" }));
+
+    expect(screen.getByRole("heading", { name: "Delete Backup?" })).toBeInTheDocument();
+    expect(
+      screen.getByText("This removes the saved LLM scan configuration. Existing scan results are not deleted."),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/scan/configs/1",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Delete Backup?" })).not.toBeInTheDocument(),
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/scan/configs/1",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+
+    fireEvent.click(within(backupRow as HTMLElement).getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/scan/configs/1",
+        expect.objectContaining({ method: "DELETE" }),
+      ),
+    );
   });
 
   it("requires API key for new configs and can toggle API key visibility", async () => {

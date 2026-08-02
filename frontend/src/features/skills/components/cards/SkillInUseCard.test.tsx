@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { LOCALE_STORAGE_KEY, LocaleProvider } from "../../../../i18n";
 import { SkillInUseCard } from "./SkillInUseCard";
 
 const SkillInUseCardSubject = SkillInUseCard as unknown as ComponentType<Record<string, unknown>>;
@@ -9,6 +10,8 @@ const SkillInUseCardSubject = SkillInUseCard as unknown as ComponentType<Record<
 function renderCard(overrides?: Record<string, unknown>) {
   const onRequestRemove = vi.fn();
   const onRequestDelete = vi.fn();
+  const onOpenSkill = vi.fn();
+  const onToggleHarness = vi.fn();
   const props = {
     row: {
       skillRef: "shared:trace-lens",
@@ -25,15 +28,26 @@ function renderCard(overrides?: Record<string, unknown>) {
     pendingStructuralAction: null,
     selected: false,
     checked: false,
-    onOpenSkill: vi.fn(),
+    onOpenSkill,
     onToggleChecked: vi.fn(),
+    onToggleHarness,
     onSetAllHarnesses: vi.fn(),
     onRequestRemove,
     onRequestDelete,
     ...overrides,
   };
 
-  return { ...render(<SkillInUseCardSubject {...props} />), onRequestRemove, onRequestDelete };
+  return {
+    ...render(
+      <LocaleProvider>
+        <SkillInUseCardSubject {...props} />
+      </LocaleProvider>,
+    ),
+    onOpenSkill,
+    onToggleHarness,
+    onRequestRemove,
+    onRequestDelete,
+  };
 }
 
 describe("SkillInUseCard", () => {
@@ -79,5 +93,32 @@ describe("SkillInUseCard", () => {
     });
 
     expect(screen.queryByRole("button", { name: "More actions for Trace Lens" })).not.toBeInTheDocument();
+  });
+
+  it("renders every interactive harness as a card toggle", () => {
+    const { onOpenSkill, onToggleHarness } = renderCard();
+
+    const enabledHarness = screen.getByRole("button", { name: "Disable Trace Lens on Codex" });
+    const disabledHarness = screen.getByRole("button", { name: "Enable Trace Lens on Cursor" });
+
+    expect(enabledHarness).toHaveAttribute("aria-pressed", "true");
+    expect(disabledHarness).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(disabledHarness);
+
+    expect(onToggleHarness).toHaveBeenCalledWith(
+      expect.objectContaining({ skillRef: "shared:trace-lens" }),
+      expect.objectContaining({ harness: "cursor", state: "disabled" }),
+    );
+    expect(onOpenSkill).not.toHaveBeenCalled();
+  });
+
+  it("localizes harness toggle labels", () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
+
+    renderCard();
+
+    expect(screen.getByRole("button", { name: "在 Codex 上禁用 Trace Lens" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "在 Cursor 上启用 Trace Lens" })).toBeInTheDocument();
   });
 });

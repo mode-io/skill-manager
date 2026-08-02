@@ -32,6 +32,7 @@ AI 扩展通常分散在各个 harness 自己的文件夹、MCP 配置文件、s
 | **待确认** | Skill Manager 发现了本地状态、配置差异或库存问题，需要你先做决定。 |
 | **扫描** | 在信任某个 Skill 之前，使用 LLM 驱动的安全检查进行确认。 |
 | **发现** | 浏览商城，并预览外部工具。 |
+| **设置** | 启用或停用 harness 支持，并查看 Skill Manager 将使用的本地路径。 |
 
 ## 你可以做什么
 
@@ -41,6 +42,7 @@ AI 扩展通常分散在各个 harness 自己的文件夹、MCP 配置文件、s
 - 安装或采用 MCP 服务器配置，解决配置差异，并写入支持的 harness。
 - 统一管理可复用的 slash command，并同步到支持的 harness。
 - 从商城来源发现 Skill、MCP 服务器，以及仅预览的 CLI 工具。
+- 当本地 agent 缺失、不支持或暂不纳入管理时，可以切换对应 harness 的支持状态。
 
 ## 产品导览
 
@@ -74,11 +76,11 @@ AI 扩展通常分散在各个 harness 自己的文件夹、MCP 配置文件、s
 3. 对单个 Skill、已选 Skill 或当前可见列表运行扫描。
 4. 查看严重程度、发现项、代码片段和修复建议。
 
-![skill-manager-scan-view](./assets/skill-manager-scan-view.svg)
+![skill-manager-scan-view](./assets/skill-manager-scan-view.png)
 
 扫描配置单独管理，因此你可以保存多个 provider，选择一个当前配置，并且在列表中只显示隐藏后的 API Key。
 
-![skill-manager-scan-config](./assets/skill-manager-scan-config.svg)
+![skill-manager-scan-config](./assets/skill-manager-scan-config.png)
 
 ### MCP 服务器
 
@@ -144,6 +146,19 @@ GitHub Releases 会发布 macOS ARM64/x64、Linux x64/ARM64 和 Windows x64 的�
 
 Windows ARM64、Windows Server、UNC 路径、映射网络盘和便携式磁盘暂不在支持范围内。
 
+### CLI 命令
+
+`skill-manager start` 会启动一个托管的后台实例并打开浏览器。CLI 还支持：
+
+```bash
+skill-manager serve   # 在前台运行 app server
+skill-manager start   # 启动一个托管后台实例
+skill-manager status  # 打印托管实例 URL 和 pid
+skill-manager stop    # 停止托管后台实例
+```
+
+常用启动参数包括 `--host`、`--port`、`--frontend-dist`、`--state-dir` 和 `--no-open-browser`。
+
 ## 支持的 harness
 
 | Harness | Skill | MCP 服务器 | Slash command |
@@ -182,7 +197,22 @@ Skill Manager 是本地配置管理工具。它在你的机器上运行，并读
 
 在 macOS 上，应用拥有的文件位于 `~/Library/Application Support/skill-manager`；在 Linux 上使用 XDG base directories；在 Windows 上使用 `%APPDATA%\skill-manager` 和 `%LOCALAPPDATA%\skill-manager`。
 
+商城请求会访问外部 registry 或 catalog 来源；Skill 扫描会将所选 Skill 上下文发送给已配置的 LLM provider。所有本地状态变更都来自 UI 或 API 中的显式用户操作。
+
 ## 工作方式
+
+### 应用架构
+
+Skill Manager 是一个本地 FastAPI 应用，配套 React/TypeScript 前端。Python 后端负责文件系统和配置变更，在 `/api` 下提供 JSON API，并为浏览器体验提供构建后的前端静态资源。前端使用 React Router 管理页面，使用 TanStack Query 缓存 API 状态，并复用卡片、矩阵、对话框、toast、筛选器和 harness 图标等设计系统组件。
+
+后端按功能服务组织：
+
+- `skills` 读取 harness Skill 文件夹，管理共享本地存储，并安装商城 Skill。
+- `mcp` 规范化服务器配置，将其转换为各 harness 专用配置文件，并检查本地可用性。
+- `slash_commands` 保存共享 command 定义，并同步到每个 harness 的格式。
+- `scan` 在 SQLite 中保存 LLM 扫描配置，并运行受限的 Skill 安全分析。
+- `settings` 报告本地路径并持久化 harness 支持开关。
+- `marketplace` 缓存 Skills、MCP registry 和 CLIs.dev catalog 响应。
 
 ### Skill
 
@@ -246,6 +276,8 @@ CLI marketplace 条目仅用于预览。
 - 商城缓存：`~/Library/Application Support/skill-manager/marketplace`
 - 应用数据库和 LLM 扫描配置：`~/Library/Application Support/skill-manager/skill-manager.db`
 - 应用设置：`~/Library/Application Support/skill-manager/settings.json`
+- 托管运行时状态：`~/Library/Application Support/skill-manager/runtime.json`
+- 托管 server 日志：`~/Library/Application Support/skill-manager/server.log`
 
 常用 Linux 路径：
 
@@ -256,6 +288,8 @@ CLI marketplace 条目仅用于预览。
 - 商城缓存：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
 - 应用数据库和 LLM 扫描配置：`${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - 应用设置：`${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
+- 托管运行时状态：`${XDG_STATE_HOME:-~/.local/state}/skill-manager/runtime.json`
+- 托管 server 日志：`${XDG_STATE_HOME:-~/.local/state}/skill-manager/server.log`
 
 常用 Windows 路径：
 
@@ -276,6 +310,12 @@ CLI marketplace 条目仅用于预览。
 | OpenClaw | `n/a` | `~/.openclaw/skills` |
 
 MCP 配置位置由 harness 拥有。Skill Manager 只写入经过验证的配置路径，并跳过不支持的 harness 写入。Hermes Agent 配置发现会优先使用 `SKILL_MANAGER_HERMES_HOME`，然后是 `HERMES_HOME`，最后回退到 `~/.hermes`。
+
+其他常用覆盖项：
+
+- `SKILL_MANAGER_SETTINGS_PATH`：使用指定的 settings JSON 文件。
+- `SKILL_MANAGER_STATE_DIR`：为 `start`、`stop` 和 `status` 使用指定运行时状态/日志目录。
+- `XDG_CONFIG_HOME`、`XDG_DATA_HOME`、`XDG_STATE_HOME`：改变 Linux 上使用的基础目录；在 macOS 上显式设置时也会生效。
 
 ## 从源码运行
 
@@ -349,6 +389,8 @@ npm test
 npm run build
 ```
 
+后端测试分为 `tests/unit` 和 `tests/integration`。前端测试与其保护的组件、模型或页面放在一起，共享测试 helper 位于 `frontend/src/test`。
+
 ## 故障排查
 
 - 如果商城请求失败并显示 `Marketplace is temporarily unavailable`，请确认网络连接后重试。
@@ -356,6 +398,7 @@ npm run build
 - 在 Windows 上，如果 Codex 显示不可用，请在同一个 PowerShell 中运行 `codex --version`，修复 `PATH` 后重启 Skill Manager。Skill Manager 不负责安装或登录 Codex。
 - Windows Skill 绑定使用目录联接。请把 Skill Manager 数据目录和 Codex Skill 根目录放在本机磁盘；目前不支持网络盘和便携式磁盘。
 - 如果某个 MCP harness 显示为不可用，说明 Skill Manager 检测到本地客户端缺失，或该客户端不支持所需配置界面。
+- 如果 `skill-manager start` 启动失败，可以先运行 `skill-manager status`，再查看配置章节列出的托管 server 日志；也可以传入 `--state-dir` 隔离一次测试启动。
 
 ## 后续计划
 

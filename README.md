@@ -32,6 +32,7 @@ AI extensions are scattered across harness-specific folders, MCP config files, s
 | **Needs review** | Skill Manager found local state, config differences, or inventory issues that need a decision. |
 | **Scan** | Run LLM-backed security checks against Skills before trusting them. |
 | **Discover** | Browse marketplaces and preview external tools. |
+| **Settings** | Enable or disable harness support and inspect the local paths Skill Manager will use. |
 
 ## What you can do
 
@@ -41,6 +42,7 @@ AI extensions are scattered across harness-specific folders, MCP config files, s
 - Install or adopt MCP server configs, resolve differences, and enable them where supported.
 - Manage reusable slash commands once, then sync them to supported harnesses.
 - Discover Skills, MCP servers, and preview-only CLI tools from marketplace sources.
+- Toggle harness support when a local agent is missing, unsupported, or intentionally out of scope.
 
 ## Product tour
 
@@ -74,11 +76,11 @@ Typical flow:
 3. Run a scan for one Skill, selected Skills, or the full visible list.
 4. Review severity, findings, snippets, and remediation guidance.
 
-![skill-manager-scan-view](./assets/skill-manager-scan-view.svg)
+![skill-manager-scan-view](./assets/skill-manager-scan-view.png)
 
 Scan configurations are managed separately so you can save multiple providers, choose one active configuration, and keep API keys masked in list views.
 
-![skill-manager-scan-config](./assets/skill-manager-scan-config.svg)
+![skill-manager-scan-config](./assets/skill-manager-scan-config.png)
 
 ### MCP servers
 
@@ -143,6 +145,19 @@ Native Windows support targets Windows 10 22H2 and Windows 11 on x64 local disks
 The first Windows release supports the complete **Codex CLI + Skills** flow: discover an existing Codex CLI installation, install or adopt Skills, and enable or disable them under `%USERPROFILE%\.agents\skills`. Skill Manager does not install, update, or sign in to Codex. Other harnesses, MCP server management, and slash command management are not yet supported on Windows.
 
 Windows ARM64, Windows Server, UNC paths, mapped network drives, and removable drives are outside the current support scope.
+
+### CLI commands
+
+`skill-manager start` launches one managed background instance and opens the browser. The CLI also supports:
+
+```bash
+skill-manager serve   # run the app server in the foreground
+skill-manager start   # launch one managed background instance
+skill-manager status  # print the managed instance URL and pid
+skill-manager stop    # stop the managed background instance
+```
+
+Useful launch flags include `--host`, `--port`, `--frontend-dist`, `--state-dir`, and `--no-open-browser`.
 
 ## Supported harnesses
 
@@ -217,7 +232,22 @@ Actions that can change local state include:
 
 App-owned files live under `~/Library/Application Support/skill-manager` on macOS, XDG base directories on Linux, and `%APPDATA%\skill-manager` plus `%LOCALAPPDATA%\skill-manager` on Windows.
 
+Marketplace requests go to external registries or catalog sources, and Skill scans send selected Skill context to the configured LLM provider. Local mutation operations are explicit user actions from the UI or API.
+
 ## How it works
+
+### App architecture
+
+Skill Manager is a local FastAPI app with a React/TypeScript frontend. The Python backend owns filesystem and config mutations, exposes JSON APIs under `/api`, and serves the built frontend for the desktop browser experience. The frontend uses React Router for pages, TanStack Query for cached API state, and shared design-system primitives for cards, matrices, dialogs, toasts, filters, and harness icons.
+
+The backend is organized around feature services:
+
+- `skills` reads harness skill folders, manages the shared local store, and installs marketplace Skills.
+- `mcp` normalizes server configs, translates them into harness-specific config files, and checks local availability.
+- `slash_commands` stores shared command definitions and syncs them into each harness format.
+- `scan` stores LLM scan configs in SQLite and runs bounded Skill security analysis.
+- `settings` reports local paths and persists harness support toggles.
+- `marketplace` caches Skills, MCP registry, and CLIs.dev catalog responses.
 
 ### Skills
 
@@ -281,6 +311,8 @@ Useful macOS paths:
 - marketplace cache: `~/Library/Application Support/skill-manager/marketplace`
 - app database and LLM scan configs: `~/Library/Application Support/skill-manager/skill-manager.db`
 - app settings: `~/Library/Application Support/skill-manager/settings.json`
+- managed runtime state: `~/Library/Application Support/skill-manager/runtime.json`
+- managed server log: `~/Library/Application Support/skill-manager/server.log`
 
 Useful Linux paths:
 
@@ -291,6 +323,8 @@ Useful Linux paths:
 - marketplace cache: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/marketplace`
 - app database and LLM scan configs: `${XDG_DATA_HOME:-~/.local/share}/skill-manager/skill-manager.db`
 - app settings: `${XDG_CONFIG_HOME:-~/.config}/skill-manager/settings.json`
+- managed runtime state: `${XDG_STATE_HOME:-~/.local/state}/skill-manager/runtime.json`
+- managed server log: `${XDG_STATE_HOME:-~/.local/state}/skill-manager/server.log`
 
 Useful Windows paths:
 
@@ -311,6 +345,12 @@ Most users do not need to change these locations. If you manage skills in a cust
 | OpenClaw | `n/a` | `~/.openclaw/skills` |
 
 MCP config locations are harness-owned. Skill Manager writes only to verified config paths and skips unsupported harness writes. Hermes Agent config discovery honors `SKILL_MANAGER_HERMES_HOME` first, then `HERMES_HOME`, then `~/.hermes`.
+
+Other useful overrides:
+
+- `SKILL_MANAGER_SETTINGS_PATH`: use a specific settings JSON file.
+- `SKILL_MANAGER_STATE_DIR`: use a specific runtime state/log directory for `start`, `stop`, and `status`.
+- `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`: change the base directories used on Linux, and also on macOS when explicitly set.
 
 ## From source
 
@@ -384,6 +424,8 @@ npm test
 npm run build
 ```
 
+Backend tests are split between `tests/unit` and `tests/integration`. Frontend tests live beside the component, model, or screen they cover, with shared test helpers under `frontend/src/test`.
+
 ## Troubleshooting
 
 - If Marketplace requests fail with `Marketplace is temporarily unavailable`, verify your network connection and try again.
@@ -391,6 +433,7 @@ npm run build
 - On Windows, if Codex is unavailable, run `codex --version` in the same PowerShell session and restart Skill Manager after fixing `PATH`. Skill Manager does not install or sign in to Codex.
 - Windows Skill bindings are directory junctions. Keep the Skill Manager data directory and Codex Skills root on local disks; network and removable-drive paths are not supported.
 - If an MCP harness is shown as unavailable, Skill Manager has detected that the local client is missing or does not support the required config surface.
+- If `skill-manager start` fails, run `skill-manager status`, then inspect the managed server log listed in the configuration section or pass `--state-dir` to isolate a test launch.
 
 ## More to come
 

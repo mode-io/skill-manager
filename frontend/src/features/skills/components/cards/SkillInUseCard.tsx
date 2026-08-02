@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { Loader2, PackageOpen, Power, Trash2 } from "lucide-react";
 
 import { CardMenu, type CardMenuItem } from "../../../../components/cards/CardMenu";
+import { UiTooltip } from "../../../../components/ui/UiTooltip";
+import { getHarnessPresentation } from "../../../../components/harness/harnessPresentation";
 import { useSkillsCopy } from "../../i18n";
 import { cellActionKey } from "../../model/pending";
 import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
-import type { SkillListRow } from "../../model/types";
+import type { HarnessCell, SkillListRow } from "../../model/types";
 import { CardTitleRow } from "./CardTitleRow";
-import { HarnessChipStack } from "./HarnessChipStack";
 
 interface SkillInUseCardProps {
   row: SkillListRow;
@@ -17,6 +18,7 @@ interface SkillInUseCardProps {
   checked: boolean;
   onOpenSkill: (skillRef: string) => void;
   onToggleChecked: (skillRef: string) => void;
+  onToggleHarness: (row: SkillListRow, cell: HarnessCell) => void;
   onSetAllHarnesses: (
     skillRef: string,
     target: "enabled" | "disabled",
@@ -33,6 +35,7 @@ export function SkillInUseCard({
   checked,
   onOpenSkill,
   onToggleChecked,
+  onToggleHarness,
   onSetAllHarnesses,
   onRequestRemove,
   onRequestDelete,
@@ -101,7 +104,12 @@ export function SkillInUseCard({
       {row.description ? <p className="skill-card__description">{row.description}</p> : null}
 
       <div className="skill-card__footer">
-        <HarnessChipStack cells={row.cells} />
+        <HarnessToggleStack
+          row={row}
+          pendingToggleKeys={pendingToggleKeys}
+          disabled={pendingStructuralAction !== null}
+          onToggleHarness={onToggleHarness}
+        />
         <button
           type="button"
           className="action-pill"
@@ -121,5 +129,67 @@ export function SkillInUseCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function HarnessToggleStack({
+  row,
+  pendingToggleKeys,
+  disabled,
+  onToggleHarness,
+}: {
+  row: SkillListRow;
+  pendingToggleKeys: ReadonlySet<CellActionKey>;
+  disabled: boolean;
+  onToggleHarness: (row: SkillListRow, cell: HarnessCell) => void;
+}) {
+  const copy = useSkillsCopy().inUse;
+  const cells = row.cells.filter((cell) => cell.interactive);
+  const enabledCount = cells.filter((cell) => cell.state === "enabled").length;
+
+  return (
+    <div className="skill-card__harness-row">
+      <div
+        className="harness-stack skill-card__harness-toggle-stack"
+        aria-label={copy.harnessToggleAria(enabledCount, cells.length)}
+      >
+        {cells.map((cell, index) => {
+          const enabled = cell.state === "enabled";
+          const pending = pendingToggleKeys.has(cellActionKey(row.skillRef, cell.harness));
+          const presentation = getHarnessPresentation(cell.logoKey ?? cell.harness);
+          return (
+            <UiTooltip key={cell.harness} content={copy.harnessToggleTooltip(cell.label, enabled)}>
+              <button
+                type="button"
+                className="harness-stack__item skill-card__harness-toggle"
+                data-state={enabled ? "enabled" : "disabled"}
+                data-pending={pending ? "true" : undefined}
+                style={{ zIndex: cells.length - index }}
+                disabled={disabled || pending}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleHarness(row, cell);
+                }}
+                aria-label={
+                  enabled
+                    ? copy.disableHarnessAria(row.name, cell.label)
+                    : copy.enableHarnessAria(row.name, cell.label)
+                }
+                aria-pressed={enabled}
+              >
+                {presentation ? (
+                  <img src={presentation.logoSrc} alt="" aria-hidden="true" />
+                ) : (
+                  <span className="harness-stack__fallback">{cell.label.slice(0, 1)}</span>
+                )}
+              </button>
+            </UiTooltip>
+          );
+        })}
+      </div>
+      <span className="skill-card__harness-count">
+        {enabledCount}/{cells.length}
+      </span>
+    </div>
   );
 }

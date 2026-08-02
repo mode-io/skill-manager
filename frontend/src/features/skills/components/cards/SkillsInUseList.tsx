@@ -1,5 +1,5 @@
 import type { CellActionKey, StructuralSkillAction } from "../../model/pending";
-import type { SkillListRow } from "../../model/types";
+import type { HarnessCell, SkillListRow } from "../../model/types";
 import { useSkillsCopy } from "../../i18n";
 import { SkillInUseCard } from "./SkillInUseCard";
 
@@ -12,6 +12,7 @@ interface SkillsInUseListProps {
   checkedRefs: ReadonlySet<string>;
   onOpenSkill: (skillRef: string) => void;
   onToggleChecked: (skillRef: string) => void;
+  onToggleHarness: (row: SkillListRow, cell: HarnessCell) => void;
   onSetAllHarnesses: (
     skillRef: string,
     target: "enabled" | "disabled",
@@ -29,6 +30,7 @@ export function SkillsInUseList({
   checkedRefs,
   onOpenSkill,
   onToggleChecked,
+  onToggleHarness,
   onSetAllHarnesses,
   onRequestRemove,
   onRequestDelete,
@@ -47,6 +49,7 @@ export function SkillsInUseList({
           checked={checkedRefs.has(row.skillRef)}
           onOpenSkill={onOpenSkill}
           onToggleChecked={onToggleChecked}
+          onToggleHarness={onToggleHarness}
           onSetAllHarnesses={onSetAllHarnesses}
           onRequestRemove={onRequestRemove}
           onRequestDelete={onRequestDelete}

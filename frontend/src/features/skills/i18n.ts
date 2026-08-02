@@ -14,6 +14,10 @@ const englishSkillsCopy = {
     emptyBody:
       "Review local skill folders or install something from the marketplace to start controlling harness coverage here.",
     filterAria: (label: string) => `Filter: ${label}`,
+    harnessToggleAria: (enabled: number, total: number) => `Enabled on ${enabled} of ${total} harnesses`,
+    harnessToggleTooltip: (label: string, enabled: boolean) => `${label} - ${enabled ? "enabled" : "disabled"}`,
+    enableHarnessAria: (skillName: string, harnessLabel: string) => `Enable ${skillName} on ${harnessLabel}`,
+    disableHarnessAria: (skillName: string, harnessLabel: string) => `Disable ${skillName} on ${harnessLabel}`,
     pills: {
       all: "All",
       enabled: "Enabled",
@@ -36,7 +40,9 @@ const englishSkillsCopy = {
     noConfigsTitle: "No scan configs yet",
     noConfigsBody: "Add an LLM configuration before running semantic security scans.",
     configsAria: "LLM scan configurations",
-    deleteConfigConfirm: (name: string) => `Delete scan config "${name}"?`,
+    deleteConfigTitle: (name: string) => `Delete ${name}?`,
+    deleteConfigDescription: "This removes the saved LLM scan configuration. Existing scan results are not deleted.",
+    deletingConfig: "Deleting",
     table: {
       name: "Name",
       model: "Model",
@@ -220,6 +226,10 @@ export const skillsCopy = {
       emptyTitle: "还没有使用中的 Skill",
       emptyBody: "确认本地 Skill 文件夹，或从商城安装内容，然后在这里控制 harness 覆盖范围。",
       filterAria: (label: string) => `筛选：${label}`,
+      harnessToggleAria: (enabled: number, total: number) => `已在 ${enabled}/${total} 个 harness 上启用`,
+      harnessToggleTooltip: (label: string, enabled: boolean) => `${label}：${enabled ? "已启用" : "已禁用"}`,
+      enableHarnessAria: (skillName: string, harnessLabel: string) => `在 ${harnessLabel} 上启用 ${skillName}`,
+      disableHarnessAria: (skillName: string, harnessLabel: string) => `在 ${harnessLabel} 上禁用 ${skillName}`,
       pills: {
         all: "全部",
         enabled: "已启用",
@@ -242,7 +252,9 @@ export const skillsCopy = {
       noConfigsTitle: "还没有扫描配置",
       noConfigsBody: "先添加一个 LLM 配置，再运行语义安全扫描。",
       configsAria: "LLM 扫描配置",
-      deleteConfigConfirm: (name: string) => `删除扫描配置“${name}”？`,
+      deleteConfigTitle: (name: string) => `删除 ${name}？`,
+      deleteConfigDescription: "这会移除已保存的 LLM 扫描配置，不会删除已有扫描结果。",
+      deletingConfig: "正在删除",
       table: {
         name: "名称",
         model: "模型",
